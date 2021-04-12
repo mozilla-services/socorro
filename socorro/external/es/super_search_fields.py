@@ -330,6 +330,48 @@ class SuperSearchMissingFieldsModel(SuperSearchFieldsModel):
         return super().get_missing_fields()
 
 
+# Cache of hashed_args -> list of fields values
+_FIELDS_CACHE = {}
+
+
+def get_fields_by_item(fields, key, val):
+    """Returns the values in fields that have the specified key=val item
+
+    Note: This "hashes" the fields argument by using `id`. I think this is fine because
+    fields don't change between runs and it's not mutated in-place. We're hashing it
+    sufficiently often that it's faster to use `id` than a more computationally
+    intensive hash of a large data structure.
+
+    :arg dict fields: dict of field information mapped as field name to
+        properties
+    :arg str key: the key to match; example: "analyzer"
+    :arg str value: the value that key should have
+
+    :returns: list of field properties for fields that match the analyzer
+
+    """
+    map_key = (id(fields), key, val)
+    try:
+        return _FIELDS_CACHE[map_key]
+    except KeyError:
+        pass
+
+    def has_key_val(key, val, data):
+        for this_key, this_val in data.items():
+            if isinstance(this_val, dict):
+                ret = has_key_val(key, val, this_val)
+                if ret:
+                    return True
+            elif isinstance(this_key, str):
+                if (this_key, this_val) == (key, val):
+                    return True
+        return False
+
+    fields = [field for field in fields.values() if has_key_val(key, val, field)]
+    _FIELDS_CACHE[map_key] = fields
+    return fields
+
+
 # Tree of super search fields
 FIELDS = {
     "ActiveExperiment": {
