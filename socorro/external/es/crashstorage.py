@@ -15,7 +15,11 @@ from elasticsearch.exceptions import NotFoundError
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
-from socorro.external.es.super_search_fields import FIELDS, parse_mapping
+from socorro.external.es.super_search_fields import (
+    FIELDS,
+    parse_mapping,
+    get_fields_by_item,
+)
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 
 
@@ -73,40 +77,6 @@ class RawCrashRedactor(Redactor):
 VALID_KEY = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
-# Cache of (fields id, analyzer) -> list of fields properties
-_ANALYZER_TO_FIELDS_MAP = {}
-
-
-def get_fields_by_analyzer(fields, analyzer):
-    """Returns the fields in fields that have the specified analyzer
-
-    Note: This "hashes" the fields argument by using `id`. I think this is fine because
-    fields don't change between runs and it's not mutated in-place. We're hashing it
-    sufficiently often that it's faster to use `id` than a more computationally
-    intensive hash of a large data structure.
-
-    :arg dict fields: dict of field information mapped as field name to
-        properties
-    :arg str analyzer: the Elasticsearch analyzer to match
-
-    :returns: list of field properties for fields that match the analyzer
-
-    """
-    map_key = (id(fields), analyzer)
-    try:
-        return _ANALYZER_TO_FIELDS_MAP[map_key]
-    except KeyError:
-        pass
-
-    fields = [
-        field
-        for field in fields.values()
-        if (field.get("storage_mapping") or {}).get("analyzer", "") == analyzer
-    ]
-    _ANALYZER_TO_FIELDS_MAP[map_key] = fields
-    return fields
-
-
 def is_valid_key(key):
     """Validates an Elasticsearch document key
 
@@ -118,16 +88,17 @@ def is_valid_key(key):
     return bool(VALID_KEY.match(key))
 
 
-def truncate_keyword_field_values(fields, data):
-    """Truncates keyword field values greater than MAX_KEYWORD_FIELD_VALUE_SIZE length
+def truncate_keyword_field_values(data, fields, max_size):
+    """Truncates keyword field values greater than max_size length in characters
 
-    Note: This modifies the data dict in-place and only looks at the top level.
+    This modifies the data dict in-place and only looks at the top level.
 
-    :arg dict fields: the super search fields schema
     :arg dict data: the data to look through
+    :arg dict fields: the super search fields schema
+    :arg int max_size: the maximum size for the field value
 
     """
-    keyword_fields = get_fields_by_analyzer(fields, "keyword")
+    keyword_fields = get_fields_by_item(fields, "analyzer", "keyword")
 
     for field in keyword_fields:
         field_name = field.get("in_database_name")
@@ -135,51 +106,58 @@ def truncate_keyword_field_values(fields, data):
             continue
 
         value = data.get(field_name)
-        if isinstance(value, str) and len(value) > MAX_KEYWORD_FIELD_VALUE_SIZE:
-            data[field_name] = value[:MAX_KEYWORD_FIELD_VALUE_SIZE]
+        if isinstance(value, str) and len(value) > max_size:
+            data[field_name] = value[:max_size]
 
 
-def truncate_string_field_values(fields, data):
-    """Truncates string field values greater than MAX_STRING_FIELD_VALUE_SIZE length
+def truncate_string_field_values(data, fields, max_size):
+    """Truncates string field values greater than max_size length in bytes
 
-    Note: This modifies the data dict in-place and only looks at the top level.
+    This modifies the data dict in-place and only looks at the top level.
 
-    :arg dict fields: the super search fields schema
     :arg dict data: the data to look through
+    :arg dict fields: the super search fields schema
+    :arg int max_size: the maximum size in bytes to truncate the unicode string encoded
+        as utf-8 to
 
     """
-    string_fields = [
-        field
-        for field in fields.values()
-        if (field.get("storage_mapping") or {}).get("type", "") == "string"
-    ]
+    string_fields = get_fields_by_item(fields, "type", "string")
 
     for field in string_fields:
         field_name = field.get("in_database_name")
         if not field_name:
             continue
+
         value = data.get(field_name)
         if not isinstance(value, str):
             continue
 
-        new_value = value
-
-        # First truncate down to MAX_STRING_FIELD_VALUE_SIZE
         try:
-            if len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
-                new_value = new_value[:MAX_STRING_FIELD_VALUE_SIZE]
-
-            # If the utf-8 encoded bytes is still larger, whittle off unicode
-            # characters until it fits
-            while len(new_value.encode("utf-8")) > MAX_STRING_FIELD_VALUE_SIZE:
-                new_value = new_value[:-1]
+            value_bytes = value.encode("utf-8")
         except UnicodeEncodeError:
-            # If we hit a UnicodeEncodeError converting the unicode to utf-8, then the
-            # string value is likely junk and we don't want it in Elasticsearch.
-            new_value = "BAD DATA"
+            # If we hit an encoding error, then it's probably not valid unicode
+            # and we should reject it
+            data[field_name] = "BAD DATA"
+            continue
 
-        if value != new_value:
-            data[field_name] = new_value
+        if len(value_bytes) <= max_size:
+            continue
+
+        value_bytes = value_bytes[:max_size]
+        new_value = ""
+
+        # Remove bytes until we either run out of bytes or we can decode to a unicode
+        # string
+        while value_bytes:
+            try:
+                new_value = value_bytes.decode("utf-8")
+                break
+            except UnicodeDecodeError:
+                value_bytes = value_bytes[:-1]
+
+        new_value = new_value or "BAD DATA"
+
+        data[field_name] = new_value
 
 
 POSSIBLE_TRUE_VALUES = [1, "1", "true", True]
@@ -196,7 +174,7 @@ def convert_booleans(fields, data):
     :arg dict data: the data to look through
 
     """
-    boolean_fields = get_fields_by_analyzer(fields, "boolean")
+    boolean_fields = get_fields_by_item(fields, "analyzer", "boolean")
 
     for field in boolean_fields:
         field_name = field["in_database_name"]
@@ -264,34 +242,8 @@ class ESCrashStorage(CrashStorageBase):
         mapping = self.es_context.get_mapping(index_name, es_doctype, reraise=True)
         return parse_mapping(mapping, None)
 
-    def prepare_processed_crash(self, raw_crash, processed_crash):
-        """Returns prepared data
-
-        This mutates the raw and processed crashes in place.
-
-        """
-        # Massage the crash such that the date_processed field is formatted in the
-        # fashion of our established mapping
-        reconstitute_datetimes(processed_crash)
-
-        # Truncate values that are too long
-        truncate_keyword_field_values(FIELDS, raw_crash)
-        truncate_string_field_values(FIELDS, raw_crash)
-        truncate_keyword_field_values(FIELDS, processed_crash)
-        truncate_string_field_values(FIELDS, processed_crash)
-
-        # Convert pseudo-boolean values to boolean values
-        convert_booleans(FIELDS, raw_crash)
-        convert_booleans(FIELDS, processed_crash)
-
-    def save_processed_crash(self, raw_crash, processed_crash):
-        """Save processed crash report to Elasticsearch"""
-        index_name = self.es_context.get_index_for_date(
-            string_to_datetime(processed_crash["date_processed"])
-        )
-        es_doctype = self.config.elasticsearch.elasticsearch_doctype
-        crash_id = processed_crash["uuid"]
-
+    @cache
+    def get_keys(self, index_name, es_doctype):
         supersearch_fields_keys = self.get_keys_for_fields()
         try:
             mapping_keys = self.get_keys_for_mapping(index_name, es_doctype)
@@ -304,31 +256,72 @@ class ESCrashStorage(CrashStorageBase):
             # mapping
             all_valid_keys = all_valid_keys & mapping_keys
 
+        return all_valid_keys
+
+    def prepare_crash_data(self, raw_crash, processed_crash):
+        """Returns prepared data
+
+        This mutates the raw and processed crashes in place.
+
+        """
+        # Massage the crash such that the date_processed field is formatted in the
+        # fashion of our established mapping
+        reconstitute_datetimes(processed_crash)
+
+        # Truncate values that are too long
+        truncate_keyword_field_values(
+            raw_crash, fields=FIELDS, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE
+        )
+        truncate_keyword_field_values(
+            processed_crash, fields=FIELDS, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE
+        )
+
+        truncate_string_field_values(
+            raw_crash, fields=FIELDS, max_size=MAX_STRING_FIELD_VALUE_SIZE
+        )
+        truncate_string_field_values(
+            processed_crash, fields=FIELDS, max_size=MAX_STRING_FIELD_VALUE_SIZE
+        )
+
+        # Convert pseudo-boolean values to boolean values
+        convert_booleans(FIELDS, raw_crash)
+        convert_booleans(FIELDS, processed_crash)
+
+    def save_processed_crash(self, raw_crash, processed_crash):
+        """Save processed crash report to Elasticsearch"""
+        crash_id = processed_crash["uuid"]
+
+        index_name = self.es_context.get_index_for_date(
+            string_to_datetime(processed_crash["date_processed"])
+        )
+        es_doctype = self.config.elasticsearch.elasticsearch_doctype
+
+        all_valid_keys = self.get_keys(index_name, es_doctype)
+
         # Copy the crash structures so we can mutate them later and remove everything
         # that's not a valid key for the index
         raw_crash = {
-            key: value
-            for key, value in copy.deepcopy(raw_crash).items()
+            key: copy.deepcopy(value)
+            for key, value in raw_crash.items()
             if "raw_crash.%s" % key in all_valid_keys
         }
         processed_crash = {
-            key: value
-            for key, value in copy.deepcopy(processed_crash).items()
+            key: copy.deepcopy(value)
+            for key, value in processed_crash.items()
             if "processed_crash.%s" % key in all_valid_keys
         }
 
         # Clean up and redact raw and processed crash data
-        self.prepare_processed_crash(raw_crash, processed_crash)
-
-        # Capture crash data size metrics--do this only after we've cleaned up
-        # the crash data
-        self.capture_crash_metrics(raw_crash, processed_crash)
+        self.prepare_crash_data(raw_crash, processed_crash)
 
         crash_document = {
-            "crash_id": processed_crash["uuid"],
-            "processed_crash": processed_crash,
+            "crash_id": crash_id,
             "raw_crash": raw_crash,
+            "processed_crash": processed_crash,
         }
+
+        # Capture crash data size metrics
+        self.capture_crash_metrics(raw_crash, processed_crash, crash_document)
 
         self._submit_crash_to_elasticsearch(
             crash_id=crash_id,
@@ -337,28 +330,22 @@ class ESCrashStorage(CrashStorageBase):
             crash_document=crash_document,
         )
 
-    def capture_crash_metrics(self, raw_crash, processed_crash):
+    def capture_crash_metrics(self, raw_crash, processed_crash, crash_document):
         """Capture metrics about crash data being saved to Elasticsearch"""
-        try:
-            self.metrics.histogram(
-                "raw_crash_size", value=len(json.dumps(raw_crash, cls=JsonDTEncoder))
-            )
-        except Exception:
-            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
-            # later.
-            self.logger.exception("something went wrong when capturing raw_crash_size")
 
-        try:
-            self.metrics.histogram(
-                "processed_crash_size",
-                value=len(json.dumps(processed_crash, cls=JsonDTEncoder)),
-            )
-        except Exception:
-            # NOTE(willkg): An error here shouldn't screw up saving data. Log it so we can fix it
-            # later.
-            self.logger.exception(
-                "something went wrong when capturing processed_crash_size"
-            )
+        def _capture(key, data):
+            try:
+                self.metrics.histogram(
+                    key, value=len(json.dumps(data, cls=JsonDTEncoder))
+                )
+            except Exception:
+                # NOTE(willkg): An error here shouldn't screw up saving data. Log it so
+                # we can fix it later.
+                self.logger.exception(f"something went wrong when capturing {key}")
+
+        _capture("raw_crash_size", raw_crash)
+        _capture("processed_crash_size", processed_crash)
+        _capture("crash_document_size", crash_document)
 
     def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
         try:
@@ -514,11 +501,11 @@ class ESCrashStorageRedactedSave(ESCrashStorage):
             config.raw_crash_es_redactor
         )
 
-    def prepare_processed_crash(self, raw_crash, processed_crash):
+    def prepare_crash_data(self, raw_crash, processed_crash):
         self.raw_crash_redactor.redact(raw_crash)
         self.redactor.redact(processed_crash)
 
-        super().prepare_processed_crash(raw_crash, processed_crash)
+        super().prepare_crash_data(raw_crash, processed_crash)
 
 
 class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
@@ -558,7 +545,7 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         reference_value_from="resource.redactor",
     )
 
-    def prepare_processed_crash(self, raw_crash, processed_crash):
+    def prepare_crash_data(self, raw_crash, processed_crash):
         # Replace the `json_dump` with an allowed subset.
         json_dump = processed_crash.get("json_dump", {})
         redacted_json_dump = {
@@ -566,4 +553,4 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         }
         processed_crash["json_dump"] = redacted_json_dump
 
-        super().prepare_processed_crash(raw_crash, processed_crash)
+        super().prepare_crash_data(raw_crash, processed_crash)

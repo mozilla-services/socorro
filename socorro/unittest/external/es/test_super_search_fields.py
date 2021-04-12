@@ -9,9 +9,10 @@ import pytest
 
 from socorro.lib import BadArgumentError
 from socorro.external.es.super_search_fields import (
+    add_doc_values,
     FIELDS,
     is_doc_values_friendly,
-    add_doc_values,
+    get_fields_by_item,
     SuperSearchFieldsModel,
 )
 from socorro.lib import datetimeutil
@@ -23,6 +24,72 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # import logging
 # logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('requests').setLevel(logging.ERROR)
+
+
+class Test_get_fields_by_item:
+    @pytest.mark.parametrize(
+        "fields",
+        [
+            # No fields
+            {},
+            # No storage_mapping
+            {"key": {"in_database_name": "key"}},
+            # Wrong or missing analyzer
+            {"key": {"in_database_name": "key", "storage_mapping": {"type": "string"}}},
+            {
+                "key": {
+                    "in_database_name": "key",
+                    "storage_mapping": {
+                        "analyzer": "semicolon_keywords",
+                        "type": "string",
+                    },
+                }
+            },
+        ],
+    )
+    def test_no_match(self, fields):
+        assert get_fields_by_item(fields, "analyzer", "keyword") == []
+
+    def test_match(self):
+        fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+            }
+        }
+        assert get_fields_by_item(fields, "analyzer", "keyword") == [fields["key"]]
+
+    def test_match_by_type(self):
+        fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+            }
+        }
+        assert get_fields_by_item(fields, "type", "string") == [fields["key"]]
+
+    def test_caching(self):
+        # Verify caching works
+        fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+            }
+        }
+        result = get_fields_by_item(fields, "analyzer", "keyword")
+        second_result = get_fields_by_item(fields, "analyzer", "keyword")
+        assert id(result) == id(second_result)
+
+        # This is the same data as fields, but a different dict, so it has a
+        # different id and we won't get the cached version
+        second_fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+            }
+        }
+        third_result = get_fields_by_item(second_fields, "analyzer", "keyword")
+        assert id(result) != id(third_result)
 
 
 class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
