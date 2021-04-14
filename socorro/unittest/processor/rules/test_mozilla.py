@@ -24,6 +24,7 @@ from socorro.processor.rules.mozilla import (
     FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
+    MajorVersionRule,
     MalformedBreadcrumbs,
     ModulesInStackRule,
     ModuleURLRewriteRule,
@@ -649,6 +650,33 @@ class TestDatesAndTimesRule:
         assert processor_meta["processor_notes"] == [
             'non-integer value of "SecondsSinceLastCrash"'
         ]
+
+
+class TestMajorVersionRule:
+    @pytest.mark.parametrize(
+        "version, expected",
+        [
+            (None, 0),
+            ("", 0),
+            ("abc", 0),
+            ("50", 50),
+            ("50.1", 50),
+            ("50.1.0", 50),
+            ("50.0b4", 50),
+        ],
+    )
+    def test_major_version(self, version, expected):
+        raw_crash = {}
+        if version is not None:
+            raw_crash["Version"] = version
+        raw_dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = MajorVersionRule()
+        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+
+        assert processed_crash["major_version"] == expected
 
 
 VALID = True
