@@ -194,6 +194,7 @@ msvcr120\.dll@0x
 \<name omitted\>
 NP_Shutdown
 (NS_)?(Lossy)?(Copy|Append|Convert).*UTF
+NS_CycleCollectorSuspect3
 nsACString_internal::Assign
 nsAString_internal::Assign
 nsACString_internal::BeginWriting
