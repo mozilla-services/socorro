@@ -146,6 +146,7 @@
                     <td title="This is a new signature">new</td>
                   {% else %}
                     <td title="A change of {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}% from {{ topcrashers_stats_item.previous_percent_of_total_crashes | round(2) }}%">
+                      {{ "⬆️" if topcrashers_stats_item.percent_of_total_crashes_diff > 0 else "⬇️"}}
                       {{ topcrashers_stats_item.percent_of_total_crashes_diff | round(2) }}%
                     </td>
                   {% endif %}

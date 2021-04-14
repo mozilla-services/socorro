@@ -122,15 +122,19 @@ class SignatureStats:
     @cached_property
     def percent_of_total_crashes_diff(self):
         if self.previous_signature:
+            # The number should go "up" when moving towards 100 and "down" when moving
+            # towards 0
             return (
-                self.previous_signature.percent_of_total_crashes
-                - self.percent_of_total_crashes
+                self.percent_of_total_crashes
+                - self.previous_signature.percent_of_total_crashes
             )
         return "new"
 
     @cached_property
     def rank_diff(self):
         if self.previous_signature:
+            # The number should go "up" when moving towards 1 and "down" when moving
+            # towards infinity
             return self.previous_signature.rank - self.rank
         return 0
 
