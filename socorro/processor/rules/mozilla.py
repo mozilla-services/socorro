@@ -94,6 +94,21 @@ class ProductRule(Rule):
         )
 
 
+class MajorVersionRule(Rule):
+    """Sets "version" to the major version number of the Version annotation or 0"""
+
+    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+        major_version = None
+        try:
+            version = raw_crash.get("Version", "")
+            major_version = int(version.split(".")[0])
+        except (ValueError, IndexError):
+            pass
+
+        major_version = major_version if major_version is not None else 0
+        processed_crash["major_version"] = major_version
+
+
 class UserDataRule(Rule):
     def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
         processed_crash["url"] = raw_crash.get("URL", None)

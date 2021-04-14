@@ -2426,6 +2426,20 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": None,
     },
+    "major_version": {
+        "data_validation_type": "int",
+        "description": "Major part of the version",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "major_version",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "major_version",
+        "namespace": "processed_crash",
+        "permissions_needed": [],
+        "query_type": "number",
+        "storage_mapping": {"type": "integer"},
+    },
     "memory_error_correction": {
         "data_validation_type": "str",
         "description": (

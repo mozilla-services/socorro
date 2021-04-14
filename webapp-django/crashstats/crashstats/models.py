@@ -636,6 +636,7 @@ class ProcessedCrash(SocorroMiddleware):
         "java_stack_trace",
         "json_dump",
         "last_crash",
+        "major_version",
         "moz_crash_reason",
         "mdsw_status_string",
         "os_name",
