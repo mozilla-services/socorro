@@ -28,14 +28,6 @@ def convert_to_crash_data(raw_crash, processed_crash):
     :returns: crash data structure that conforms to the schema
 
     """
-    # We want to generate fresh signatures, so we remove the "normalized" field
-    # from stack frames from the processed crash because this is essentially
-    # cached data from previous processing
-    for thread in glom(processed_crash, "json_dump.threads", default=[]):
-        for frame in thread.get("frames", []):
-            if "normalized" in frame:
-                del frame["normalized"]
-
     crash_data = {
         # JavaStackTrace or None
         "java_stack_trace": glom(processed_crash, "java_stack_trace", default=None),
