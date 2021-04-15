@@ -58,33 +58,12 @@ class Rule:
         return True
 
 
-class SignatureTool:
-    """Stack walking signature generator base class
-
-    This defines the interface for classes that take a stack and generate a
-    signature from it.
-
-    Subclasses should implement the ``_do_generate`` method.
-
-    """
-
-    def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=" | "):
-        signature, notes, debug_notes = self._do_generate(
-            source_list, hang_type, crashed_thread, delimiter
-        )
-
-        return signature, notes, debug_notes
-
-    def _do_generate(self, source_list, hang_type, crashed_thread, delimiter):
-        raise NotImplementedError
-
-
-class CSignatureTool(SignatureTool):
+class CSignatureTool:
     """Generates signature from C/C++/Rust stacks.
 
-    This is the class for signature generation tools that work on breakpad
-    C/C++ stacks. It normalizes frames and then runs them through the siglists
-    to determine which frames should be part of the signature.
+    This is the class for signature generation tools that work on C/C++/Rust stacks. It
+    normalizes frames and then runs them through the siglists to determine which frames
+    should be part of the signature.
 
     """
 
@@ -213,11 +192,7 @@ class CSignatureTool(SignatureTool):
         line=None,
         module_offset=None,
         offset=None,
-        normalized=None,
-        # eat any extra kwargs passed in
-        # fmt: off
-        **kwargs
-        # fmt: on
+        **kwargs,
     ):
         """Normalizes a single frame
 
@@ -226,15 +201,7 @@ class CSignatureTool(SignatureTool):
         names of the fields from the jsonMDSW frame output. This allows this
         function to be invoked by passing a frame as ``**a_frame``.
 
-        Sometimes, a frame may already have a normalized version cached. If
-        that exists, return it instead.
-
         """
-        # If there's a cached normalized value, use that so we don't spend time
-        # figuring it out again
-        if normalized is not None:
-            return normalized
-
         if function:
             # If there's a filename and it ends in .rs, then normalize using
             # Rust rules
@@ -260,7 +227,7 @@ class CSignatureTool(SignatureTool):
         # Return module/module_offset
         return "{}@{}".format(module or "", module_offset)
 
-    def _do_generate(self, source_list, hang_type, crashed_thread, delimiter=" | "):
+    def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=" | "):
         """Iterate over frames in the crash stack and generate a signature.
 
         First, we look for a sentinel frame and if we find one, we start with that.
@@ -358,7 +325,7 @@ class CSignatureTool(SignatureTool):
         return signature, notes, debug_notes
 
 
-class JavaSignatureTool(SignatureTool):
+class JavaSignatureTool:
     """This is the signature generation class for Java signatures."""
 
     # The max length of a java exception description--if it's longer than this,
@@ -368,9 +335,7 @@ class JavaSignatureTool(SignatureTool):
     java_line_number_killer = re.compile(r"\.java\:\d+\)$")
     java_hex_addr_killer = re.compile(r"@[0-9a-f]{8}")
 
-    def _do_generate(
-        self, source, hang_type_unused=0, crashed_thread_unused=None, delimiter=": "
-    ):
+    def generate(self, source, delimiter=": "):
         if not isinstance(source, str):
             return (
                 "EMPTY: Java stack trace not in expected format",
@@ -540,7 +505,6 @@ class SignatureGenerationRule(Rule):
                 a_frame["module"] = a_frame["module"].lower()
 
             normalized_frame = self.c_signature_tool.normalize_frame(**a_frame)
-            a_frame["normalized"] = normalized_frame
             frame_signatures_list.append(normalized_frame)
         return frame_signatures_list
 

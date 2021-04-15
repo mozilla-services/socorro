@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
+import copy
 import importlib
 import json
 import re
@@ -13,9 +13,9 @@ import pytest
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
 # "siggen" or "socorro.signature".
-base_module = ".".join(__name__.split(".")[:-2])
-rules = importlib.import_module(base_module + ".rules")
-generator = importlib.import_module(base_module + ".generator")
+BASE_MODULE = ".".join(__name__.split(".")[:-2])
+rules = importlib.import_module(BASE_MODULE + ".rules")
+generator = importlib.import_module(BASE_MODULE + ".generator")
 
 
 @pytest.mark.parametrize(
@@ -49,7 +49,7 @@ class TestCSignatureTool:
         td=[r"foo32\.dll.*"],
         ss=("sentinel", ("sentinel2", lambda x: "ff" in x)),
     ):
-        with mock.patch(base_module + ".rules.siglists_utils") as mocked_siglists:
+        with mock.patch(BASE_MODULE + ".rules.siglists_utils") as mocked_siglists:
             mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
             mocked_siglists.PREFIX_SIGNATURE_RE = pr
             mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
@@ -220,7 +220,7 @@ class TestCSignatureTool:
 
     def test_generate_1(self):
         """test_generate_1: simple"""
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghijklmnopqrstuvwxyz")
         sig, notes, debug_notes = s.generate(a)
         assert sig == "d | e | f | g"
@@ -231,7 +231,7 @@ class TestCSignatureTool:
 
     def test_generate_2(self):
         """test_generate_2: hang"""
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghijklmnopqrstuvwxyz")
         sig, notes, debug_notes = s.generate(a, hang_type=-1)
         assert sig == "hang | d | e | f | g"
@@ -250,7 +250,7 @@ class TestCSignatureTool:
 
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghijklmnopqrstuvwxyz")
         a[3] = a[3] * 70
         a[4] = a[4] * 70
@@ -277,32 +277,36 @@ class TestCSignatureTool:
 
     def test_generate_3(self):
         """test_generate_3: simple sentinel"""
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghabcfaeabdijklmnopqrstuvwxyz")
         a[7] = "sentinel"
         sig, notes, debug_notes = s.generate(a)
         assert sig == "sentinel"
 
-        s = self.setup_config_c_sig_tool(["a", "b", "c", "sentinel"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(
+            ig=["a", "b", "c", "sentinel"], pr=["d", "e", "f"]
+        )
         sig, notes, debug_notes = s.generate(a)
         assert sig == "f | e | d | i"
 
     def test_generate_4(self):
         """test_generate_4: tuple sentinel"""
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghabcfaeabdijklmnopqrstuvwxyz")
         a[7] = "sentinel2"
         sig, notes, debug_notes = s.generate(a)
         assert sig == "d | e | f | g"
 
-        s = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
         a = list("abcdefghabcfaeabdijklmnopqrstuvwxyz")
         a[7] = "sentinel2"
         a[22] = "ff"
         sig, notes, debug_notes = s.generate(a)
         assert sig == "sentinel2"
 
-        s = self.setup_config_c_sig_tool(["a", "b", "c", "sentinel2"], ["d", "e", "f"])
+        s = self.setup_config_c_sig_tool(
+            ig=["a", "b", "c", "sentinel2"], pr=["d", "e", "f"]
+        )
         a = list("abcdefghabcfaeabdijklmnopqrstuvwxyz")
         a[7] = "sentinel2"
         a[22] = "ff"
@@ -310,19 +314,19 @@ class TestCSignatureTool:
         assert sig == "f | e | d | i"
 
     def test_generate_with_merged_dll(self):
-        sig_tool = self.setup_config_c_sig_tool(["a", "b", "c"], ["d", "e", "f"])
-        source_list = (
+        sig_tool = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
+        source_list = [
             "a",
             "d",
             "foo32.dll@0x231423",
             "foo32.dll",
             "foo32.dll@0x42",
             "g",
-        )
+        ]
         sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == "d | foo32.dll | g"
 
-        source_list = ("foo32.dll", "foo32.dll@0x231423", "g")
+        source_list = ["foo32.dll", "foo32.dll@0x231423", "g"]
         sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == "foo32.dll | g"
 
@@ -547,7 +551,7 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
 
 #  rules testing section
 
-frames_from_json_dump = {
+FRAMES_FROM_JSON_DUMP = {
     "frames": [
         {
             "frame": 0,
@@ -666,7 +670,7 @@ frames_from_json_dump = {
     "frame_count": 32,
 }
 
-frames_from_json_dump_with_templates = {
+FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES = {
     "frames": [
         {
             "frame": 0,
@@ -785,7 +789,7 @@ frames_from_json_dump_with_templates = {
     "total_frames": 32,
 }
 
-frames_from_json_dump_with_templates_and_special_case = {
+FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
     "frames": [
         {
             "frame": 0,
@@ -905,10 +909,10 @@ frames_from_json_dump_with_templates_and_special_case = {
 }
 
 
-class TestSignatureGeneration:
+class TestSignatureGenerationRule:
     def test_create_frame_list(self):
         sgr = rules.SignatureGenerationRule()
-        frame_signatures_list = sgr._create_frame_list(frames_from_json_dump)
+        frame_signatures_list = sgr._create_frame_list(FRAMES_FROM_JSON_DUMP)
         expected = [
             "NtWaitForMultipleObjects",
             "WaitForMultipleObjectsEx",
@@ -922,8 +926,36 @@ class TestSignatureGeneration:
             "F_1428703866________________________________",
         ]
         assert frame_signatures_list == expected
-        assert "normalized" in frames_from_json_dump["frames"][0]
-        assert frames_from_json_dump["frames"][0]["normalized"] == expected[0]
+
+    def test_no_mutation(self):
+        sgr = rules.SignatureGenerationRule()
+        frames = {
+            "frames": [
+                {
+                    "frame": 0,
+                    "function": "NtWaitForMultipleObjects",
+                    "function_offset": "0x15",
+                    "module": "ntdll.dll",
+                    "module_offset": "0x2015d",
+                    "offset": "0x77ad015d",
+                    "trust": "context",
+                },
+                {
+                    "frame": 1,
+                    "function": "WaitForMultipleObjectsEx",
+                    "function_offset": "0xff",
+                    "module": "KERNELBASE.dll",
+                    "module_offset": "0x115f6",
+                    "offset": "0x775e15f6",
+                    "trust": "cfi",
+                },
+            ]
+        }
+        frames_copy = copy.deepcopy(frames)
+        sgr._create_frame_list(frames_copy)
+
+        # If they're the same, then there was no mutation
+        assert frames == frames_copy
 
     def test_java_stack_trace(self):
         sgr = rules.SignatureGenerationRule()
@@ -950,7 +982,7 @@ class TestSignatureGeneration:
     def test_c_stack_trace(self):
         sgr = rules.SignatureGenerationRule()
 
-        crash_data = {"os": "Windows NT", "threads": [frames_from_json_dump]}
+        crash_data = {"os": "Windows NT", "threads": [FRAMES_FROM_JSON_DUMP]}
         result = generator.Result()
 
         # the call to be tested
@@ -980,7 +1012,7 @@ class TestSignatureGeneration:
         crash_data = {
             "os": "Windows NT",
             "crashing_thread": 0,
-            "threads": [frames_from_json_dump_with_templates],
+            "threads": [FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES],
         }
         result = generator.Result()
 
@@ -1008,7 +1040,7 @@ class TestSignatureGeneration:
         crash_data = {
             "os": "Windows NT",
             "crashing_thread": 0,
-            "threads": [frames_from_json_dump_with_templates_and_special_case],
+            "threads": [FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE],
         }
         result = generator.Result()
 
@@ -1352,7 +1384,7 @@ class TestSignatureWatchDogRule:
         crash_data = {
             "os": "Windows NT",
             "crashing_thread": 0,
-            "threads": [frames_from_json_dump],
+            "threads": [FRAMES_FROM_JSON_DUMP],
         }
         result = generator.Result()
         result.signature = "foo::bar"
