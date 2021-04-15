@@ -870,25 +870,41 @@ class Bugs(SocorroMiddleware):
 
     /api/Bugs/?signatures=OOM | small&signatures=OOM | large
 
+    Note: This works with both GET and passing signatures via the querystring of the url
+    and also with POST and passing signatures in the HTTP request body.
+
     """
 
     API_ALLOWLIST = {"hits": ("id", "signature")}
 
-    def get(self, *args, **kwargs):
-        params = self.parse_parameters(kwargs)
+    def get_bug_id_data(self, signatures):
+        """
+        :arg list-of-str signatures: list of signatures to check
 
+        :returns: list of dict of "id" and "signature keys
+        """
         hits = list(
-            BugAssociation.objects.get_bugs_and_related_bugs(
-                signatures=params["signatures"]
-            )
+            BugAssociation.objects.get_bugs_and_related_bugs(signatures=signatures)
             .values("bug_id", "signature")
             .order_by("bug_id", "signature")
         )
 
-        hits = [
+        return [
             {"id": int(hit["bug_id"]), "signature": hit["signature"]} for hit in hits
         ]
 
+    def get(self, *args, **kwargs):
+        params = self.parse_parameters(kwargs)
+
+        hits = self.get_bug_id_data(params["signatures"])
+        return {"hits": hits, "total": len(hits)}
+
+    def post(self, **data):
+        signatures = data["signatures"]
+        if not isinstance(signatures, (list, tuple)):
+            signatures = [signatures]
+
+        hits = self.get_bug_id_data(signatures)
         return {"hits": hits, "total": len(hits)}
 
 
