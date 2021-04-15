@@ -900,7 +900,7 @@ FIELDS = {
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "adapter_device_id": {
-        "data_validation_type": "enum",
+        "data_validation_type": "str",
         "description": "The graphics adapter device identifier.",
         "form_field_choices": [],
         "has_full_version": False,
@@ -910,7 +910,7 @@ FIELDS = {
         "name": "adapter_device_id",
         "namespace": "raw_crash",
         "permissions_needed": [],
-        "query_type": "enum",
+        "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "adapter_driver_version": {
@@ -942,7 +942,7 @@ FIELDS = {
         "storage_mapping": None,
     },
     "adapter_vendor_id": {
-        "data_validation_type": "enum",
+        "data_validation_type": "str",
         "description": (
             "The graphics adapter vendor. This value is sometimes a name, and sometimes a "
             "hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), "
@@ -956,7 +956,7 @@ FIELDS = {
         "name": "adapter_vendor_id",
         "namespace": "raw_crash",
         "permissions_needed": [],
-        "query_type": "enum",
+        "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "additional_minidumps": {
