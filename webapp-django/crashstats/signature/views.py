@@ -13,6 +13,7 @@ from django.urls import reverse
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
+from crashstats import productlib
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context
 from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
@@ -374,7 +375,12 @@ def signature_correlations(request, params):
         elif all("esr" in version for version in params["version"]):
             context["channel"] = "esr"
 
-    context["product_name"] = "Firefox"
+    default_product_name = productlib.get_default_product().name
+    product_name = params.get("product", default_product_name)
+    if isinstance(product_name, (list, tuple)):
+        product_name = product_name[0]
+
+    context["product_name"] = product_name
 
     return render(request, "signature/signature_correlations.html", context)
 
