@@ -1051,20 +1051,21 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th scope="col">Extension</th>
                     <th scope="col">Extension Id</th>
+                    <th scope="col">Name</th>
                     <th scope="col">Version</th>
-                    <th scope="col">Current?</th>
+                    <th scope="col">System?</th>
+                    <th scope="col">Signed state</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for addon in report.addons %}
-                    {% set split = addon.split(':') %}
                     <tr>
-                      <td><a href=""></a></td>
-                      <td>{{ split[0] }}</td>
-                      <td>{{ split[1] }}</td>
-                      <td><b>{{ split[2] }}</b></td>
+                      <td>{{ addon.id or "" }}</td>
+                      <td>{{ addon.name or "" }}</td>
+                      <td>{{ addon.version or "" }}</td>
+                      <td>{{ addon.is_system or "" }}</td>
+                      <td>{{ addon.get_signed_state_name() }}</td>
                     </tr>
                   {% endfor %}
                 </tbody>

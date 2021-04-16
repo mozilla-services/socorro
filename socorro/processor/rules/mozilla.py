@@ -178,6 +178,7 @@ class AddonsRule(Rule):
 
         This is used because some addons are missing a version. In order to
         simplify subsequent queries, we make sure the format is consistent.
+
         """
         return addon if ":" in addon else addon + ":NO_VERSION"
 

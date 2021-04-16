@@ -172,6 +172,10 @@ def report_index(request, crash_id, default_context=None):
         .order_by("-bug_id")
     )
 
+    context["report"]["addons"] = utils.enhance_addons(
+        context["raw"], context["report"]
+    )
+
     context["public_raw_keys"] = [
         x for x in context["raw"] if x in models.RawCrash.API_ALLOWLIST()
     ]
@@ -260,20 +264,6 @@ def report_index(request, crash_id, default_context=None):
     context["make_raw_crash_key"] = make_raw_crash_key
     context["fields_desc"] = descriptions
     context["empty_desc"] = "No description for this field. Search: unknown"
-
-    # report.addons used to be a list of lists.
-    # In https://bugzilla.mozilla.org/show_bug.cgi?id=1250132
-    # we changed it from a list of lists to a list of strings, using
-    # a ':' to split the name and version.
-    # See https://bugzilla.mozilla.org/show_bug.cgi?id=1250132#c7
-    # Considering legacy, let's tackle both.
-    # In late 2017, this code is going to be useless and can be removed.
-    if context["report"].get("addons") and isinstance(
-        context["report"]["addons"][0], (list, tuple)
-    ):
-        # This is the old legacy format. This crash hasn't been processed
-        # the new way.
-        context["report"]["addons"] = [":".join(x) for x in context["report"]["addons"]]
 
     content = loader.render_to_string("crashstats/report_index.html", context, request)
     utf8_content = content.encode("utf-8", errors="backslashreplace")

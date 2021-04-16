@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import OrderedDict
+from dataclasses import dataclass
 import datetime
 import functools
 import isodate
@@ -10,6 +11,7 @@ import json
 import logging
 import random
 import re
+from typing import Optional
 from urllib.parse import urlencode
 
 from django import http
@@ -19,6 +21,8 @@ from django.template import engines
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.functional import cached_property
+
+from glom import glom
 
 from crashstats import productlib
 from crashstats.crashstats import models
@@ -363,6 +367,81 @@ def enhance_raw(raw_crash):
         if result is not None:
             raw_crash["AdapterVendorName"] = result[0]
             raw_crash["AdapterDeviceName"] = result[1]
+
+
+# From /toolkit/mozapps/extensions/AddonManager.jsm Addon.signedState section
+# in mozilla-central
+SIGNED_STATE_ID_TO_NAME = {
+    None: "SIGNEDSTATE_NOT_REQUIRED",
+    -2: "SIGNEDSTATE_BROKEN",
+    # Add-on may be signed but by an certificate that doesn't chain to our
+    # our trusted certificate.
+    -1: "SIGNEDSTATE_UNKNOWN",
+    # Add-on is unsigned.
+    0: "SIGNEDSTATE_MISSING",
+    # Add-on is preliminarily reviewed.
+    1: "SIGNEDSTATE_PRELIMINARY",
+    # Add-on is fully reviewed.
+    2: "SIGNEDSTATE_SIGNED",
+    # Add-on is system add-on.
+    3: "SIGNEDSTATE_SYSTEM",
+    # Add-on is signed with a "Mozilla Extensions" certificate
+    4: "SIGNEDSTATE_PRIVILEGED",
+}
+
+
+@dataclass
+class Addon:
+    id: str
+    version: str
+    name: Optional[str] = None
+    is_system: Optional[bool] = None
+    signed_state: Optional[int] = None
+
+    def get_signed_state_name(self):
+        return SIGNED_STATE_ID_TO_NAME.get(self.signed_state, self.signed_state)
+
+
+def enhance_addons(raw_crash, processed_crash):
+    """Enhances "addons" in processed crash with TelemetryEnvironment information
+
+    :arg raw_crash: the raw crash structure
+    :arg processed_crash: the processed crash structure
+
+    :returns: list of Addon instances
+
+    """
+    addon_data = processed_crash.get("addons", [])
+    if not addon_data:
+        return []
+
+    try:
+        telemetry_environment = json.loads(raw_crash.get("TelemetryEnvironment", "{}"))
+        active_addons = glom(telemetry_environment, "addons.activeAddons", default={})
+    except json.JSONDecodeError:
+        active_addons = {}
+
+    ret = []
+    for addon_line in addon_data:
+        split_data = addon_line.split(":")
+        extension_id = ""
+        version = ""
+
+        if len(split_data) >= 1:
+            extension_id = split_data[0]
+        if len(split_data) >= 2:
+            version = split_data[1]
+
+        addon = Addon(id=extension_id, version=version)
+
+        more_data = active_addons.get(extension_id, {})
+        addon.name = more_data.get("name", None)
+        addon.is_system = more_data.get("isSystem", None)
+        addon.signed_state = more_data.get("signedState", None)
+
+        ret.append(addon)
+
+    return ret
 
 
 def get_versions_for_product(product, use_cache=True):
