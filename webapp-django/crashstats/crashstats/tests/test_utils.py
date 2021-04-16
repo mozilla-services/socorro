@@ -9,6 +9,8 @@ import os
 from django.http import HttpResponse
 from django.utils.encoding import smart_text
 
+import pytest
+
 from crashstats.crashstats import utils
 
 
@@ -504,3 +506,63 @@ def test_parse_graphics_devices_iterable__pci_ids():
                 "vendor_name": "Silicon Image, Inc. (Wrong ID)",
             },
         ]
+
+
+@pytest.mark.parametrize(
+    "raw, processed, expected",
+    [
+        # Missing data cases
+        ({}, {}, []),
+        ({}, {"addons": []}, []),
+        ({"TelemetryEnvironment": "{}"}, {"addons": []}, []),
+        # TelemetryEnvironment with bad JSON
+        (
+            {"TelemetryEnvironment": "{foo"},
+            {"addons": ["someid:5.0"]},
+            [utils.Addon(id="someid", version="5.0")],
+        ),
+        # Valid data
+        (
+            {
+                "TelemetryEnvironment": json.dumps(
+                    {
+                        "addons": {
+                            "activeAddons": {
+                                "someid": {
+                                    "version": "5.0",
+                                    "scope": 1,
+                                    "type": "extension",
+                                    "updateDay": 18140,
+                                    "isSystem": False,
+                                    "isWebExtension": True,
+                                    "multiprocessCompatible": True,
+                                    "blocklisted": False,
+                                    "description": "this is an addon",
+                                    "name": "Some Addon",
+                                    "userDisabled": False,
+                                    "appDisabled": False,
+                                    "foreignInstall": False,
+                                    "hasBinaryComponents": False,
+                                    "installDay": 18140,
+                                    "signedState": 2,
+                                },
+                            }
+                        }
+                    }
+                )
+            },
+            {"addons": ["someid:5.0"]},
+            [
+                utils.Addon(
+                    id="someid",
+                    version="5.0",
+                    name="Some Addon",
+                    is_system=False,
+                    signed_state=2,
+                )
+            ],
+        ),
+    ],
+)
+def test_enhance_addons(raw, processed, expected):
+    assert utils.enhance_addons(raw, processed) == expected
