@@ -571,11 +571,14 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
-        "storage_mapping": None,
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "phc_base_address": {
         "data_validation_type": "str",
-        "description": "The allocation's base address, if the crash involved a bad access of a special PHC allocation. Encoded as a decimal address.",
+        "description": (
+            "The allocation's base address, if the crash involved a bad access of a "
+            "special PHC allocation. Encoded as a decimal address."
+        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_base_address",
@@ -585,11 +588,14 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
-        "storage_mapping": None,
+        "storage_mapping": {"type": "string"},
     },
     "phc_usable_size": {
         "data_validation_type": "int",
-        "description": "The allocation's usable size, if the crash involved a bad access of a special PHC allocation.",
+        "description": (
+            "The allocation's usable size, if the crash involved a bad access of a "
+            "special PHC allocation."
+        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_usable_size",
@@ -603,7 +609,11 @@ FIELDS = {
     },
     "phc_alloc_stack": {
         "data_validation_type": "str",
-        "description": "The allocation's allocation stack trace, if the crash involved a bad access of a special PHC allocation. Encoded as a comma-separated list of decimal addresses.",
+        "description": (
+            "The allocation's allocation stack trace, if the crash involved a bad "
+            "access of a special PHC allocation. Encoded as a comma-separated list "
+            "of decimal addresses."
+        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_alloc_stack",
@@ -613,11 +623,15 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
-        "storage_mapping": None,
+        "storage_mapping": {"type": "string"},
     },
     "phc_free_stack": {
         "data_validation_type": "str",
-        "description": "The allocation's free stack trace, if the crash involved a bad access of a special PHC allocation. Encoded as a comma-separated list of decimal addresses.",
+        "description": (
+            "The allocation's free stack trace, if the crash involved a bad access "
+            "of a special PHC allocation. Encoded as a comma-separated list of decimal "
+            "addresses."
+        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_free_stack",
@@ -627,7 +641,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
-        "storage_mapping": None,
+        "storage_mapping": {"type": "string"},
     },
     "PluginFilename": {
         "data_validation_type": "enum",
