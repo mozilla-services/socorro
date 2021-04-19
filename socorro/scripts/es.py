@@ -8,7 +8,7 @@ indices.
 """
 
 import datetime
-from pprint import pprint
+import json
 
 import click
 from configman import ConfigurationManager
@@ -116,7 +116,7 @@ def cmd_print_mapping(ctx, index):
     indices_client = IndicesClient(conn)
     resp = indices_client.get_mapping(index=index)
     mapping = resp[index]["mappings"][doctype]["properties"]
-    pprint(mapping)
+    click.echo(json.dumps(mapping, indent=2, sort_keys=True))
 
 
 @es_group.command("print_document")
@@ -134,7 +134,7 @@ def cmd_print_document(ctx, index, crashid):
     search = search.query("match", crash_id=crashid)
     results = search.execute()
     for item in results:
-        pprint(item.to_dict())
+        click.echo(json.dumps(item.to_dict(), indent=2, sort_keys=True))
 
 
 @es_group.command("delete")
