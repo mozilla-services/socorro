@@ -750,6 +750,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 processed_crash=deepcopy(processed_crash),
             )
 
+    @pytest.mark.skip(reason="the raw_crash value is flapping. bug 1706076")
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
         raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
