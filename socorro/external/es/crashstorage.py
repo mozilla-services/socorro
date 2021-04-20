@@ -12,6 +12,7 @@ from configman import Namespace
 from configman.converters import class_converter, list_converter
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError
+import glom
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
@@ -86,6 +87,33 @@ def is_valid_key(key):
 
     """
     return bool(VALID_KEY.match(key))
+
+
+def remove_invalid_keys(tree_name, tree, keys):
+    """Removes invalid keys from the tree
+
+    This works for nested trees where the keys
+
+    :arg str tree_name: "raw" or "processed"
+    :arg dict tree: the tree to copy and remove invalid keys from
+    :arg set keys: the set of all valid keys; example: ``{"key1", "key2.subkey1"}``
+
+    :returns: new tree
+
+    """
+    # Get the keys for this tree and remove the tree_name at the beginning
+    keys = [key[len(tree_name) + 1 :] for key in keys if key.startswith(tree_name)]
+
+    new_tree = {}
+    for key in keys:
+        # Pull the value ouf of the original tree. If it is non-None, put it in the new
+        # tree in the same spot as specified by key
+        val = glom.glom(tree, key, default=None)
+        if val is not None:
+            glom.assign(new_tree, key, val, missing=dict)
+
+    # Return reassembled tree
+    return new_tree
 
 
 def truncate_keyword_field_values(data, fields, max_size):
@@ -299,16 +327,14 @@ class ESCrashStorage(CrashStorageBase):
 
         # Copy the crash structures so we can mutate them later and remove everything
         # that's not a valid key for the index
-        raw_crash = {
-            key: copy.deepcopy(value)
-            for key, value in raw_crash.items()
-            if "raw_crash.%s" % key in all_valid_keys
-        }
-        processed_crash = {
-            key: copy.deepcopy(value)
-            for key, value in processed_crash.items()
-            if "processed_crash.%s" % key in all_valid_keys
-        }
+        raw_crash = remove_invalid_keys(
+            tree_name="raw_crash", tree=copy.deepcopy(raw_crash), keys=all_valid_keys
+        )
+        processed_crash = remove_invalid_keys(
+            tree_name="processed_crash",
+            tree=copy.deepcopy(processed_crash),
+            keys=all_valid_keys,
+        )
 
         # Clean up and redact raw and processed crash data
         self.prepare_crash_data(raw_crash, processed_crash)
