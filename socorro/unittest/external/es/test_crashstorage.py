@@ -20,7 +20,6 @@ from socorro.external.es.crashstorage import (
     ESCrashStorageRedactedJsonDump,
     is_valid_key,
     RawCrashRedactor,
-    reconstitute_datetimes,
     truncate_keyword_field_values,
     truncate_string_field_values,
 )
@@ -300,6 +299,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "BuildID": "20200605000",
             "ProductName": "Firefox",
             "ReleaseChannel": "nightly",
+            "RecordReplay": "1",
         }
         processed_crash = {
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
@@ -327,14 +327,17 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_processed_crash = deepcopy(processed_crash)
-        reconstitute_datetimes(expected_processed_crash)
-
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "processed_crash": expected_processed_crash,
-            "raw_crash": raw_crash,
+            "raw_crash": {
+                "BuildID": "20200605000",
+                "RecordReplay": "1",
+            },
+            "processed_crash": {
+                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
+            },
         }
 
         additional = {
@@ -367,6 +370,10 @@ class TestESCrashStorage(ElasticsearchTestCase):
         modified_config.raw_crash_es_redactor.redactor_class = RawCrashRedactor
         modified_config.raw_crash_es_redactor.forbidden_keys = "unsused"
 
+        raw_crash = {
+            "ProductName": "Firefox",
+            "RecordReplay": "1",
+        }
         processed_crash = {
             "build": "20120309050057",
             "date_processed": date_to_string(utc_now()),
@@ -394,7 +401,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # Submit a crash like normal, except that the back-end ES object is
         # mocked (see the decorator above).
         es_storage.save_processed_crash(
-            raw_crash=deepcopy(SAMPLE_RAW_CRASH),
+            raw_crash=raw_crash,
             processed_crash=processed_crash,
         )
 
@@ -405,18 +412,25 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_processed_crash = deepcopy(processed_crash)
-        reconstitute_datetimes(expected_processed_crash)
-        expected_processed_crash["json_dump"] = {
-            k: SAMPLE_PROCESSED_CRASH["json_dump"][k]
-            for k in modified_config.json_dump_allowlist_keys
-        }
-
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "processed_crash": expected_processed_crash,
-            "raw_crash": SAMPLE_RAW_CRASH,
+            "raw_crash": {
+                "RecordReplay": "1",
+            },
+            "processed_crash": {
+                "build": "20120309050057",
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
+                "product": "Firefox",
+                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+                "json_dump": {
+                    # json dump allowed keys
+                    "largest_free_vm_block": None,
+                    "system_info": None,
+                    "tiny_block_size": None,
+                    "write_combine_size": None,
+                },
+            },
         }
 
         additional = {
@@ -447,6 +461,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "BuildID": "20200605000",
             "ProductName": "Firefox",
             "ReleaseChannel": "nightly",
+            "RecordReplay": "1",
             # Add a 'StackTraces' field to be redacted.
             "StackTraces": "something",
         }
@@ -470,17 +485,17 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # IndexCreator but is part of the crashstorage workflow).
         assert espy_mock.client.IndicesClient.called
 
-        expected_raw_crash = deepcopy(raw_crash)
-        del expected_raw_crash["StackTraces"]
-
-        expected_processed_crash = deepcopy(processed_crash)
-        reconstitute_datetimes(expected_processed_crash)
-
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "processed_crash": expected_processed_crash,
-            "raw_crash": expected_raw_crash,
+            "raw_crash": {
+                "BuildID": "20200605000",
+                "RecordReplay": "1",
+            },
+            "processed_crash": {
+                "date_processed": string_to_datetime(processed_crash["date_processed"]),
+                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            },
         }
 
         additional = {
@@ -652,6 +667,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         crash_id = create_new_ooid()
         raw_crash = {
             "ProductName": "Firefox",
+            "RecordReplay": "1",
         }
         processed_crash = {
             "date_processed": date_to_string(utc_now()),
@@ -692,7 +708,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": crash_id,
             },
-            "raw_crash": raw_crash,
+            "raw_crash": {
+                "RecordReplay": "1",
+            },
         }
         es_class_mock().index.assert_called_with(
             index=self.es_context.get_index_for_date(utc_now()),
