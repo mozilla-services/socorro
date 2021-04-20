@@ -161,7 +161,7 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Check super_search_fields.py for valid keys to update this
         raw_crash = {
             "InvalidKey": "alpha",
-            "BuildID": "20200506000000",
+            "RecordReplay": "20200506000000",
         }
         processed_crash = {
             "AnotherInvalidKey": "alpha",
@@ -185,7 +185,7 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Verify keys that aren't in super_search_fields aren't in the raw or processed
         # crash parts
         raw_crash = doc["_source"]["raw_crash"]
-        assert list(sorted(raw_crash.keys())) == ["BuildID"]
+        assert list(sorted(raw_crash.keys())) == ["RecordReplay"]
 
         processed_crash = doc["_source"]["processed_crash"]
         assert list(sorted(processed_crash.keys())) == ["date_processed", "uuid"]
@@ -331,7 +331,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "raw_crash": {
-                "BuildID": "20200605000",
                 "RecordReplay": "1",
             },
             "processed_crash": {
@@ -489,7 +488,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "raw_crash": {
-                "BuildID": "20200605000",
                 "RecordReplay": "1",
             },
             "processed_crash": {

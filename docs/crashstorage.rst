@@ -186,10 +186,13 @@ Here is an explanation of each properties of a field:
     Possible values for this field in the Super Search form.
 
 **is_exposed**
-    Is this field exposed as a filter?
+    Is this field exposed as a filter or field in Super Search?
+
+    If this is set to ``True``, you must specify a ``storage_mapping``.
 
 **is_returned**
-    Is this field returned in results?
+    Is this field returned in Supersearch results or the RawCrash/ProcessedCrash
+    API?
 
 **has_full_version**
     Does this field have a full version in Elasticsearch? Enable only if you use
@@ -198,6 +201,14 @@ Here is an explanation of each properties of a field:
 **storage_mapping**
     Mapping that is used in Elasticsearch for this field. See below for more
     information.
+
+    If ``storage_mapping`` is set to ``None``, this field will not be indexed
+    in Elasticsearch. If it's not indexed, make sure ``is_exposed`` is set to
+    ``False``.
+
+    If you want the default ``storage_mapping``, set it to::
+
+        {"type": "string"}
 
 
 Query types
