@@ -20,6 +20,7 @@ from socorro.external.es.crashstorage import (
     ESCrashStorageRedactedJsonDump,
     is_valid_key,
     RawCrashRedactor,
+    remove_invalid_keys,
     truncate_keyword_field_values,
     truncate_string_field_values,
 )
@@ -424,10 +425,10 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "json_dump": {
                     # json dump allowed keys
-                    "largest_free_vm_block": None,
-                    "system_info": None,
-                    "tiny_block_size": None,
-                    "write_combine_size": None,
+                    "largest_free_vm_block": "0x2F42",
+                    "system_info": {"cpu_count": 42},
+                    "tiny_block_size": 42,
+                    "write_combine_size": 43,
                 },
             },
         }
@@ -815,6 +816,20 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
             mm.assert_histogram_once("processor.es.index", tags=["outcome:successful"])
             mm.assert_histogram_once("processor.es.index", tags=["outcome:failed"])
+
+
+@pytest.mark.parametrize(
+    "tree, keys, expected",
+    [
+        ({}, set(), {}),
+        ({}, {"tree.key1", "tree.key2"}, {}),
+        ({"key1": "a", "key2": "b"}, set(), {}),
+        ({"key1": "a", "key2": "b"}, {"tree.key1", "tree.key3"}, {"key1": "a"}),
+        ({"key1": {"subkey1": "a"}}, {"tree.key1.subkey1"}, {"key1": {"subkey1": "a"}}),
+    ],
+)
+def test_remove_invalid_keys(tree, keys, expected):
+    assert remove_invalid_keys("tree", tree, keys) == expected
 
 
 class Test_truncate_keyword_field_values:
