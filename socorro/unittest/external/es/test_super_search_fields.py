@@ -286,8 +286,8 @@ def get_fields():
 def test_validate_super_search_fields(name, properties):
     """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
 
-    # FIXME(willkg): When we start doing schema stuff in Python, we should
-    # switch this to a schema validation.
+    # FIXME(willkg): When we start doing schema stuff in Python, we should switch this
+    # to a schema validation.
 
     property_keys = [
         "data_validation_type",
@@ -332,6 +332,16 @@ def test_validate_super_search_fields(name, properties):
 
     # The name in the mapping should be the same as the name in properties
     assert properties["name"] == name
+
+    # If stroage_mapping is None, then is_exposed must be False
+    if properties["storage_mapping"] is None:
+        assert properties["is_exposed"] is False
+
+    if properties["is_exposed"] is False:
+        assert properties["storage_mapping"] is None
+
+    # If is_exposed and is_returned are both False, then we should remove this field
+    assert properties["is_exposed"] or properties["is_returned"]
 
 
 @pytest.mark.parametrize(

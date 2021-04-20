@@ -612,6 +612,7 @@ class ProcessedCrash(SocorroMiddleware):
 
     """
 
+    # List of fields that are public and don't require view_pii permissions to view.
     API_ALLOWLIST = (
         "additional_minidumps",
         "addons",
