@@ -768,7 +768,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 processed_crash=deepcopy(processed_crash),
             )
 
-    @pytest.mark.skip(reason="the raw_crash value is flapping. bug 1706076")
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
         raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
@@ -787,9 +786,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 processed_crash=processed_crash,
             )
 
-            # NOTE(willkg): Elasticsearch crashstorage removes things from the raw and
-            # processed crash that aren't indexed in super_search_fields, so the raw
-            # crash ends up as {} which is 2 characters.
             mm.assert_histogram("processor.es.raw_crash_size", value=2)
             mm.assert_histogram("processor.es.processed_crash_size", value=96)
             mm.assert_histogram("processor.es.crash_document_size", value=186)
