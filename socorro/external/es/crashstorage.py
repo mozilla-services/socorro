@@ -209,8 +209,7 @@ class ESCrashStorage(CrashStorageBase):
         )
         self.metrics = markus.get_metrics(namespace)
 
-    @cache
-    def get_keys_for_fields(self):
+    def get_keys_for_indexable_fields(self):
         """Return keys for FIELDS in "namespace.key" format
 
         NOTE(willkg): Answer is cached on the ESCrashStorage instance. If you change
@@ -222,9 +221,9 @@ class ESCrashStorage(CrashStorageBase):
         return {
             "%s.%s" % (field["namespace"], field["in_database_name"])
             for field in FIELDS.values()
+            if field.get("storage_mapping")
         }
 
-    @cache
     def get_keys_for_mapping(self, index_name, es_doctype):
         """Get the keys in "namespace.key" format for a given mapping
 
@@ -244,7 +243,7 @@ class ESCrashStorage(CrashStorageBase):
 
     @cache
     def get_keys(self, index_name, es_doctype):
-        supersearch_fields_keys = self.get_keys_for_fields()
+        supersearch_fields_keys = self.get_keys_for_indexable_fields()
         try:
             mapping_keys = self.get_keys_for_mapping(index_name, es_doctype)
         except NotFoundError:
