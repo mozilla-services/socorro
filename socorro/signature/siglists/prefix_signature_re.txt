@@ -113,6 +113,8 @@ JS_DHashTableEnumerate
 JS_DHashTableOperate
 JS_NewStringCopyZ
 js_strlen
+KiFastSystemCall
+KiRaiseUserExceptionDispatcher
 KiUserExceptionDispatcher
 kill
 __libc_android_abort
@@ -281,6 +283,7 @@ SECKEY_
 __semwait_signal
 send
 servo_arc::Arc<T>::drop_slow
+SetEvent
 setjmp
 sigblock
 sigprocmask
