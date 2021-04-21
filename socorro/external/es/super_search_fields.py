@@ -78,6 +78,38 @@ def add_field_to_properties(properties, namespaces, field):
     add_field_to_properties(properties[namespace]["properties"], namespaces, field)
 
 
+def build_mapping(doctype, fields=None):
+    """Generates Elasticsearch mapping from the super search fields schema
+
+    :arg str doctype: the doctype to use
+    :arg any fields: map of field name -> field value; defaults to FIELDS
+
+    :returns: dict of doctype -> Elasticsearch mapping
+
+    """
+    fields = fields or FIELDS
+    properties = {}
+
+    for field in fields.values():
+        if not field.get("storage_mapping"):
+            continue
+
+        add_doc_values(field["storage_mapping"])
+
+        namespaces = field["namespace"].split(".")
+
+        add_field_to_properties(properties, namespaces, field)
+
+    mapping = {
+        doctype: {
+            "_all": {"enabled": False},
+            "_source": {"compress": True},
+            "properties": properties,
+        }
+    }
+    return mapping
+
+
 def is_doc_values_friendly(field_value):
     """Predicate denoting whether this field should have doc_values added
 
@@ -202,44 +234,6 @@ class SuperSearchFields(SuperSearchFieldsData):
         missing_fields = sorted(all_existing_fields - all_known_fields)
 
         return {"hits": missing_fields, "total": len(missing_fields)}
-
-    def get_mapping(self, overwrite_mapping=None):
-        """Generates Elasticsearch mapping from the super search fields schema
-
-        :arg overwrite_mapping: mapping with values that override the super
-            search fields schema values
-
-        :returns: dict of doctype name -> Elasticsearch mapping
-
-        """
-        properties = {}
-        all_fields = self.get_fields()
-
-        if overwrite_mapping:
-            field = overwrite_mapping["name"]
-            if field in all_fields:
-                all_fields[field].update(overwrite_mapping)
-            else:
-                all_fields[field] = overwrite_mapping
-
-        for field in all_fields.values():
-            if not field.get("storage_mapping"):
-                continue
-
-            add_doc_values(field["storage_mapping"])
-
-            namespaces = field["namespace"].split(".")
-
-            add_field_to_properties(properties, namespaces, field)
-
-        mapping = {
-            self.context.get_doctype(): {
-                "_all": {"enabled": False},
-                "_source": {"compress": True},
-                "properties": properties,
-            }
-        }
-        return mapping
 
     def test_mapping(self, mapping):
         """Verify that a mapping is correct

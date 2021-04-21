@@ -10,6 +10,7 @@ import pytest
 from socorro.lib import BadArgumentError
 from socorro.external.es.super_search_fields import (
     add_doc_values,
+    build_mapping,
     FIELDS,
     is_doc_values_friendly,
     get_fields_by_item,
@@ -90,6 +91,51 @@ class Test_get_fields_by_item:
         }
         third_result = get_fields_by_item(second_fields, "analyzer", "keyword")
         assert id(result) != id(third_result)
+
+
+class Test_build_mapping(ElasticsearchTestCase):
+    """Test build_mapping with an elasticsearch database containing fake data"""
+
+    def setup_method(self):
+        super().setup_method()
+
+        config = self.get_base_config(cls=SuperSearchFieldsModel)
+        self.api = SuperSearchFieldsModel(config=config)
+        self.api.get_fields = lambda: copy.deepcopy(FIELDS)
+
+    def test_get_mapping(self):
+        doctype = self.es_context.get_doctype()
+        mapping = build_mapping(doctype=doctype, fields=self.api.get_fields())
+
+        assert doctype in mapping
+        properties = mapping[doctype]["properties"]
+
+        assert "processed_crash" in properties
+        assert "raw_crash" in properties
+
+        processed_crash = properties["processed_crash"]["properties"]
+
+        # Check in_database_name is used.
+        assert "os_name" in processed_crash
+        assert "platform" not in processed_crash
+
+        # Those fields have no `storage_mapping`.
+        assert "fake_field" not in properties["raw_crash"]["properties"]
+
+        # Those fields have a `storage_mapping`.
+        assert processed_crash["release_channel"] == {
+            "analyzer": "keyword",
+            "type": "string",
+        }
+
+        # Test nested objects.
+        assert "json_dump" in processed_crash
+        assert "properties" in processed_crash["json_dump"]
+        assert "write_combine_size" in processed_crash["json_dump"]["properties"]
+        assert processed_crash["json_dump"]["properties"]["write_combine_size"] == {
+            "type": "long",
+            "doc_values": True,
+        }
 
 
 class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
@@ -200,80 +246,42 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         assert missing_fields["hits"] == expected
         assert missing_fields["total"] == 5
 
-    def test_get_mapping(self):
-        mapping = self.api.get_mapping()
-        doctype = self.es_context.get_doctype()
-
-        assert doctype in mapping
-        properties = mapping[doctype]["properties"]
-
-        assert "processed_crash" in properties
-        assert "raw_crash" in properties
-
-        processed_crash = properties["processed_crash"]["properties"]
-
-        # Check in_database_name is used.
-        assert "os_name" in processed_crash
-        assert "platform" not in processed_crash
-
-        # Those fields have no `storage_mapping`.
-        assert "fake_field" not in properties["raw_crash"]["properties"]
-
-        # Those fields have a `storage_mapping`.
-        assert processed_crash["release_channel"] == {
-            "analyzer": "keyword",
-            "type": "string",
-        }
-
-        # Test nested objects.
-        assert "json_dump" in processed_crash
-        assert "properties" in processed_crash["json_dump"]
-        assert "write_combine_size" in processed_crash["json_dump"]["properties"]
-        assert processed_crash["json_dump"]["properties"]["write_combine_size"] == {
-            "type": "long",
-            "doc_values": True,
-        }
-
-        # Test overwriting a field.
-        mapping = self.api.get_mapping(
-            overwrite_mapping={
-                "name": "fake_field",
-                "namespace": "raw_crash",
-                "in_database_name": "fake_field",
-                "storage_mapping": {"type": "long"},
-            }
-        )
-        properties = mapping[doctype]["properties"]
-
-        assert "fake_field" in properties["raw_crash"]["properties"]
-        assert properties["raw_crash"]["properties"]["fake_field"]["type"] == "long"
-
     def test_test_mapping(self):
         """Much test. So meta. Wow test_test_. """
         # First test a valid mapping.
-        mapping = self.api.get_mapping()
+        doctype = self.api.context.get_doctype()
+        mapping = build_mapping(doctype=doctype)
         assert self.api.test_mapping(mapping) is None
 
         # Insert an invalid storage mapping.
-        mapping = self.api.get_mapping(
-            {
+        fields = {
+            "fake_field": {
                 "name": "fake_field",
                 "namespace": "raw_crash",
                 "in_database_name": "fake_field",
                 "storage_mapping": {"type": "unkwown"},
             }
-        )
+        }
+        mapping = build_mapping(doctype=doctype, fields=fields)
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
 
-        # Test with a correct mapping but with data that cannot be indexed.
+        # Test with a correct mapping, but changes the storage (long) for a field
+        # that's indexed as a string so test_mapping throws an error because those
+        # are incompatible types
         self.index_crash(
             {"date_processed": datetimeutil.utc_now(), "product": "WaterWolf"}
         )
         self.es_context.refresh()
-        mapping = self.api.get_mapping(
-            {"name": "product", "storage_mapping": {"type": "long"}}
-        )
+        fields = {
+            "product": {
+                "name": "product",
+                "namespace": "processed_crash",
+                "in_database_name": "product",
+                "storage_mapping": {"type": "long"},
+            }
+        }
+        mapping = build_mapping(doctype=doctype, fields=fields)
         with pytest.raises(BadArgumentError):
             self.api.test_mapping(mapping)
 

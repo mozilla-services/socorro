@@ -11,7 +11,7 @@ from configman import Namespace, RequiredConfig
 from configman.converters import list_converter
 import elasticsearch
 
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import build_mapping
 from socorro.lib.datetimeutil import utc_now
 
 
@@ -199,7 +199,7 @@ class ConnectionContext(RequiredConfig):
 
         """
         if mappings is None:
-            mappings = SuperSearchFields(context=self).get_mapping()
+            mappings = build_mapping(doctype=self.get_doctype())
 
         es_settings = self.get_socorro_index_settings(mappings)
 
