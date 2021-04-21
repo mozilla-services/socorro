@@ -26,7 +26,7 @@ from socorro.external.es.crashstorage import (
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib.ooid import create_new_ooid
-from socorro.external.es.super_search_fields import SuperSearchFields
+from socorro.external.es.super_search_fields import build_mapping
 from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig
 
 
@@ -205,9 +205,9 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
 
         field = "user_comments"
 
-        # We're going to use a mapping that's what SuperSearchFields gives us, but
-        # remove the user_comments field.
-        mappings = SuperSearchFields(context=self.es_context).get_mapping()
+        # We're going to use a mapping from super search fields, bug remove the
+        # user_comments field.
+        mappings = build_mapping(self.es_context.get_doctype())
         doctype = self.es_context.get_doctype()
         del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
 
