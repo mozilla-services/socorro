@@ -1636,7 +1636,7 @@ class TestBetaVersionRule:
         ]
 
     def test_beta_channel_unknown_version(self):
-        """Beta crash that Buildhub doesn't know about gets b0"""
+        """Beta crash that Socorro doesn't know about gets b0"""
         raw_crash = {}
         raw_dumps = {}
         processed_crash = {
