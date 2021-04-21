@@ -187,6 +187,7 @@ class StringField(MultipleValueField):
 
 class BooleanField(forms.CharField):
     truthy_strings = ("__true__", "true", "t", "1", "y", "yes")
+    existence_strings = ("__null__", "!__null__")
 
     def to_python(self, value):
         """Return None if the value is None. Return 'true' if the value is one
@@ -198,6 +199,9 @@ class BooleanField(forms.CharField):
         if value is None:
             return None
 
-        if smart_str(value).lower() in self.truthy_strings:
+        value = smart_str(value).lower()
+        if value in self.truthy_strings:
             return "__true__"
+        if value in self.existence_strings:
+            return value
         return "!__true__"

@@ -34,14 +34,15 @@
   var OPERATORS_RANGE = ['>', '>=', '<', '<='];
   var OPERATORS_REGEX = ['~', '=', '$', '^', '@', '!=', '!~', '!$', '!^', '!@'];
   var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
-  var OPERATORS_BOOLEAN = ['__true__', '!__true__'];
+  var OPERATORS_BOOL = ['__true__', '!__true__'];
 
-  var OPERATORS_ENUM = OPERATORS_BASE;
-  var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE);
-  var OPERATORS_DATE = OPERATORS_RANGE;
+  var OPERATORS_BOOLEAN = OPERATORS_BOOL.concat(OPERATORS_EXISTENCE);
+  var OPERATORS_ENUM = OPERATORS_BASE.concat(OPERATORS_EXISTENCE);
+  var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE).concat(OPERATORS_EXISTENCE);
+  var OPERATORS_DATE = OPERATORS_RANGE.concat(OPERATORS_EXISTENCE);
   var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX).concat(OPERATORS_EXISTENCE);
 
-  var OPERATORS_NO_VALUE = OPERATORS_EXISTENCE.concat(OPERATORS_BOOLEAN);
+  var OPERATORS_NO_VALUE = OPERATORS_EXISTENCE.concat(OPERATORS_BOOL);
 
   /**
    * Create a new dynamic form or run an action on an existing form.
