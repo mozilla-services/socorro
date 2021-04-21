@@ -23,7 +23,7 @@ CONFIG_DEFAULTS = {
     "always_ignore_mismatches": True,
     "queue": {"crashqueue_class": "socorro.external.sqs.crashqueue.SQSCrashQueue"},
     "source": {
-        "benchmark_tag": "BotoBenchmarkRead",
+        "benchmark_tag": "BotoS3CrashStorage",
         "crashstorage_class": "socorro.external.crashstorage_base.BenchmarkingCrashStorage",
         "wrapped_crashstore": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     },
@@ -34,15 +34,14 @@ CONFIG_DEFAULTS = {
         "storage_namespaces": ",".join(["s3", "elasticsearch", "statsd", "telemetry"]),
         "s3": {
             "active_list": "save_processed_crash",
-            "benchmark_tag": "BotoBenchmarkWrite",
+            "benchmark_tag": "BotoS3CrashStorage",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
             "metrics_prefix": "processor.s3",
-            "use_mapping_file": "False",
             "wrapped_object_class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
         },
         "elasticsearch": {
             "active_list": "save_processed_crash",
-            "benchmark_tag": "BotoBenchmarkWrite",
+            "benchmark_tag": "ElasticsearchCrashStorage",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
             "es_redactor": {
                 "forbidden_keys": ", ".join(
@@ -59,7 +58,6 @@ CONFIG_DEFAULTS = {
                 )
             },
             "metrics_prefix": "processor.es",
-            "use_mapping_file": "False",
             "wrapped_object_class": (
                 "socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump"
             ),
@@ -87,14 +85,6 @@ CONFIG_DEFAULTS = {
     "producer_consumer": {"maximum_queue_size": 8, "number_of_threads": 4},
     "resource": {
         "boto": {"prefix": "", "boto_metrics_prefix": "processor.s3"},
-        "elasticsearch": {
-            # FIXME(willkg): Where does this file come from?
-            "elasticsearch_index_settings": (
-                "/app/socorro/external/elasticsearch/socorro_index_settings.json"
-            ),
-            "timeout": 2,
-            "use_mapping_file": False,
-        },
     },
 }
 
