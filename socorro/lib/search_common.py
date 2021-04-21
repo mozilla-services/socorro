@@ -35,17 +35,18 @@ import socorro.lib.external_common as extern
 """
 OPERATOR_NOT = "!"
 OPERATORS_BASE = [""]
+OPERATORS_EXISTENCE = ["__null__"]
 OPERATORS_BOOL = ["__true__"]
-OPERATORS_STRING = ["__null__", "=", "~", "$", "^", "@"]
+OPERATORS_STRING = ["=", "~", "$", "^", "@"]
 OPERATORS_NUMBER = [">=", "<=", "<", ">"]
 OPERATORS_MAP = {
-    "str": OPERATORS_STRING + OPERATORS_BASE,
-    "int": OPERATORS_NUMBER + OPERATORS_BASE,
-    "date": OPERATORS_NUMBER,
-    "datetime": OPERATORS_NUMBER,
-    "bool": OPERATORS_BOOL,
-    "enum": OPERATORS_BASE,
-    "default": OPERATORS_BASE,
+    "str": OPERATORS_STRING + OPERATORS_EXISTENCE + OPERATORS_BASE,
+    "int": OPERATORS_NUMBER + OPERATORS_EXISTENCE + OPERATORS_BASE,
+    "date": OPERATORS_NUMBER + OPERATORS_EXISTENCE,
+    "datetime": OPERATORS_NUMBER + OPERATORS_EXISTENCE,
+    "bool": OPERATORS_BOOL + OPERATORS_EXISTENCE,
+    "enum": OPERATORS_EXISTENCE + OPERATORS_BASE,
+    "default": OPERATORS_EXISTENCE + OPERATORS_BASE,
 }
 
 
@@ -133,7 +134,6 @@ class SearchBase:
         parameters = {}
 
         fields = kwargs["_fields"]
-        assert fields
         if fields:
             self.build_filters(fields)
 
