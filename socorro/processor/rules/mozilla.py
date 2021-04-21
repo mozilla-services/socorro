@@ -804,10 +804,9 @@ class BetaVersionRule(Rule):
             versions = resp.json()["hits"]
 
         if not versions:
-            # We didn't get an answer which could mean that this is a weird
-            # build and there is no answer or it could mean that Buildhub
-            # doesn't know, yet. Maybe in the future we get a better answer so
-            # we use the short ttl.
+            # We didn't get an answer which could mean that this is a weird build and
+            # there is no answer or it could mean that Socorro doesn't know, yet. Maybe
+            # in the future we get a better answer so we use the short ttl.
             self.metrics.incr("lookup", tags=["result:fail"])
             self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL)
             return None
