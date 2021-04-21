@@ -48,7 +48,7 @@ RUN mkdir -p /tmp/symbols/cache /tmp/symbols/tmp
 
 # Run collectstatic in container which puts files in the default place for
 # static files
-RUN cd /app/webapp-django/ && python manage.py collectstatic --noinput
+RUN cd /app/webapp-django/ && SECRET_KEY=fakekey python manage.py collectstatic --noinput
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.

@@ -489,8 +489,7 @@ PIPELINE = {
 NPM_ROOT_PATH = config("NPM_ROOT_PATH", ROOT)
 
 # Make this unique, and don't share it with anybody.  It cannot be blank.
-# FIXME remove this default when we are out of PHX
-SECRET_KEY = config("SECRET_KEY", "this must be changed!!")
+SECRET_KEY = config("SECRET_KEY")
 
 # If you intend to run WITHOUT HTTPS, such as local development,
 # then set this to False
