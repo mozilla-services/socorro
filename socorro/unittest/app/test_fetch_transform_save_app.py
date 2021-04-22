@@ -97,7 +97,7 @@ class TestFetchTransformSaveApp:
             def get_raw_crash(self, ooid):
                 return self.store[ooid]
 
-            def get_raw_dumps(self, ooid):
+            def get_dumps(self, ooid):
                 return {"upload_file_minidump": "this is a fake dump"}
 
             def new_crashes(self):
@@ -146,7 +146,7 @@ class TestFetchTransformSaveApp:
 
         assert source.store == destination.store
         assert len(destination.dumps) == 4
-        assert destination.dumps["1237"] == source.get_raw_dumps("1237")
+        assert destination.dumps["1237"] == source.get_dumps("1237")
         # ensure that each storage system had its close called
         assert source.number_of_close_calls == 1
         assert destination.number_of_close_calls == 1

@@ -93,40 +93,45 @@ class FetchTransformSaveApp(App):
         yield None
 
     def source_iterator(self):
-        """Iterate infinitely yielding crash ids."""
+        """Iterate infinitely yielding tasks."""
         while True:
             yield from self._basic_iterator()
 
-    def transform(self, crash_id, finished_func=(lambda: None)):
+    def transform(self, task, finished_func=(lambda: None)):
         try:
-            self._transform(crash_id)
+            self._transform(task)
         finally:
             # no matter what causes this method to end, we need to make sure
             # that the finished_func gets called. If the new crash source is
             # Pub/Sub, this is what removes the job from the queue.
             try:
                 finished_func()
-            except Exception as x:
+            except Exception:
                 # when run in a thread, a failure here is not a problem, but if
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.logger.error(
-                    "Error completing job %s: %s", crash_id, x, exc_info=True
-                )
+                self.logger.exception(f"Error calling finishing_func() on {task}")
 
-    def _transform(self, crash_id):
-        """this default transform function only transfers raw data from the
-        source to the destination without changing the data.  While this may
-        be good enough for the raw crashmover, the processor would override
-        this method to create and save processed crashes"""
+    def _transform(self, task):
+        """Default transform function
+
+        This default transform function only transfers raw data from the source to the
+        destination without changing the data. While this may be good enough for the
+        raw crashmover, the processor would override this method to create and save
+        processed crashes.
+
+        """
+        # This assumes the task is a crash_id.
+        crash_id = task
+
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
         except Exception as x:
             self.logger.error("reading raw_crash: %s", str(x), exc_info=True)
             raw_crash = {}
         try:
-            dumps = self.source.get_raw_dumps(crash_id)
+            dumps = self.source.get_dumps(crash_id)
         except Exception as x:
             self.logger.error("reading dump: %s", str(x), exc_info=True)
             dumps = {}
@@ -173,24 +178,21 @@ class FetchTransformSaveApp(App):
         )
 
     def close(self):
-        try:
+        if hasattr(self.queue, "close"):
             self.queue.close()
-        except AttributeError:
-            pass
-        try:
+        if hasattr(self.source, "close"):
             self.source.close()
-        except AttributeError:
-            pass
-        try:
+        if hasattr(self.destination, "close"):
             self.destination.close()
-        except AttributeError:
-            pass
 
     def main(self):
-        """this main routine sets up the signal handlers, the source and
-        destination crashstorage systems at the  theaded task manager.  That
-        starts a flock of threads that are ready to shepherd crashes from
-        the source to the destination."""
+        """Main routine
+
+        Sets up the signal handlers, the source and destination crashstorage systems at
+        the theaded task manager. That starts a flock of threads that are ready to
+        shepherd tasks from the source to the destination.
+
+        """
 
         self._setup_task_manager()
         self._setup_source_and_destination()

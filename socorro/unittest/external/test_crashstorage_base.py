@@ -298,16 +298,16 @@ class TestBench:
             assert "test get_raw_dump 1" in [rec.message for rec in caplogpp.records]
             caplogpp.clear()
 
-            crashstorage.get_raw_dumps("uuid")
-            crashstorage.wrapped_crashstore.get_raw_dumps.assert_called_with("uuid")
-            assert "test get_raw_dumps 1" in [rec.message for rec in caplogpp.records]
+            crashstorage.get_dumps("uuid")
+            crashstorage.wrapped_crashstore.get_dumps.assert_called_with("uuid")
+            assert "test get_dumps 1" in [rec.message for rec in caplogpp.records]
             caplogpp.clear()
 
-            crashstorage.get_raw_dumps_as_files("uuid")
-            crashstorage.wrapped_crashstore.get_raw_dumps_as_files.assert_called_with(
+            crashstorage.get_dumps_as_files("uuid")
+            crashstorage.wrapped_crashstore.get_dumps_as_files.assert_called_with(
                 "uuid"
             )
-            assert "test get_raw_dumps_as_files 1" in [
+            assert "test get_dumps_as_files 1" in [
                 rec.message for rec in caplogpp.records
             ]
             caplogpp.clear()

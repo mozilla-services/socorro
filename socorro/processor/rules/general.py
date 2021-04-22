@@ -37,7 +37,7 @@ class DeNullRule(Rule):
         # return it as is
         return s
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         had_nulls = False
 
         # Go through the raw crash and de-null keys and values
@@ -64,7 +64,7 @@ class DeNoneRule(Rule):
 
     """
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         had_nones = False
 
         # Remove keys that have None values
@@ -78,14 +78,14 @@ class DeNoneRule(Rule):
 
 
 class IdentifierRule(Rule):
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         if "uuid" in raw_crash:
             processed_crash["crash_id"] = raw_crash["uuid"]
             processed_crash["uuid"] = raw_crash["uuid"]
 
 
 class CPUInfoRule(Rule):
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # This is the CPU that the product was built for
         processed_crash["cpu_arch"] = glom(
             processed_crash, "json_dump.system_info.cpu_arch", default=""
@@ -101,7 +101,7 @@ class CPUInfoRule(Rule):
 
 
 class OSInfoRule(Rule):
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         os_name = glom(
             processed_crash, "json_dump.system_info.os", default="Unknown"
         ).strip()

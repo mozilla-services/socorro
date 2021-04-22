@@ -105,15 +105,15 @@ class TestFSPermanentStorage:
         with pytest.raises(IOError):
             self.fsrts.get_raw_dump(self.CRASH_ID_1, "foor")
 
-    def test_get_raw_dumps(self):
+    def test_get_dumps(self):
         self._make_test_crash()
         expected = MemoryDumpsMapping(
             {"foo": b"bar", self.fsrts.config.dump_field: b"baz"}
         )
-        assert self.fsrts.get_raw_dumps(self.CRASH_ID_1) == expected
+        assert self.fsrts.get_dumps(self.CRASH_ID_1) == expected
 
         with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_raw_dumps(self.CRASH_ID_2)
+            self.fsrts.get_dumps(self.CRASH_ID_2)
 
     def test_remove(self):
         self._make_test_crash()

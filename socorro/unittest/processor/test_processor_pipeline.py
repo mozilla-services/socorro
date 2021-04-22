@@ -38,8 +38,8 @@ class TestProcessorPipeline:
         raw_crash = {"uuid": "1"}
         processed_crash = DotDict()
 
-        processor = ProcessorPipeline(config, rules=[BadRule()])
-        processor.process_crash(raw_crash, {}, processed_crash)
+        processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
+        processor.process_crash("default", raw_crash, {}, processed_crash)
 
         # Notes were added
         assert (
@@ -70,8 +70,8 @@ class TestProcessorPipeline:
         raw_crash = {"uuid": "1"}
         processed_crash = DotDict()
 
-        processor = ProcessorPipeline(config, rules=[BadRule()])
-        processor.process_crash(raw_crash, {}, processed_crash)
+        processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
+        processor.process_crash("default", raw_crash, {}, processed_crash)
 
         # Notes were added again
         assert (
@@ -82,7 +82,7 @@ class TestProcessorPipeline:
 
     def test_process_crash_existing_processed_crash(self):
         raw_crash = DotDict({"uuid": "1"})
-        raw_dumps = {}
+        dumps = {}
         processed_crash = DotDict(
             {
                 "processor_notes": "we've been here before; yep",
@@ -90,10 +90,14 @@ class TestProcessorPipeline:
             }
         )
 
-        p = ProcessorPipeline(self.get_config(), rules=[CPUInfoRule(), OSInfoRule()])
+        p = ProcessorPipeline(
+            self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}
+        )
         with mock.patch("socorro.processor.processor_pipeline.utc_now") as faked_utcnow:
             faked_utcnow.return_value = "2015-01-01T00:00:00"
-            processed_crash = p.process_crash(raw_crash, raw_dumps, processed_crash)
+            processed_crash = p.process_crash(
+                "default", raw_crash, dumps, processed_crash
+            )
 
         assert processed_crash.success
         assert processed_crash.started_datetime == "2015-01-01T00:00:00"

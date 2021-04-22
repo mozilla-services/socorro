@@ -553,6 +553,9 @@ if not implementations_database_url:
     implementations_database_url = database_url
 implementations_config = dj_database_url.parse(implementations_database_url)
 
+# The list of valid rulesets for the Reprocessing API
+VALID_RULESETS = ["default", "regenerate_signature"]
+
 # The CrashQueueBase class to use for submitting priority and reprocessing
 # requests
 CRASHQUEUE = config(

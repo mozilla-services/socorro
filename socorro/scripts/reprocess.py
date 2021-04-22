@@ -47,6 +47,11 @@ def main(argv=None):
         "--host", help="host for system to reprocess in", default=DEFAULT_HOST
     )
     parser.add_argument(
+        "--ruleset",
+        help="name of ruleset to reprocess these crash reports with",
+        default="",
+    )
+    parser.add_argument(
         "crashid",
         help="one or more crash ids to fetch data for",
         nargs="*",
@@ -67,6 +72,8 @@ def main(argv=None):
     print("Sending reprocessing requests to: %s" % url)
     session = session_with_retries()
 
+    ruleset = args.ruleset
+
     crash_ids = args.crashid
     print(
         "Reprocessing %s crashes sleeping %s seconds between groups..."
@@ -79,6 +86,10 @@ def main(argv=None):
             "Processing group ending with %s ... (%s/%s)"
             % (group[-1], i + 1, len(groups))
         )
+
+        if ruleset:
+            group = [f"{crash_id}:{ruleset}" for crash_id in group]
+
         resp = session.post(
             url, data={"crash_ids": group}, headers={"Auth-Token": api_token}
         )

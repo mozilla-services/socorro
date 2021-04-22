@@ -172,24 +172,24 @@ class TestIdentifierRule:
     def test_everything_we_hoped_for(self):
         uuid = "00000000-0000-0000-0000-000002140504"
         raw_crash = {"uuid": uuid}
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["crash_id"] == uuid
         assert processed_crash["uuid"] == uuid
 
     def test_uuid_missing(self):
         raw_crash = {}
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         # raw crash and processed crashes should be unchanged
         assert raw_crash == {}
@@ -199,14 +199,14 @@ class TestIdentifierRule:
 class TestCPUInfoRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
+        dumps = {}
         processed_crash = copy.copy(canonical_processed_crash)
         processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["cpu_arch"] == "x86"
         assert (
@@ -219,7 +219,7 @@ class TestCPUInfoRule:
 
     def test_missing_cpu_count(self):
         raw_crash = copy.copy(canonical_standard_raw_crash)
-        raw_dumps = {}
+        dumps = {}
         system_info = copy.copy(canonical_processed_crash["json_dump"]["system_info"])
         del system_info["cpu_count"]
         processed_crash = {"json_dump": {"system_info": system_info}}
@@ -228,7 +228,7 @@ class TestCPUInfoRule:
         rule = CPUInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert (
             processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
@@ -240,14 +240,14 @@ class TestCPUInfoRule:
 
     def test_missing_json_dump(self):
         raw_crash = {}
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["cpu_info"] == ""
         assert processed_crash["cpu_arch"] == ""

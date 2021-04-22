@@ -160,84 +160,104 @@ class ProcessorPipeline(RequiredConfig):
         self.config = config
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
-        self.rules = rules or self.get_ruleset(config)
-        for rule in self.rules:
-            self.logger.info("Loaded rule: %r" % rule)
+        self.rulesets = rules or self.get_rulesets(config)
+        for ruleset_name, ruleset in self.rulesets.items():
+            self.logger.info(f"Loading ruleset: {ruleset_name}")
+            for rule in ruleset:
+                self.logger.info(f"Loaded rule: {rule!r}")
 
-    def get_ruleset(self, config):
-        """Generate rule set for Mozilla crash processing.
+    def get_rulesets(self, config):
+        """Generate rule sets for Mozilla crash processing.
 
         :arg config: configman DotDict config instance
 
-        :returns: pipeline of rules
+        :returns: dict of rulesets
 
         """
-        return [
-            # fix the raw crash removing null characters and Nones
-            DeNullRule(),
-            DeNoneRule(),
-            # fix ModuleSignatureInfo if it needs fixing
-            ConvertModuleSignatureInfoRule(),
-            # fix SubmittedFromInfobar value
-            SubmittedFromInfobarFixRule(),
-            # rules to change the internals of the raw crash
-            FenixVersionRewriteRule(),
-            ESRVersionRewrite(),
-            ProcessTypeRule(),
-            PluginContentURL(),
-            PluginUserComment(),
-            # rules to transform a raw crash into a processed crash
-            IdentifierRule(),
-            MinidumpSha256Rule(),
-            BreakpadStackwalkerRule2015(
-                dump_field=config.breakpad.dump_field,
-                symbols_urls=config.breakpad.symbols_urls,
-                command_line=config.breakpad.command_line,
-                command_pathname=config.breakpad.command_pathname,
-                kill_timeout=config.breakpad.kill_timeout,
-                symbol_tmp_path=config.breakpad.symbol_tmp_path,
-                symbol_cache_path=config.breakpad.symbol_cache_path,
-                tmp_storage_path=config.breakpad.tmp_storage_path,
-            ),
-            ModuleURLRewriteRule(),
-            ProductRule(),
-            MajorVersionRule(),
-            UserDataRule(),
-            EnvironmentRule(),
-            PluginRule(),
-            AddonsRule(),
-            DatesAndTimesRule(),
-            OutOfMemoryBinaryRule(),
-            PHCRule(),
-            BreadcrumbsRule(),
-            JavaProcessRule(),
-            MozCrashReasonRule(),
-            # post processing of the processed crash
-            CrashingThreadRule(),
-            CPUInfoRule(),
-            OSInfoRule(),
-            BetaVersionRule(version_string_api=config.betaversion.version_string_api),
-            ExploitablityRule(),
-            FlashVersionRule(),
-            OSPrettyVersionRule(),
-            TopMostFilesRule(),
-            ModulesInStackRule(),
-            ThemePrettyNameRule(),
-            MemoryReportExtraction(),
-            # generate signature now that we've done all the processing it depends on
-            SignatureGeneratorRule(),
-            # a set of classifiers to help with jit crashes--must be last since it
-            # depends on signature generation
-            JitCrashCategorizeRule(
-                dump_field=config.jit.dump_field,
-                command_line=config.jit.command_line,
-                command_pathname=config.jit.command_pathname,
-                kill_timeout=config.jit.kill_timeout,
-            ),
-        ]
+        # NOTE(willkg): the rulesets defined in here must match the set of
+        # rulesets in webapp-django/crashstats/settings/base.py VALID_RULESETS
+        # for them to be available to the Reprocessing API
+        rulesets = {
+            # The default processing pipeline
+            "default": [
+                # fix the raw crash removing null characters and Nones
+                DeNullRule(),
+                DeNoneRule(),
+                # fix ModuleSignatureInfo if it needs fixing
+                ConvertModuleSignatureInfoRule(),
+                # fix SubmittedFromInfobar value
+                SubmittedFromInfobarFixRule(),
+                # rules to change the internals of the raw crash
+                FenixVersionRewriteRule(),
+                ESRVersionRewrite(),
+                ProcessTypeRule(),
+                PluginContentURL(),
+                PluginUserComment(),
+                # rules to transform a raw crash into a processed crash
+                IdentifierRule(),
+                MinidumpSha256Rule(),
+                BreakpadStackwalkerRule2015(
+                    dump_field=config.breakpad.dump_field,
+                    symbols_urls=config.breakpad.symbols_urls,
+                    command_line=config.breakpad.command_line,
+                    command_pathname=config.breakpad.command_pathname,
+                    kill_timeout=config.breakpad.kill_timeout,
+                    symbol_tmp_path=config.breakpad.symbol_tmp_path,
+                    symbol_cache_path=config.breakpad.symbol_cache_path,
+                    tmp_storage_path=config.breakpad.tmp_storage_path,
+                ),
+                ModuleURLRewriteRule(),
+                ProductRule(),
+                MajorVersionRule(),
+                UserDataRule(),
+                EnvironmentRule(),
+                PluginRule(),
+                AddonsRule(),
+                DatesAndTimesRule(),
+                OutOfMemoryBinaryRule(),
+                PHCRule(),
+                BreadcrumbsRule(),
+                JavaProcessRule(),
+                MozCrashReasonRule(),
+                # post processing of the processed crash
+                CrashingThreadRule(),
+                CPUInfoRule(),
+                OSInfoRule(),
+                BetaVersionRule(
+                    version_string_api=config.betaversion.version_string_api
+                ),
+                ExploitablityRule(),
+                FlashVersionRule(),
+                OSPrettyVersionRule(),
+                TopMostFilesRule(),
+                ModulesInStackRule(),
+                ThemePrettyNameRule(),
+                MemoryReportExtraction(),
+                # generate signature now that we've done all the processing it depends on
+                SignatureGeneratorRule(),
+                # a set of classifiers to help with jit crashes--must be last since it
+                # depends on signature generation
+                JitCrashCategorizeRule(
+                    dump_field=config.jit.dump_field,
+                    command_line=config.jit.command_line,
+                    command_pathname=config.jit.command_pathname,
+                    kill_timeout=config.jit.kill_timeout,
+                ),
+            ],
+            # Regenerate signatures
+            "regenerate_signature": [
+                SignatureGeneratorRule(),
+            ],
+        }
 
-    def process_crash(self, raw_crash, raw_dumps, processed_crash):
-        """Take a raw_crash and its associated raw_dumps and return a processed_crash
+        return rulesets
+
+    def process_crash(self, ruleset_name, raw_crash, dumps, processed_crash):
+        """Process a crash
+
+        This takes a raw_crash, associated minidump files, and a pre-existing
+        processed_crash if there is one, and processed the crash into a new
+        processed_crash.
 
         If this throws an exception, the crash was not processed correctly.
 
@@ -272,13 +292,20 @@ class ProcessorPipeline(RequiredConfig):
 
         crash_id = raw_crash["uuid"]
 
-        start_time = self.logger.info("starting transform for crash: %s", crash_id)
-        processor_meta_data.started_timestamp = start_time
+        ruleset = self.rulesets.get(ruleset_name)
+        if ruleset is None:
+            processor_meta_data.processor_notes.append(
+                f"error: no ruleset: {ruleset_name}"
+            )
+            return processed_crash
+
+        self.logger.info(f"starting transform {ruleset_name} for crash: {crash_id}")
+        processor_meta_data.started_timestamp = utc_now()
 
         # Apply rules; if a rule fails, capture the error and continue onward
-        for rule in self.rules:
+        for rule in ruleset:
             try:
-                rule.act(raw_crash, raw_dumps, processed_crash, processor_meta_data)
+                rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
 
             except Exception as exc:
                 # If a rule throws an error, capture it and toss it in the

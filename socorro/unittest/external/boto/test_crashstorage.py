@@ -210,7 +210,7 @@ class TestBotoS3CrashStorage:
         )
         assert result == b"this is a raw dump"
 
-    def test_get_raw_dumps(self, boto_helper):
+    def test_get_dumps(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
@@ -236,22 +236,22 @@ class TestBotoS3CrashStorage:
             data=b'this is "city_dump", the last one',
         )
 
-        result = boto_s3_store.get_raw_dumps("936ce666-ff3b-4c7a-9674-367fe2120408")
+        result = boto_s3_store.get_dumps("936ce666-ff3b-4c7a-9674-367fe2120408")
         assert result == {
             "dump": b'this is "dump", the first one',
             "flash_dump": b'this is "flash_dump", the second one',
             "city_dump": b'this is "city_dump", the last one',
         }
 
-    def test_get_raw_dumps_not_found(self, boto_helper):
+    def test_get_dumps_not_found(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
-            boto_s3_store.get_raw_dumps("0bba929f-dead-dead-dead-a43c20071027")
+            boto_s3_store.get_dumps("0bba929f-dead-dead-dead-a43c20071027")
 
-    def test_get_raw_dumps_as_files(self, boto_helper, tmpdir):
+    def test_get_dumps_as_files(self, boto_helper, tmpdir):
         boto_s3_store = self.get_s3_store(tmpdir=tmpdir)
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
@@ -277,7 +277,7 @@ class TestBotoS3CrashStorage:
             data=b'this is "city_dump", the last one',
         )
 
-        result = boto_s3_store.get_raw_dumps_as_files(
+        result = boto_s3_store.get_dumps_as_files(
             "936ce666-ff3b-4c7a-9674-367fe2120408"
         )
 

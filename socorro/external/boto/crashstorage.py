@@ -222,7 +222,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
-    def get_raw_dumps(self, crash_id):
+    def get_dumps(self, crash_id):
         """Get all the dump files for a given crash id.
 
         :returns MemoryDumpsMapping:
@@ -245,7 +245,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
-    def get_raw_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id):
         """Get the dump files for given crash id and save them to tmp.
 
         :returns: dict of dumpname -> file path
@@ -253,7 +253,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         :raises CrashIDNotFound: if file does not exist
 
         """
-        in_memory_dumps = self.get_raw_dumps(crash_id)
+        in_memory_dumps = self.get_dumps(crash_id)
         # convert our native memory dump mapping into a file dump mapping.
         return in_memory_dumps.as_file_dumps_mapping(
             crash_id,

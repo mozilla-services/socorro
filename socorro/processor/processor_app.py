@@ -137,30 +137,46 @@ class ProcessorApp(FetchTransformSaveApp):
         sentry_client.capture_error(self.logger, exc_info, extra=extra)
 
     def _basic_iterator(self):
+        """Yields an infinite list of processing tasks."""
         try:
             yield from super()._basic_iterator()
         except Exception:
             self._capture_error(sys.exc_info())
             self.logger.warning("error in crashid iterator", exc_info=True)
 
-            # NOTE(willkg): Queue code should not be throwing unhandled
-            # exceptions. If we hit one, we should make sure it gets to sentry
-            # and then let the caller deal with it
+            # NOTE(willkg): Queue code should not be throwing unhandled exceptions. If
+            # we hit one, we should make sure it gets to sentry and then let the caller
+            # deal with it
             raise
 
-    @METRICS.timer_decorator("process_crash")
-    def _transform(self, crash_id):
-        """Transform a raw crash into a process crash.
+    def _transform(self, task):
+        """Runs a transform on a task.
 
-        The ``crash_id`` passed in is used as a key to fetch the raw crash data
-        from the ``source``, the ``processor_class`` processes the crash and
-        the processed crash is saved to the ``destination``.
+        The ``task`` passed in is in the form of CRASHID or CRASHID:RULESET.
+        In the case of the former, it uses the default pipeline.
+
+        """
+
+        if ":" in task:
+            crash_id, ruleset_name = task.split(":", 1)
+        else:
+            crash_id, ruleset_name = task, "default"
+
+        with METRICS.timer("process_crash", tags=[f"ruleset:{ruleset_name}"]):
+            self.process_crash(crash_id, ruleset_name)
+
+    def process_crash(self, crash_id, ruleset_name):
+        """Processed crash data using a specified ruleset into a processed crash.
+
+        The ``crash_id`` is a key to fetch the raw crash data from the ``source``, the
+        ``processor_class`` processes the crash and the processed crash is saved to the
+        ``destination``.
 
         """
         # Fetch the raw crash data
         try:
             raw_crash = self.source.get_raw_crash(crash_id)
-            dumps = self.source.get_raw_dumps_as_files(crash_id)
+            dumps = self.source.get_dumps_as_files(crash_id)
         except CrashIDNotFound:
             # If the crash isn't found, we just reject it--no need to capture
             # errors here
@@ -186,7 +202,7 @@ class ProcessorApp(FetchTransformSaveApp):
         try:
             # Process the crash to generate a processed crash
             processed_crash = self.processor.process_crash(
-                raw_crash, dumps, processed_crash
+                ruleset_name, raw_crash, dumps, processed_crash
             )
 
             # Convert the raw and processed crashes from DotDict into Python standard

@@ -197,23 +197,23 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
 class TestCrashingThreadRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {"json_dump": copy.deepcopy(canonical_stackwalker_output)}
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["crashedThread"] == 0
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {"json_dump": {}}
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadRule()
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["crashedThread"] is None
         assert processor_meta["processor_notes"] == [
@@ -224,29 +224,25 @@ class TestCrashingThreadRule:
 class TestMinidumpSha256HashRule:
     def test_hash_not_in_raw_crash(self):
         raw_crash = {}
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule()
         assert (
-            rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
-            is False
+            rule.predicate(raw_crash, dumps, processed_crash, processor_meta) is False
         )
 
     def test_hash_in_raw_crash(self):
         raw_crash = {"MinidumpSha256Hash": "hash"}
-        raw_dumps = {}
+        dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = MinidumpSha256Rule()
-        assert (
-            rule.predicate(raw_crash, raw_dumps, processed_crash, processor_meta)
-            is True
-        )
+        assert rule.predicate(raw_crash, dumps, processed_crash, processor_meta) is True
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
 
@@ -274,7 +270,7 @@ class TestBreakpadTransformRule2015:
         rule = self.build_rule()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -285,7 +281,7 @@ class TestBreakpadTransformRule2015:
         mocked_subprocess_handle.wait.return_value = 0
 
         with MetricsMock() as mm:
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
             assert processed_crash["json_dump"] == canonical_stackwalker_output
             assert processed_crash["mdsw_return_code"] == 0
@@ -302,7 +298,7 @@ class TestBreakpadTransformRule2015:
         rule = self.build_rule()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -311,7 +307,7 @@ class TestBreakpadTransformRule2015:
         mocked_subprocess_handle.wait.return_value = 124
 
         with MetricsMock() as mm:
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
             assert processed_crash["json_dump"] == {}
             assert processed_crash["mdsw_return_code"] == 124
@@ -329,7 +325,7 @@ class TestBreakpadTransformRule2015:
         rule = self.build_rule()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -338,7 +334,7 @@ class TestBreakpadTransformRule2015:
         mocked_subprocess_handle.stdout.read.return_value = "{ff"
         mocked_subprocess_handle.wait.return_value = -1
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["json_dump"] == {}
         assert processed_crash["mdsw_return_code"] == -1
@@ -388,7 +384,7 @@ class TestJitCrashCategorizeRule:
         rule = self.build_rule()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "Windows 386",
@@ -406,7 +402,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processor_meta["processor_notes"] == []
         assert processed_crash["classifications"]["jit"]["category"] == "EXTRA-SPECIAL"
@@ -417,7 +413,7 @@ class TestJitCrashCategorizeRule:
         rule = self.build_rule()
 
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         base_processed_crash = {
             "product": "Firefox",
             "os_name": "Windows 386",
@@ -445,7 +441,7 @@ class TestJitCrashCategorizeRule:
         for signature in signatures:
             processed_crash = copy.deepcopy(base_processed_crash)
             processed_crash["signature"] = signature
-            rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
             assert processor_meta["processor_notes"] == []
             assert (
@@ -459,7 +455,7 @@ class TestJitCrashCategorizeRule:
     def test_subprocess_fail(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "Windows 386",
@@ -477,7 +473,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = None
         mocked_subprocess_handle.wait.return_value = -1
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processor_meta["processor_notes"] == []
         assert processed_crash["classifications"]["jit"]["category"] is None
@@ -487,7 +483,7 @@ class TestJitCrashCategorizeRule:
     def test_wrong_os(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "MS-DOS",
@@ -505,7 +501,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert "classifications.jit.category" not in processed_crash
         assert "classifications.jit.category_return_code" not in processed_crash
@@ -514,7 +510,7 @@ class TestJitCrashCategorizeRule:
     def test_wrong_product(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefrenzy",
             "os_name": "Windows NT",
@@ -532,7 +528,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert "classifications.jit.category" not in processed_crash
         assert "classifications.jit.category_return_code" not in processed_crash
@@ -541,7 +537,7 @@ class TestJitCrashCategorizeRule:
     def test_wrong_cpu(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "Windows NT",
@@ -559,7 +555,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert "classifications.jit.category" not in processed_crash
         assert "classifications.jit.category_return_code" not in processed_crash
@@ -568,7 +564,7 @@ class TestJitCrashCategorizeRule:
     def test_wrong_signature(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "Windows NT",
@@ -586,7 +582,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert "classifications.jit.category" not in processed_crash
         assert "classifications.jit.category_return_code" not in processed_crash
@@ -595,7 +591,7 @@ class TestJitCrashCategorizeRule:
     def test_module_on_stack_top(self, mocked_subprocess_module):
         rule = self.build_rule()
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_dumps = {rule.dump_field: "a_fake_dump.dump"}
+        dumps = {rule.dump_field: "a_fake_dump.dump"}
         processed_crash = {
             "product": "Firefox",
             "os_name": "Windows NT",
@@ -613,7 +609,7 @@ class TestJitCrashCategorizeRule:
         mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
         mocked_subprocess_handle.wait.return_value = 0
 
-        rule.act(raw_crash, raw_dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert "classifications.jit.category" not in processed_crash
         assert "classifications.jit.category_return_code" not in processed_crash
