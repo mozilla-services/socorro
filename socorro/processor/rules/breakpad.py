@@ -18,7 +18,7 @@ from socorro.processor.rules.base import Rule
 
 
 class CrashingThreadRule(Rule):
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["crashedThread"] = glom.glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         )
@@ -43,10 +43,10 @@ class CrashingThreadRule(Rule):
 class MinidumpSha256Rule(Rule):
     """Copy over MinidumpSha256Hash value if there is one"""
 
-    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
         return "MinidumpSha256Hash" in raw_crash
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["minidump_sha256_hash"] = raw_crash["MinidumpSha256Hash"]
 
 
@@ -222,7 +222,7 @@ class BreakpadStackwalkerRule2015(Rule):
         }
         return self.command_line.format(**params)
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         crash_id = raw_crash["uuid"]
 
         if "additional_minidumps" not in processed_crash:
@@ -231,7 +231,7 @@ class BreakpadStackwalkerRule2015(Rule):
         with self._temp_raw_crash_json_file(
             raw_crash, raw_crash["uuid"]
         ) as raw_crash_pathname:
-            for dump_name in raw_dumps.keys():
+            for dump_name in dumps.keys():
                 # this rule is only interested in dumps targeted for the
                 # minidump stackwalker external program.  As of the writing
                 # of this code, there is one other dump type.  The only way
@@ -242,7 +242,7 @@ class BreakpadStackwalkerRule2015(Rule):
                     # dumps not intended for the stackwalker are ignored
                     continue
 
-                dump_file_pathname = raw_dumps[dump_name]
+                dump_file_pathname = dumps[dump_name]
 
                 command_line = self.expand_commandline(
                     dump_file_pathname=dump_file_pathname,
@@ -282,7 +282,7 @@ class JitCrashCategorizeRule(Rule):
         keys = ("dump_field", "command_pathname", "command_line", "kill_timeout")
         return self.generate_repr(keys=keys)
 
-    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
         if (
             processed_crash.get("product", "") != "Firefox"
             or not processed_crash.get("os_name", "").startswith("Windows")
@@ -321,11 +321,11 @@ class JitCrashCategorizeRule(Rule):
             # there's no strip method
             return result
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         params = {
             "command_pathname": self.command_pathname,
             "kill_timeout": self.kill_timeout,
-            "dump_file_pathname": raw_dumps[self.dump_field],
+            "dump_file_pathname": dumps[self.dump_field],
         }
         command_line = self.command_line.format(**params)
 

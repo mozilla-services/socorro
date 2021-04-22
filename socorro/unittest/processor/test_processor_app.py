@@ -83,8 +83,8 @@ class TestProcessorApp:
         pa.source.get_raw_crash = mocked_get_raw_crash
 
         fake_dumps = {"upload_file_minidump": "fake_dump_TEMPORARY.dump"}
-        mocked_get_raw_dumps_as_files = mock.Mock(return_value=fake_dumps)
-        pa.source.get_raw_dumps_as_files = mocked_get_raw_dumps_as_files
+        mocked_get_dumps_as_files = mock.Mock(return_value=fake_dumps)
+        pa.source.get_dumps_as_files = mocked_get_dumps_as_files
 
         fake_processed_crash = DotDict({"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"})
         mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
@@ -97,12 +97,12 @@ class TestProcessorApp:
         patch_path = "socorro.processor.processor_app.os.unlink"
         with mock.patch(patch_path) as mocked_unlink:
             # the call being tested
-            pa.transform(17, finished_func)
+            pa.transform("17", finished_func)
         # test results
         mocked_unlink.assert_called_with("fake_dump_TEMPORARY.dump")
-        pa.source.get_raw_crash.assert_called_with(17)
+        pa.source.get_raw_crash.assert_called_with("17")
         pa.processor.process_crash.assert_called_with(
-            fake_raw_crash, fake_dumps, fake_processed_crash
+            "default", fake_raw_crash, fake_dumps, fake_processed_crash
         )
         pa.destination.save_processed_crash.assert_called_with(
             {"raw": "1"}, {"processed": "1"}
@@ -117,10 +117,10 @@ class TestProcessorApp:
         pa.source.get_raw_crash = mocked_get_raw_crash
 
         finished_func = mock.Mock()
-        pa.transform(17, finished_func)
-        pa.source.get_raw_crash.assert_called_with(17)
+        pa.transform("17", finished_func)
+        pa.source.get_raw_crash.assert_called_with("17")
         pa.processor.reject_raw_crash.assert_called_with(
-            17, "crash cannot be found in raw crash storage"
+            "17", "crash cannot be found in raw crash storage"
         )
         assert finished_func.call_count == 1
 
@@ -132,9 +132,11 @@ class TestProcessorApp:
         pa.source.get_raw_crash = mocked_get_raw_crash
 
         finished_func = mock.Mock()
-        pa.transform(17, finished_func)
-        pa.source.get_raw_crash.assert_called_with(17)
-        pa.processor.reject_raw_crash.assert_called_with(17, "error in loading: bummer")
+        pa.transform("17", finished_func)
+        pa.source.get_raw_crash.assert_called_with("17")
+        pa.processor.reject_raw_crash.assert_called_with(
+            "17", "error in loading: bummer"
+        )
         assert finished_func.call_count == 1
 
     def test_transform_polystorage_error_without_sentry_configured(self, caplogpp):
@@ -144,7 +146,7 @@ class TestProcessorApp:
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_raw_dumps_as_files.return_value = {}
+        pa.source.get_dumps_as_files.return_value = {}
 
         def mocked_save_processed_crash(*args, **kwargs):
             exception = PolyStorageError()
@@ -179,7 +181,7 @@ class TestProcessorApp:
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_raw_dumps_as_files.return_value = {}
+        pa.source.get_dumps_as_files.return_value = {}
 
         expected_exception = PolyStorageError()
         expected_exception.exceptions.append(NameError("waldo"))
@@ -215,7 +217,7 @@ class TestProcessorApp:
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_raw_dumps_as_files.return_value = {}
+        pa.source.get_dumps_as_files.return_value = {}
 
         expected_exception = ValueError("simulated error")
         pa.destination.save_processed_crash.side_effect = expected_exception
@@ -248,7 +250,7 @@ class TestProcessorApp:
         pa.source.get_raw_crash.side_effect = expected_exception
 
         # The processor catches all exceptions from .get_raw_crash() and
-        # .get_raw_dumps_as_files(), so there's nothing we need to catch here
+        # .get_dumps_as_files(), so there's nothing we need to catch here
         pa.transform("mycrashid")
 
         # Assert that the processor sent something to Sentry
@@ -278,7 +280,7 @@ class TestProcessorApp:
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_raw_dumps_as_files.return_value = {}
+        pa.source.get_dumps_as_files.return_value = {}
 
         try:
             raise NameError("waldo")

@@ -21,11 +21,11 @@ class Rule:
     def __init__(self):
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
-    def predicate(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         """Determines whether to run the action for this crash
 
         :arg raw_crash: the raw crash data
-        :arg raw_dumps: any minidumps associated with this crash
+        :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
         :arg processor_meta_data: any notes or bookkeeping we need to keep about
             processing as we process
@@ -35,11 +35,11 @@ class Rule:
         """
         return True
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         """Executes the rule transforming the crash data
 
         :arg raw_crash: the raw crash data
-        :arg raw_dumps: any minidumps associated with this crash
+        :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
         :arg processor_meta_data: any notes or bookkeeping we need to keep about
             processing as we process
@@ -47,11 +47,11 @@ class Rule:
         """
         return
 
-    def act(self, raw_crash, raw_dumps, processed_crash, processor_meta_data):
+    def act(self, raw_crash, dumps, processed_crash, processor_meta_data):
         """Runs predicate and action for a rule
 
         :arg raw_crash: the raw crash data
-        :arg raw_dumps: any minidumps associated with this crash
+        :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
         :arg processor_meta_data: any notes or bookkeeping we need to keep about
             processing as we process
@@ -59,10 +59,8 @@ class Rule:
         """
         rule_name = self.__class__.__name__
         with metrics.timer("act.timing", tags=["rule:%s" % rule_name]):
-            if self.predicate(
-                raw_crash, raw_dumps, processed_crash, processor_meta_data
-            ):
-                self.action(raw_crash, raw_dumps, processed_crash, processor_meta_data)
+            if self.predicate(raw_crash, dumps, processed_crash, processor_meta_data):
+                self.action(raw_crash, dumps, processed_crash, processor_meta_data)
 
     def close(self):
         pass

@@ -1122,6 +1122,13 @@ class Reprocessing(SocorroMiddleware):
 
     /api/Reprocessing/?crash_ids=XXX&crash_ids=YYY
 
+    Each crash id can also specify a processing pipeline ruleset to use by appending
+    the crash id with a ":" and a ruleset name.
+
+    Example for submitting a crash id using the "regenerate_signature" ruleset:
+
+    /api/Reprocessing/?crashids=9b79af22-fcb4-4e85-bada-f3d230210421:regenerate_signature
+
     """
 
     implementation = import_string(settings.CRASHQUEUE)
@@ -1138,10 +1145,20 @@ class Reprocessing(SocorroMiddleware):
         crash_ids = data["crash_ids"]
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
-        # If one of them isn't a crash id, raise a 400.
+
+        # If one of the crash ids or rulesets isn't valid, raise an HTTP 400.
         for crash_id in crash_ids:
+            if ":" in crash_id:
+                crash_id, ruleset_name = crash_id.split(":", 1)
+            else:
+                crash_id, ruleset_name = crash_id, "default"
+
             if not is_crash_id_valid(crash_id):
-                raise BadArgumentError("Crash id '%s' is not valid." % crash_id)
+                raise BadArgumentError(f"Crash id {crash_id!r} is not valid.")
+
+            if ruleset_name not in settings.VALID_RULESETS:
+                raise BadArgumentError(f"Ruleset {ruleset_name!r} is not valid.")
+
         return self.get_implementation().publish(
             queue="reprocessing", crash_ids=crash_ids
         )

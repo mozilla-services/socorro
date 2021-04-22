@@ -20,7 +20,7 @@ class MemoryReportExtraction(Rule):
 
     """
 
-    def predicate(self, raw_crash, raw_dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
         try:
             # Verify that...
             return (
@@ -36,7 +36,7 @@ class MemoryReportExtraction(Rule):
         except KeyError:
             return False
 
-    def action(self, raw_crash, raw_dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         pid = processed_crash["json_dump"]["pid"]
         memory_report = processed_crash["memory_report"]
 

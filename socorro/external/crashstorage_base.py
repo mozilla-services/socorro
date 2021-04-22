@@ -222,7 +222,7 @@ class CrashStorageBase(RequiredConfig):
         """
         raise NotImplementedError("get_raw_dump is not implemented")
 
-    def get_raw_dumps(self, crash_id):
+    def get_dumps(self, crash_id):
         """Fetch all dumps for a crash report
 
         :param crash_id: crash report id
@@ -230,9 +230,9 @@ class CrashStorageBase(RequiredConfig):
         :returns: MemoryDumpsMapping of dumps
 
         """
-        raise NotImplementedError("get_raw_dumps is not implemented")
+        raise NotImplementedError("get_dumps is not implemented")
 
-    def get_raw_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id):
         """Fetch all dumps for a crash report and save as files.
 
         :param crash_id: crash report id
@@ -240,7 +240,7 @@ class CrashStorageBase(RequiredConfig):
         :returns: dict of dumpname -> file path
 
         """
-        raise NotImplementedError("get_raw_dumps is not implemented")
+        raise NotImplementedError("get_dumps is not implemented")
 
     def get_processed(self, crash_id):
         """Fetch processed crash.
@@ -541,20 +541,18 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         self.logger.debug("%s get_raw_dump %s", self.tag, end_time - start_time)
         return result
 
-    def get_raw_dumps(self, crash_id):
+    def get_dumps(self, crash_id):
         start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_raw_dumps(crash_id)
+        result = self.wrapped_crashstore.get_dumps(crash_id)
         end_time = self.end_timer()
-        self.logger.debug("%s get_raw_dumps %s", self.tag, end_time - start_time)
+        self.logger.debug("%s get_dumps %s", self.tag, end_time - start_time)
         return result
 
-    def get_raw_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id):
         start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_raw_dumps_as_files(crash_id)
+        result = self.wrapped_crashstore.get_dumps_as_files(crash_id)
         end_time = self.end_timer()
-        self.logger.debug(
-            "%s get_raw_dumps_as_files %s", self.tag, end_time - start_time
-        )
+        self.logger.debug("%s get_dumps_as_files %s", self.tag, end_time - start_time)
         return result
 
     def get_unredacted_processed(self, crash_id):
