@@ -2,7 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import dataclasses
 import sys
+from typing import Any
 
 from .rules import (
     SignatureGenerationRule,
@@ -37,12 +39,12 @@ DEFAULT_PIPELINE = [
 ]
 
 
+@dataclasses.dataclass
 class Result:
-    def __init__(self):
-        self.signature = ""
-        self.notes = []
-        self.debug_log = []
-        self.extra = {}
+    signature: str = ""
+    notes: list[str] = dataclasses.field(default_factory=list, repr=False)
+    debug_log: list[str] = dataclasses.field(default_factory=list, repr=False)
+    extra: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
     def set_signature(self, rule, signature):
         self.debug(rule, 'change: "%s" -> "%s"', self.signature, signature)
