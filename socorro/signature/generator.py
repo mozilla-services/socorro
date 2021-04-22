@@ -4,7 +4,7 @@
 
 import dataclasses
 import sys
-from typing import Any
+from typing import Any, Dict, List
 
 from .rules import (
     SignatureGenerationRule,
@@ -42,9 +42,9 @@ DEFAULT_PIPELINE = [
 @dataclasses.dataclass
 class Result:
     signature: str = ""
-    notes: list[str] = dataclasses.field(default_factory=list, repr=False)
-    debug_log: list[str] = dataclasses.field(default_factory=list, repr=False)
-    extra: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
+    notes: List[str] = dataclasses.field(default_factory=list, repr=False)
+    debug_log: List[str] = dataclasses.field(default_factory=list, repr=False)
+    extra: Dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
     def set_signature(self, rule, signature):
         self.debug(rule, 'change: "%s" -> "%s"', self.signature, signature)
