@@ -17,6 +17,7 @@ formats: []
 # Optionally set the version of Python and requirements required to build your
 # docs
 python:
-  version: 3.9
+  # FIXME(willkg): 2021-04-29: ReadTheDocs doesn't support 3.9
+  version: 3.8
   install:
     - requirements: docs/requirements.txt
