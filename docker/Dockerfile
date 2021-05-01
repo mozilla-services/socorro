@@ -1,6 +1,6 @@
 FROM mozilla/socorro-minidump-stackwalk:2021.04.19@sha256:8068606a6d0a46cd1c12ead6f0e7ed5d08a55d6c3beffa6b2c8dd5872628ab3a as breakpad
 
-FROM python:3.9.4-slim@sha256:de9482638c1354f5178efc90431de2a42e863a12bf3df41d7fa30d5c10fe543d
+FROM python:3.9.4-slim@sha256:bca2bcc8afda3abca3f73ff3d9ac146076aa47d09a226290eb3c99f175b1371a
 
 # Set up user and group
 ARG groupid=10001
