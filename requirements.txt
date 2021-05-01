@@ -585,9 +585,9 @@ regex==2021.4.4 \
     --hash=sha256:fa4537fb4a98fe8fde99626e4681cc644bdcf2a795038533f9f711513a862ae6 \
     --hash=sha256:fd45ff9293d9274c5008a2054ecef86a9bfe819a67c7be1afb65e69b405b3042
     # via black
-requests-mock==1.8.0 \
-    --hash=sha256:11215c6f4df72702aa357f205cf1e537cffd7392b3e787b58239bde5fb3db53b \
-    --hash=sha256:e68f46844e4cee9d447150343c9ae875f99fa8037c6dcf5f15bf1fe9ab43d226
+requests-mock==1.9.2 \
+    --hash=sha256:33296f228d8c5df11a7988b741325422480baddfdf5dd9318fd0eb40c3ed8595 \
+    --hash=sha256:5c8ef0254c14a84744be146e9799dc13ebc4f6186058112d9aeed96b131b58e2
     # via -r requirements.in
 requests==2.25.1 \
     --hash=sha256:27973dd4a904a4f13b263a19c866c13b92a39ed1c964655f025f3f8d3d75b804 \
