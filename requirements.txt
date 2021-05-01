@@ -477,9 +477,9 @@ pyquery==1.4.3 \
 pyrsistent==0.17.3 \
     --hash=sha256:2e636185d9eb976a18a8a8e96efce62f2905fea90041958d8cc2a189756ebf3e
     # via jsonschema
-pytest-django==4.1.0 \
-    --hash=sha256:10e384e6b8912ded92db64c58be8139d9ae23fb8361e5fc139d8e4f8fc601bc2 \
-    --hash=sha256:26f02c16d36fd4c8672390deebe3413678d89f30720c16efb8b2a6bf63b9041f
+pytest-django==4.2.0 \
+    --hash=sha256:80f8875226ec4dc0b205f0578072034563879d98d9b1bec143a80b9045716cb0 \
+    --hash=sha256:a51150d8962200250e850c6adcab670779b9c2aa07271471059d1fb92a843fa9
     # via -r requirements.in
 pytest-env==0.6.2 \
     --hash=sha256:7e94956aef7f2764f3c147d216ce066bf6c42948bb9e293169b1b1c880a580c2
