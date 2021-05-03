@@ -25,12 +25,13 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Start date</th>
             <th>Count</th>
           </tr>
         </thead>
         <tbody>
-          {% for index_name, count in indices %}
-            <tr><td>{{ index_name }}</td><td>{{ count }}</td>
+          {% for item in indices %}
+            <tr><td>{{ item.name }}</td><td>{{ item.start_date }}</td><td>{{ item.count }}</td>
           {% endfor %}
         </tbody>
       </table>
