@@ -216,7 +216,7 @@ class SuperSearchFields(SuperSearchFieldsData):
         index_template = self.context.get_index_template()
         if index_template.endswith("%Y%W"):
             # Doing strptime on a template that has %W but doesn't have a day-of-week,
-            # will ignore the %W part. So we anchor it with 0 (Sunday).
+            # will ignore the %W part; so we anchor it with 1 (Monday)
             add_day_of_week = True
             index_template = f"{index_template}%w"
         else:
@@ -227,10 +227,13 @@ class SuperSearchFields(SuperSearchFieldsData):
             count = Search(using=conn, index=index_name, doc_type=doctype).count()
 
             if add_day_of_week:
-                adjusted_index_name = f"{index_name}0"
+                # %W starts on Mondays, so we set the day-of-week to 1 which is
+                # Monday
+                adjusted_index_name = f"{index_name}1"
             else:
                 adjusted_index_name = index_name
             start_date = datetime.datetime.strptime(adjusted_index_name, index_template)
+            start_date = start_date.date()
 
             index_data.append(
                 IndexDataItem(
