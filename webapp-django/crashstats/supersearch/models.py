@@ -224,6 +224,12 @@ class SuperSearchMissingFields(ESSocorroMiddleware):
     cache_seconds = 60 * 60 * 12  # 12 hours
 
 
+class SuperSearchStatus(ESSocorroMiddleware):
+    implementation = super_search_fields.SuperSearchStatusModel
+
+    cache_seconds = 0
+
+
 class Query(ESSocorroMiddleware):
     # No API_ALLOWLIST because this can't be accessed through the public API.
 
