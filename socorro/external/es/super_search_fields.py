@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from dataclasses import dataclass
 import datetime
 import logging
 
@@ -185,6 +186,13 @@ class SuperSearchFieldsData:
     get = get_fields
 
 
+@dataclass
+class IndexDataItem:
+    name: str
+    start_date: datetime.datetime
+    count: int
+
+
 class SuperSearchFields(SuperSearchFieldsData):
     def __init__(self, context):
         self.context = context
@@ -196,25 +204,47 @@ class SuperSearchFields(SuperSearchFieldsData):
     def get_supersearch_status(self):
         """Return list of indices, latest index, and mapping.
 
-        :returns: dict with keys "indices", "latest_index", "mapping"
+        :returns: list of IndexDataItem instances
 
         """
         conn = self.get_connection()
         index_client = elasticsearch.client.IndicesClient(conn)
         indices = sorted(self.context.get_indices())
         latest_index = indices[-1]
-        doctype = self.context.get_doctype()
 
-        index_to_size_map = {}
+        doctype = self.context.get_doctype()
+        index_template = self.context.get_index_template()
+        if index_template.endswith("%Y%W"):
+            # Doing strptime on a template that has %W but doesn't have a day-of-week,
+            # will ignore the %W part. So we anchor it with 0 (Sunday).
+            add_day_of_week = True
+            index_template = f"{index_template}%w"
+        else:
+            add_day_of_week = False
+
+        index_data = []
         for index_name in indices:
-            search = Search(using=conn, index=index_name, doc_type=doctype)
-            index_to_size_map[index_name] = search.count()
+            count = Search(using=conn, index=index_name, doc_type=doctype).count()
+
+            if add_day_of_week:
+                adjusted_index_name = f"{index_name}0"
+            else:
+                adjusted_index_name = index_name
+            start_date = datetime.datetime.strptime(adjusted_index_name, index_template)
+
+            index_data.append(
+                IndexDataItem(
+                    name=index_name,
+                    start_date=start_date,
+                    count=count,
+                )
+            )
 
         mapping = index_client.get_mapping(index=latest_index)
         mapping_properties = mapping[latest_index]["mappings"][doctype]["properties"]
 
         return {
-            "indices": index_to_size_map.items(),
+            "indices": index_data,
             "latest_index": latest_index,
             "mapping": mapping_properties,
         }
