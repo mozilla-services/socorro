@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import hashlib
+import json
 from urllib.parse import urlparse
 
 import requests
@@ -14,7 +15,10 @@ from django.db import connection
 from django.shortcuts import render
 
 from crashstats.manage.decorators import superuser_required
-from crashstats.supersearch.models import SuperSearchMissingFields
+from crashstats.supersearch.models import (
+    SuperSearchMissingFields,
+    SuperSearchStatus,
+)
 
 
 @superuser_required
@@ -98,6 +102,18 @@ def supersearch_fields_missing(request):
     context["title"] = "Super search missing fields"
 
     return render(request, "admin/supersearch_fields_missing.html", context)
+
+
+@superuser_required
+def supersearch_status(request):
+    context = {}
+    status = SuperSearchStatus().get()
+    context["indices"] = status["indices"]
+    context["latest_index"] = status["latest_index"]
+    context["mapping"] = json.dumps(status["mapping"], indent=2)
+    context["title"] = "Supersearch status"
+
+    return render(request, "admin/supersearch_status.html", context)
 
 
 @superuser_required

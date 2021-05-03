@@ -95,14 +95,18 @@ class MiddlewareModelForm(forms.Form):
 
 # Names of models we don't want to serve at all
 API_DONT_SERVE_LIST = (
-    # because it's only used for the admin
+    # Only used for the admin
     "Field",
     "SuperSearchMissingFields",
-    # because it's very sensitive and we don't want to expose it
+    # It's very sensitive and we don't want to expose it
     "Query",
-    # because it's an internal thing only
+    # This is only used to rapidly process crash reports that haven't been processed
+    # yet, but someone is trying to look at them
     "PriorityJob",
+    # This is used by another API to verify crash data
     "TelemetryCrash",
+    # This is internal and used in the Django admin
+    "SuperSearchStatus",
 )
 
 

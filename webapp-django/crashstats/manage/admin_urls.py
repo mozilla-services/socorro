@@ -22,6 +22,11 @@ urlpatterns = [
         name="supersearch_fields_missing",
     ),
     url(
+        "^supersearch-status/$",
+        admin.supersearch_status,
+        name="supersearch_status",
+    ),
+    url(
         "^protected-data-users/$",
         admin.protected_data_users,
         name="protected_data_users",

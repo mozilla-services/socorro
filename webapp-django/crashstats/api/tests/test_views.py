@@ -808,7 +808,7 @@ API_MODEL_NAMES = [
 
 def test_api_model_names():
     """
-    Verify the expected API model list.
+    Verify the expected publicly exposed API model list.
 
     This allows parametrized testing of the API Models, for better failure messages.
     """

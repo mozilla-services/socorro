@@ -7,6 +7,7 @@ import logging
 
 from configman import class_converter, Namespace, RequiredConfig
 import elasticsearch
+from elasticsearch_dsl import Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.lib import datetimeutil, BadArgumentError
@@ -192,6 +193,32 @@ class SuperSearchFields(SuperSearchFieldsData):
         with self.context() as conn:
             return conn
 
+    def get_supersearch_status(self):
+        """Return list of indices, latest index, and mapping.
+
+        :returns: dict with keys "indices", "latest_index", "mapping"
+
+        """
+        conn = self.get_connection()
+        index_client = elasticsearch.client.IndicesClient(conn)
+        indices = sorted(self.context.get_indices())
+        latest_index = indices[-1]
+        doctype = self.context.get_doctype()
+
+        index_to_size_map = {}
+        for index_name in indices:
+            search = Search(using=conn, index=index_name, doc_type=doctype)
+            index_to_size_map[index_name] = search.count()
+
+        mapping = index_client.get_mapping(index=latest_index)
+        mapping_properties = mapping[latest_index]["mappings"][doctype]["properties"]
+
+        return {
+            "indices": index_to_size_map.items(),
+            "latest_index": latest_index,
+            "mapping": mapping_properties,
+        }
+
     def get_missing_fields(self):
         """Return fields missing from our FIELDS list
 
@@ -322,6 +349,13 @@ class SuperSearchMissingFieldsModel(SuperSearchFieldsModel):
 
     def get(self):
         return super().get_missing_fields()
+
+
+class SuperSearchStatusModel(SuperSearchFieldsModel):
+    """Model that returns list of indices and latest mapping."""
+
+    def get(self):
+        return super().get_supersearch_status()
 
 
 # Cache of hashed_args -> list of fields values
