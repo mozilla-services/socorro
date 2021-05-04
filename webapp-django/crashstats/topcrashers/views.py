@@ -23,7 +23,7 @@ from crashstats.topcrashers.forms import TopCrashersForm
 
 
 def datetime_to_build_id(date):
-    """Return a build_id-like string from a datetime. """
+    """Return a build_id-like string from a datetime."""
     return date.strftime("%Y%m%d%H%M%S")
 
 

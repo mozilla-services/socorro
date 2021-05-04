@@ -33,7 +33,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def get(self, **kwargs):
-        """Return JSON data of a crash report, given its uuid. """
+        """Return JSON data of a crash report, given its uuid."""
         filters = [
             ("uuid", None, str),
             ("datatype", None, str),

@@ -308,7 +308,7 @@ class TestSearchBase:
 
 
 class TestSearchCommon:
-    """Test functions of the search_common module. """
+    """Test functions of the search_common module."""
 
     def test_convert_to_type(self):
         # Test null

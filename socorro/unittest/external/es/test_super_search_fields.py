@@ -247,7 +247,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         assert missing_fields["total"] == 5
 
     def test_test_mapping(self):
-        """Much test. So meta. Wow test_test_. """
+        """Much test. So meta. Wow test_test_."""
         # First test a valid mapping.
         doctype = self.api.context.get_doctype()
         mapping = build_mapping(doctype=doctype)

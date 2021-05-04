@@ -33,7 +33,7 @@ def truncatechars(str_, max_length):
 
 @library.filter
 def digitgroupseparator(number):
-    """AKA ``thousands separator'' - 1000000 becomes 1,000,000 """
+    """AKA ``thousands separator'' - 1000000 becomes 1,000,000"""
     if not isinstance(number, int):
         return number
     return format(number, ",")
@@ -94,7 +94,7 @@ def time_tag(dt, format="%a, %b %d, %Y at %H:%M %Z", future=False):
 
 @library.filter
 def human_readable_iso_date(dt):
-    """ Python datetime to a human readable ISO datetime. """
+    """Python datetime to a human readable ISO datetime."""
     if not isinstance(dt, (datetime.date, datetime.datetime)):
         try:
             dt = parse_isodate(dt)

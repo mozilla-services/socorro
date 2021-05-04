@@ -70,7 +70,7 @@ class SuperSearch(RequiredConfig, SearchBase):
             return conn
 
     def get_indices(self, dates):
-        """Return the list of indices to use for given dates. """
+        """Return the list of indices to use for given dates."""
         start_date = None
         end_date = None
         for date in dates:
