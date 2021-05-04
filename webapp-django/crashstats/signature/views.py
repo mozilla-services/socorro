@@ -117,7 +117,7 @@ def signature_report(request, params, default_context=None):
 
 @pass_validated_params
 def signature_reports(request, params):
-    """Return the results of a search. """
+    """Return the results of a search."""
 
     signature = params["signature"][0]
 
@@ -213,7 +213,7 @@ def signature_reports(request, params):
 
 @pass_validated_params
 def signature_aggregation(request, params, aggregation):
-    """Return the aggregation of a field. """
+    """Return the aggregation of a field."""
 
     signature = params["signature"][0]
 
@@ -258,7 +258,7 @@ def signature_aggregation(request, params, aggregation):
 @utils.json_view
 @pass_validated_params
 def signature_graphs(request, params, field):
-    """Return a multi-line graph of crashes per day grouped by field. """
+    """Return a multi-line graph of crashes per day grouped by field."""
 
     signature = params["signature"][0]
 
@@ -361,7 +361,7 @@ def signature_comments(request, params):
 
 @pass_validated_params
 def signature_correlations(request, params):
-    """Guess the best channel and product to use for correlations. """
+    """Guess the best channel and product to use for correlations."""
     context = {}
 
     context["channel"] = "release"

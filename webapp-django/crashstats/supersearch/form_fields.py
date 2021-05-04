@@ -82,7 +82,7 @@ class PrefixedField:
         return cleaned_value
 
     def value_to_string(self, value):
-        """Return the value as a string. """
+        """Return the value as a string."""
         if value is None:
             return None
         return str(value)

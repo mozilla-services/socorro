@@ -6,13 +6,13 @@
 
 
 class DatabaseError(Exception):
-    """When querying a storage system failed. """
+    """When querying a storage system failed."""
 
     pass
 
 
 class MissingArgumentError(Exception):
-    """When a mandatory argument is missing or empty. """
+    """When a mandatory argument is missing or empty."""
 
     def __init__(self, arg):
         self.arg = arg
@@ -26,7 +26,7 @@ class MissingArgumentError(Exception):
 
 
 class BadArgumentError(Exception):
-    """When a mandatory argument has a bad value. """
+    """When a mandatory argument has a bad value."""
 
     def __init__(self, param, received=None, expected=None, msg=None):
         self.param = param
@@ -50,7 +50,7 @@ class BadArgumentError(Exception):
 
 
 class ResourceNotFound(Exception):
-    """When a resource could not be found in a storage system. """
+    """When a resource could not be found in a storage system."""
 
     pass
 

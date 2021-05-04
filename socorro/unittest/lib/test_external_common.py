@@ -12,7 +12,7 @@ from socorro.lib import BadArgumentError, external_common
 
 
 class TestExternalCommon:
-    """Test functions of the external_common module. """
+    """Test functions of the external_common module."""
 
     def test_check_type(self):
         # Test 1: null
@@ -92,7 +92,7 @@ class TestExternalCommon:
         assert res.day == 1
 
     def test_parse_arguments_old_way(self):
-        """Test external_common.parse_arguments(). """
+        """Test external_common.parse_arguments()."""
         filters = [
             ("param1", "default", ["list", "str"]),
             ("param2", None, "int"),
@@ -109,7 +109,7 @@ class TestExternalCommon:
         assert params == params_exp
 
     def test_parse_arguments(self):
-        """Test external_common.parse_arguments(). """
+        """Test external_common.parse_arguments()."""
         filters = [
             ("param1", "default", [str]),
             ("param2", None, int),
