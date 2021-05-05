@@ -24,7 +24,14 @@ from crashstats.crashstats.utils import parse_isodate, urlencode_obj
 
 
 @library.global_function
+def minimum(item1, item2):
+    """Returns the minimum of two items"""
+    return min(item1, item2)
+
+
+@library.global_function
 def truncatechars(str_, max_length):
+    """Truncates a string to max_length and adds ... to the end"""
     if len(str_) < max_length:
         return str_
     else:
