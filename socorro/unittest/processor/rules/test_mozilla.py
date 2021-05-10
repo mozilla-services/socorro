@@ -24,6 +24,7 @@ from socorro.processor.rules.mozilla import (
     FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
+    MacCrashInfoRule,
     MajorVersionRule,
     MalformedBreadcrumbs,
     ModulesInStackRule,
@@ -650,6 +651,43 @@ class TestDatesAndTimesRule:
         assert processor_meta["processor_notes"] == [
             'non-integer value of "SecondsSinceLastCrash"'
         ]
+
+
+class TestMacCrashInfoRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            ({}, False),
+            ({"json_dump": {}}, False),
+            ({"json_dump": {"mac_crash_info": {}}}, True),
+        ],
+    )
+    def test_mac_crash_info_predicate(self, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+        rule = MacCrashInfoRule()
+
+        assert rule.predicate(raw_crash, dumps, processed, processor_meta) == expected
+
+    def test_mac_crash_info_action(self):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {"json_dump": {"mac_crash_info": {"key": "val"}}}
+        processor_meta = get_basic_processor_meta()
+
+        rule = MacCrashInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {
+            "json_dump": {
+                "mac_crash_info": {
+                    "key": "val",
+                }
+            },
+            # The mac_crash_info is a json encoded string
+            "mac_crash_info": '{\n  "key": "val"\n}',
+        }
 
 
 class TestMajorVersionRule:

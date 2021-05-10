@@ -46,6 +46,7 @@ from socorro.processor.rules.mozilla import (
     MajorVersionRule,
     ModulesInStackRule,
     ModuleURLRewriteRule,
+    MacCrashInfoRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
@@ -218,6 +219,7 @@ class ProcessorPipeline(RequiredConfig):
                 PHCRule(),
                 BreadcrumbsRule(),
                 JavaProcessRule(),
+                MacCrashInfoRule(),
                 MozCrashReasonRule(),
                 # post processing of the processed crash
                 CrashingThreadRule(),
