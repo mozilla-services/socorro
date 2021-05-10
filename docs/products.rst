@@ -14,6 +14,25 @@ Socorro collector will reject those crash reports.
 .. contents::
 
 
+How to add crash reporting to your product
+==========================================
+
+You need to set up a crash reporting client and handler and hook it into
+your code.
+
+There's documentation on how this works in Firefox here:
+
+https://firefox-source-docs.mozilla.org/toolkit/crashreporter/crashreporter/index.html
+
+There's documentation on how this works for Android products like Fenix here:
+
+https://github.com/mozilla-mobile/android-components/tree/master/components/lib/crash
+
+Crash annotations are listed and described here:
+
+https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml
+
+
 How to add a new supported product
 ==================================
 
@@ -56,19 +75,44 @@ Version
 -------
 
 The ``Version`` annotation specifies the version of the application that crashed.
-Firefox use versions in the following formats:
+Socorro supports two version formats:
 
-1. X.Y.Z -- release and beta version
-2. X.Ya1 -- nightly versions
+1. Firefox versioning. Examples: 90.0, 90.0.1, 90.0a1, 90.0rc2, 90.0b2
+2. Semantic versioning. Examples: 90.0.0, 90.0.0-alpha.1,
 
-Socorro fixes the version for incoming crash reports for beta releases by
-adding a ``b`` and then a beta number like ``X.Y.ZbN``.
+.. Note::
 
-Socorro fixes the version for incoming crash reports for ESR releases by adding
-``esr`` to the version.
+   Please use one of those formats. If you use something different, then Crash
+   Stats will likely have difficulties calculating featured versions.
 
 The version is used to populate the version menu and determine featured versions
 in the Crash Stats site.
+
+
+Firefox, Thunderbird, SeaMonkey, Fennec version notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Firefox, Thunderbird, SeaMonkey, and Fennec use the Firefox versioning scheme.
+
+The Socorro processor fixes the version for incoming crash reports for Firefox
+beta release channel by adding a ``b`` and then a beta number like ``X.YbN``.
+For example, 90.0b1.
+
+The Socorro processor fixes the version for incoming crash reports for ESR
+releases by adding ``esr`` to the version.
+
+
+Fenix version notes
+~~~~~~~~~~~~~~~~~~~
+
+Fenix version numbers use semantic versioning except the nightly channel.
+
+The Socorro processor changes the version of older Fenix nightly crash reports
+from ``Nightly YYMMDD HH:MM``  to ``0.0a1``.
+
+Current Fenix nightly crash reports use the same version as GeckView that the
+build ships with. The version for that uses the Firefox versioning scheme. For
+example ``90.0a1``.
 
 
 Other annotations
