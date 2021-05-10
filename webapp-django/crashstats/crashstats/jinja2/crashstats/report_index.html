@@ -356,6 +356,12 @@
                     <td>{{ parsed_dump.threads[crashing_thread].last_error_value }}</td>
                   </tr>
                 {% endif %}
+                {% if report.mac_crash_info %}
+                  <tr title="Mac crash info">
+                    <th scope="row">Mac Crash info</th>
+                    <td><pre>{{ report.mac_crash_info }}</pre></td>
+                  </tr>
+                {% endif %}
                 {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
                   {% if report.java_stack_trace_raw %}
                     <tr title="{{ fields_desc['processed_crash.java_stack_trace_raw'] }}">
