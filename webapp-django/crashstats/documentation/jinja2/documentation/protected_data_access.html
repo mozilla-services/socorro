@@ -6,11 +6,16 @@
   <div class="body">
     <h1 id="definition">Protected data on Crash Stats</h1>
     <p>
-      Crash reports include memory dumps which contain sensitive information
-      and is not publicly available on Crash Stats. Memory dumps are important
-      for diagnosing and debugging issues. Further, crash reports may also
-      contain private user data such as the user's email address and comments
-      if they provided any.
+      Crash reports include memory dumps which can contain memory from the heap
+      which may contain sensitive information such as visited urls, credentials
+      (ids, email addresses, usernames, etc), exploitability information and so
+      on. This information is protected and not publicly available on Crash
+      Stats.
+    </p>
+    <p>
+      Crash reports also contain annotations which may contain private user
+      data such as user comments and visited urls. This information is also
+      protected and not publicly available on Crash Stats.
     </p>
     <p>
       In order to view protected data, you must be signed in and have been
