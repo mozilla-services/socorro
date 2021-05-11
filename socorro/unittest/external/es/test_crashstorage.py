@@ -18,6 +18,7 @@ from socorro.external.es.crashstorage import (
     ESCrashStorage,
     ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
+    fix_numbers,
     is_valid_key,
     RawCrashRedactor,
     remove_invalid_keys,
@@ -419,7 +420,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "RecordReplay": "1",
             },
             "processed_crash": {
-                "build": "20120309050057",
+                "build": 20120309050057,
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "product": "Firefox",
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
@@ -973,23 +974,54 @@ class Test_convert_booleans:
         convert_booleans(fields, data)
         assert data == expected
 
+
+class Testfix_numbers:
     @pytest.mark.parametrize(
-        "fields",
+        "data, expected",
         [
-            # No in_database_name leaves data unchanged
-            {"key": {"storage_mapping": {"analyzer": "keyword", "type": "string"}}},
-            # Wrong in_database_name leaves data unchanged
-            {
-                "key": {
-                    "in_database_name": "different_key",
-                    "storage_mapping": {"analyzer": "keyword", "type": "string"},
-                }
-            },
+            # Field isn't there
+            ({}, {}),
+            # Field is valid
+            ({"key": 0}, {"key": 0}),
+            # Field is a string and valid, gets converted to int
+            ({"key": "0"}, {"key": 0}),
+            # Field is out of bounds, gets removed
+            ({"key": -2_147_483_650}, {}),
+            ({"key": 2_147_483_650}, {}),
         ],
     )
-    def test_fields_handling(self, fields):
-        original_data = {"key": "a" * 10001}
-        data = deepcopy(original_data)
+    def test_fix_integer(self, data, expected):
+        fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"type": "integer"},
+            }
+        }
+        # Note: data is modified in place
+        fix_numbers(fields, data)
+        assert data == expected
 
-        convert_booleans(fields, data)
-        assert original_data == data
+    @pytest.mark.parametrize(
+        "data, expected",
+        [
+            # Field isn't there
+            ({}, {}),
+            # Field is valid
+            ({"key": 0}, {"key": 0}),
+            # Field is a string and valid, gets converted to int
+            ({"key": "0"}, {"key": 0}),
+            # Field is out of bounds, gets removed
+            ({"key": -9_223_372_036_854_775_810}, {}),
+            ({"key": 9_223_372_036_854_775_810}, {}),
+        ],
+    )
+    def test_fix_long(self, data, expected):
+        fields = {
+            "key": {
+                "in_database_name": "key",
+                "storage_mapping": {"type": "long"},
+            }
+        }
+        # Note: data is modified in place
+        fix_numbers(fields, data)
+        assert data == expected
