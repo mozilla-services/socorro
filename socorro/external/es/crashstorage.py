@@ -211,6 +211,67 @@ def convert_booleans(fields, data):
         data[field_name] = True if value in POSSIBLE_TRUE_VALUES else False
 
 
+INTEGER_BOUNDS = (-2_147_483_648, 2_147_483_647)
+LONG_BOUNDS = (-9_223_372_036_854_775_808, 9_223_372_036_854_775_807)
+
+
+def fix_numbers(fields, data):
+    """Fix number values so they don't exceed Elasticsearch maximums
+
+    "long" can be -9,223,372,036,854,775,808
+
+    :arg dict fields: the super search fields schema
+    :arg dict data: the data to look through
+
+    """
+    integer_fields = get_fields_by_item(fields, "type", "integer")
+    min_int, max_int = INTEGER_BOUNDS
+    for field in integer_fields:
+        field_name = field["in_database_name"]
+
+        value = data.get(field_name)
+        print("integer", field_name, repr(value))
+        if value is None:
+            continue
+        if not isinstance(value, int):
+            try:
+                value = int(value)
+            except ValueError:
+                # If the value isn't valid, remove it
+                del data[field_name]
+                continue
+
+        if not (min_int <= value <= max_int):
+            # If the value isn't within the bounds, remove it
+            del data[field_name]
+        else:
+            data[field_name] = value
+
+    long_fields = get_fields_by_item(fields, "type", "long")
+    min_long, max_long = LONG_BOUNDS
+    for field in long_fields:
+        field_name = field["in_database_name"]
+
+        value = data.get(field_name)
+        print("long", field_name, repr(value))
+        if value is None:
+            continue
+
+        if not isinstance(value, int):
+            try:
+                value = int(value)
+            except ValueError:
+                # If the value isn't valid, remove it
+                del data[field_name]
+                continue
+
+        if not (min_long <= value <= max_long):
+            # If the value isn't within the bounds, remove it
+            del data[field_name]
+        else:
+            data[field_name] = value
+
+
 class ESCrashStorage(CrashStorageBase):
     """This sends raw and processed crash reports to Elasticsearch."""
 
@@ -313,6 +374,10 @@ class ESCrashStorage(CrashStorageBase):
         # Convert pseudo-boolean values to boolean values
         convert_booleans(FIELDS, raw_crash)
         convert_booleans(FIELDS, processed_crash)
+
+        # Fix numbers so they're within bounds
+        fix_numbers(FIELDS, raw_crash)
+        fix_numbers(FIELDS, processed_crash)
 
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash report to Elasticsearch"""
