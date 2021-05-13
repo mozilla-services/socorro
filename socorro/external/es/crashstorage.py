@@ -230,7 +230,6 @@ def fix_numbers(fields, data):
         field_name = field["in_database_name"]
 
         value = data.get(field_name)
-        print("integer", field_name, repr(value))
         if value is None:
             continue
         if not isinstance(value, int):
@@ -253,7 +252,6 @@ def fix_numbers(fields, data):
         field_name = field["in_database_name"]
 
         value = data.get(field_name)
-        print("long", field_name, repr(value))
         if value is None:
             continue
 
