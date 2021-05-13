@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import copy
-
 from configman.dotdict import DotDict
 import pytest
 
@@ -197,63 +195,100 @@ class TestIdentifierRule:
 
 
 class TestCPUInfoRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = copy.copy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta()
-
-        rule = CPUInfoRule()
-
-        # the call to be tested
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["cpu_arch"] == "x86"
-        assert (
-            processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
-        )
-        assert processed_crash["cpu_count"] == 4
-
-        # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
-
-    def test_missing_cpu_count(self):
-        raw_crash = copy.copy(canonical_standard_raw_crash)
-        dumps = {}
-        system_info = copy.copy(canonical_processed_crash["json_dump"]["system_info"])
-        del system_info["cpu_count"]
-        processed_crash = {"json_dump": {"system_info": system_info}}
-        processor_meta = get_basic_processor_meta()
-
-        rule = CPUInfoRule()
-
-        # the call to be tested
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert (
-            processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
-        )
-        assert processed_crash["cpu_arch"] == "x86"
-
-        # raw crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
-
-    def test_missing_json_dump(self):
+    def test_cpu_count(self):
         raw_crash = {}
         dumps = {}
-        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = CPUInfoRule()
 
-        # the call to be tested
+        processed_crash = {"json_dump": {"system_info": {"cpu_count": 4}}}
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_count"] == 4
 
-        assert processed_crash["cpu_info"] == ""
-        assert processed_crash["cpu_arch"] == ""
+    def test_cpu_count_no_json_dump(self):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
 
-        # raw crash should be unchanged
-        assert raw_crash == {}
+        rule = CPUInfoRule()
+
+        processed_crash = {}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_count"] == 0
+
+    def test_cpu_info(self):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CPUInfoRule()
+
+        processed_crash = {
+            "json_dump": {
+                "system_info": {
+                    "cpu_info": "GenuineIntel family 6 model 42 stepping 7",
+                }
+            }
+        }
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert (
+            processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
+        )
+
+    def test_cpu_info_no_json_dump(self):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CPUInfoRule()
+
+        processed_crash = {}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_info"] == "unknown"
+
+    def test_cpu_arch_no_json_dump(self):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CPUInfoRule()
+
+        # If there's no information, then it should be "unknown"
+        processed_crash = {}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_arch"] == "unknown"
+
+    def test_cpu_arch_from_json_dump(self):
+        raw_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CPUInfoRule()
+
+        # If it's in the minidump-stackwalk output, use that
+        processed_crash = {"json_dump": {"system_info": {"cpu_arch": "x86"}}}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_arch"] == "x86"
+
+    @pytest.mark.parametrize(
+        "android_cpu_abi, expected",
+        [
+            ("x86", "x86"),
+            ("arm64-v8a", "arm64"),
+            ("x86_64", "amd64"),
+            ("value not in map", "value not in map"),
+        ],
+    )
+    def test_cpu_arch_from_android_cpu_abi(self, android_cpu_abi, expected):
+        raw_crash = {"Android_CPU_ABI": android_cpu_abi}
+        processed_crash = {}
+        dumps = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CPUInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash["cpu_arch"] == expected
 
 
 class TestOSInfoRule:

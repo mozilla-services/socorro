@@ -85,19 +85,35 @@ class IdentifierRule(Rule):
 
 
 class CPUInfoRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        # This is the CPU that the product was built for
-        processed_crash["cpu_arch"] = glom(
-            processed_crash, "json_dump.system_info.cpu_arch", default=""
-        )
+    """Fill in cpu_arch, cpu_info, and cpu_count fields in processed crash"""
 
+    # Map of Android_CPU_ABI values to cpu_arch values
+    ANDROID_CPU_ABI_MAP = {
+        "armeabi-v7a": "arm",
+        "arm64-v8a": "arm64",
+        "x86_64": "amd64",
+    }
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # This is the CPU info of the machine the product was running on
         processed_crash["cpu_info"] = glom(
-            processed_crash, "json_dump.system_info.cpu_info", default=""
+            processed_crash, "json_dump.system_info.cpu_info", default="unknown"
         )
         processed_crash["cpu_count"] = glom(
             processed_crash, "json_dump.system_info.cpu_count", default=0
         )
+
+        # This is the CPU that the product was built for. We look at the
+        # minidump-stackwalk output first and if there's nothing there, look at
+        # annotations.
+        cpu_arch = glom(
+            processed_crash, "json_dump.system_info.cpu_arch", default="unknown"
+        )
+        if cpu_arch == "unknown" and "Android_CPU_ABI" in raw_crash:
+            android_cpu_abi = raw_crash["Android_CPU_ABI"]
+            cpu_arch = self.ANDROID_CPU_ABI_MAP.get(android_cpu_abi, android_cpu_abi)
+
+        processed_crash["cpu_arch"] = cpu_arch
 
 
 class OSInfoRule(Rule):
