@@ -422,8 +422,8 @@ class TestViews(BaseTestViews):
             assert "NightTrain" in params["product"]
 
             assert "address" in params
-            assert "0x0" in params["address"]
-            assert "0xa" in params["address"]
+            assert "0x00000000" in params["address"]
+            assert "0xa0000000" in params["address"]
 
             assert "reason" in params
             assert "^hello" in params["reason"]
@@ -442,7 +442,7 @@ class TestViews(BaseTestViews):
             url,
             {
                 "product": ["WaterWolf", "NightTrain"],
-                "address": ["0x0", "0xa"],
+                "address": ["0x00000000", "0xa0000000"],
                 "reason": ["^hello", "$thanks"],
                 "java_stack_trace": "Exception",
             },
