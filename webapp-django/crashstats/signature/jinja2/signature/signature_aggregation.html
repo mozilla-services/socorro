@@ -3,7 +3,7 @@
     <thead>
       <tr>
         <th scope="col">Rank</th>
-        <th scope="col">{{ aggregation | replace('_', ' ') | capitalize }}</th>
+        <th data-field-name="{{ aggregation }}" scope="col">{{ aggregation | replace('_', ' ') | capitalize }}</th>
         <th scope="col">Count</th>
         <th scope="col">%</th>
       </tr>

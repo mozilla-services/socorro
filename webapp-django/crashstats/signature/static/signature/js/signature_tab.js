@@ -109,12 +109,47 @@ SignatureReport.Tab.prototype.buildUrl = function (params, option) {
   return this.dataUrl + option + '?' + Qs.stringify(params, { indices: false });
 };
 
+// Extend this if you need more
+SignatureReport.Tab.prototype.generateTablesorterHeaders = function (table) {
+  // jquery-tablesorter guesses the value type wrong and thus doesn't
+  // sort the data correctly for some columns. This hard-codes fixes
+  // for data we know it gets wrong. Bug 1676593.
+  //
+  // field name -> header override
+  var fieldOverride = {
+    adapter_device: { sorter: 'text' },
+    adapter_driver_version: { sorter: 'text' },
+    adapter_vendor: { sorter: 'text' },
+    address: { sorter: 'text' },
+  };
+
+  var headers = {};
+  var counter = 0;
+
+  $(table)
+    .find('th')
+    .each(function (index, elem) {
+      var fieldName = elem.getAttribute('data-field-name');
+
+      if (fieldName in fieldOverride) {
+        headers[counter] = fieldOverride[fieldName];
+      }
+      counter += 1;
+    });
+
+  return headers;
+};
+
 // Extend this if anything different should be done with the returned data.
 SignatureReport.Tab.prototype.onAjaxSuccess = function (contentElement, data) {
   contentElement.empty().append($(data));
   contentElement.addClass('loaded');
+
   if (this.dataDisplayType === 'table') {
-    $('.tablesorter').tablesorter();
+    $('.tablesorter').each(function (index, elem) {
+      var headers = SignatureReport.Tab.prototype.generateTablesorterHeaders($(elem));
+      $(elem).tablesorter({ headers: headers });
+    });
   }
   if (this.pagination) {
     this.bindPaginationLinks(contentElement);

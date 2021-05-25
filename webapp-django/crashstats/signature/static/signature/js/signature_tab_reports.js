@@ -128,36 +128,13 @@ SignatureReport.ReportsTab.prototype.buildUrl = function (params) {
 
 SignatureReport.ReportsTab.prototype.onAjaxSuccess = function (contentElement, data) {
   var tab = this;
-
-  // jquery-tablesorter guesses the value type wrong and thus doesn't
-  // sort the data correctly for some columns. This hard-codes fixes
-  // for data we know it gets wrong. Bug 1676593.
-  //
-  // field name -> header override
-  var fieldOverride = {
-    adapter_driver_version: { sorter: 'text' },
-    address: { sorter: 'hexdigit' },
-  };
-
   contentElement.empty().append($(data));
-  var headers = {
-    0: {
-      // disable sorting with the first column, `Crash ID`
-      sorter: false,
-    },
+  var headers = this.generateTablesorterHeaders($('.tablesorter'));
+  // Disable sorting with the first column, `Crash ID`
+  headers[0] = {
+    sorter: false,
   };
-  var counter = 0;
-
-  $('#reports-list th').each(function (index, elem) {
-    var fieldName = elem.getAttribute('data-field-name');
-
-    if (fieldName in fieldOverride) {
-      headers[counter] = fieldOverride[fieldName];
-    }
-    counter += 1;
-  });
-
-  $('#reports-list').tablesorter({ headers: headers });
+  $('.tablesorter').tablesorter({ headers: headers });
   this.bindPaginationLinks(contentElement);
 
   // Make sure there are more than 1 page of results. If not,
