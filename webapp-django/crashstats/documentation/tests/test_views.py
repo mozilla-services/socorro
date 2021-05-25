@@ -45,3 +45,8 @@ class TestViews(BaseTestViews):
         response = self.client.get("/documentation/memory_dump_access/")
         assert response.status_code == 302
         assert response.url == reverse("documentation:protected_data_access")
+
+    def test_signup_renders(self):
+        url = reverse("documentation:signup")
+        response = self.client.get(url)
+        assert response.status_code == 200

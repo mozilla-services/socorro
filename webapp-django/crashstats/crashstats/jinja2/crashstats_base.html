@@ -58,7 +58,7 @@
             </li>
           </ul>
         {% else %}
-          <a class="signup-link" href="{{ url("crashstats:signup") }}">Sign up</a>
+          <a class="signup-link" href="{{ url("documentation:signup") }}">Sign up</a>
           |
           <a class="login-link" href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Log in</a>
         {% endif %}

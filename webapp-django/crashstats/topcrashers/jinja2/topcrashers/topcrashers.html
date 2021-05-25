@@ -40,9 +40,11 @@
 
         {% if total_crashing_signatures %}
           <div>
-            Top {{ total_crashing_signatures }} Crashing Signatures.
-            {{ query.start_date | time_tag }} through
-            {{ query.end_date | time_tag }}.
+            <p>
+              Top {{ total_crashing_signatures }} Crashing Signatures.
+              {{ query.start_date | time_tag }} through
+              {{ query.end_date | time_tag }}.
+            </p>
             <p>
               The report covers <span class="percentage">{{ number_of_crashes }} ({{ total_percentage | round(2) }}%)</span> of all {{ total_number_of_crashes }} crashes during this period.
             </p>

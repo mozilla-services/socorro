@@ -26,7 +26,6 @@ urlpatterns = [
     ),
     url(r"^search/quick/$", views.quick_search, name="quick_search"),
     url(r"^buginfo/bug", views.buginfo, name="buginfo"),
-    url(r"^signup/$", views.signup, name="signup"),
     url(r"^login/$", views.login, name="login"),
     url(r"^about/throttling/$", views.about_throttling, name="about_throttling"),
     url(r"^home/product/(?P<product>\w+)$", views.product_home, name="product_home"),

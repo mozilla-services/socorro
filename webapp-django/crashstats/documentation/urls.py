@@ -17,6 +17,7 @@ urlpatterns = [
         name="supersearch_examples",
     ),
     url(r"^supersearch/api/$", views.supersearch_api, name="supersearch_api"),
+    url(r"^signup/$", views.signup, name="signup"),
     url(
         r"^protected_data_access/$",
         views.protected_data_access,

@@ -142,3 +142,9 @@ def supersearch_api(request, default_context=None):
     context["operators"] = OPERATORS_MAP
 
     return render(request, "documentation/supersearch/api.html", context)
+
+
+@pass_default_context
+def signup(request, default_context=None):
+    context = default_context or {}
+    return render(request, "documentation/signup.html", context)
