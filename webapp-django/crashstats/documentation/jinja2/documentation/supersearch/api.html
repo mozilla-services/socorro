@@ -2,26 +2,24 @@
 
 {% block doc_title %}Super Search API Reference{% endblock %}
 
-{% macro table_content(fields, columns_number, prefix='') %}
-  <tr>
-    {% for i in range(0, fields | length) %}
-      {% if i % columns_number == 0 %}
-        </tr><tr>
-      {% endif %}
-      <td>
-        {% if fields[i].is_exposed %}
-          <a href="#param-{{ fields[i].name }}">{{ prefix }}{{ fields[i].name }}</a>
+{% macro table_content(fields, columns_number, prefix="") %}
+  {% for row in fields | batch(columns_number, "") %}
+    <tr>
+      {% for item in row %}
+        {% if item == "" %}
+          <td></td>
         {% else %}
-          {{ prefix }}{{ fields[i].name }}
+          <td>
+            {% if item.is_exposed %}
+              <a href="#param-{{ item.name }}">{{ prefix }}{{ item.name }}</a>
+            {% else %}
+              {{ prefix }}{{ item.name }}
+            {% endif %}
+          </td>
         {% endif %}
-      </td>
-    {% endfor %}
-    {% if (fields | length) % columns_number %}
-      {% for j in range(0, columns_number - ((fields | length) % columns_number)) %}
-        <td></td>
       {% endfor %}
-    {% endif %}
-  </tr>
+    </tr>
+  {% endfor %}
 {%- endmacro %}
 
 {% block doc_content %}
@@ -285,7 +283,7 @@
         {% if filter.is_exposed %}
           <article class="parameter" id="param-{{ filter.name }}">
             <header>
-              <h2 id="param-{{ filter.name }}">{{ filter.name }}</h1>
+              <h2 id="param-{{ filter.name }}">{{ filter.name }}</h2>
               <p>
                 <span class="type">{{ filter.query_type }}</span>
                 {% if filter.default %}
