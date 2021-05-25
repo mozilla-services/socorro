@@ -10,8 +10,8 @@ crash reports using the `Breakpad libraries
 Support
 =======
 
-This is a Mozilla-specific product. We do not currently have the capacity to
-support external users.
+Note: This is a Mozilla-specific product. We do not currently have the capacity
+to support external users.
 
 If you are looking to use Socorro for your product, maybe you want to consider
 this non-exhaustive list of alternatives:
@@ -48,10 +48,8 @@ https://github.com/mozilla-services/socorro/releases
 Communication
 =============
 
-We have a mailing list for Socorro users that you can join here:
-https://lists.mozilla.org/listinfo/tools-socorro
+Socorro and Crash Stats are part of Mozilla's crash reporting infrastructure.
+We all hang out in `#crashreporting:mozilla.org
+<https://riot.im/app/#/room/#crashreporting:mozilla.org>`_.
 
 Please help each other.
-
-Crash Stats engineers hang out in `#breakpad:mozilla.org
-<https://riot.im/app/#/room/#breakpad:mozilla.org>`_
