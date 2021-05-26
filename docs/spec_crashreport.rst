@@ -10,13 +10,28 @@ This is a specification for the format for submitting crash reports.
    :local:
 
 
-crash report specification
+Summary
+=======
+
+The Breakpad library includes an `HTTP upload tool
+<https://chromium.googlesource.com/breakpad/breakpad/+/master/src/tools/linux/symupload/minidump_upload.cc>`_.
+
+Mozilla doesn't use that tool for its products. Instead, we have our own set of
+crash reporting clients.
+
+This specification points out aspects that are supported by Mozilla's crash
+reporting clients, but not the Breakpad minidump upload tool.
+
+
+Crash report specification
 ==========================
 
 History:
 
 * 2020-01-15: Initial writing
 * 2020-01-17: Add specifying annotations as a single JSON-encoded value.
+* 2021-05-26: Add notes about where we stray from the Breakpad crash reporting
+  client.
 
 
 Submitting a crash report
@@ -74,6 +89,11 @@ Example::
 
 Annotations as single JSON-encoded value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. Note::
+
+   This is not supported by Breakpad's minidump upload tool.
+
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
@@ -150,6 +170,16 @@ Example::
 
 Collector response
 ------------------
+
+.. Note::
+
+   This is not supported by Breakpad's minidump upload tool which expects
+   an HTTP 200 or something else and that's it.
+
+
+The collector throttles crash reports and returns a response to the crash
+reporter client in the HTTP response.
+
 
 Accepted
 ~~~~~~~~
