@@ -8,6 +8,10 @@ appdirs==1.4.4 \
     --hash=sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41 \
     --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
     # via black
+asgiref==3.3.4 \
+    --hash=sha256:92906c611ce6c967347bbfea733f13d6313901d54dcca88195eaeb52b2a8e8ee \
+    --hash=sha256:d1216dfbdfb63826470995d31caed36225dcaf34f182e0fa257a4dd9e86f1b78
+    # via django
 attrs==20.3.0 \
     --hash=sha256:31b2eced602aa8423c2aea9c76a724617ed67cf9513173fd3a4f03e3a929c7e6 \
     --hash=sha256:832aa3cde19744e49938b91fea06d69ecb9e649c93ba974535d08ad92164f700
@@ -170,9 +174,9 @@ django-waffle==2.1.0 \
     --hash=sha256:a39f294f8c4e026b9e441d0e4d35ff3b26d1eb2da1d52196ba4bc04ba78b1db1 \
     --hash=sha256:a96b52ed6256238b7e0dda8c5c18b6f00e38008fae380f9ff22e12fd1a702c7f
     # via -r requirements.in
-django==2.2.22 \
-    --hash=sha256:db2214db1c99017cbd971e58824e6f424375154fe358afc30e976f5b99fc6060 \
-    --hash=sha256:e831105edb153af1324de44d06091ca75520a227456387dda4a47d2f1cc2731a
+django==3.2.3 \
+    --hash=sha256:13ac78dbfd189532cad8f383a27e58e18b3d33f80009ceb476d7fcbfc5dcebd8 \
+    --hash=sha256:7e0a1393d18c16b503663752a8b6790880c5084412618990ce8a81cc908b4962
     # via
     #   -r requirements.in
     #   django-csp
