@@ -40,7 +40,7 @@ pytest-env==0.6.2
 pytest==6.2.4
 python-decouple==3.4
 python-memcached==1.59
-requests-mock==1.9.2
+requests-mock==1.9.3
 requests==2.25.1
 semver==2.13.0
 sentry-sdk==1.0.0
