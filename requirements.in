@@ -35,7 +35,7 @@ pip-tools==6.0.1
 psycopg2==2.8.6
 pyinotify==0.9.6
 pyquery==1.4.3
-pytest-django==4.2.0
+pytest-django==4.3.0
 pytest-env==0.6.2
 pytest==6.2.4
 python-decouple==3.4
