@@ -49,7 +49,7 @@ urlwait==1.0
 whitenoise==5.2.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 3.2.
-Django==2.2.24
+Django==3.2.4
 
 # NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
 # because they work with the cluster we're using
