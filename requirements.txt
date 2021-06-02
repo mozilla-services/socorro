@@ -170,9 +170,9 @@ django-waffle==2.1.0 \
     --hash=sha256:a39f294f8c4e026b9e441d0e4d35ff3b26d1eb2da1d52196ba4bc04ba78b1db1 \
     --hash=sha256:a96b52ed6256238b7e0dda8c5c18b6f00e38008fae380f9ff22e12fd1a702c7f
     # via -r requirements.in
-django==2.2.22 \
-    --hash=sha256:db2214db1c99017cbd971e58824e6f424375154fe358afc30e976f5b99fc6060 \
-    --hash=sha256:e831105edb153af1324de44d06091ca75520a227456387dda4a47d2f1cc2731a
+django==2.2.24 \
+    --hash=sha256:3339ff0e03dee13045aef6ae7b523edff75b6d726adf7a7a48f53d5a501f7db7 \
+    --hash=sha256:f2084ceecff86b1e631c2cd4107d435daf4e12f1efcdf11061a73bf0b5e95f92
     # via
     #   -r requirements.in
     #   django-csp
