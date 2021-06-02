@@ -9,6 +9,7 @@ import os
 import shlex
 import subprocess
 import threading
+import ujson
 
 import glom
 import markus
@@ -138,7 +139,11 @@ class BreakpadStackwalkerRule2015(Rule):
     def _interpret_output(self, fp, processor_meta, command_pathname):
         data = fp.read()
         try:
-            return json.loads(data)
+            # NOTE(willkg): We use ujson here because stackwalk sometimes outputs byte
+            # sequences that the json library can't parse. We should revisit this when
+            # we switch to the Rust minidump-stackwalk which uses serde for JSON
+            # encoding. bug #1713306
+            return ujson.loads(data)
         except Exception as x:
             self.logger.error(
                 '%s non-json output: "%s"' % (command_pathname, data[:100])
