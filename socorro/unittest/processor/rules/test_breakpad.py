@@ -341,9 +341,9 @@ class TestBreakpadTransformRule2015:
         assert processed_crash["mdsw_status_string"] == "unknown error"
         assert not processed_crash["success"]
         assert (
-            rule.command_pathname + " output failed in json: Expecting property name"
-            in processor_meta["processor_notes"][0]
-        )
+            f"{rule.command_pathname} output failed in json: "
+            + "Unexpected character found when decoding 'false'"
+        ) in processor_meta["processor_notes"][0]
         assert (
             processor_meta["processor_notes"][1] == "MDSW failed with -1: unknown error"
         )
