@@ -39,6 +39,7 @@ g_assertion_message_error
 g_assertion_message_expr
 gdk_x_error
 _gdk_x11_display_error_event
+get_fpsr
 GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
 gkrust_shared::oom_hook::hook
