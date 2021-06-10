@@ -86,6 +86,7 @@ gsignal
 handle_errorf
 handle_response
 HandleInvalidParameter
+hashbrown::raw::Fallibility::alloc_err
 hashbrown::raw::RawTable<T>::new_uninitialized<T>
 HeapFree
 huge_dalloc
