@@ -7,7 +7,7 @@ from urllib.parse import quote
 import warnings
 
 from django_jinja import library
-import jinja2
+import markupsafe
 
 from django.forms.widgets import RadioSelect
 
@@ -66,7 +66,7 @@ def make_test_input(parameter, defaults):
         template += ' value="%(value)s"'
     template += ">"
     html = template % data
-    return jinja2.Markup(html)
+    return markupsafe.Markup(html)
 
 
 @library.filter
