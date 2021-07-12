@@ -163,14 +163,20 @@ TEMPLATES = [
             "extensions": [
                 "jinja2.ext.do",
                 "jinja2.ext.loopcontrols",
-                "jinja2.ext.with_",
-                "jinja2.ext.i18n",  # needed to avoid errors in django_jinja
-                "jinja2.ext.autoescape",
+                # needed to avoid errors in django_jinja
+                "jinja2.ext.i18n",
                 "django_jinja.builtins.extensions.CsrfExtension",
                 "django_jinja.builtins.extensions.StaticFilesExtension",
                 "django_jinja.builtins.extensions.DjangoFiltersExtension",
                 "pipeline.jinja2.PipelineExtension",
-                "waffle.jinja.WaffleExtension",
+                # NOTE(willkg): We haven't used waffle in a while and should remove it.
+                # waffle uses a deprecated function in Jinja2 which is raising errors in
+                # our tests, so I'm commenting this out for now.
+                #
+                # We can uncomment this when
+                # https://github.com/django-waffle/django-waffle/issues/402 is fixed or
+                # we remove waffle.
+                # "waffle.jinja.WaffleExtension",
             ],
             "globals": {},
         },

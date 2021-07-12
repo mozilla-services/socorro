@@ -11,6 +11,7 @@ from django_jinja import library
 import humanfriendly
 import isodate
 import jinja2
+import markupsafe
 
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
@@ -54,7 +55,7 @@ def buildid_to_date(buildid, fmt="%Y-%m-%d"):
     except (TypeError, ValueError):
         return ""
 
-    return jinja2.Markup(
+    return markupsafe.Markup(
         '<time datetime="{}" class="jstime" data-format="{}">{}</time>'.format(
             dt.isoformat(), fmt, dt.strftime(fmt)
         )
@@ -78,7 +79,7 @@ def timestamp_to_date(timestamp, fmt="%Y-%m-%d %H:%M:%S"):
         return ""
 
     dt = datetime.datetime.fromtimestamp(float(timestamp))
-    return jinja2.Markup(
+    return markupsafe.Markup(
         '<time datetime="{}" class="jstime" data-format="{}">{}</time>'.format(
             dt.isoformat(), fmt, dt.strftime(fmt)
         )
@@ -92,7 +93,7 @@ def time_tag(dt, format="%a, %b %d, %Y at %H:%M %Z", future=False):
             dt = parse_isodate(dt)
         except isodate.ISO8601Error:
             return dt
-    return jinja2.Markup(
+    return markupsafe.Markup(
         '<time datetime="{}" class="{}">{}</time>'.format(
             dt.isoformat(), future and "in" or "ago", dt.strftime(format)
         )
@@ -146,7 +147,7 @@ def show_bug_link(bug_id):
 
     tmpl += 'class="%(class)s">%(bug_id)s</a>'
     data["class"] = " ".join(data["class"])
-    return jinja2.Markup(tmpl) % data
+    return markupsafe.Markup(tmpl) % data
 
 
 @library.global_function
@@ -257,7 +258,7 @@ def replace_bugzilla_links(text):
     """
     # Convert text from Markup/str to a str so it doesn't escape the substituted
     # text, then return as a Markup because it's safe
-    return jinja2.Markup(
+    return markupsafe.Markup(
         BUG_RE.sub(
             r'<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=\2">\1</a>',
             str(text),
@@ -401,7 +402,7 @@ def static(path):
 
 
 @library.global_function
-@jinja2.contextfunction
+@jinja2.pass_context
 def change_query_string(context, **kwargs):
     """
     Template function for modifying the current URL by parameters.
