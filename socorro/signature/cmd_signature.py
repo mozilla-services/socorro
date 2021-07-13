@@ -220,8 +220,8 @@ def main(argv=None):
 
             # If there's an error in the raw crash, then something is wrong--probably with the API
             # token. So print that out and exit.
-            if "errors" in raw_crash:
-                out.warning("Error fetching raw crash: %s" % raw_crash["errors"])
+            if "error" in raw_crash:
+                out.warning("Error fetching raw crash: %s" % raw_crash["error"])
                 return 1
 
             resp = fetch("/ProcessedCrash/", crash_id, api_token)
@@ -241,9 +241,9 @@ def main(argv=None):
 
             # If there's an error in the processed crash, then something is wrong--probably with the
             # API token. So print that out and exit.
-            if "errors" in processed_crash:
+            if "error" in processed_crash:
                 out.warning(
-                    "Error fetching processed crash: %s" % processed_crash["errors"]
+                    "Error fetching processed crash: %s" % processed_crash["error"]
                 )
                 return 1
 
