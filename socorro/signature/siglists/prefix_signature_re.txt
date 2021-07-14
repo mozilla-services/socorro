@@ -115,8 +115,6 @@ JS_DHashTableOperate
 JS_NewStringCopyZ
 js_strlen
 KiFastSystemCall
-KiRaiseUserExceptionDispatcher
-KiUserExceptionDispatcher
 kill
 __libc_android_abort
 __libc_message

@@ -132,6 +132,7 @@ std::__terminate
 std::terminate
 system@framework@.*\.jar@classes\.dex@0x
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
+
 # These frames have platform variants and bucket poorly so we nix them
 # from the signature
 .*\$VARIANT\$
@@ -141,3 +142,15 @@ _XError
 _XReply
 _ZdlPv
 zero
+
+# Windows-specific fastfail frames
+KiRaiseUserExceptionDispatcher
+KiUserExceptionDispatch
+KiUserExceptionDispatcher
+LdrpICallHandler
+LdrpValidateUserCallTarget
+RtlDispatchException
+RtlFailFast2
+RtlpExecuteHandlerForException
+RtlpHandleInvalidUserCallTarget
+seh_filter_exe
