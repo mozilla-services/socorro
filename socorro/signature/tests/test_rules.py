@@ -1355,14 +1355,6 @@ class TestStackwalkerErrorSignatureRule:
 
 
 class TestSignatureWatchDogRule:
-    def test_instantiation(self):
-        srwd = rules.SignatureRunWatchDog()
-
-        assert isinstance(srwd.c_signature_tool, rules.CSignatureTool)
-        assert isinstance(srwd.java_signature_tool, rules.JavaSignatureTool)
-
-        assert srwd._get_crashing_thread({}) == 0
-
     def test_predicate(self):
         srwd = rules.SignatureRunWatchDog()
 
