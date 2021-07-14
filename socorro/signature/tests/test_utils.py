@@ -2,15 +2,70 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import copy
+
 import pytest
 
 from ..utils import (
     collapse,
     drop_bad_characters,
     drop_prefix_and_return_type,
+    get_crashing_thread,
+    int_or_none,
+    override_values,
     parse_crashid,
     parse_source_file,
 )
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        (None, None),
+        ("", None),
+        ("5", 5),
+    ],
+)
+def test_int_or_none(data, expected):
+    assert int_or_none(data) == expected
+
+
+@pytest.mark.parametrize(
+    "crash_data, expected",
+    [
+        ({}, 0),
+        ({"crashing_thread": ""}, 0),
+        ({"crashing_thread": "5"}, 5),
+        ({"hang_type": 0, "crashing_thread": "5"}, 5),
+        # If hang_type == 1, the crashing_thread is always 0
+        ({"hang_type": 1}, 0),
+        ({"hang_type": 1, "crashing_thread": "5"}, 0),
+    ],
+)
+def test_get_crashing_thread(crash_data, expected):
+    assert get_crashing_thread(crash_data) == expected
+
+
+@pytest.mark.parametrize(
+    "crash_data, overrides, expected",
+    [
+        ({}, {}, {}),
+        ({"a": 1}, {}, {"a": 1}),
+        # Try overriding a one-step path
+        ({"a": 1, "b": 1}, {"a": 2}, {"a": 2, "b": 1}),
+        # Override a path that doesn't exist
+        ({}, {"a": 1}, {"a": 1}),
+        # Override a multi-step path
+        ({"a": {}, "b": 1}, {"a.b.c": 2}, {"a": {"b": {"c": 2}}, "b": 1}),
+    ],
+)
+def test_override_values(crash_data, overrides, expected):
+    original_crash_data = copy.deepcopy(crash_data)
+    with override_values(crash_data, overrides) as adjusted_crash_data:
+        assert adjusted_crash_data == expected
+
+    # Make sure overriding a value doesn't mess up the original structure
+    assert crash_data == original_crash_data
 
 
 @pytest.mark.parametrize(

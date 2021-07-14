@@ -3,10 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+import contextlib
+import copy
 import re
 from urllib.parse import urlparse
 
-from glom import glom
+from glom import glom, assign
 
 
 def int_or_none(data):
@@ -14,6 +16,52 @@ def int_or_none(data):
         return int(data)
     except (TypeError, ValueError):
         return None
+
+
+def get_crashing_thread(crash_data):
+    """
+    Takes crash data and returns the crashing thread as an int.
+
+    If it's a chrome hang (hang_type=1), then use thread 0. Otherwise, use the crashing
+    thread specified in the crash data.
+
+    :arg crash_data: crash data structure that conforms to the schema
+
+    :returns: crashing thread as an int
+
+    """
+    crashing_thread = 0
+    if crash_data.get("hang_type", None) != 1:
+        try:
+            crashing_thread = int(crash_data.get("crashing_thread", 0))
+        except (TypeError, ValueError):
+            pass
+
+    return crashing_thread
+
+
+DOES_NOT_EXIST = object()
+
+
+@contextlib.contextmanager
+def override_values(crash_data, values):
+    """
+    Takes a dict of path -> value to override in the original crash data.
+    After the context is over, the crash data will return to the original
+    value.
+
+    :arg crash_data: the crash data that conforms to the schema
+    :arg values: dict of path -> value to override
+
+    :yields: dict with overridden values
+
+    """
+    crash_data = copy.deepcopy(crash_data)
+
+    for path, value in values.items():
+        assign(crash_data, path, val=value, missing=dict)
+
+    yield crash_data
 
 
 def convert_to_crash_data(raw_crash, processed_crash):
