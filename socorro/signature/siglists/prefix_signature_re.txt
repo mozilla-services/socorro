@@ -261,6 +261,7 @@ pthread_cond_signal_thread_np
 pthread_mutex_lock
 pthread_mutex_trylock
 __pthread_kill
+pthread_kill
 __pthread_mutex_lock
 _purecall
 raise
