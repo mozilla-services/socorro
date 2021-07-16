@@ -9,40 +9,10 @@ from django.utils.encoding import smart_text
 
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 class TestViews(BaseTestViews):
     def test_profile(self):
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
-            assert "_sort" in params
-            assert "email" in params
-            assert params["email"] == ["test@example.com"]
-
-            results = {
-                "hits": [
-                    {
-                        "uuid": "1234abcd-ef56-7890-ab12-abcdef130802",
-                        "date": "2000-01-02T00:00:00",
-                    },
-                    {
-                        "uuid": "1234abcd-ef56-7890-ab12-abcdef130801",
-                        "date": "2000-01-01T00:00:00",
-                    },
-                ],
-                "total": 2,
-            }
-            return results
-
-        def mocked_supersearch_get_no_data(**params):
-            assert "email" in params
-            assert params["email"] == ["test@example.com"]
-
-            return {"hits": [], "total": 0}
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
         url = reverse("profile:profile")
 
         # Test that the user must be logged in.
@@ -53,22 +23,10 @@ class TestViews(BaseTestViews):
         # Now log in for the remaining tests.
         user = self._login()
 
-        # Test with results and check email is there.
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert "1234abcd-ef56-7890-ab12-abcdef130801" in smart_text(response.content)
-        assert "1234abcd-ef56-7890-ab12-abcdef130802" in smart_text(response.content)
-        assert "test@example.com" in smart_text(response.content)
-
-        SuperSearchUnredacted.implementation().get.side_effect = (
-            mocked_supersearch_get_no_data
-        )
-
-        # Test with no results.
+        # Check email is there.
         response = self.client.get(url)
         assert response.status_code == 200
         assert "test@example.com" in smart_text(response.content)
-        assert "no crash report" in smart_text(response.content)
 
         # Make some permissions.
         self._create_group_with_permission("view_pii", "Group A")
