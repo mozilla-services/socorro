@@ -23,7 +23,6 @@ canonical_standard_raw_crash = {
     "Comments": "why did my browser crash?  #fail",
     "Theme": "classic/1.0",
     "Version": "12.0",
-    "Email": "noreply@mozilla.com",
     "Vendor": "Mozilla",
     "EMCheckCompatibility": "true",
     "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",

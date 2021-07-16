@@ -113,7 +113,6 @@ class UserDataRule(Rule):
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["url"] = raw_crash.get("URL", None)
         processed_crash["user_comments"] = raw_crash.get("Comments", None)
-        processed_crash["email"] = raw_crash.get("Email", None)
 
 
 class EnvironmentRule(Rule):

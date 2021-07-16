@@ -53,7 +53,7 @@ class TestFSPermanentStorage:
 
     def _make_processed_test_crash(self):
         self.fsrts.save_processed_crash(
-            {}, {"uuid": self.CRASH_ID_2, "test": "TEST", "email": "should not exist"}
+            {}, {"uuid": self.CRASH_ID_2, "test": "TEST", "url": "https://example.com/"}
         )
 
     def test_save_raw_crash(self):
@@ -78,14 +78,14 @@ class TestFSPermanentStorage:
     def test_get_unredacted_processed_crash(self):
         self._make_processed_test_crash()
         assert self.fsrts.get_unredacted_processed(self.CRASH_ID_2)["test"] == "TEST"
-        assert "email" in self.fsrts.get_unredacted_processed(self.CRASH_ID_2)
+        assert "url" in self.fsrts.get_unredacted_processed(self.CRASH_ID_2)
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
 
     def test_get_processed_crash(self):
         self._make_processed_test_crash()
         assert self.fsrts.get_processed(self.CRASH_ID_2)["test"] == "TEST"
-        assert "email" not in self.fsrts.get_processed(self.CRASH_ID_2)
+        assert "url" not in self.fsrts.get_processed(self.CRASH_ID_2)
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
 

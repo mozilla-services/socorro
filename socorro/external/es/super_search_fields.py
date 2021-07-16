@@ -1719,23 +1719,6 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
-    "email": {
-        "data_validation_type": "str",
-        "description": (
-            "Users may opt in to providing their email address so that Mozilla may contact them "
-            "about their crash report."
-        ),
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "email",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "email",
-        "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
-        "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
-    },
     "exploitability": {
         "data_validation_type": "enum",
         "description": "An automated estimate of how exploitable this crash is.",

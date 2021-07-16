@@ -109,7 +109,7 @@ class Redactor(RequiredConfig):
         name="forbidden_keys",
         doc="a list of keys not allowed in a redacted processed crash",
         default=(
-            "url, email, exploitability,"
+            "url, exploitability,"
             "json_dump.sensitive,"
             "upload_file_minidump_flash1.json_dump.sensitive,"
             "upload_file_minidump_flash2.json_dump.sensitive,"

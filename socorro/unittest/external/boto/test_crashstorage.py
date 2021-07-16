@@ -312,7 +312,6 @@ class TestBotoS3CrashStorage:
                 "not_url": "not a url",
                 # These keys do not survive redaction
                 "url": "http://example.com",
-                "email": "lars@example.com",
                 "exploitability": "yep",
                 "json_dump": {"sensitive": 22},
             }

@@ -466,8 +466,6 @@ class TestViews(BaseTestViews):
             for key in restricted_params:
                 if key in params:
                     assert "url" not in params[key]
-                    assert "email" not in params[key]
-                    assert "_cardinality.email" not in params[key]
 
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
@@ -478,7 +476,6 @@ class TestViews(BaseTestViews):
                         "signature": "abcdef",
                         "product": "WaterWolf",
                         "version": "1.0",
-                        "email": "thebig@lebowski.net",
                         "exploitability": "high",
                         "url": "http://embarassing.website.com",
                         "user_comments": "hey I am thebig@lebowski.net",
@@ -499,7 +496,6 @@ class TestViews(BaseTestViews):
         assert res["facets"]
 
         # Verify forbidden fields are not exposed.
-        assert "email" not in res["hits"]
         assert "exploitability" not in res["hits"]
         assert "url" not in res["hits"]
 
@@ -508,9 +504,9 @@ class TestViews(BaseTestViews):
             url,
             {
                 "exploitability": "high",
-                "_facets": ["url", "email", "product", "_cardinality.email"],
-                "_aggs.signature": ["url", "email", "product", "_cardinality.email"],
-                "_histogram.date": ["url", "email", "product", "_cardinality.email"],
+                "_facets": ["url", "product"],
+                "_aggs.signature": ["url", "product"],
+                "_histogram.date": ["url", "product"],
             },
         )
         assert response.status_code == 200
@@ -530,7 +526,6 @@ class TestViews(BaseTestViews):
                         "signature": "abcdef",
                         "product": "WaterWolf",
                         "version": "1.0",
-                        "email": "thebig@lebowski.net",
                         "exploitability": "high",
                         "url": "http://embarassing.website.com",
                         "user_comments": "hey I am thebig@lebowski.net",
@@ -563,7 +558,6 @@ class TestViews(BaseTestViews):
         assert res["facets"]
 
         # Verify forbidden fields are exposed.
-        assert "email" in res["hits"][0]
         assert "exploitability" in res["hits"][0]
         assert "url" in res["hits"][0]
         assert "thebig@lebowski.net" in res["hits"][0]["user_comments"]

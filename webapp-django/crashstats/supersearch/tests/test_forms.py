@@ -54,9 +54,9 @@ class TestForms:
         assert form.is_valid()
 
         # Verify admin restricted fields are not accepted
-        form = get_new_form({"email": "something", "exploitability": "high"})
+        form = get_new_form({"url": "something", "exploitability": "high"})
         assert form.is_valid()
-        assert "email" not in form.fields
+        assert "url" not in form.fields
         assert "exploitability" not in form.fields
 
     def test_search_form_with_admin_mode(self):
@@ -95,7 +95,6 @@ class TestForms:
                 "date": [">2012-01-16 12:23:34", "<=2013-01-16 12:23:34"],
                 "reason": ["some reason"],
                 "build_id": "<20200101344556",
-                "email": ["^mail.com"],
                 "url": ["$http://"],
                 "exploitability": ["high", "medium"],
             }
@@ -103,7 +102,6 @@ class TestForms:
         assert form.is_valid()
 
         # Verify admin restricted fields are accepted
-        assert "email" in form.fields
         assert "url" in form.fields
         assert "exploitability" in form.fields
 
