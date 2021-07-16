@@ -519,7 +519,7 @@ class TestViews(BaseTestViews):
                 "facets": {
                     "platform_pretty_version": [{"count": 4, "term": "Windows 7"}],
                     "cpu_arch": [{"count": 4, "term": "x86"}],
-                    "process_type": [{"count": 4, "term": "browser"}],
+                    "process_type": [{"count": 4, "term": "parent"}],
                     "product": [
                         {
                             "count": 4,
@@ -635,7 +635,7 @@ class TestViews(BaseTestViews):
         assert "x86" in smart_text(response.content)
         assert "WaterWolf" in smart_text(response.content)
         assert "2.1b99" in smart_text(response.content)
-        assert "browser" in smart_text(response.content)
+        assert "parent" in smart_text(response.content)
         assert "1.1.1.14" in smart_text(response.content)
         assert "&lt; 1 min" in smart_text(response.content)
         assert "1-5 min" in smart_text(response.content)

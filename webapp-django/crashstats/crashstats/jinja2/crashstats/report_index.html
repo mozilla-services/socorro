@@ -296,7 +296,7 @@
                 <tr title="{{ fields_desc['processed_crash.process_type'] }}">
                   <th scope="row">Process Type</th>
                   <td>
-                    {{ report.process_type or "browser" }}
+                    {{ report.process_type or "parent" }}
                     {% if report.process_type == "content" and request.user.has_perm("crashstats.view_pii") -%}
                       ({{ raw.RemoteType or 'web' }}) - {{ protected_warning() }}
                     {%- endif %}

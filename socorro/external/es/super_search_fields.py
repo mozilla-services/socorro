@@ -2828,7 +2828,6 @@ FIELDS = {
         "form_field_choices": [
             "any",
             "parent",
-            "browser",
             "plugin",
             "content",
             "gpu",
