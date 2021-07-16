@@ -382,7 +382,7 @@ class TestPluginRule:
     def test_browser_hang(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["Hang"] = 1
-        raw_crash["ProcessType"] = "browser"
+        raw_crash["ProcessType"] = "parent"
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()

@@ -222,7 +222,6 @@ class SearchBase:
                         parameters[value.name].append(value)
 
         self.fix_date_parameter(parameters)
-        self.fix_process_type_parameter(parameters)
         self.fix_hang_type_parameter(parameters)
         self.fix_version_parameter(parameters)
 
@@ -289,54 +288,6 @@ class SearchBase:
 
             parameters["date"].append(lower_than)
             parameters["date"].append(greater_than)
-
-    @staticmethod
-    def fix_process_type_parameter(parameters):
-        """Correct the process_type parameter.
-
-        Previously, crash reports that didn't have a ProcessType annotation
-        were parent process crashes. We used "browser" to refer to these and whenever
-        "browser" was specified in supersearch, we converted it to "process_type doesn't
-        exist".
-
-        On April 7th, 2021, we changed how that works. Now all crash reports have
-        a process_type. If there was no ProcessType annotation, the process_type
-        will be "parent". Because we're not reprocessing all the crash reports we
-        have (there are too many), we now have two different ways to identify
-        a parent process crash report: process_type = "parent" and "has no
-        process_type".
-
-        So this static method fixes incoming searches to do the right thing.
-
-        * "parent" -> gets an additional "or process_type does not exist"
-        * "browser" -> gets an additional "parent" and "or process_type does not exist"
-
-        """
-        if not parameters.get("process_type"):
-            return
-
-        new_params = []
-        for index, process_type in enumerate(parameters["process_type"]):
-            # `Note that process_type.value` can be a string or a list of strings
-            if "parent" in process_type.value or "browser" in process_type.value:
-                # Replace "browser" with "parent"
-                if process_type.value == "browser":
-                    process_type.value = "parent"
-                elif "browser" in process_type.value:
-                    process_type.value.remove("browser")
-                    process_type.value.append("parent")
-
-                new_params.append(
-                    SearchParam(
-                        name="process_type",
-                        value=[""],
-                        data_type="enum",
-                        operator="__null__",
-                        operator_not=process_type.operator_not,
-                    )
-                )
-
-        parameters["process_type"].extend(new_params)
 
     @staticmethod
     def fix_hang_type_parameter(parameters):

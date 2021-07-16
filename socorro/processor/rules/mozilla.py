@@ -143,7 +143,7 @@ class PluginRule(Rule):
         # the processed_crash["hang_type"] has the following meaning:
         #
         # * hang_type == -1 is a plugin hang
-        # * hang_type ==  1 is a browser hang
+        # * hang_type ==  1 is a parent hang
         # * hang_type ==  0 is not a hang at all, but a normal crash
 
         try:
