@@ -431,14 +431,15 @@ class TestMiddlewareModels(DjangoTestCase):
                 "FramePoisonSize": "4096",
                 "Theme": "classic/1.0",
                 "Version": "5.0a1",
-                "Email": "socorro-123@restmail.net",
                 "Vendor": "Mozilla",
+                # This is not allowlisted
+                "URL": "https://example.com/",
             }
 
         model.implementation().get.side_effect = mocked_get
         r = api.get(crash_id="some-crash-id")
         assert r["Vendor"] == "Mozilla"
-        assert "Email" in r  # no filtering at this level
+        assert "URL" in r  # no filtering at this level
 
     def test_raw_crash_invalid_id(self):
         # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test

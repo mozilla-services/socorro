@@ -27,7 +27,6 @@ _SAMPLE_META = {
     "FramePoisonSize": "4096",
     "Theme": "classic/1.0",
     "Version": "5.0a1",
-    "Email": "some@emailaddress.com",
     "Vendor": "Mozilla",
     "URL": "someaddress.com",
     "Comments": "this is a comment",
@@ -425,7 +424,6 @@ class TestViews(BaseTestViews):
         assert "Possible AMD CPU bug related crash report" in content
 
         assert _SAMPLE_UNREDACTED["user_comments"] not in content
-        assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
         assert (
             "You need to be logged in and have access to protected data to see "
@@ -438,7 +436,7 @@ class TestViews(BaseTestViews):
         # The pretty platform version should appear.
         assert "OS X 10.11" in content
 
-        # the email address will appear if we log in
+        # the protected data will appear if we log in
         user = self._login()
         group = self._create_group_with_permission("view_pii")
         user.groups.add(group)
@@ -447,7 +445,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         content = smart_text(response.content)
         assert _SAMPLE_UNREDACTED["user_comments"] in content
-        assert _SAMPLE_META["Email"] in content
         assert _SAMPLE_META["URL"] in content
         assert "&#34;sensitive&#34;" in content
         assert "&#34;exploitability&#34;" in content
@@ -467,7 +464,6 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         content = smart_text(response.content)
         assert _SAMPLE_UNREDACTED["user_comments"] not in content
-        assert _SAMPLE_META["Email"] not in content
         assert _SAMPLE_META["URL"] not in content
 
     def test_report_index_with_raw_crash_unicode_key(self):
@@ -629,7 +625,6 @@ class TestViews(BaseTestViews):
                     "FramePoisonSize": "4096",
                     "Theme": "classic/1.0",
                     "Version": "5.0a1",
-                    "Email": "secret@email.com",
                     "Vendor": "Mozilla",
                     "URL": "farmville.com",
                     "dump_checksums": {

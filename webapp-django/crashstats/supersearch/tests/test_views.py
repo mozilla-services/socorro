@@ -318,7 +318,6 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
-                        "email": "bob@example.org",
                         "url": "http://example.org",
                         "exploitability": "high",
                     },
@@ -330,7 +329,6 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
-                        "email": "bob@example.org",
                         "url": "http://example.org",
                         "exploitability": "low",
                     },
@@ -342,7 +340,6 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": None,
-                        "email": "bob@example.org",
                         "url": "http://example.org",
                         "exploitability": "error",
                     },
@@ -359,7 +356,7 @@ class TestViews(BaseTestViews):
 
         url = reverse("supersearch:search_results")
 
-        # Logged in user, can see the email field
+        # Logged in user, can see protected data fields
         user = self._login()
         group = self._create_group_with_permission("view_pii")
         user.groups.add(group)
@@ -367,14 +364,12 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {
-                "_columns": ["version", "email", "url", "exploitability"],
+                "_columns": ["version", "url", "exploitability"],
                 "_facets": ["url", "platform"],
             },
         )
 
         assert response.status_code == 200
-        assert "Email" in smart_text(response.content)
-        assert "bob@example.org" in smart_text(response.content)
         assert "Url facet" in smart_text(response.content)
         assert "http://example.org" in smart_text(response.content)
         assert "Version" in smart_text(response.content)
@@ -389,26 +384,23 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {
-                "_columns": ["version", "email", "url", "exploitability"],
+                "_columns": ["version", "url", "exploitability"],
                 "_facets": ["url", "platform"],
             },
         )
 
         assert response.status_code == 200
-        assert "Email" in smart_text(response.content)
         assert "Exploitability" in smart_text(response.content)
         assert "high" in smart_text(response.content)
 
-        # Logged out user, cannot see the email field
+        # Logged out user, cannot see the protected data fields
         self._logout()
         response = self.client.get(
             url,
-            {"_columns": ["version", "email", "url"], "_facets": ["url", "platform"]},
+            {"_columns": ["version", "url"], "_facets": ["url", "platform"]},
         )
 
         assert response.status_code == 200
-        assert "Email" not in smart_text(response.content)
-        assert "bob@example.org" not in smart_text(response.content)
         assert "Url facet" not in smart_text(response.content)
         assert "http://example.org" not in smart_text(response.content)
         assert "Version" in smart_text(response.content)

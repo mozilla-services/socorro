@@ -50,7 +50,6 @@ SAMPLE_PROCESSED_CRASH = {
     "cpu_arch": "arm",
     "crashedThread": 8,
     "date_processed": "2012-04-08 10:56:41.558922",
-    "email": "bogus@bogus.com",
     "flash_version": "[blank]",
     "hangid": None,
     "id": 361399767,

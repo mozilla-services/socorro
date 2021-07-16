@@ -66,8 +66,6 @@ in the web app:
 * **Signature Reports** provide useful information about crashes that share a
   signature. This includes aggregation on any database field, exploring
   crash reports, and generating graphs.
-* **Profile pages** show the recent crash reports that contain the user's email
-  address.
 
 Socorro currently requires Elasticsearch version 1.4.
 

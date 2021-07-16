@@ -391,15 +391,6 @@
                       - {{ protected_warning() }}
                     </td>
                   </tr>
-                  <tr title="{{ fields_desc['processed_crash.email'] }}">
-                    <th scope="row">Email Address</th>
-                    <td>
-                      {% if raw.Email %}
-                        <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a>
-                      {% endif %}
-                      - {{ protected_warning() }}
-                    </td>
-                  </tr>
                   <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
                     <th scope="row">User Comments</th>
                     <td>

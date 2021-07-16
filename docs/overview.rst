@@ -275,9 +275,9 @@ accessing data.
 
 You can create an account in the webapp by logging in.
 
-By default, information in a crash report that's personally identifiable
-information is hidden. This includes the user's email address and the url the
-user was visiting when Firefox crashed.
+Administrators can grant you access to protected data in crash reports. Without
+access to protected data, you can't see data in crash reports like the URL the
+user was visiting.
 
 
 .. seealso::

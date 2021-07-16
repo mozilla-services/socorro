@@ -57,7 +57,6 @@ canonical_standard_raw_crash = {
     "Comments": "why did my browser crash?  #fail",
     "Theme": "classic/1.0",
     "Version": "12.0",
-    "Email": "noreply@mozilla.com",
     "Vendor": "Mozilla",
     "EMCheckCompatibility": "true",
     "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
@@ -290,13 +289,11 @@ class TestUserDataRule:
 
         assert processed_crash["url"] == "http://www.mozilla.com"
         assert processed_crash["user_comments"] == "why did my browser crash?  #fail"
-        assert processed_crash["email"] == "noreply@mozilla.com"
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash["URL"]
         del raw_crash["Comments"]
-        del raw_crash["Email"]
 
         dumps = {}
         processed_crash = {}
@@ -307,7 +304,6 @@ class TestUserDataRule:
 
         assert processed_crash["url"] is None
         assert processed_crash["user_comments"] is None
-        assert processed_crash["email"] is None
 
 
 class TestEnvironmentRule:
