@@ -1,10 +1,6 @@
-{% macro protected_warning(your_crash) -%}
+{% macro protected_warning() -%}
   <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
-  {% if your_crash %}
-    Protected data: You can see it because it is your crash.
-  {% else %}
-    Protected data: <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
-  {% endif %}
+  Protected data: <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
 {%- endmacro %}
 
 {% extends "crashstats_base.html" %}
@@ -49,9 +45,7 @@
     </div>
 
     <div class="protected-info">
-      {% if your_crash %}
-        You are seeing public and protected data for your crash.
-      {% elif request.user.has_perm('crashstats.view_pii') %}
+      {% if request.user.has_perm('crashstats.view_pii') %}
         <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
         You are seeing public and protected data.
       {% else %}
@@ -63,16 +57,6 @@
 
     <div class="panel">
       <div class="body">
-        {% if your_crash %}
-          <div class="note">
-            <p>
-              As of February 11th, 2021, we no longer store Email address data in
-              crash reports. Crash reports sent on or after that date will not
-              show up as your crash.
-            </p>
-          </div>
-        {% endif %}
-
         {# Header #}
 
         <div id="sumo-link">
@@ -314,7 +298,7 @@
                   <td>
                     {{ report.process_type or "browser" }}
                     {% if report.process_type == "content" and request.user.has_perm("crashstats.view_pii") -%}
-                      ({{ raw.RemoteType or 'web' }}) - {{ protected_warning(your_crash) }}
+                      ({{ raw.RemoteType or 'web' }}) - {{ protected_warning() }}
                     {%- endif %}
                     {% if report.process_type == "plugin" -%}
                       ({{ report.PluginName or "No name" }}, ver: {{ report.PluginVersion or "Unknown" }}, filename: {{ report.PluginFilename or "" }})
@@ -329,11 +313,11 @@
                     </td>
                   </tr>
                 {% endif %}
-                {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                {% if request.user.has_perm('crashstats.view_pii') %}
                   {% if report.moz_crash_reason_raw %}
                     <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
                       <th scope="row">MOZ_CRASH Reason (Raw)</th>
-                      <td>{{ report.moz_crash_reason_raw }} - {{ protected_warning(your_crash) }}</td>
+                      <td>{{ report.moz_crash_reason_raw }} - {{ protected_warning() }}</td>
                     </tr>
                   {% endif %}
                 {% elif report.moz_crash_reason %}
@@ -362,14 +346,14 @@
                     <td><pre>{{ report.mac_crash_info }}</pre></td>
                   </tr>
                 {% endif %}
-                {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                {% if request.user.has_perm('crashstats.view_pii') %}
                   {% if report.java_stack_trace_raw %}
                     <tr title="{{ fields_desc['processed_crash.java_stack_trace_raw'] }}">
                       <th scope="row">Java Stack Trace (Raw)</th>
                       <td>
                         <pre>{{ report.java_stack_trace_raw }}</pre>
                         <div>
-                          {{ protected_warning(your_crash) }}
+                          {{ protected_warning() }}
                         </div>
                       </td>
                     </tr>
@@ -384,12 +368,12 @@
                     </tr>
                   {% endif %}
                 {% endif %}
-                {% if request.user.has_perm('crashstats.view_exploitability') or your_crash %}
+                {% if request.user.has_perm('crashstats.view_exploitability') %}
                   <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
                     <th scope="row">Exploitability</th>
                     <td>
                       {% if report.exploitability %}
-                        {{ report.exploitability }} - {{ protected_warning(your_crash) }}
+                        {{ report.exploitability }} - {{ protected_warning() }}
                       {% endif %}
                     </td>
                   </tr>
@@ -397,14 +381,14 @@
 
                 {# Personal user info #}
 
-                {% if request.user.has_perm('crashstats.view_pii') or your_crash %}
+                {% if request.user.has_perm('crashstats.view_pii') %}
                   <tr title="{{ fields_desc['processed_crash.url'] }}">
                     <th scope="row">URL</th>
                     <td>
                       {% if raw.URL %}
                         <a href="{{ raw.URL }}" title="{{ raw.URL }}">{{ raw.URL }}</a>
                       {% endif %}
-                      - {{ protected_warning(your_crash) }}
+                      - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.email'] }}">
@@ -413,7 +397,7 @@
                       {% if raw.Email %}
                         <a href="mailto:{{ raw.Email }}">{{ raw.Email }}</a>
                       {% endif %}
-                      - {{ protected_warning(your_crash) }}
+                      - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.user_comments'] }}">
@@ -422,7 +406,7 @@
                       {% if report.user_comments %}
                         {{ report.user_comments | linebreaks }}
                       {% endif %}
-                      - {{ protected_warning(your_crash) }}
+                      - {{ protected_warning() }}
                     </td>
                   </tr>
                 {% endif %}
@@ -478,40 +462,40 @@
                   </tr>
                 {% endif %}
 
-                {% if 'phc_kind' in report and (request.user.has_perm('crashstats.view_pii') or your_crash) %}
+                {% if 'phc_kind' in report and request.user.has_perm('crashstats.view_pii') %}
                   <tr title="{{ fields_desc['processed_crash.phc_kind'] }}">
                     <th scope="row">PHC Kind</th>
                     <td>
                       {{ report.phc_kind }}
-                        - {{ protected_warning(your_crash) }}
+                        - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_usable_size'] }}">
                     <th scope="row">PHC Usable Size</th>
                     <td>
                       {{ report.phc_usable_size }}
-                        - {{ protected_warning(your_crash) }}
+                        - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_base_address'] }}">
                     <th scope="row">PHC Base Address</th>
                     <td>
                       {{ report.phc_base_address }}
-                        - {{ protected_warning(your_crash) }}
+                        - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_alloc_stack'] }}">
                     <th scope="row">PHC Alloc Stack</th>
                     <td>
                       {{ report.phc_alloc_stack }}
-                        - {{ protected_warning(your_crash) }}
+                        - {{ protected_warning() }}
                     </td>
                   </tr>
                   <tr title="{{ fields_desc['processed_crash.phc_free_stack'] }}">
                     <th scope="row">PHC Free Stack</th>
                     <td>
                       {{ report.phc_free_stack }}
-                        - {{ protected_warning(your_crash) }}
+                        - {{ protected_warning() }}
                     </td>
                   </tr>
 		            {% endif %}
@@ -820,11 +804,11 @@
               <!-- /frames -->
             {% endif %}
 
-            {% if (request.user.has_perm('crashstats.view_pii') or your_crash) and report.breadcrumbs %}
+            {% if request.user.has_perm('crashstats.view_pii') and report.breadcrumbs %}
               <div id="breadcrumbs">
                 <h2>Breadcrumbs</h2>
                 <p>
-                  {{ protected_warning(your_crash) }} -
+                  {{ protected_warning() }} -
                   {% if report.breadcrumbs|length > 10 %}
                     Latest 10 breadcrumbs (out of {{ report.breadcrumbs|length }})
                   {% else %}
@@ -901,7 +885,7 @@
             </div>
             {% if request.user.has_perm('crashstats.view_pii') %}
               <div>
-                {{ protected_warning(your_crash) }}
+                {{ protected_warning() }}
               </div>
               <table class="record data-table vertical hardwrapped">
                 <tbody>
@@ -992,7 +976,7 @@
             <h3>Download raw crash, processed crash, minidump, and memory report data</h3>
             {% if request.user.has_perm('crashstats.view_pii') or request.user.has_perm('crashstats.view_rawdump') %}
               <p>
-                {{ protected_warning(your_crash) }}
+                {{ protected_warning() }}
                 Raw and processed crash reports contain protected data.
                 Please don't share minidumps with third-parties.
                 See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
@@ -1033,10 +1017,8 @@
             <h3>minidump-stackwalk output</h3>
             <div>
               {% if request.user.has_perm('crashstats.view_rawdump') %}
-                {{ protected_warning(your_crash) }}
-                {% if not your_crash %}
-                  minidump-stackwalk output contains sensitive and exploitability information.
-                {% endif %}
+                {{ protected_warning() }}
+                minidump-stackwalk output contains sensitive and exploitability information.
               {% else %}
                 You do not have access to protected data so the minidump-stackwalk output is redacted.
                 See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
