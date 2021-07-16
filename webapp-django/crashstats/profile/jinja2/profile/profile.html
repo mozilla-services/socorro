@@ -26,53 +26,6 @@
 
     <div class="panel page-section">
       <div class="title">
-        <h2>Your Crash Reports</h2>
-      </div>
-      <div class="body">
-        <div class="note">
-          <p>
-            As of February 11th, 2021, we no longer store Email address data in
-            crash reports. Crash reports sent on or after that date will not
-            have Email data and will not show up on this page.
-          </p>
-        </div>
-        {% if crashes_list %}
-          <p>
-            Here is a list of the crash reports we have received from you,
-            and processed, in the last 4 weeks:
-          </p>
-
-          <table class="crashes_list data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Crash ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for crash in crashes_list %}
-                <tr>
-                  <td>{{ crash.date | time_tag }}</td>
-                  <td>
-                    <a href="{{ url('crashstats:report_index', crash.crash_id) }}">{{ crash.crash_id }}</a>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <p>
-            It seems we have received or processed <b>no crash report
-            from you in the last 4 weeks</b>. It's either good news,
-            or you do not provide your email address when you send us
-            crash reports.
-          </p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="panel page-section">
-      <div class="title">
         <h2>Your Permissions</h2>
       </div>
       <div class="body">
