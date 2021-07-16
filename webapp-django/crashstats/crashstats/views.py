@@ -108,10 +108,6 @@ def report_index(request, crash_id, default_context=None):
         )
     utils.enhance_raw(context["raw"])
 
-    context["your_crash"] = your_crash = (
-        request.user.is_active and context["raw"].get("Email") == request.user.email
-    )
-
     api = models.UnredactedCrash()
     try:
         context["report"] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
@@ -157,7 +153,7 @@ def report_index(request, crash_id, default_context=None):
 
     # For Java crashes
     if "java_exception" in context["report"]:
-        if request.user.has_perm("crashstats.view_pii") or your_crash:
+        if request.user.has_perm("crashstats.view_pii"):
             context["java_exception_stacks"] = context["report"]["java_exception_raw"][
                 "exception"
             ]["values"]
@@ -179,7 +175,7 @@ def report_index(request, crash_id, default_context=None):
     context["public_raw_keys"] = [
         x for x in context["raw"] if x in models.RawCrash.API_ALLOWLIST()
     ]
-    if request.user.has_perm("crashstats.view_pii") or your_crash:
+    if request.user.has_perm("crashstats.view_pii"):
         # If the user can see PII or this is their crash report, include everything
         context["protected_raw_keys"] = [
             x for x in context["raw"] if x not in models.RawCrash.API_ALLOWLIST()
@@ -192,7 +188,7 @@ def report_index(request, crash_id, default_context=None):
     context["protected_raw_keys"].sort(key=lambda s: s.lower())
 
     data_urls = []
-    if request.user.has_perm("crashstats.view_pii") or your_crash:
+    if request.user.has_perm("crashstats.view_pii"):
         # Add Raw Crash link
         data_urls.append(
             (
