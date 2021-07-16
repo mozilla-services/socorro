@@ -89,10 +89,10 @@ The version is used to populate the version menu and determine featured versions
 in the Crash Stats site.
 
 
-Firefox, Thunderbird, SeaMonkey, Fennec version notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Firefox, Thunderbird, SeaMonkey version notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Firefox, Thunderbird, SeaMonkey, and Fennec use the Firefox versioning scheme.
+Firefox, Thunderbird, and SeaMonkey use the Firefox versioning scheme.
 
 The Socorro processor fixes the version for incoming crash reports for Firefox
 beta release channel by adding a ``b`` and then a beta number like ``X.YbN``.
