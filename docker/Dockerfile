@@ -1,4 +1,4 @@
-FROM mozilla/socorro-minidump-stackwalk:2021.06.02@sha256:b0834f24adc1563f3c833c0952727739eb10ebb9723a88e74a78324a52b2cd5a as breakpad
+FROM mozilla/socorro-minidump-stackwalk:2021.07.21@sha256:dd5892b74fdd65b0160a7e779e4c9c0550ed36d188c62db8400c7ee060f33095 as breakpad
 
 FROM python:3.9.6-slim@sha256:2c018e29a8eada75e855d78641adda978a2c0a035fd928e281e1240144e8a337
 
