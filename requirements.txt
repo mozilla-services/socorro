@@ -375,9 +375,9 @@ more-itertools==8.8.0 \
     --hash=sha256:2cf89ec599962f2ddc4d568a05defc40e0a587fbc10d5989713638864c36be4d \
     --hash=sha256:83f0308e05477c68f56ea3a888172c78ed5d5b3c282addb67508e7ba6c8f813a
     # via -r requirements.in
-mozilla-django-oidc==1.2.4 \
-    --hash=sha256:6f1064ec35c0dc42a7f6487e8649c9b51db04df52c424f48ebad6fe35e7481c8 \
-    --hash=sha256:a5130790bc71096b864d67486bbdabbbd4efc9bf1a755fb50d1f51891c11f423
+mozilla-django-oidc==2.0.0 \
+    --hash=sha256:53c39755b667e8c5923b1dffc3c29673198d03aa107aa42ac86b8a38b4720c25 \
+    --hash=sha256:a8b2f27c69c122d2f4d801c3759761d33debf06ae9dabbab8aed82887bba3bb8
     # via -r requirements.in
 mypy-extensions==0.4.3 \
     --hash=sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d \
@@ -643,7 +643,6 @@ six==1.16.0 \
     #   elasticsearch-dsl
     #   isodate
     #   jsonschema
-    #   mozilla-django-oidc
     #   oauth2client
     #   pyopenssl
     #   python-dateutil
