@@ -648,6 +648,29 @@ class TestDatesAndTimesRule:
             'non-integer value of "SecondsSinceLastCrash"'
         ]
 
+    def test_absent_seconds_since_last_crash(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash.pop("SecondsSinceLastCrash")
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = DatesAndTimesRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
+        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
+        )
+        assert processed_crash["crash_time"] == 1336519554
+        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
+        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["install_age"] == 1079662
+        assert processed_crash["uptime"] == 20116
+        assert processed_crash["last_crash"] is None
+        assert processor_meta["processor_notes"] == []
+
 
 class TestMacCrashInfoRule:
     @pytest.mark.parametrize(
