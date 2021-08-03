@@ -275,7 +275,9 @@ class DatesAndTimesRule(Rule):
         processed_crash["uptime"] = max(0, crash_time - startup_time)
         try:
             last_crash = int(raw_crash["SecondsSinceLastCrash"])
-        except (KeyError, TypeError, ValueError):
+        except KeyError:
+            last_crash = None
+        except (TypeError, ValueError):
             last_crash = None
             processor_notes.append('non-integer value of "SecondsSinceLastCrash"')
         if last_crash and last_crash > MAXINT:
