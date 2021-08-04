@@ -98,9 +98,9 @@ snowballstemmer==2.1.0 \
     --hash=sha256:b51b447bea85f9968c13b650126a888aabd4cb4463fca868ec596826325dedc2 \
     --hash=sha256:e997baa4f2e9139951b6f4c631bad912dfd3c792467e2f03d7239464af90e914
     # via sphinx
-sphinx==4.1.0 \
-    --hash=sha256:4219f14258ca5612a0c85ed9b7222d54da69724d7e9dd92d1819ad1bf65e1ad2 \
-    --hash=sha256:51028bb0d3340eb80bcc1a2d614e8308ac78d226e6b796943daf57920abc1aea
+sphinx==4.1.2 \
+    --hash=sha256:3092d929cd807926d846018f2ace47ba2f3b671b309c7a89cd3306e80c826b13 \
+    --hash=sha256:46d52c6cee13fec44744b8c01ed692c18a640f6910a725cbb938bc36e8d64544
     # via
     #   -r docs/requirements.in
     #   sphinx-rtd-theme
@@ -116,9 +116,9 @@ sphinxcontrib-devhelp==1.0.2 \
     --hash=sha256:8165223f9a335cc1af7ffe1ed31d2871f325254c0423bc0c4c7cd1c1e4734a2e \
     --hash=sha256:ff7f1afa7b9642e7060379360a67e9c41e8f3121f2ce9164266f61b9f4b338e4
     # via sphinx
-sphinxcontrib-htmlhelp==1.0.3 \
-    --hash=sha256:3c0bc24a2c41e340ac37c85ced6dafc879ab485c095b1d65d2461ac2f7cca86f \
-    --hash=sha256:e8f5bb7e31b2dbb25b9cc435c8ab7a79787ebf7f906155729338f3156d93659b
+sphinxcontrib-htmlhelp==2.0.0 \
+    --hash=sha256:d412243dfb797ae3ec2b59eca0e52dac12e75a241bf0e4eb861e450d06c6ed07 \
+    --hash=sha256:f5f8bb2d0d629f398bf47d0d69c07bc13b65f75a81ad9e2f71a63d4b7a2f6db2
     # via sphinx
 sphinxcontrib-jsmath==1.0.1 \
     --hash=sha256:2ec2eaebfb78f3f2078e73666b1415417a116cc848b72e5172e596c871103178 \
@@ -128,9 +128,9 @@ sphinxcontrib-qthelp==1.0.3 \
     --hash=sha256:4c33767ee058b70dba89a6fc5c1892c0d57a54be67ddd3e7875a18d14cba5a72 \
     --hash=sha256:bd9fc24bcb748a8d51fd4ecaade681350aa63009a347a8c14e637895444dfab6
     # via sphinx
-sphinxcontrib-serializinghtml==1.1.4 \
-    --hash=sha256:eaa0eccc86e982a9b939b2b82d12cc5d013385ba5eadcc7e4fed23f4405f77bc \
-    --hash=sha256:f242a81d423f59617a8e5cf16f5d4d74e28ee9a66f9e5b637a18082991db5a9a
+sphinxcontrib-serializinghtml==1.1.5 \
+    --hash=sha256:352a9a00ae864471d3a7ead8d7d79f5fc0b57e8b3f95e9867eb9eb28999b92fd \
+    --hash=sha256:aa5f6de5dfdf809ef505c4895e51ef5c9eac17d0f287933eb49ec495280b6952
     # via sphinx
 urllib3==1.26.5 \
     --hash=sha256:753a0374df26658f99d826cfe40394a686d05985786d946fbe4165b5148f5a7c \
