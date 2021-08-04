@@ -598,6 +598,11 @@ class OOMSignature(Rule):
             if last_error_value == "ERROR_COMMITMENT_LIMIT":
                 return True
 
+        # Check the reason to see if it's one of a few values that indicate an OOM
+        reason = crash_data.get("reason", None)
+        if reason in ["STATUS_FATAL_MEMORY_EXHAUSTION", "STATUS_NO_MEMORY"]:
+            return True
+
         return False
 
     def action(self, crash_data, result):
