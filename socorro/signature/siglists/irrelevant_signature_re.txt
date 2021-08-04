@@ -144,9 +144,16 @@ _ZdlPv
 zero
 
 # Windows-specific fastfail frames
+KiFastSystemCall
 KiRaiseUserExceptionDispatcher
+KiUserApcDispatch
+KiUserApcDispatcher
+KiUserCallbackDispatch
+KiUserCallbackDispatcher
 KiUserExceptionDispatch
 KiUserExceptionDispatcher
+LdrpDispatchUserCallTarget
+LdrpHandleInvalidUserCallTarget
 LdrpICallHandler
 LdrpValidateUserCallTarget
 RtlDispatchException
