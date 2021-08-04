@@ -1147,6 +1147,57 @@ class TestOOMSignature:
         rule = rules.OOMSignature()
         assert rule.predicate(crash_data, result) is True
 
+    @pytest.mark.parametrize(
+        "crashdata, expected",
+        [
+            ({}, False),
+            ({"crashing_thread": 5}, False),
+            ({"crashing_thread": 5, "threads": []}, False),
+            (
+                {
+                    "crashing_thread": 0,
+                    "threads": [
+                        {
+                            "last_error_value": "FOO",
+                        },
+                    ],
+                },
+                False,
+            ),
+            (
+                {
+                    "crashing_thread": 0,
+                    "threads": [
+                        {
+                            "last_error_value": "ERROR_COMMITMENT_LIMIT",
+                        },
+                    ],
+                },
+                True,
+            ),
+        ],
+    )
+    def test_predicate_error_commitment_limit(self, crashdata, expected):
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.OOMSignature()
+        assert rule.predicate(crashdata, result) is expected
+
+    @pytest.mark.parametrize(
+        "reason, expected",
+        [
+            ("FOO", False),
+            ("STATUS_NO_MEMORY", True),
+            ("STATUS_FATAL_MEMORY_EXHAUSTION", True),
+        ],
+    )
+    def test_predicate_reason(self, reason, expected):
+        crash_data = {"reason": reason}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is expected
+
     def test_action_success(self):
         crash_data = {}
         result = generator.Result()

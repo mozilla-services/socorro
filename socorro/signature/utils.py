@@ -83,6 +83,8 @@ def convert_to_crash_data(raw_crash, processed_crash):
         "crashing_thread": glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         ),
+        # string or None
+        "reason": glom(processed_crash, "json_dump.crash_info.type", default=None),
         # list of CStackTrace or None
         "threads": glom(processed_crash, "json_dump.threads", default=None),
         # int or None
