@@ -661,6 +661,7 @@ class ProcessedCrash(SocorroMiddleware):
         "uptime",
         "uuid",
         "version",
+        "windows_error_reporting",
         "Winsock_LSP",
     )
 
@@ -815,6 +816,7 @@ class RawCrash(SocorroMiddleware):
         "Vendor",
         "version",
         "Version",
+        "WindowsErrorReporting",
         "Winsock_LSP",
     )
 

@@ -37,6 +37,7 @@ class CopyFromRawCrashRule(Rule):
     This copies and normalizes crash annotations from the raw crash.
 
     """
+
     FLAGS = [
         ("WindowsErrorReporting", "windows_error_reporting"),
     ]
@@ -51,7 +52,9 @@ class CopyFromRawCrashRule(Rule):
                 if flag_value == "1":
                     processed_crash[processed_key] = "1"
                 else:
-                    processor_meta["processor_notes"].append(f"{raw_key} has non-1 value")
+                    processor_meta["processor_notes"].append(
+                        f"{raw_key} has non-1 value"
+                    )
 
 
 class ConvertModuleSignatureInfoRule(Rule):
