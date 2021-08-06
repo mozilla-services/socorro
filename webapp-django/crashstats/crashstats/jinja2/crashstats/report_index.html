@@ -214,6 +214,14 @@
                     </td>
                   </tr>
                 {% endif %}
+                {% if report.windows_error_reporting == "1" %}
+                  <tr title="{{ fields_desc['processed_crash.windows_error_reporting'] }}">
+                    <th scope="row">Windows Error Reporting</th>
+                    <td>
+                      <pre>{{ report.windows_error_reporting }}</pre>
+                    </td>
+                  </tr>
+                {% endif %}
 
                 {# Hardware #}
 
