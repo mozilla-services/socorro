@@ -175,9 +175,13 @@ class TestCopyFromRawCrashRule:
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == []
 
-    @pytest.mark.parametrize("flag", CopyFromRawCrashRule.FLAGS)
-    def test_flags(self, flag):
-        raw_key, processed_key = flag
+    @pytest.mark.parametrize(
+        "field_data",
+        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "flag"],
+    )
+    def test_flag(self, field_data):
+        value_type, raw_key, processed_key = field_data
+
         rule = CopyFromRawCrashRule()
 
         raw_crash = {raw_key: "1"}
@@ -197,6 +201,51 @@ class TestCopyFromRawCrashRule:
         assert raw_crash == {raw_key: "foo"}
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == [f"{raw_key} has non-1 value"]
+
+    @pytest.mark.parametrize(
+        "field_data",
+        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "int"],
+    )
+    def test_int(self, field_data):
+        value_type, raw_key, processed_key = field_data
+
+        rule = CopyFromRawCrashRule()
+
+        raw_crash = {raw_key: "1"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {raw_key: "1"}
+        assert processed_crash == {processed_key: 1}
+        assert processor_meta["processor_notes"] == []
+
+        raw_crash = {raw_key: "foo"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {raw_key: "foo"}
+        assert processed_crash == {}
+        assert processor_meta["processor_notes"] == [f"{raw_key} has a non-int value"]
+
+    @pytest.mark.parametrize(
+        "field_data",
+        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "string"],
+    )
+    def test_string(self, field_data):
+        value_type, raw_key, processed_key = field_data
+
+        rule = CopyFromRawCrashRule()
+
+        raw_crash = {raw_key: "123"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {raw_key: "123"}
+        assert processed_crash == {processed_key: "123"}
+        assert processor_meta["processor_notes"] == []
 
 
 class TestConvertModuleSignatureInfoRule:
