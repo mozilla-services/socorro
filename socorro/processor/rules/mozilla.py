@@ -38,16 +38,31 @@ class CopyFromRawCrashRule(Rule):
 
     """
 
-    FLAGS = [
-        ("WindowsErrorReporting", "windows_error_reporting"),
+    FIELDS = [
+        # type, crash annotation name, processed crash key
+        # windows error reporting flag
+        ("flag", "WindowsErrorReporting", "windows_error_reporting"),
+        # Mac memory pressure annotations
+        ("int", "MacMemoryPressureSysctl", "mac_memory_pressure_sysctl"),
+        ("int", "MacAvailableMemorySysctl", "mac_available_memory_sysctl"),
+        ("string", "MacMemoryPressure", "mac_memory_pressure"),
+        ("string", "MacMemoryPressureNormalTime", "mac_memory_pressure_normal_time"),
+        ("string", "MacMemoryPressureWarningTime", "mac_memory_pressure_warning_time"),
+        (
+            "string",
+            "MacMemoryPressureCriticalTime",
+            "mac_memory_pressure_critical_time",
+        ),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # FIXME(willkg): This is currently hard-coded. We should change it to work from
         # a schema.
 
-        for raw_key, processed_key in self.FLAGS:
-            if raw_key in raw_crash:
+        for value_type, raw_key, processed_key in self.FIELDS:
+            if raw_key not in raw_crash:
+                continue
+            if value_type == "flag":
                 flag_value = raw_crash[raw_key]
                 if flag_value == "1":
                     processed_crash[processed_key] = "1"
@@ -55,6 +70,17 @@ class CopyFromRawCrashRule(Rule):
                     processor_meta["processor_notes"].append(
                         f"{raw_key} has non-1 value"
                     )
+
+            elif value_type == "int":
+                try:
+                    processed_crash[processed_key] = int(raw_crash[raw_key])
+                except ValueError:
+                    processor_meta["processor_notes"].append(
+                        f"{raw_key} has a non-int value"
+                    )
+
+            elif value_type == "string":
+                processed_crash[processed_key] = raw_crash[raw_key]
 
 
 class ConvertModuleSignatureInfoRule(Rule):

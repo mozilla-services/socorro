@@ -436,8 +436,8 @@ def get_fields_by_item(fields, key, val):
 def flag_field(
     name,
     description,
-    namespace,
-    in_database_name,
+    namespace="processed_crash",
+    in_database_name="",
     is_protected=True,
 ):
     """Generates a flag field.
@@ -450,11 +450,23 @@ def flag_field(
     These can be searched and aggregated, but documents that are missing the field won't
     show up in aggregations.
 
+    :param name: the name used to query the field in super search
+    :param description: the description of this field; if this is a crash annotation,
+        you can copy the annotation description
+    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
+        to a model where we pull everything from the processed_crash, so prefer that
+    :param in_database_name: the field in the processed crash to pull this data from
+    :param is_protected: whether or not this is protected data
+
+    :returns: super search field specification as a dict
+
     """
     if is_protected:
         permissions_needed = ["crashstats.view_pii"]
     else:
         permissions_needed = []
+
+    in_database_name = in_database_name or name
 
     return {
         "name": name,
@@ -469,6 +481,105 @@ def flag_field(
         "query_type": "bool",
         "permissions_needed": permissions_needed,
         "storage_mapping": {"type": "boolean"},
+    }
+
+
+def keyword_field(
+    name,
+    description,
+    namespace="processed_crash",
+    in_database_name="",
+    choices=None,
+    is_protected=True,
+):
+    """Generates a keyword field.
+
+    Keyword field values are analyzed as a single token. This is good for ids, product
+    names, fields that have a limited set of choices, etc.
+
+    :param name: the name used to query the field in super search
+    :param description: the description of this field; if this is a crash annotation,
+        you can copy the annotation description
+    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
+        to a model where we pull everything from the processed_crash, so prefer that
+    :param in_database_name: the field in the processed crash to pull this data from
+    :param choices: a list of valid values for the dropdown
+    :param is_protected: whether or not this is protected data
+
+    :returns: super search field specification as a dict
+
+    """
+
+    if is_protected:
+        permissions_needed = ["crashstats.view_pii"]
+    else:
+        permissions_needed = []
+
+    in_database_name = in_database_name or name
+
+    choices = choices or []
+
+    return {
+        "name": name,
+        "description": description,
+        "data_validation_type": "str",
+        "form_field_choices": choices,
+        "has_full_version": False,
+        "namespace": namespace,
+        "in_database_name": in_database_name,
+        "is_exposed": True,
+        "is_returned": True,
+        "permissions_needed": permissions_needed,
+        "query_type": "string",
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+    }
+
+
+def number_field(
+    name,
+    description,
+    namespace="processed_crash",
+    in_database_name="",
+    number_type="integer",
+    is_protected=True,
+):
+    """Generates a numeric field.
+
+    :param name: the name used to query the field in super search
+    :param description: the description of this field; if this is a crash annotation,
+        you can copy the annotation description
+    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
+        to a model where we pull everything from the processed_crash, so prefer that
+    :param in_database_name: the field in the processed crash to pull this data from
+    :param number_type: "short", "integer", "long", "double"
+    :param is_protected: whether or not this is protected data
+
+    :returns: super search field specification as a dict
+
+    """
+    if is_protected:
+        permissions_needed = ["crashstats.view_pii"]
+    else:
+        permissions_needed = []
+
+    in_database_name = in_database_name or name
+
+    if number_type not in ["short", "integer", "long", "double"]:
+        raise ValueError(f"number_type {number_type} is not valid")
+
+    return {
+        "name": name,
+        "description": description,
+        "data_validation_type": "int",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "namespace": namespace,
+        "in_database_name": in_database_name,
+        "is_exposed": True,
+        "is_returned": True,
+        "query_type": "number",
+        "permissions_needed": permissions_needed,
+        "storage_mapping": {"type": number_type},
     }
 
 
@@ -2256,6 +2367,39 @@ FIELDS = {
             "type": "string",
         },
     },
+    "mac_available_memory_sysctl": number_field(
+        name="mac_available_memory_sysctl",
+        description=(
+            "The value of the available memory sysctl 'kern.memorystatus_level'. "
+            "Expected to be a percentage integer value."
+        ),
+        number_type="integer",
+        is_protected=False,
+    ),
+    "mac_memory_pressure": keyword_field(
+        name="mac_memory_pressure",
+        description=(
+            "The current memory pressure state as provided by the macOS memory "
+            'pressure dispatch source. The annotation value is one of "Normal" '
+            'for no memory pressure, "Unset" indicating a memory pressure event '
+            'has not been received, "Warning" or "Critical" mapping to the system '
+            'memory pressure levels, or "Unexpected" for an unexpected level. This '
+            "is a Mac-specific annotation."
+        ),
+        choices=["Normal", "Unset", "Warning", "Critical", "Unexpected"],
+        is_protected=False,
+    ),
+    "mac_memory_pressure_sysctl": number_field(
+        name="mac_memory_pressure_sysctl",
+        description=(
+            "The value of the memory pressure sysctl "
+            "'kern.memorystatus_vm_pressure_level'. Indicates which memory pressure "
+            "level the system is in at the time of the crash. The expected values "
+            "are one of 4 (Critical), 2 (Warning), or 0 (Normal)."
+        ),
+        number_type="integer",
+        is_protected=False,
+    ),
     "major_version": {
         "data_validation_type": "int",
         "description": "Major part of the version",
@@ -3476,8 +3620,6 @@ FIELDS = {
             "Set to 1 if this crash was intercepted via the Windows Error Reporting "
             "runtime exception module."
         ),
-        namespace="processed_crash",
-        in_database_name="windows_error_reporting",
         is_protected=False,
     ),
     "winsock_lsp": {
