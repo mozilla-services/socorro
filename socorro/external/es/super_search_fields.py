@@ -433,6 +433,45 @@ def get_fields_by_item(fields, key, val):
     return fields
 
 
+def flag_field(
+    name,
+    description,
+    namespace,
+    in_database_name,
+    is_protected=True,
+):
+    """Generates a flag field.
+
+    Flag fields are one of a few things:
+
+    1. a boolean value that is either true and false
+    2. a crash annotation flag that is "1" or missing
+
+    These can be searched and aggregated, but documents that are missing the field won't
+    show up in aggregations.
+
+    """
+    if is_protected:
+        permissions_needed = ["crashstats.view_pii"]
+    else:
+        permissions_needed = []
+
+    return {
+        "name": name,
+        "description": description,
+        "data_validation_type": "bool",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "namespace": namespace,
+        "in_database_name": in_database_name,
+        "is_exposed": True,
+        "is_returned": True,
+        "query_type": "bool",
+        "permissions_needed": permissions_needed,
+        "storage_mapping": {"type": "boolean"},
+    }
+
+
 # Tree of super search fields
 FIELDS = {
     "ActiveExperiment": {
@@ -3431,6 +3470,16 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
+    "windows_error_reporting": flag_field(
+        name="windows_error_reporting",
+        description=(
+            "Set to 1 if this crash was intercepted via the Windows Error Reporting "
+            "runtime exception module."
+        ),
+        namespace="processed_crash",
+        in_database_name="windows_error_reporting",
+        is_protected=False,
+    ),
     "winsock_lsp": {
         "data_validation_type": "str",
         "description": (

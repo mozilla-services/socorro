@@ -36,6 +36,7 @@ from socorro.processor.rules.mozilla import (
     BetaVersionRule,
     BreadcrumbsRule,
     ConvertModuleSignatureInfoRule,
+    CopyFromRawCrashRule,
     DatesAndTimesRule,
     EnvironmentRule,
     ESRVersionRewrite,
@@ -191,10 +192,11 @@ class ProcessorPipeline(RequiredConfig):
                 # rules to change the internals of the raw crash
                 FenixVersionRewriteRule(),
                 ESRVersionRewrite(),
-                ProcessTypeRule(),
                 PluginContentURL(),
                 PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
+                CopyFromRawCrashRule(),
+                ProcessTypeRule(),
                 IdentifierRule(),
                 MinidumpSha256Rule(),
                 BreakpadStackwalkerRule2015(
