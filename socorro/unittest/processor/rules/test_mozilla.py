@@ -17,6 +17,7 @@ from socorro.processor.rules.mozilla import (
     BetaVersionRule,
     BreadcrumbsRule,
     ConvertModuleSignatureInfoRule,
+    CopyFromRawCrashRule,
     DatesAndTimesRule,
     ESRVersionRewrite,
     EnvironmentRule,
@@ -160,6 +161,42 @@ canonical_processed_crash = {
         ],
     }
 }
+
+
+class TestCopyFromRawCrashRule:
+    def test_empty(self):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule = CopyFromRawCrashRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {}
+        assert processed_crash == {}
+        assert processor_meta["processor_notes"] == []
+
+    @pytest.mark.parametrize("flag", CopyFromRawCrashRule.FLAGS)
+    def test_flags(self, flag):
+        raw_key, processed_key = flag
+        rule = CopyFromRawCrashRule()
+
+        raw_crash = {raw_key: "1"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {raw_key: "1"}
+        assert processed_crash == {processed_key: "1"}
+        assert processor_meta["processor_notes"] == []
+
+        raw_crash = {raw_key: "foo"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {raw_key: "foo"}
+        assert processed_crash == {}
+        assert processor_meta["processor_notes"] == [f"{raw_key} has non-1 value"]
 
 
 class TestConvertModuleSignatureInfoRule:

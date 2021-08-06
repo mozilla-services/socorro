@@ -31,6 +31,29 @@ from socorro.signature.utils import convert_to_crash_data
 MAXINT = 9223372036854775807
 
 
+class CopyFromRawCrashRule(Rule):
+    """Copy data from raw crash to processed crash with correct name
+
+    This copies and normalizes crash annotations from the raw crash.
+
+    """
+    FLAGS = [
+        ("WindowsErrorReporting", "windows_error_reporting"),
+    ]
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        # FIXME(willkg): This is currently hard-coded. We should change it to work from
+        # a schema.
+
+        for raw_key, processed_key in self.FLAGS:
+            if raw_key in raw_crash:
+                flag_value = raw_crash[raw_key]
+                if flag_value == "1":
+                    processed_crash[processed_key] = "1"
+                else:
+                    processor_meta["processor_notes"].append(f"{raw_key} has non-1 value")
+
+
 class ConvertModuleSignatureInfoRule(Rule):
     """Make ModuleSignatureInfo to a string.
 
