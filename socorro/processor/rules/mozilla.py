@@ -183,14 +183,7 @@ class PluginRule(Rule):
     """Handle plugin-related things and hang_type."""
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        try:
-            plugin_hang_as_int = int(raw_crash.get("PluginHang", False))
-        except ValueError:
-            plugin_hang_as_int = 0
-        if plugin_hang_as_int:
-            processed_crash["hangid"] = "fake-" + raw_crash["uuid"]
-        else:
-            processed_crash["hangid"] = raw_crash.get("HangID", None)
+        processed_crash["hangid"] = raw_crash.get("HangID", None)
 
         # the processed_crash["hang_type"] has the following meaning:
         #
@@ -202,10 +195,9 @@ class PluginRule(Rule):
             hang_as_int = int(raw_crash.get("Hang", False))
         except ValueError:
             hang_as_int = 0
+
         if hang_as_int:
             processed_crash["hang_type"] = 1
-        elif plugin_hang_as_int:
-            processed_crash["hang_type"] = -1
         elif processed_crash["hangid"]:
             processed_crash["hang_type"] = -1
         else:
