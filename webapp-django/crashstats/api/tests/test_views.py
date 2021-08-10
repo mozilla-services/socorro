@@ -340,8 +340,6 @@ class TestViews(BaseTestViews):
                     "buildid": "20130422105838",
                     "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
                     "CrashTime": "1366703112",
-                    "FramePoisonBase": "7ffffffff0dea000",
-                    "FramePoisonSize": "4096",
                     "StartupTime": "1366702830",
                     "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
                     "BuildID": "20130422105838",

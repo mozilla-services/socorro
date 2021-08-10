@@ -61,9 +61,7 @@ canonical_standard_raw_crash = {
         "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
         "%SystemRoot%\\system32\\mswsock.dll"
     ),
-    "FramePoisonBase": "00000000f0de0000",
     "AvailablePhysicalMemory": "2227773440",
-    "FramePoisonSize": "65536",
     "StartupTime": "1336499438",
     "Add-ons": (
         "adblockpopups@jessehakanen.net:0.3,"

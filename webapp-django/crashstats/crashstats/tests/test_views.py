@@ -24,7 +24,6 @@ from socorro.external.crashstorage_base import CrashIDNotFound
 
 _SAMPLE_META = {
     "InstallTime": "1339289895",
-    "FramePoisonSize": "4096",
     "Theme": "classic/1.0",
     "Version": "5.0a1",
     "Vendor": "Mozilla",
@@ -622,7 +621,6 @@ class TestViews(BaseTestViews):
             if params["datatype"] == "meta":
                 return {
                     "InstallTime": "1339289895",
-                    "FramePoisonSize": "4096",
                     "Theme": "classic/1.0",
                     "Version": "5.0a1",
                     "Vendor": "Mozilla",

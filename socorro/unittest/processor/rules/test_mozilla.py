@@ -96,9 +96,7 @@ canonical_standard_raw_crash = {
         "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
         "%SystemRoot%\\system32\\mswsock.dll"
     ),
-    "FramePoisonBase": "00000000f0de0000",
     "AvailablePhysicalMemory": "2227773440",
-    "FramePoisonSize": "65536",
     "StartupTime": "1336499438",
     "Add-ons": (
         "adblockpopups@jessehakanen.net:0.3,"
@@ -444,27 +442,6 @@ class TestProcessTypeRule:
 
 
 class TestPluginRule:
-    def test_plugin_hang(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["PluginHang"] = 1
-        raw_crash["Hang"] = 0
-        raw_crash["ProcessType"] = "plugin"
-        raw_crash["PluginFilename"] = "x.exe"
-        raw_crash["PluginName"] = "X"
-        raw_crash["PluginVersion"] = "0.0"
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        rule = PluginRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["hangid"] == "fake-00000000-0000-0000-0000-000002140504"
-        assert processed_crash["hang_type"] == -1
-        assert processed_crash["PluginFilename"] == "x.exe"
-        assert processed_crash["PluginName"] == "X"
-        assert processed_crash["PluginVersion"] == "0.0"
-
     def test_browser_hang(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["Hang"] = 1

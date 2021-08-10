@@ -428,7 +428,6 @@ class TestMiddlewareModels(DjangoTestCase):
         def mocked_get(**params):
             return {
                 "InstallTime": "1339289895",
-                "FramePoisonSize": "4096",
                 "Theme": "classic/1.0",
                 "Version": "5.0a1",
                 "Vendor": "Mozilla",

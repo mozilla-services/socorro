@@ -313,14 +313,6 @@
                     {%- endif %}
                   </td>
                 </tr>
-                {% if raw.FlashProcessDump %}
-                  <tr title="{{ fields_desc['raw_crash.FlashProcessDump'] }}">
-                    <th scope="row">Flash Process Dump</th>
-                    <td>
-                      <pre>{{ raw.FlashProcessDump }}</pre>
-                    </td>
-                  </tr>
-                {% endif %}
                 {% if request.user.has_perm('crashstats.view_pii') %}
                   {% if report.moz_crash_reason_raw %}
                     <tr title="{{ fields_desc['processed_crash.moz_crash_reason_raw'] }}">
