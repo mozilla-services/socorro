@@ -73,6 +73,7 @@ mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x
 MOZ_Assert
 MOZ_Crash
 mozalloc_handle_oom
+mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
 mozcrt19.dll@0x
 mozilla::CondVar::Wait
