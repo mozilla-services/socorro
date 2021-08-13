@@ -81,7 +81,6 @@ gfxPlatform::Init
 __GI___strlen_sse2
 __GI_memcpy
 __GI_strlen
-gkrust_shared::oom_hook::hook
 gsignal
 handle_errorf
 handle_response
