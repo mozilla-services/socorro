@@ -157,6 +157,7 @@ mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
 mozilla::detail::nsTStringRepr<T>::
+mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::MozPromise<T>::ThenCommand<T>::Track
 mozilla::MozPromise<T>::ThenInternal
