@@ -11,7 +11,16 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import sys
+from pathlib import Path
+
 import sphinx_rtd_theme
+
+BASEDIR = Path(__file__).parent.parent
+
+# Insert this directory to pick up extensions
+sys.path.insert(0, str(Path(__file__).parent))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -23,6 +32,7 @@ import sphinx_rtd_theme
 # ones.
 extensions = [
     'sphinx.ext.graphviz',
+    "exts.adr_log",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -88,7 +98,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = ["_static"]
+
+html_css_files = ["css/custom.css"]
 
 # -- Options for HTMLHelp output ------------------------------------------
 
