@@ -21,3 +21,4 @@ Which tool(s) should we use to manage these records?
 ## Decision Outcome
 
 Chosen option: "Log4brains", because it includes the features of all the other tools, and even more.
+Also, if you don't want to install and use log4brains, you can manually create, edit, and work with ADR files.
