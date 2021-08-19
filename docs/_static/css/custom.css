@@ -1,0 +1,4 @@
+div.wy-nav-content {
+    /* This forces the content part to not get truncated */
+    max-width: 100% !important;
+}

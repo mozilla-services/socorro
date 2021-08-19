@@ -61,6 +61,7 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    stackwalk
    crashstorage
    crashqueue
+   adr_log
    tests/system_checklist
 
 
