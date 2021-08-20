@@ -1,4 +1,4 @@
-# run stackwalk as subprocess
+# Run stackwalk as subprocess
 
 - Status: accepted
 - Deciders: Will Kahn-Greene, and Socorro team circa 2008
