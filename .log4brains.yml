@@ -1,5 +1,5 @@
 project:
   name: Socorro
-  tz: America/New_York
+  tz: Etc/UTC
   adrFolder: ./docs/adr
   packages: []
