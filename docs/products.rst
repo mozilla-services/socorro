@@ -48,7 +48,7 @@ Make sure crash reports for your product follow our guidelines. Otherwise Crash
 Stats and crash analysis may not work.
 
 If you have any questions, please ask in
-`#breakpad:mozilla.org <https://riot.im/app/#/room/#breakpad:mozilla.org>`_.
+`#crashreporting matrix channel <https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`_.
 
 
 Guidelines for crash report annotations
