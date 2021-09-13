@@ -83,6 +83,7 @@ mozilla::ipc::RPCChannel::Call
 mozilla::ipc::WriteIPDLParam
 mozilla::ipc::IPDLParamTraits<T>::Write
 mozilla::ThreadEventQueue
+mozilla::widget::WlCrashHandler
 nsEventQueue::GetEvent
 _NSRaiseError
 nsThread::GetEvent
