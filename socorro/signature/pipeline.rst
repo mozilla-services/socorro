@@ -62,13 +62,9 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
 
 7. **Rule: SignatureIPCChannelError**
    
-   Either stomp on or prepend signature for IPCError
+   Stomps on signature with shutdownkill signature
    
-   If the IPCError is a ShutDownKill, then this prepends the signature with
-   "IPCError-browser | ShutDownKill".
-   
-   Otherwise it stomps on the signature with "IPCError-browser/content" and the error
-   message.
+   Either "IPCError-browser | ShutDownKill" or "IPCError-content | ShutDownKill".
 
 8. **Rule: SignatureIPCMessageName**
    

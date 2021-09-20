@@ -1529,25 +1529,6 @@ class TestSignatureIPCChannelError:
             "SignatureIPCChannelError: IPC Channel Error stomped on signature"
         ]
 
-    def test_shutdownkill(self):
-        rule = rules.SignatureIPCChannelError()
-
-        original_signature = "foo::bar"
-        crash_data = {
-            "ipc_channel_error": "ShutDownKill",
-            "additional_minidumps": "browser",
-        }
-        result = generator.Result()
-        result.signature = original_signature
-
-        action_result = rule.action(crash_data, result)
-        assert action_result is True
-
-        assert result.signature == "IPCError-browser | ShutDownKill | {}".format(
-            original_signature
-        )
-        assert result.notes == ["SignatureIPCChannelError: IPC Channel Error prepended"]
-
 
 class TestSignatureShutdownTimeout:
     def test_predicate_no_match(self):
