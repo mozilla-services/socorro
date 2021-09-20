@@ -1809,8 +1809,11 @@ class TestOsPrettyName:
     @pytest.mark.parametrize(
         "os_name, os_version, expected",
         [
-            # Known windows version
-            ("Windows NT", "10.0.11.7600", "Windows 10"),
+            # Known windows versions
+            ("Windows NT", "6.1.7601 Service Pack 2", "Windows 7"),
+            ("Windows NT", "6.3.9600 Service Pack 1", "Windows 8.1"),
+            ("Windows NT", "10.0.17758", "Windows 10"),
+            ("Windows NT", "10.0.21996", "Windows 11"),
             # Unknown windows version
             ("Windows NT", "15.2", "Windows Unknown"),
             # A valid version of Mac OS X
