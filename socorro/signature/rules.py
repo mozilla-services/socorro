@@ -809,13 +809,9 @@ class SignatureJitCategory(Rule):
 
 
 class SignatureIPCChannelError(Rule):
-    """Either stomp on or prepend signature for IPCError
+    """Stomps on signature with shutdownkill signature
 
-    If the IPCError is a ShutDownKill, then this prepends the signature with
-    "IPCError-browser | ShutDownKill".
-
-    Otherwise it stomps on the signature with "IPCError-browser/content" and the error
-    message.
+    Either "IPCError-browser | ShutDownKill" or "IPCError-content | ShutDownKill".
 
     """
 
@@ -829,12 +825,7 @@ class SignatureIPCChannelError(Rule):
             new_sig = "IPCError-content | {}"
         new_sig = new_sig.format(crash_data["ipc_channel_error"][:100])
 
-        if crash_data["ipc_channel_error"] == "ShutDownKill":
-            # If it's a ShutDownKill, append the rest of the signature
-            result.info(self.name, "IPC Channel Error prepended")
-            new_sig = f"{new_sig} | {result.signature}"
-        else:
-            result.info(self.name, "IPC Channel Error stomped on signature")
+        result.info(self.name, "IPC Channel Error stomped on signature")
 
         result.set_signature(self.name, new_sig)
         return True
