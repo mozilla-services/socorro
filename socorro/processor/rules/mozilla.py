@@ -960,6 +960,7 @@ class OSPrettyVersionRule(Rule):
         "6.2": "Windows 8",
         "6.3": "Windows 8.1",
         "10.0": "Windows 10",
+        # NOTE(willkg): Windows 11 is 10.0.21996 and higher, so it's not in this map
     }
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
@@ -990,9 +991,15 @@ class OSPrettyVersionRule(Rule):
         minor_version = int(version_split[1])
 
         if os_name.lower().startswith("windows"):
-            processed_crash["os_pretty_version"] = self.WINDOWS_VERSIONS.get(
-                "%s.%s" % (major_version, minor_version), "Windows Unknown"
-            )
+            if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":
+                windows_version = "Windows 11"
+
+            else:
+                windows_version = self.WINDOWS_VERSIONS.get(
+                    "%s.%s" % (major_version, minor_version), "Windows Unknown"
+                )
+
+            processed_crash["os_pretty_version"] = windows_version
             return
 
         elif os_name == "Mac OS X":
