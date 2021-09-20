@@ -104,6 +104,8 @@ panic_abort::
 PR_WaitCondVar
 RaiseException
 RealMsgWaitFor
+_report_gsfailure
+__report_gsfailure
 _rust_alloc_error_handler
 __rust_alloc_error_handler
 rust_oom
