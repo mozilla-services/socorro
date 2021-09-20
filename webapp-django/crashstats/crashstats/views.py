@@ -192,7 +192,7 @@ def report_index(request, crash_id, default_context=None):
         # Add Raw Crash link
         data_urls.append(
             (
-                "raw crash",
+                "crash annotations",
                 "%s?crash_id=%s"
                 % (
                     reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),

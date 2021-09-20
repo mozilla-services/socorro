@@ -964,26 +964,37 @@
           <!-- /modules -->
 
           <div id="rawdump" class="ui-tabs-hide">
-            <h3>Download raw crash, processed crash, minidump, and memory report data</h3>
+            <h3>Download crash annotations, processed crash, minidump, and memory report data</h3>
             {% if request.user.has_perm('crashstats.view_pii') or request.user.has_perm('crashstats.view_rawdump') %}
               <p>
                 {{ protected_warning() }}
-                Raw and processed crash reports contain protected data.
+                Crash annotations and processed crash report contain protected data.
                 Please don't share minidumps with third-parties.
                 See <a href="{{ url('documentation:protected_data_access') }}">Protected data policy</a> for details.
               </p>
-              <ul class="list-inside list-disc">
-                {% if request.user.has_perm('crashstats.view_pii') %}
+              {% if request.user.has_perm('crashstats.view_pii') %}
+                <ul class="list-inside list-disc">
                   {% for name, url in raw_data_urls %}
-                    <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
+                    <li><a href="{{ url }}">{{ name }}</a></li>
                   {% endfor %}
+                </ul>
+              {% endif %}
+              {% if request.user.has_perm('crashstats.view_rawdump') %}
+                {% if raw_dump_urls %}
+                  <p>
+                    Dumps:
+                  </p>
+                  <ul class="list-inside list-disc">
+                    {% for name, url in raw_dump_urls %}
+                      <li><a href="{{ url }}">{{ name }}</a></li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p>
+                    No dumps available.
+                  </p>
                 {% endif %}
-                {% if request.user.has_perm('crashstats.view_rawdump') %}
-                  {% for name, url in raw_dump_urls %}
-                    <li>{{ name }}: <a href="{{ url }}">{{ url }}</a></li>
-                  {% endfor %}
-                {% endif %}
-              </ul>
+              {% endif %}
               {% if request.user.has_perm('crashstats.view_rawdump') and not raw_dump_urls %}
                 <p>
                   There are no dumps or memory report to download.
