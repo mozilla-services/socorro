@@ -33,6 +33,7 @@ exp2
 framework\.odex@0x
 __fixunsdfsi
 __GI___assert_fail
+__GI___pthread_mutex_lock
 g_assertion_message
 g_assertion_message.cold
 g_assertion_message_error
