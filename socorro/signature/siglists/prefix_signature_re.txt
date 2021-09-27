@@ -156,6 +156,7 @@ mozilla::CheckCheckedUnsafePtrs<T>::Check
 mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
+mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
