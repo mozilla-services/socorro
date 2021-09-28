@@ -1165,3 +1165,31 @@ class ModuleURLRewriteRule(Rule):
             # bucket and then the try bucket.
             new_url = f"https://symbols.mozilla.org/try/{debug_filename}/{debug_id}/{symbol_file}"
             module["symbol_url"] = new_url
+
+
+class DistributionIdRule(Rule):
+    """Extracts the distributionId from the Telemetry environment
+
+    The distributorid indicates which vendor built the product. This helps to know
+    in cases where we might be missing symbols or build context is different.
+
+    Bug #1732414
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        try:
+            telemetry = json.loads(raw_crash.get("TelemetryEnvironment", "{}"))
+        except json.JSONDecodeError:
+            telemetry = {}
+
+        # Values for distribution_id:
+        #
+        # * not there -> "unknown"
+        # * null -> "mozilla"
+        # * value of the distributionId field
+        distribution_id = glom(telemetry, "partner.distributionId", default="unknown")
+        if not distribution_id:
+            distribution_id = "mozilla"
+
+        processed_crash["distribution_id"] = distribution_id

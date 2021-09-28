@@ -38,6 +38,7 @@ from socorro.processor.rules.mozilla import (
     ConvertModuleSignatureInfoRule,
     CopyFromRawCrashRule,
     DatesAndTimesRule,
+    DistributionIdRule,
     EnvironmentRule,
     ESRVersionRewrite,
     ExploitablityRule,
@@ -226,6 +227,7 @@ class ProcessorPipeline(RequiredConfig):
                 # post processing of the processed crash
                 CrashingThreadRule(),
                 CPUInfoRule(),
+                DistributionIdRule(),
                 OSInfoRule(),
                 BetaVersionRule(
                     version_string_api=config.betaversion.version_string_api

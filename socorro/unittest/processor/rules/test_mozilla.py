@@ -19,6 +19,7 @@ from socorro.processor.rules.mozilla import (
     ConvertModuleSignatureInfoRule,
     CopyFromRawCrashRule,
     DatesAndTimesRule,
+    DistributionIdRule,
     ESRVersionRewrite,
     EnvironmentRule,
     ExploitablityRule,
@@ -2083,7 +2084,7 @@ class TestSignatureGeneratorRule:
 class TestPHCRule:
     def test_predicate(self):
         rule = PHCRule()
-        assert rule.predicate({}, (), {}, {}) is False
+        assert rule.predicate({}, {}, {}, {}) is False
 
     @pytest.mark.parametrize(
         "base_address, expected",
@@ -2096,7 +2097,7 @@ class TestPHCRule:
 
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, (), processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, {})
         if expected is None:
             assert "phc_base_address" not in processed_crash
         else:
@@ -2112,7 +2113,7 @@ class TestPHCRule:
 
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, (), processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, {})
         if expected is None:
             assert "phc_usable_size" not in processed_crash
         else:
@@ -2128,7 +2129,7 @@ class TestPHCRule:
         }
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, (), processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, {})
         assert processed_crash == {
             "phc_kind": "FreedPage",
             "phc_usable_size": 8,
@@ -2136,3 +2137,42 @@ class TestPHCRule:
             "phc_alloc_stack": "100,200",
             "phc_free_stack": "300,400",
         }
+
+
+class TestDistributionIdRule:
+    def test_no_telemetry(self):
+        processed_crash = {}
+        rule = DistributionIdRule()
+        rule.action({}, {}, processed_crash, {})
+        assert processed_crash["distribution_id"] == "unknown"
+
+    @pytest.mark.parametrize(
+        "telemetry_value",
+        [
+            # Invalid JSON
+            "null",
+            "foo{",
+            # Valid JSON, but missing value
+            "{}",
+            '{"partner": {}}',
+        ],
+    )
+    def test_telemetry_values_unknown(self, telemetry_value):
+        processed_crash = {}
+        rule = DistributionIdRule()
+        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        assert processed_crash["distribution_id"] == "unknown"
+
+    def test_telemetry_value_mozilla(self):
+        telemetry_value = '{"partner": {"distributionId": null}}'
+        processed_crash = {}
+        rule = DistributionIdRule()
+        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        assert processed_crash["distribution_id"] == "mozilla"
+
+    def test_telemetry_value_mint(self):
+        telemetry_value = '{"partner": {"distributionId": "mint"}}'
+        processed_crash = {}
+        rule = DistributionIdRule()
+        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        assert processed_crash["distribution_id"] == "mint"
