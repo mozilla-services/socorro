@@ -1541,6 +1541,20 @@ FIELDS = {
             "type": "date",
         },
     },
+    "distribution_id": {
+        "data_validation_type": "enum",
+        "description": "The TelemetryEnvironment.partner.distributionId value.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "distribution_id",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "distribution_id",
+        "namespace": "processed_crash",
+        "permissions_needed": [],
+        "query_type": "enum",
+        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+    },
     "dom_fission_enabled": {
         "data_validation_type": "str",
         "description": (
