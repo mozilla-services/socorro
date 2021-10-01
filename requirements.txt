@@ -15,9 +15,9 @@ awscli==1.19.110 \
     --hash=sha256:71ff0e07dd3b3dfbb702c4257054e0305e9157c87a3a7ca326aa23c41c67a586 \
     --hash=sha256:f2f51ce0f54acb4aa09c1020e7fa0b3827f9758c0f1a59969f184a7aecdb0a38
     # via -r requirements.in
-black==21.8b0 \
-    --hash=sha256:2a0f9a8c2b2a60dbcf1ccb058842fb22bdbbcb2f32c6cc02d9578f90b92ce8b7 \
-    --hash=sha256:570608d28aa3af1792b98c4a337dbac6367877b47b12b88ab42095cfc1a627c2
+black==21.9b0 \
+    --hash=sha256:380f1b5da05e5a1429225676655dddb96f5ae8c75bdf91e53d798871b902a115 \
+    --hash=sha256:7de4cfc7eb6b710de325712d40125689101d21d25283eed7e9998722cf10eb91
     # via -r requirements.in
 boltons==21.0.0 \
     --hash=sha256:65e70a79a731a7fe6e98592ecfb5ccf2115873d01dbc576079874629e5c90f13 \
