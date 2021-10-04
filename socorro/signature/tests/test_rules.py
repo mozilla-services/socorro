@@ -1175,6 +1175,17 @@ class TestOOMSignature:
                 },
                 True,
             ),
+            (
+                {
+                    "crashing_thread": 0,
+                    "threads": [
+                        {
+                            "last_error_value": "ERROR_NOT_ENOUGH_MEMORY",
+                        },
+                    ],
+                },
+                True,
+            ),
         ],
     )
     def test_predicate_error_commitment_limit(self, crashdata, expected):
