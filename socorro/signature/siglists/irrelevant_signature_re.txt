@@ -45,9 +45,13 @@ GetLCIDFromLangListNodeWithLICCheck
 gfxPlatform::GetPlatform
 gkrust_shared::oom_hook::hook
 _g_log_abort
+g_log
+g_log_default_handler
+g_log_structured
 g_log_structured_array
 g_log_structured_standard
 g_log_writer_default
+g_logv
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
