@@ -577,6 +577,18 @@ class OOMSignature(Rule):
         "alloc::oom::oom",
     )
 
+    # These reason values indicate an OOM
+    oom_reason = [
+        "STATUS_FATAL_MEMORY_EXHAUSTION",
+        "STATUS_NO_MEMORY",
+    ]
+
+    # These last_error_value values indicate an OOM
+    oom_last_error_value = [
+        "ERROR_COMMITMENT_LIMIT",
+        "ERROR_NOT_ENOUGH_MEMORY",
+    ]
+
     def predicate(self, crash_data, result):
         if crash_data.get("oom_allocation_size"):
             return True
@@ -595,12 +607,12 @@ class OOMSignature(Rule):
         thread = glom(crash_data, "threads.%d" % crashing_thread, default={})
         if thread:
             last_error_value = thread.get("last_error_value", "")
-            if last_error_value == "ERROR_COMMITMENT_LIMIT":
+            if last_error_value in self.oom_last_error_value:
                 return True
 
         # Check the reason to see if it's one of a few values that indicate an OOM
         reason = crash_data.get("reason", None)
-        if reason in ["STATUS_FATAL_MEMORY_EXHAUSTION", "STATUS_NO_MEMORY"]:
+        if reason in self.oom_reason:
             return True
 
         return False
