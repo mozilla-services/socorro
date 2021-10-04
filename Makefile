@@ -119,3 +119,8 @@ test-ci: my.env .docker-build  ## | Run unit tests in CI.
 .PHONY: testshell
 testshell: my.env .docker-build  ## | Open a shell in the test environment.
 	${DC} run --rm test shell
+
+.PHONY: rebuildreqs
+rebuildreqs: my.env .docker-build  ## | Rebuild requirements.txt file.
+	-rm requirements.txt
+	${DC} run --rm app shell pip-compile --generate-hashes
