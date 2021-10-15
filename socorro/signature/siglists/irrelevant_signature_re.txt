@@ -137,6 +137,7 @@ std::_Atomic_fetch_add_4
 std::alloc::rust_oom
 std::io::stdio::_eprint
 std::panicking::
+std::sys_common::backtrace::__rust_end_short_backtrace<T>
 std::__terminate
 std::terminate
 system@framework@.*\.jar@classes\.dex@0x
