@@ -3276,4 +3276,13 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    "xpcom_spin_event_loop_stack": keyword_field(
+        name="xpcom_spin_event_loop_stack",
+        description=(
+            "If we crash while some code is spinning manually the event loop, we will "
+            "see the stack of nested annotations here."
+        ),
+        in_database_name="xpcom_spin_event_loop_stack",
+        is_protected=False,
+    ),
 }
