@@ -823,6 +823,7 @@ class RawCrash(SocorroMiddleware):
         "Version",
         "WindowsErrorReporting",
         "Winsock_LSP",
+        "XPCOMSpinEventLoopStack",
     )
 
     # The reason we use the old list and pass it into the more dynamic wrapper

@@ -53,6 +53,12 @@ class CopyFromRawCrashRule(Rule):
             "MacMemoryPressureCriticalTime",
             "mac_memory_pressure_critical_time",
         ),
+        # Other things
+        (
+            "string",
+            "XPCOMSpinEventLoopStack",
+            "xpcom_spin_event_loop_stack",
+        ),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
