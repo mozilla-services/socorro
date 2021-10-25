@@ -42,7 +42,7 @@ Releases
 
 We use continuous development and we release often. See our list of releases:
 
-https://github.com/mozilla-services/socorro/releases
+https://github.com/mozilla-services/socorro/tags
 
 
 Communication
