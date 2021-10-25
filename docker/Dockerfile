@@ -1,4 +1,36 @@
+# =========================================================================
+# Dokcer image with minidump-stackwalk
+# =========================================================================
+
 FROM mozilla/socorro-minidump-stackwalk:2021.09.20@sha256:11dab7a81b6ff64ac16276ff1b1bd901b66cf61dce6cbfe1fbeb52b3508ac4d0 as breakpad
+RUN ls -al /stackwalk/
+
+
+# =========================================================================
+# Dokcer image with https://github.com/luser/rust-minidump
+# =========================================================================
+
+FROM rust:1.56-buster@sha256:b197d91205475e139d6c7f8782239e0d4160222039d2c66ec9ee80658123129c as rustminidump
+
+RUN update-ca-certificates
+ARG groupid=10001
+ARG userid=10001
+
+WORKDIR /app/
+
+RUN groupadd --gid $groupid app && \
+    useradd -g app --uid $userid --shell /usr/sbin/nologin --create-home app && \
+    chown app:app /app/
+
+USER app
+
+RUN cargo install minidump-stackwalk --root=/app/ --version 0.9.0
+RUN ls -al /app/bin/
+
+
+# =========================================================================
+# Building app image
+# =========================================================================
 
 FROM python:3.9.7-slim@sha256:cd1045dbabff11dab74379e25f7974aa7638bc5ad46755d67d0f1f1783aee101
 
@@ -17,6 +49,9 @@ RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 
 # Copy stackwalk bits from mozilla/socorro-minidump-stackwalk image
 COPY --from=breakpad /stackwalk/* /stackwalk/
+
+# Copy stackwalk bits from rust-minidump minidump-stackwalker
+COPY --from=rustminidump /app/bin/* /stackwalk-rust/
 
 # Install frontend JS deps
 COPY ./webapp-django/package*.json /webapp-frontend-deps/
