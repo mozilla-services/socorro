@@ -49,7 +49,7 @@ class OutputBase:
         :arg str line: the line to print to stderr
 
         """
-        print("WARNING: %s" % line, file=sys.stderr)
+        print(f"WARNING: {line}" % line, file=sys.stderr)
 
     def separator(self):
         """Output a separator between two crash signature generations"""
@@ -69,19 +69,31 @@ class OutputBase:
 
 class TextOutput(OutputBase):
     def data(self, crash_id, old_sig, result, verbose):
-        print("Crash id: %s" % crash_id)
-        print("Original: %s" % old_sig)
-        print("New:      %s" % result.signature)
-        print("Same?:    %s" % (old_sig == result.signature))
+        print(f"Crash id: {crash_id}")
+        print(f"Original: {old_sig}")
+        print(f"New:      {result.signature}")
+        print(f"Same?:    {old_sig == result.signature}")
 
         if result.notes:
-            print("Notes:    (%d)" % len(result.notes))
+            print(f"Notes:    ({len(result.notes)})")
             for note in result.notes:
-                print("          %s" % note)
-        if verbose and result.debug_log:
-            print("Debug:    (%d)" % len(result.debug_log))
-            for item in result.debug_log:
-                print("          %s" % item)
+                print(f"          {note}")
+        if verbose:
+            if result.debug_log:
+                print(f"Debug:    ({len(result.debug_log)})")
+                for item in result.debug_log:
+                    print(f"          {item}")
+
+            extra_items = list(sorted(result.extra.items()))
+            if extra_items:
+                print("Extra:")
+                for key, val in extra_items:
+                    if isinstance(val, list):
+                        print(f"          {key}:")
+                        for item in val:
+                            print(f"          - {item}")
+                    else:
+                        print(f"          {key}: {val}")
 
     def separator(self):
         print("")
@@ -112,20 +124,27 @@ class MarkdownOutput(OutputBase):
     """Output in Markdown for use in Bugzilla and GitHub"""
 
     def data(self, crash_id, old_sig, result, verbose):
+        def fix(s):
+            return s.replace("`", "\\`")
+
         print(
             "**Crash id:** [%s](https://crash-stats.mozilla.org/report/index/%s)"
             % (crash_id, crash_id)
         )
-        print("**Original:** `%s`" % old_sig.replace("`", "\\`"))
-        print("**New:** `%s`" % result.signature.replace("`", "\\`"))
-        print("**Same?:** %s" % str(old_sig == result.signature))
-        print("**Notes** (%d)" % len(result.notes))
-        for note in result.notes:
-            print("* %s" % note)
+        print(f"**Original:** `{fix(old_sig)}`")
+        print(f"**New:** `{fix(result.signature)}`")
+        print(f"**Same?:** {old_sig == result.signature}")
+        print(f"**Notes:** ({len(result.notes)})")
+        print("")
+        if result.notes:
+            for note in result.notes:
+                print(f"* {note}")
+            print("")
         if verbose and result.debug_log:
-            print("**Debug:** (%d)" % len(result.debug_log))
+            print(f"**Debug:** ({len(result.debug_log)})")
+            print("")
             for note in result.debug_log:
-                print("* %s" % note)
+                print(f"* {note}")
 
     def separator(self):
         print("")
@@ -198,22 +217,22 @@ def main(argv=None):
             crash_id = crash_id.strip()
             parsed_crash_id = parse_crashid(crash_id)
             if not parsed_crash_id:
-                out.warning("Error: %r is not a valid crash id" % crash_id)
+                out.warning(f"Error: {crash_id} is not a valid crash id")
                 continue
 
             crash_id = parsed_crash_id
 
             resp = fetch("/RawCrash/", crash_id, api_token)
             if resp.status_code == 404:
-                out.warning("%s: does not exist." % crash_id)
+                out.warning(f"{crash_id}: does not exist.")
                 continue
             if resp.status_code == 429:
-                out.warning("API rate limit reached. %s" % resp.content)
+                out.warning(f"API rate limit reached. {resp.content}")
                 # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
                 # few minutes.
                 return 1
             if resp.status_code == 500:
-                out.warning("HTTP 500: %s" % resp.content)
+                out.warning(f"HTTP 500: {resp.content}")
                 continue
 
             raw_crash = resp.json()
@@ -221,20 +240,20 @@ def main(argv=None):
             # If there's an error in the raw crash, then something is wrong--probably with the API
             # token. So print that out and exit.
             if "error" in raw_crash:
-                out.warning("Error fetching raw crash: %s" % raw_crash["error"])
+                out.warning(f"Error fetching raw crash: {raw_crash['error']}")
                 return 1
 
             resp = fetch("/ProcessedCrash/", crash_id, api_token)
             if resp.status_code == 404:
-                out.warning("%s: does not have processed crash." % crash_id)
+                out.warning(f"{crash_id}: does not have processed crash.")
                 continue
             if resp.status_code == 429:
-                out.warning("API rate limit reached. %s" % resp.content)
+                out.warning(f"API rate limit reached. {resp.content}")
                 # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
                 # few minutes.
                 return 1
             if resp.status_code == 500:
-                out.warning("HTTP 500: %s" % resp.content)
+                out.warning(f"HTTP 500: {resp.content}")
                 continue
 
             processed_crash = resp.json()
@@ -243,7 +262,7 @@ def main(argv=None):
             # API token. So print that out and exit.
             if "error" in processed_crash:
                 out.warning(
-                    "Error fetching processed crash: %s" % processed_crash["error"]
+                    f"Error fetching processed crash: {processed_crash['error']}"
                 )
                 return 1
 
