@@ -975,6 +975,7 @@ class TestSignatureGenerationRule:
         expected = "SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)"
         assert result.signature == expected
         assert "proto_signature" not in result.extra
+        assert "normalized_frames" not in result.extra
         assert result.notes == [
             "SignatureGenerationRule: JavaSignatureTool: dropped Java exception description due to length"  # noqa
         ]
@@ -993,17 +994,22 @@ class TestSignatureGenerationRule:
         )
         assert result.signature == expected
 
-        expected = (
-            "NtWaitForMultipleObjects | WaitForMultipleObjectsEx | "
-            "WaitForMultipleObjectsExImplementation | "
-            "RealMsgWaitForMultipleObjectsEx | MsgWaitForMultipleObjects | "
-            "F_1152915508__________________________________ | "
-            "F2166389______________________________________ | "
-            "F_917831355___________________________________ | "
-            "F1315696776________________________________ | "
-            "F_1428703866________________________________"
-        )
-        assert result.extra["proto_signature"] == expected
+        expected_normalized_frames = [
+            "NtWaitForMultipleObjects",
+            "WaitForMultipleObjectsEx",
+            "WaitForMultipleObjectsExImplementation",
+            "RealMsgWaitForMultipleObjectsEx",
+            "MsgWaitForMultipleObjects",
+            "F_1152915508__________________________________",
+            "F2166389______________________________________",
+            "F_917831355___________________________________",
+            "F1315696776________________________________",
+            "F_1428703866________________________________",
+        ]
+        expected_proto_signature = " | ".join(expected_normalized_frames)
+
+        assert result.extra["proto_signature"] == expected_proto_signature
+        assert result.extra["normalized_frames"] == expected_normalized_frames
         assert result.notes == []
 
     def test_action_2_with_templates(self):
@@ -1020,18 +1026,21 @@ class TestSignatureGenerationRule:
         assert sgr.action(crash_data, result) is True
 
         assert result.signature == "Alpha<T>::Echo<T>"
-        expected = (
-            "NtWaitForMultipleObjects | Alpha<T>::Echo<T> | "
-            "WaitForMultipleObjectsExImplementation | "
-            "RealMsgWaitForMultipleObjectsEx | "
-            "MsgWaitForMultipleObjects | "
-            "F_1152915508__________________________________ | "
-            "F2166389______________________________________ | "
-            "F_917831355___________________________________ | "
-            "F1315696776________________________________ | "
-            "F_1428703866________________________________"
-        )
-        assert result.extra["proto_signature"] == expected
+        expected_normalized_frames = [
+            "NtWaitForMultipleObjects",
+            "Alpha<T>::Echo<T>",
+            "WaitForMultipleObjectsExImplementation",
+            "RealMsgWaitForMultipleObjectsEx",
+            "MsgWaitForMultipleObjects",
+            "F_1152915508__________________________________",
+            "F2166389______________________________________",
+            "F_917831355___________________________________",
+            "F1315696776________________________________",
+            "F_1428703866________________________________",
+        ]
+        expected_proto_signature = " | ".join(expected_normalized_frames)
+        assert result.extra["proto_signature"] == expected_proto_signature
+        assert result.extra["normalized_frames"] == expected_normalized_frames
         assert result.notes == []
 
     def test_action_2_with_templates_and_special_case(self):
@@ -1051,19 +1060,21 @@ class TestSignatureGenerationRule:
             result.signature
             == "<name omitted> | IPC::ParamTraits<mozilla::net::NetAddr>::Write"
         )
-        expected = (
-            "NtWaitForMultipleObjects | "
-            "<name omitted> | "
-            "IPC::ParamTraits<mozilla::net::NetAddr>::Write | "
-            "RealMsgWaitForMultipleObjectsEx | "
-            "MsgWaitForMultipleObjects | "
-            "F_1152915508__________________________________ | "
-            "F2166389______________________________________ | "
-            "F_917831355___________________________________ | "
-            "F1315696776________________________________ | "
-            "F_1428703866________________________________"
-        )
-        assert result.extra["proto_signature"] == expected
+        expected_normalized_frames = [
+            "NtWaitForMultipleObjects",
+            "<name omitted>",
+            "IPC::ParamTraits<mozilla::net::NetAddr>::Write",
+            "RealMsgWaitForMultipleObjectsEx",
+            "MsgWaitForMultipleObjects",
+            "F_1152915508__________________________________",
+            "F2166389______________________________________",
+            "F_917831355___________________________________",
+            "F1315696776________________________________",
+            "F_1428703866________________________________",
+        ]
+        expected_proto_signature = " | ".join(expected_normalized_frames)
+        assert result.extra["proto_signature"] == expected_proto_signature
+        assert result.extra["normalized_frames"] == expected_normalized_frames
         assert result.notes == []
 
     def test_action_3(self):
@@ -1077,6 +1088,7 @@ class TestSignatureGenerationRule:
 
         assert result.signature == "EMPTY: no crashing thread identified"
         assert "proto_signature" not in result.extra
+        assert "normalized_frames" not in result.extra
         assert result.notes == [
             "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
         ]
@@ -1108,8 +1120,15 @@ class TestSignatureGenerationRule:
         # the call to be tested
         assert sgr.action(crash_data, result) is True
         assert result.signature == "user2.dll"
-        expected = "@0x5e39bf21 | @0x5e39bf21 | @0x5e39bf21 | user2.dll@0x20869"
-        assert result.extra["proto_signature"] == expected
+        expected_normalized_frames = [
+            "@0x5e39bf21",
+            "@0x5e39bf21",
+            "@0x5e39bf21",
+            "user2.dll@0x20869",
+        ]
+        expected_proto_signature = " | ".join(expected_normalized_frames)
+        assert result.extra["proto_signature"] == expected_proto_signature
+        assert result.extra["normalized_frames"] == expected_normalized_frames
         assert result.notes == []
 
 
