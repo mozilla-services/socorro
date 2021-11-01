@@ -10,7 +10,7 @@ RUN ls -al /stackwalk/
 # Dokcer image with https://github.com/luser/rust-minidump
 # =========================================================================
 
-FROM rust:1.56-buster@sha256:b197d91205475e139d6c7f8782239e0d4160222039d2c66ec9ee80658123129c as rustminidump
+FROM rust:1.56.0-buster@sha256:f983129e8304c67bf1cb45f2fbc4a172a5f3a699ba14d05e60c2aeafceae7b55 as rustminidump
 
 RUN update-ca-certificates
 ARG groupid=10001
