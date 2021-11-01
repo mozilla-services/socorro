@@ -24,7 +24,7 @@ RUN groupadd --gid $groupid app && \
 
 USER app
 
-RUN cargo install minidump-stackwalk --root=/app/ --version 0.9.0
+RUN cargo install --locked --root=/app/ minidump-stackwalk --version 0.9.0
 RUN ls -al /app/bin/
 
 
