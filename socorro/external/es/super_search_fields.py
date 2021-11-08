@@ -627,6 +627,11 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    "crash_report_keys": keyword_field(
+        name="crash_report_keys",
+        description="Crash annotation keys and dump filenames from the crash report.",
+        is_protected=False,
+    ),
     "bug_1541161": {
         "data_validation_type": "str",
         "description": (
