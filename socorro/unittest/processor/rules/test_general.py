@@ -7,6 +7,7 @@ import pytest
 
 from socorro.processor.rules.general import (
     CPUInfoRule,
+    CrashReportKeysRule,
     DeNoneRule,
     DeNullRule,
     IdentifierRule,
@@ -328,3 +329,69 @@ class TestOSInfoRule:
 
         # raw crash should be unchanged
         assert raw_crash == {}
+
+
+class TestCrashReportKeysRule:
+    def test_basic(self):
+        raw_crash = {
+            "Product": "Firefox",
+            "Version": "95.0",
+            "ReleaseChannel": "nightly",
+            "ipc_channel_error": "ouch",
+        }
+        dumps = {
+            "upload_file_minidump": "fake data",
+            "upload_file_minidump_flash1": "fake data",
+        }
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CrashReportKeysRule()
+
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processor_meta["processor_notes"] == []
+        assert processed_crash == {
+            "crash_report_keys": [
+                "Product",
+                "ReleaseChannel",
+                "Version",
+                "ipc_channel_error",
+                "upload_file_minidump",
+                "upload_file_minidump_flash1",
+            ],
+        }
+
+    @pytest.mark.parametrize(
+        "key, expected",
+        [
+            ("ipc_channel_error", "ipc_channel_error"),
+            ("ReleaseProcess", "ReleaseProcess"),
+            ("ContentSandboxWin32kState", "ContentSandboxWin32kState"),
+            ("Add-ons", "Add-ons"),
+            # Long keys can be valid, but are truncated to 100 characters
+            ("a" * 150, "a" * 100),
+        ],
+    )
+    def test_sanitize_valid(self, key, expected):
+        rule = CrashReportKeysRule()
+
+        assert rule.sanitize(key) == expected
+
+    @pytest.mark.parametrize(
+        "key",
+        [
+            # Keys have to have at least one character
+            "",
+            # Spaces aren't valid
+            "   abc   ",
+            # Dollar sign isn't valid
+            "abc$def",
+            # Unicode isn't valid
+            "\u0001F44D",
+        ],
+    )
+    def test_sanitize_invalid(self, key):
+        rule = CrashReportKeysRule()
+
+        assert rule.sanitize(key) is None

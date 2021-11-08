@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import re
+
 from glom import glom
 import markus
 
@@ -127,3 +129,37 @@ class OSInfoRule(Rule):
             processed_crash, "json_dump.system_info.os_ver", default=""
         ).strip()
         processed_crash["os_version"] = os_ver
+
+
+class CrashReportKeysRule(Rule):
+    """Extracts a list of all keys and dump names and saves it as crash_report_keys"""
+
+    # At least one alphanumeric plus underscore and dash
+    VALID_KEY = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+    def sanitize(self, key):
+        # If the key isn't alphanumeric with underscores, then it's not valid
+        if not self.VALID_KEY.match(key):
+            return None
+
+        # Truncate
+        key = key[:100]
+
+        return key
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        all_keys = set(raw_crash.keys()) | set(dumps.keys())
+
+        # Go through and remove obviously invalid keys
+        sanitized_keys = [self.sanitize(key) for key in all_keys]
+        sanitized_keys = {key for key in sanitized_keys if key}
+
+        processed_crash["crash_report_keys"] = list(sorted(sanitized_keys))
+
+        # Figure out the set of keys that are in one set or the other, but
+        # not both
+        diff = all_keys.symmetric_difference(sanitized_keys)
+        if diff:
+            processor_meta["processor_notes"].append(
+                "invalidkeys: Crash report contains invalid keys"
+            )
