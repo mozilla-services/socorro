@@ -2,6 +2,7 @@
 # Dokcer image with minidump-stackwalk
 # =========================================================================
 
+# https://hub.docker.com/r/mozilla/socorro-minidump-stackwalk
 FROM mozilla/socorro-minidump-stackwalk:2021.09.20@sha256:11dab7a81b6ff64ac16276ff1b1bd901b66cf61dce6cbfe1fbeb52b3508ac4d0 as breakpad
 RUN ls -al /stackwalk/
 
@@ -10,7 +11,8 @@ RUN ls -al /stackwalk/
 # Dokcer image with https://github.com/luser/rust-minidump
 # =========================================================================
 
-FROM rust:1.56-buster@sha256:b197d91205475e139d6c7f8782239e0d4160222039d2c66ec9ee80658123129c as rustminidump
+# https://hub.docker.com/_/rust/
+FROM rust:1.56.1-buster@sha256:3d9db19945008fe26137362e03b0571c1235f80b5ad9bce0310d800ff9ded86a as rustminidump
 
 RUN update-ca-certificates
 ARG groupid=10001
@@ -24,7 +26,8 @@ RUN groupadd --gid $groupid app && \
 
 USER app
 
-RUN cargo install --locked --root=/app/ minidump-stackwalk --version 0.9.0
+# https://crates.io/crates/minidump-stackwalk
+RUN cargo install --locked --root=/app/ minidump-stackwalk --version 0.9.2
 RUN ls -al /app/bin/
 
 
@@ -32,6 +35,7 @@ RUN ls -al /app/bin/
 # Building app image
 # =========================================================================
 
+# https://hub.docker.com/_/python
 FROM python:3.9.7-slim@sha256:cd1045dbabff11dab74379e25f7974aa7638bc5ad46755d67d0f1f1783aee101
 
 # Set up user and group
