@@ -18,12 +18,23 @@ from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 
 
-class CrashingThreadRule(Rule):
+class CrashingThreadInfoRule(Rule):
+    """Captures information about the crashing thread
+
+    Fills in:
+
+    * crashing_thread (int or None): index of the crashing thread
+    * truncated (bool): whether or not the crashing thread frames were truncated
+    * address (str or None): the address of the crash
+    * type (str): the crash reason
+
+    """
+
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        processed_crash["crashedThread"] = glom.glom(
+        processed_crash["crashing_thread"] = glom.glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         )
-        if processed_crash["crashedThread"] is None:
+        if processed_crash["crashing_thread"] is None:
             processor_meta["processor_notes"].append(
                 "MDSW did not identify the crashing thread"
             )
@@ -37,7 +48,7 @@ class CrashingThreadRule(Rule):
         )
 
         processed_crash["reason"] = glom.glom(
-            processed_crash, "json_dump.crash_info.type", default=None
+            processed_crash, "json_dump.crash_info.type", default=""
         )
 
 

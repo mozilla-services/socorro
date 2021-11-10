@@ -1502,6 +1502,7 @@ class TestTopMostFilesRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
+        processed_crash["crashing_thread"] = 0
         processed_crash["json_dump"] = {
             "crash_info": {"crashing_thread": 0},
             "crashing_thread": {
@@ -1564,6 +1565,7 @@ class TestModulesInStackRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {
+            "crashing_thread": 0,
             "json_dump": {
                 "modules": [
                     {"filename": "libxul.dll", "debug_id": "ABCDEF"},
@@ -1574,7 +1576,7 @@ class TestModulesInStackRule:
                 "threads": [
                     {"frames": [{"module": "libxul.dll"}, {"module": "mozglue.dll"}]}
                 ],
-            }
+            },
         }
 
         processor_meta = get_basic_processor_meta()
@@ -1590,19 +1592,27 @@ class TestModulesInStackRule:
     @pytest.mark.parametrize(
         "processed_crash",
         [
-            {},
-            {"json_dump": {}},
-            {"json_dump": {"crash_info": {}}},
-            {"json_dump": {"crash_info": {"crashing_thread": 0}}},
-            {"json_dump": {"crash_info": {"crashing_thread": 10}, "threads": []}},
-            {"json_dump": {"crash_info": {"crashing_thread": 0}, "threads": [{}]}},
+            {"crashing_thread": None},
+            {"crashing_thread": None, "json_dump": {}},
+            {"crashing_thread": None, "json_dump": {"crash_info": {}}},
+            {"crashing_thread": 0, "json_dump": {"crash_info": {"crashing_thread": 0}}},
             {
+                "crashing_thread": 10,
+                "json_dump": {"crash_info": {"crashing_thread": 10}, "threads": []},
+            },
+            {
+                "crashing_thread": 0,
+                "json_dump": {"crash_info": {"crashing_thread": 0}, "threads": [{}]},
+            },
+            {
+                "crashing_thread": 0,
                 "json_dump": {
                     "crash_info": {"crashing_thread": 0},
                     "threads": [{"frames": []}],
-                }
+                },
             },
             {
+                "crashing_thread": 0,
                 "modules": [],
                 "json_dump": {
                     "crash_info": {"crashing_thread": 0},
