@@ -19,7 +19,7 @@ from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now
 from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
-    CrashingThreadRule,
+    CrashingThreadInfoRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
@@ -213,6 +213,7 @@ class ProcessorPipeline(RequiredConfig):
                     tmp_storage_path=config.breakpad.tmp_storage_path,
                 ),
                 ModuleURLRewriteRule(),
+                CrashingThreadInfoRule(),
                 ProductRule(),
                 MajorVersionRule(),
                 UserDataRule(),
@@ -227,7 +228,6 @@ class ProcessorPipeline(RequiredConfig):
                 MacCrashInfoRule(),
                 MozCrashReasonRule(),
                 # post processing of the processed crash
-                CrashingThreadRule(),
                 CPUInfoRule(),
                 DistributionIdRule(),
                 OSInfoRule(),

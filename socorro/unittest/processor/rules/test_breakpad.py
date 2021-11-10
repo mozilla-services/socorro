@@ -12,7 +12,7 @@ from markus.testing import MetricsMock
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
-    CrashingThreadRule,
+    CrashingThreadInfoRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
 )
@@ -191,17 +191,20 @@ class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
         yield "%s.json" % raw_crash["uuid"]
 
 
-class TestCrashingThreadRule:
+class TestCrashingThreadInfoRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {"json_dump": copy.deepcopy(canonical_stackwalker_output)}
         processor_meta = get_basic_processor_meta()
 
-        rule = CrashingThreadRule()
+        rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["crashedThread"] == 0
+        assert processed_crash["crashing_thread"] == 0
+        assert processed_crash["address"] == "0x0"
+        assert processed_crash["truncated"] is False
+        assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
 
     def test_stuff_missing(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -209,10 +212,14 @@ class TestCrashingThreadRule:
         processed_crash = {"json_dump": {}}
         processor_meta = get_basic_processor_meta()
 
-        rule = CrashingThreadRule()
+        rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["crashedThread"] is None
+        assert processed_crash["crashing_thread"] is None
+        assert processed_crash["address"] is None
+        assert processed_crash["truncated"] is False
+        assert processed_crash["reason"] == ""
+
         assert processor_meta["processor_notes"] == [
             "MDSW did not identify the crashing thread"
         ]

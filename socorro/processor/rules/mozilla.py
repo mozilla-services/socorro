@@ -737,15 +737,13 @@ class TopMostFilesRule(Rule):
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["topmost_filenames"] = None
         try:
-            crashing_thread = processed_crash["json_dump"]["crash_info"][
-                "crashing_thread"
-            ]
+            crashing_thread = processed_crash["crashing_thread"]
             stack_frames = processed_crash["json_dump"]["threads"][crashing_thread][
                 "frames"
             ]
-        except KeyError as x:
-            # guess we don't have frames or crashing_thread or json_dump
-            # we have to give up
+        except (IndexError, TypeError, KeyError) as x:
+            # guess we don't have frames or crashing_thread or json_dump we have to give
+            # up
             processor_meta["processor_notes"].append(
                 "no 'topmost_file' name because '%s' is missing" % x
             )
@@ -784,10 +782,10 @@ class ModulesInStackRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         json_dump = processed_crash["json_dump"]
-        try:
-            crashing_thread = json_dump["crash_info"]["crashing_thread"]
-        except KeyError:
-            # If there is no crashing thread, then there's nothing to do.
+        crashing_thread = processed_crash["crashing_thread"]
+
+        # If there is no crashing thread, then there's nothing to do.
+        if crashing_thread is None:
             return
 
         try:
