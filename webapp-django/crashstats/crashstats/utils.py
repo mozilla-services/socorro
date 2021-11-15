@@ -288,23 +288,23 @@ def enhance_frame(frame, vcs_mappings):
     Add some additional info to a stack frame--signature
     and source links from vcs_mappings.
     """
-    if "function" in frame:
+    if frame.get("function"):
         # Remove spaces before all stars, ampersands, and commas
         function = re.sub(r" (?=[\*&,])", "", frame["function"])
         # Ensure a space after commas
         function = re.sub(r",(?! )", ", ", function)
         frame["function"] = function
         signature = function
-    elif "file" in frame and "line" in frame:
+    elif frame.get("file") and frame.get("line"):
         signature = "%s#%d" % (frame["file"], frame["line"])
-    elif "module" in frame and "module_offset" in frame:
+    elif frame.get("module") and frame.get("module_offset"):
         signature = "%s@%s" % (frame["module"], frame["module_offset"])
     else:
         signature = "@%s" % frame["offset"]
     frame["signature"] = signature
     frame["short_signature"] = re.sub(r"\(.*\)", "", signature)
 
-    if "file" in frame:
+    if frame.get("file"):
         vcsinfo = frame["file"].split(":")
         if len(vcsinfo) == 4:
             vcstype, root, vcs_source_file, revision = vcsinfo
