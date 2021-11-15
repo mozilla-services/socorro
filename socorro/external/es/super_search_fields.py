@@ -3110,8 +3110,9 @@ FIELDS = {
     "uptime": {
         "data_validation_type": "int",
         "description": (
-            "Length of time the process was running before it crashed. Small values (from 0 to "
-            "5 or so) usually indicate start-up crashes."
+            "Length of time the process was running before it crashed. Small values "
+            "(from 0 to 5 or so) usually indicate start-up crashes. Calculated by "
+            "the Socorro processor using CrashTime and StartupTime."
         ),
         "form_field_choices": [],
         "has_full_version": False,
@@ -3126,7 +3127,10 @@ FIELDS = {
     },
     "uptime_ts": {
         "data_validation_type": "int",
-        "description": "TimeStamp based uptime.",
+        "description": (
+            "Uptime in seconds. This annotation uses a string instead of an integer "
+            "because it has a fractional component."
+        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "UptimeTS",
