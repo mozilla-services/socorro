@@ -22,6 +22,7 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
+    MinidumpStackwalkRule,
 )
 from socorro.processor.rules.general import (
     CPUInfoRule,
@@ -72,14 +73,79 @@ class ProcessorPipeline(RequiredConfig):
 
     required_config = Namespace("transform_rules")
 
+    required_config.add_option(
+        "minidump_stackwalker",
+        doc="the minidump stackwalker to use: breakpad or rust",
+        default="breakpad",
+    )
+
+    # MinidumpStackwalkRule configuration
+    required_config.minidumpstackwalk = Namespace()
+    required_config.minidumpstackwalk.add_option(
+        "dump_field", doc="the default name of a dump", default="upload_file_minidump"
+    )
+    required_config.minidumpstackwalk.add_option(
+        "command_path",
+        doc="absolute path to rust-minidump minidump-stackwalk binary",
+        default="/stackwalk-rust/minidump-stackwalk",
+    )
+    required_config.minidumpstackwalk.add_option(
+        name="symbols_urls",
+        doc="comma-delimited ordered list of urls for symbol lookup",
+        default="https://symbols.mozilla.org/",
+        from_string_converter=str_to_list,
+        likely_to_be_changed=True,
+    )
+    required_config.minidumpstackwalk.add_option(
+        "command_line",
+        doc=(
+            "template for the command to invoke the external program; uses Python "
+            "format syntax"
+        ),
+        default=(
+            "timeout --signal KILL {kill_timeout} {command_path} "
+            "--raw-json {raw_crash_path} "
+            "{symbols_urls} "
+            "--symbols-cache {symbol_cache_path} "
+            "--symbols-tmp {symbol_tmp_path} "
+            "{dump_file_path}"
+        ),
+    )
+    required_config.minidumpstackwalk.add_option(
+        "kill_timeout",
+        doc="time in seconds to let minidump-stackwalk run before killing it",
+        default=600,
+    )
+    required_config.minidumpstackwalk.add_option(
+        "symbol_tmp_path",
+        doc=(
+            "absolute path to temp space for downloading symbols--must be on the same "
+            "filesystem as symbol_cache_path"
+        ),
+        default=os.path.join(tempfile.gettempdir(), "symbols-tmp"),
+    ),
+    required_config.minidumpstackwalk.add_option(
+        "symbol_cache_path",
+        doc="absolute path to symbol cache",
+        default=os.path.join(tempfile.gettempdir(), "symbols"),
+    )
+    required_config.minidumpstackwalk.add_option(
+        "tmp_path",
+        doc="a path where temporary files may be written",
+        default=tempfile.gettempdir(),
+    )
+
     # BreakpadStackwalkerRule2015 configuration
     required_config.breakpad = Namespace()
     required_config.breakpad.add_option(
         "dump_field", doc="the default name of a dump", default="upload_file_minidump"
     )
     required_config.breakpad.add_option(
-        "command_pathname",
-        doc="the full pathname to the external program to run (quote path with embedded spaces)",
+        "command_path",
+        doc=(
+            "the absolute path to the external program to run (quote path with "
+            "embedded spaces)"
+        ),
         default="/stackwalk/stackwalker",
     )
     required_config.breakpad.add_option(
@@ -93,12 +159,12 @@ class ProcessorPipeline(RequiredConfig):
         "command_line",
         doc="template for the command to invoke the external program; uses Python format syntax",
         default=(
-            "timeout --signal KILL {kill_timeout} {command_pathname} "
-            "--raw-json {raw_crash_pathname} "
+            "timeout --signal KILL {kill_timeout} {command_path} "
+            "--raw-json {raw_crash_path} "
             "{symbols_urls} "
             "--symbols-cache {symbol_cache_path} "
             "--symbols-tmp {symbol_tmp_path} "
-            "{dump_file_pathname}"
+            "{dump_file_path}"
         ),
     )
     required_config.breakpad.add_option(
@@ -123,7 +189,7 @@ class ProcessorPipeline(RequiredConfig):
         default=os.path.join(tempfile.gettempdir(), "symbols"),
     )
     required_config.breakpad.add_option(
-        "tmp_storage_path",
+        "tmp_path",
         doc="a path where temporary files may be written",
         default=tempfile.gettempdir(),
     )
@@ -139,16 +205,14 @@ class ProcessorPipeline(RequiredConfig):
         "dump_field", doc="the default name of a dump", default="upload_file_minidump"
     )
     required_config.jit.add_option(
-        "command_pathname",
-        doc="full pathname to external program; quote path with embedded spaces",
+        "command_path",
+        doc="absolute path to external program; quote path with embedded spaces",
         default="/stackwalk/jit-crash-categorize",
     )
     required_config.jit.add_option(
         "command_line",
         doc="template for command line; uses Python format syntax",
-        default=(
-            "timeout -s KILL {kill_timeout} {command_pathname} {dump_file_pathname}"
-        ),
+        default=("timeout -s KILL {kill_timeout} {command_path} {dump_file_path}"),
     )
 
     # BetaVersionRule configuration
@@ -178,6 +242,31 @@ class ProcessorPipeline(RequiredConfig):
         :returns: dict of rulesets
 
         """
+        # Feature flag for determining which parser to use
+        if config.minidump_stackwalker == "rust":
+            minidump_stackwalker_rule = MinidumpStackwalkRule(
+                dump_field=config.minidumpstackwalk.dump_field,
+                symbols_urls=config.minidumpstackwalk.symbols_urls,
+                command_line=config.minidumpstackwalk.command_line,
+                command_path=config.minidumpstackwalk.command_path,
+                kill_timeout=config.minidumpstackwalk.kill_timeout,
+                symbol_tmp_path=config.minidumpstackwalk.symbol_tmp_path,
+                symbol_cache_path=config.minidumpstackwalk.symbol_cache_path,
+                tmp_path=config.minidumpstackwalk.tmp_path,
+            )
+
+        else:
+            minidump_stackwalker_rule = BreakpadStackwalkerRule2015(
+                dump_field=config.breakpad.dump_field,
+                symbols_urls=config.breakpad.symbols_urls,
+                command_line=config.breakpad.command_line,
+                command_path=config.breakpad.command_path,
+                kill_timeout=config.breakpad.kill_timeout,
+                symbol_tmp_path=config.breakpad.symbol_tmp_path,
+                symbol_cache_path=config.breakpad.symbol_cache_path,
+                tmp_path=config.breakpad.tmp_path,
+            )
+
         # NOTE(willkg): the rulesets defined in here must match the set of
         # rulesets in webapp-django/crashstats/settings/base.py VALID_RULESETS
         # for them to be available to the Reprocessing API
@@ -202,16 +291,7 @@ class ProcessorPipeline(RequiredConfig):
                 ProcessTypeRule(),
                 IdentifierRule(),
                 MinidumpSha256Rule(),
-                BreakpadStackwalkerRule2015(
-                    dump_field=config.breakpad.dump_field,
-                    symbols_urls=config.breakpad.symbols_urls,
-                    command_line=config.breakpad.command_line,
-                    command_pathname=config.breakpad.command_pathname,
-                    kill_timeout=config.breakpad.kill_timeout,
-                    symbol_tmp_path=config.breakpad.symbol_tmp_path,
-                    symbol_cache_path=config.breakpad.symbol_cache_path,
-                    tmp_storage_path=config.breakpad.tmp_storage_path,
-                ),
+                minidump_stackwalker_rule,
                 ModuleURLRewriteRule(),
                 CrashingThreadInfoRule(),
                 ProductRule(),
@@ -248,7 +328,7 @@ class ProcessorPipeline(RequiredConfig):
                 JitCrashCategorizeRule(
                     dump_field=config.jit.dump_field,
                     command_line=config.jit.command_line,
-                    command_pathname=config.jit.command_pathname,
+                    command_path=config.jit.command_path,
                     kill_timeout=config.jit.kill_timeout,
                 ),
             ],

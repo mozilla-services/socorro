@@ -506,7 +506,7 @@ class SignatureGenerationRule(Rule):
             # module in symbols files. This fixes that by adding the module.
             a_frame = fix_missing_module(a_frame)
 
-            if make_modules_lower_case and "module" in a_frame:
+            if make_modules_lower_case and a_frame.get("module"):
                 a_frame["module"] = a_frame["module"].lower()
 
             normalized_frame = self.c_signature_tool.normalize_frame(**a_frame)

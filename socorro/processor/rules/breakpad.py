@@ -9,7 +9,6 @@ import os
 import shlex
 import subprocess
 import threading
-import ujson
 
 import glom
 import markus
@@ -62,16 +61,33 @@ class MinidumpSha256Rule(Rule):
         processed_crash["minidump_sha256_hash"] = raw_crash["MinidumpSha256Hash"]
 
 
-def execute_external_process(
-    command_pathname, command_line, processor_meta, interpret_output
-):
-    """Executes external process, interprets output, and returns output and return_code.
+@contextmanager
+def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
+    """Saves JSON data to file, returns path, and deletes file when done.
 
-    :arg str command_pathname: the path to the command to run
-    :arg str command_line: the complete command line to run
-    :arg processor_meta: the meta part of the processed crash
-    :arg fun interpret_output: the function to interpret the output; takes a file-pointer,
-        processor_meta, and command_pathname and returns interpreted output
+    :param tmp_path: str path to temp storage
+    :param raw_crash: dotdict or dict of raw crash data
+    :param crash_id: crash id for this crash report
+
+    :yields: absolute path to temp file
+
+    """
+
+    path = os.path.join(
+        tmp_path, f"{crash_id}.{threading.currentThread().getName()}.temp.json"
+    )
+    with open(path, "w") as f:
+        json.dump(dotdict_to_dict(raw_crash), f)
+    try:
+        yield path
+    finally:
+        os.unlink(path)
+
+
+def execute_process(command_line):
+    """Executes process and returns output and return_code.
+
+    :param command_line: the complete command line to run
 
     :returns: (output, return_code)
 
@@ -85,14 +101,209 @@ def execute_external_process(
         command_line_args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
     )
     with closing(subprocess_handle.stdout):
-        external_command_output = interpret_output(
-            fp=subprocess_handle.stdout,
-            processor_meta=processor_meta,
-            command_pathname=command_pathname,
-        )
+        data = subprocess_handle.stdout.read()
 
     return_code = subprocess_handle.wait()
-    return external_command_output, return_code
+    return data, return_code
+
+
+class CommandError(Exception):
+    pass
+
+
+class MinidumpStackwalkRule(Rule):
+    """Runs minidump-stackwalk (rust) on minidump and puts output in processed crash.
+
+    This uses the rust-minidump minidump-stackwalk.
+
+    Produces:
+
+    * json_dump: output from minidump_stackwalk run
+    * mdsw_exit_code: process exit code
+    * mdsw_status_string: string of json_dump["status"]
+    * mdsw_success: bool
+    * additional_minidumps: list of minidump names that aren't dump_field value
+
+    Also adds processor notes.
+
+    Emits:
+
+    * processor.minidumpstackwalk.*
+
+    """
+
+    def __init__(
+        self,
+        dump_field="upload_file_minidump",
+        symbols_urls=None,
+        command_path="/stackwalk-rust/minidump-stackwalk",
+        command_line=(
+            "timeout --signal KILL {kill_timeout} {command_path} "
+            "--raw-json {raw_crash_path} "
+            "{symbols_urls} "
+            "--symbols-cache {symbol_cache_path} "
+            "--symbols-tmp {symbol_tmp_path} "
+            "{dump_file_path}"
+        ),
+        kill_timeout=600,
+        symbol_tmp_path="/tmp/symbols-tmp",
+        symbol_cache_path="/tmp/symbols",
+        tmp_path="/tmp/",
+    ):
+        super().__init__()
+        self.dump_field = dump_field
+        self.symbols_urls = symbols_urls or []
+        self.command_path = command_path
+        self.command_line = command_line
+        self.kill_timeout = kill_timeout
+        self.symbol_tmp_path = symbol_tmp_path
+        self.symbol_cache_path = symbol_cache_path
+        self.tmp_path = tmp_path
+
+        self.stackwalk_version = self.get_version()
+
+        self.metrics = markus.get_metrics("processor.minidumpstackwalk")
+
+    def __repr__(self):
+        keys = (
+            "dump_field",
+            "symbols_urls",
+            "command_path",
+            "command_line",
+            "kill_timeout",
+            "symbol_tmp_path",
+            "symbol_cache_path",
+            "tmp_path",
+        )
+        return self.generate_repr(keys=keys)
+
+    def get_version(self):
+        command_line = f"{self.command_path} --version"
+        output, return_code = execute_process(command_line)
+        if return_code != 0:
+            raise CommandError(
+                f"mdsw (rust): unknown error when getting version: {return_code} {output}"
+            )
+        return output.decode("utf-8").strip()
+
+    def expand_commandline(self, dump_file_path, raw_crash_path):
+        """Expands the command line parameters and returns the final command line
+
+        :param dump_file_path: the absolute path to the dump file to parse
+        :param raw_crash_path: the absolute path to the crash annotations file
+
+        :returns: command line as a string
+
+        """
+        # NOTE(willkg): If we ever add new configuration variables, we'll need
+        # to add them here, too, otherwise they won't get expanded in the
+        # command line.
+
+        symbols_urls = " ".join(
+            ['--symbols-url "%s"' % url.strip() for url in self.symbols_urls]
+        )
+
+        params = {
+            # These come from config
+            "kill_timeout": self.kill_timeout,
+            "command_path": self.command_path,
+            "symbol_cache_path": self.symbol_cache_path,
+            "symbol_tmp_path": self.symbol_tmp_path,
+            "symbols_urls": symbols_urls,
+            # These are calculated
+            "dump_file_path": dump_file_path,
+            "raw_crash_path": raw_crash_path,
+        }
+        return self.command_line.format(**params)
+
+    def run_stackwalker(self, crash_id, command_path, command_line, processor_meta):
+        stdout, return_code = execute_process(command_line)
+
+        try:
+            output = json.loads(stdout)
+        except Exception as exc:
+            msg = f"{command_path}: non-json output: {exc}"
+            self.logger.debug(f"{command_path}: non-json output: {stdout[:1000]}")
+            self.logger.error(msg)
+            processor_meta["processor_notes"].append(msg)
+            output = {}
+
+        if not isinstance(output, Mapping):
+            msg = f"mdsw (rust) produced unexpected output: {output[:20]}"
+            processor_meta["processor_notes"].append(msg)
+            self.logger.warning(f"{msg} ({crash_id})")
+            output = {}
+
+        # Add the stackwalk_version to the stackwalk output
+        output["stackwalk_version"] = self.stackwalk_version
+
+        stackwalker_data = {
+            "json_dump": output,
+            "mdsw_return_code": return_code,
+            "mdsw_status_string": output.get("status", "unknown error"),
+            "success": output.get("status", "") == "OK",
+        }
+
+        self.metrics.incr(
+            "run",
+            tags=[
+                "outcome:%s" % ("success" if stackwalker_data["success"] else "fail"),
+                "exitcode:%s" % return_code,
+            ],
+        )
+
+        if return_code == 124:
+            msg = "mdsw (rust) timeout (SIGKILL)"
+            processor_meta["processor_notes"].append(msg)
+            self.logger.warning(f"{msg} ({crash_id})")
+
+        elif return_code != 0 or not stackwalker_data["success"]:
+            msg = "mdsw (rust) failed with %s: %s" % (
+                return_code,
+                stackwalker_data["mdsw_status_string"],
+            )
+            # subprocess.Popen with shell=False returns negative exit codes
+            # where the number is the signal that got kicked up
+            if return_code == -6:
+                msg = msg + " (SIGABRT)"
+
+            processor_meta["processor_notes"].append(msg)
+            self.logger.warning(f"{msg} ({crash_id})")
+
+        return stackwalker_data, return_code
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        crash_id = raw_crash["uuid"]
+
+        processed_crash.setdefault("additional_minidumps", [])
+
+        with tmp_raw_crash_file(self.tmp_path, raw_crash, crash_id) as raw_crash_path:
+            for dump_name, dump_file_path in dumps.items():
+                # This rule only works on minidumps which the crash reporter prefixes
+                # with the value of dump_field (defaults to "upload_file_minidump").
+                if not dump_name.startswith(self.dump_field):
+                    continue
+
+                command_line = self.expand_commandline(
+                    dump_file_path=dump_file_path,
+                    raw_crash_path=raw_crash_path,
+                )
+
+                stackwalker_data, return_code = self.run_stackwalker(
+                    crash_id=crash_id,
+                    command_path=self.command_path,
+                    command_line=command_line,
+                    processor_meta=processor_meta,
+                )
+
+                if dump_name == self.dump_field:
+                    processed_crash.update(stackwalker_data)
+
+                else:
+                    if dump_name not in processed_crash["additional_minidumps"]:
+                        processed_crash["additional_minidumps"].append(dump_name)
+                    processed_crash.setdefault(dump_name, {})
+                    processed_crash[dump_name].update(stackwalker_data)
 
 
 class BreakpadStackwalkerRule2015(Rule):
@@ -102,22 +313,22 @@ class BreakpadStackwalkerRule2015(Rule):
         self,
         dump_field,
         symbols_urls,
-        command_pathname,
+        command_path,
         command_line,
         kill_timeout,
         symbol_tmp_path,
         symbol_cache_path,
-        tmp_storage_path,
+        tmp_path,
     ):
         super().__init__()
         self.dump_field = dump_field
         self.symbols_urls = symbols_urls
-        self.command_pathname = command_pathname
+        self.command_path = command_path
         self.command_line = command_line
         self.kill_timeout = kill_timeout
         self.symbol_tmp_path = symbol_tmp_path
         self.symbol_cache_path = symbol_cache_path
-        self.tmp_storage_path = tmp_storage_path
+        self.tmp_path = tmp_path
 
         self.metrics = markus.get_metrics("processor.breakpadstackwalkerrule")
 
@@ -125,54 +336,49 @@ class BreakpadStackwalkerRule2015(Rule):
         keys = (
             "dump_field",
             "symbols_urls",
-            "command_pathname",
+            "command_path",
             "command_line",
             "kill_timeout",
             "symbol_tmp_path",
             "symbol_cache_path",
-            "tmp_storage_path",
+            "tmp_path",
         )
         return self.generate_repr(keys=keys)
 
-    @contextmanager
-    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
-        file_pathname = os.path.join(
-            self.tmp_storage_path,
-            "%s.%s.TEMPORARY.json" % (crash_id, threading.currentThread().getName()),
-        )
-        with open(file_pathname, "w") as f:
-            json.dump(dotdict_to_dict(raw_crash), f)
-        try:
-            yield file_pathname
-        finally:
-            os.unlink(file_pathname)
+    def expand_commandline(self, dump_file_path, raw_crash_path):
+        """Expands the command line parameters and returns the final command line"""
+        # NOTE(willkg): If we ever add new configuration variables, we'll need
+        # to add them here, too, otherwise they won't get expanded in the
+        # command line.
 
-    def _interpret_output(self, fp, processor_meta, command_pathname):
-        data = fp.read()
-        try:
-            # NOTE(willkg): We use ujson here because stackwalk sometimes outputs byte
-            # sequences that the json library can't parse. We should revisit this when
-            # we switch to the Rust minidump-stackwalk which uses serde for JSON
-            # encoding. bug #1713306
-            return ujson.loads(data)
-        except Exception as x:
-            self.logger.error(
-                '%s non-json output: "%s"' % (command_pathname, data[:100])
-            )
-            processor_meta["processor_notes"].append(
-                "%s output failed in json: %s" % (command_pathname, x)
-            )
-        return {}
-
-    def _execute_external_process(
-        self, crash_id, command_pathname, command_line, processor_meta
-    ):
-        output, return_code = execute_external_process(
-            command_pathname=command_pathname,
-            command_line=command_line,
-            processor_meta=processor_meta,
-            interpret_output=self._interpret_output,
+        symbols_urls = " ".join(
+            ['--symbols-url "%s"' % url.strip() for url in self.symbols_urls]
         )
+
+        params = {
+            # These come from config
+            "kill_timeout": self.kill_timeout,
+            "command_path": self.command_path,
+            "symbol_cache_path": self.symbol_cache_path,
+            "symbol_tmp_path": self.symbol_tmp_path,
+            "symbols_urls": symbols_urls,
+            # These are calculated
+            "dump_file_path": dump_file_path,
+            "raw_crash_path": raw_crash_path,
+        }
+        return self.command_line.format(**params)
+
+    def run_stackwalker(self, crash_id, command_path, command_line, processor_meta):
+        stdout, return_code = execute_process(command_line)
+
+        try:
+            output = json.loads(stdout)
+        except Exception as exc:
+            msg = f"{command_path}: non-json output: {exc}"
+            self.logger.debug(f"{command_path}: non-json output: {stdout[:1000]}")
+            self.logger.error(msg)
+            processor_meta["processor_notes"].append(msg)
+            output = {}
 
         if not isinstance(output, Mapping):
             msg = "MDSW produced unexpected output: %s (%s)" % str(output)[:20]
@@ -215,38 +421,12 @@ class BreakpadStackwalkerRule2015(Rule):
 
         return stackwalker_data, return_code
 
-    def expand_commandline(self, dump_file_pathname, raw_crash_pathname):
-        """Expands the command line parameters and returns the final command line"""
-        # NOTE(willkg): If we ever add new configuration variables, we'll need
-        # to add them here, too, otherwise they won't get expanded in the
-        # command line.
-
-        symbols_urls = " ".join(
-            ['--symbols-url "%s"' % url.strip() for url in self.symbols_urls]
-        )
-
-        params = {
-            # These come from config
-            "kill_timeout": self.kill_timeout,
-            "command_pathname": self.command_pathname,
-            "symbol_cache_path": self.symbol_cache_path,
-            "symbol_tmp_path": self.symbol_tmp_path,
-            "symbols_urls": symbols_urls,
-            # These are calculated
-            "dump_file_pathname": dump_file_pathname,
-            "raw_crash_pathname": raw_crash_pathname,
-        }
-        return self.command_line.format(**params)
-
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         crash_id = raw_crash["uuid"]
 
-        if "additional_minidumps" not in processed_crash:
-            processed_crash["additional_minidumps"] = []
+        processed_crash.setdefault("additional_minidumps", [])
 
-        with self._temp_raw_crash_json_file(
-            raw_crash, raw_crash["uuid"]
-        ) as raw_crash_pathname:
+        with tmp_raw_crash_file(self.tmp_path, raw_crash, crash_id) as raw_crash_path:
             for dump_name in dumps.keys():
                 # this rule is only interested in dumps targeted for the
                 # minidump stackwalker external program.  As of the writing
@@ -258,16 +438,16 @@ class BreakpadStackwalkerRule2015(Rule):
                     # dumps not intended for the stackwalker are ignored
                     continue
 
-                dump_file_pathname = dumps[dump_name]
+                dump_file_path = dumps[dump_name]
 
                 command_line = self.expand_commandline(
-                    dump_file_pathname=dump_file_pathname,
-                    raw_crash_pathname=raw_crash_pathname,
+                    dump_file_path=dump_file_path,
+                    raw_crash_path=raw_crash_path,
                 )
 
-                stackwalker_data, return_code = self._execute_external_process(
+                stackwalker_data, return_code = self.run_stackwalker(
                     crash_id=crash_id,
-                    command_pathname=self.command_pathname,
+                    command_path=self.command_path,
                     command_line=command_line,
                     processor_meta=processor_meta,
                 )
@@ -275,8 +455,10 @@ class BreakpadStackwalkerRule2015(Rule):
                 if dump_name == self.dump_field:
                     processed_crash.update(stackwalker_data)
                 else:
-                    processed_crash["additional_minidumps"].append(dump_name)
-                    processed_crash[dump_name] = stackwalker_data
+                    if dump_name not in processed_crash["additional_minidumps"]:
+                        processed_crash["additional_minidumps"].append(dump_name)
+                    processed_crash.setdefault(dump_name, {})
+                    processed_crash[dump_name].update(stackwalker_data)
 
 
 class JitCrashCategorizeRule(Rule):
@@ -287,15 +469,15 @@ class JitCrashCategorizeRule(Rule):
 
     """
 
-    def __init__(self, dump_field, command_pathname, command_line, kill_timeout):
+    def __init__(self, dump_field, command_path, command_line, kill_timeout):
         super().__init__()
         self.dump_field = dump_field
-        self.command_pathname = command_pathname
+        self.command_path = command_path
         self.command_line = command_line
         self.kill_timeout = kill_timeout
 
     def __repr__(self):
-        keys = ("dump_field", "command_pathname", "command_line", "kill_timeout")
+        keys = ("dump_field", "command_path", "command_line", "kill_timeout")
         return self.generate_repr(keys=keys)
 
     def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
@@ -323,34 +505,18 @@ class JitCrashCategorizeRule(Rule):
             or signature.endswith("js::irregexp::ExecuteCode<T>")
         )
 
-    def _interpret_output(self, fp, processor_meta, command_pathname):
-        try:
-            result = fp.read()
-        except OSError as x:
-            processor_meta["processor_notes"].append(
-                "%s unable to read external command output: %s" % (command_pathname, x)
-            )
-            return ""
-        try:
-            return result.strip()
-        except AttributeError:
-            # there's no strip method
-            return result
-
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         params = {
-            "command_pathname": self.command_pathname,
+            "command_path": self.command_path,
             "kill_timeout": self.kill_timeout,
-            "dump_file_pathname": dumps[self.dump_field],
+            "dump_file_path": dumps[self.dump_field],
         }
         command_line = self.command_line.format(**params)
 
-        output, return_code = execute_external_process(
-            command_pathname=self.command_pathname,
-            command_line=command_line,
-            processor_meta=processor_meta,
-            interpret_output=self._interpret_output,
-        )
+        stdout, return_code = execute_process(command_line)
+        output = stdout
+        if output:
+            output = output.strip()
 
         glom.assign(
             processed_crash, "classifications.jit.category", val=output, missing=dict

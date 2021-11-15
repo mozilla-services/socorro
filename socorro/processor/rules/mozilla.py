@@ -457,10 +457,13 @@ class MacCrashInfoRule(Rule):
     """
 
     def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
-        return "mac_crash_info" in processed_crash.get("json_dump", {})
+        return (
+            glom(processed_crash, "json_dump.mac_crash_info", default=None) is not None
+        )
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        mac_crash_info = glom(processed_crash, "json_dump.mac_crash_info", default="")
+        mac_crash_info = processed_crash["json_dump"]["mac_crash_info"]
+        print(f">>> {mac_crash_info})")
         processed_crash["mac_crash_info"] = json.dumps(
             mac_crash_info, indent=2, sort_keys=True
         )
@@ -1158,7 +1161,7 @@ class ModuleURLRewriteRule(Rule):
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         modules = processed_crash["json_dump"]["modules"]
         for module in modules:
-            if "symbol_url" not in module:
+            if not module.get("symbol_url"):
                 continue
 
             url = module["symbol_url"]

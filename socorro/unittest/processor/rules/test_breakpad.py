@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from contextlib import contextmanager
 import copy
 import json
 from unittest import mock
@@ -15,6 +14,8 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     JitCrashCategorizeRule,
     MinidumpSha256Rule,
+    MinidumpStackwalkRule,
+    tmp_raw_crash_file,
 )
 from socorro.unittest.processor import get_basic_processor_meta
 
@@ -185,12 +186,6 @@ canonical_stackwalker_output = {
 canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
-class MyBreakpadStackwalkerRule2015(BreakpadStackwalkerRule2015):
-    @contextmanager
-    def _temp_raw_crash_json_file(self, raw_crash, crash_id):
-        yield "%s.json" % raw_crash["uuid"]
-
-
 class TestCrashingThreadInfoRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -256,17 +251,17 @@ canonical_external_output_str = json.dumps(canonical_external_output)
 
 class TestBreakpadTransformRule2015:
     def build_rule(self):
-        pprcb = ProcessorPipeline.required_config.breakpad
+        config = ProcessorPipeline.required_config.breakpad
 
         return BreakpadStackwalkerRule2015(
             dump_field="upload_file_minidump",
-            symbols_urls=pprcb.symbols_urls.default,
-            command_pathname=pprcb.command_pathname.default,
-            command_line=pprcb.command_line.default,
+            symbols_urls=config.symbols_urls.default,
+            command_path=config.command_path.default,
+            command_line=config.command_line.default,
             kill_timeout=5,
             symbol_tmp_path="/tmp/symbols/tmp",
             symbol_cache_path="/tmp/symbols/cache",
-            tmp_storage_path="/tmp",
+            tmp_path="/tmp",
         )
 
     @mock.patch("socorro.processor.rules.breakpad.subprocess")
@@ -287,10 +282,10 @@ class TestBreakpadTransformRule2015:
         with MetricsMock() as mm:
             rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-            assert processed_crash["json_dump"] == canonical_stackwalker_output
             assert processed_crash["mdsw_return_code"] == 0
             assert processed_crash["mdsw_status_string"] == "OK"
             assert processed_crash["success"] is True
+            assert processed_crash["json_dump"] == canonical_stackwalker_output
 
             mm.assert_incr(
                 "processor.breakpadstackwalkerrule.run",
@@ -345,8 +340,8 @@ class TestBreakpadTransformRule2015:
         assert processed_crash["mdsw_status_string"] == "unknown error"
         assert not processed_crash["success"]
         assert (
-            f"{rule.command_pathname} output failed in json: "
-            + "Unexpected character found when decoding 'false'"
+            f"{rule.command_path}: non-json output: Expecting property name "
+            + "enclosed in double quotes: line 1 column 2 (char 1)"
         ) in processor_meta["processor_notes"][0]
         assert (
             processor_meta["processor_notes"][1] == "MDSW failed with -1: unknown error"
@@ -354,32 +349,31 @@ class TestBreakpadTransformRule2015:
 
     @mock.patch("socorro.processor.rules.breakpad.os.unlink")
     def test_temp_file_context(self, mocked_unlink):
-        rule = self.build_rule()
-        with rule._temp_raw_crash_json_file("foo.json", example_uuid):
+        with tmp_raw_crash_file("/tmp/", {}, example_uuid):
             pass
         mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
+            "/tmp/%s.MainThread.temp.json" % example_uuid
         )
         mocked_unlink.reset_mock()
 
         try:
-            with rule._temp_raw_crash_json_file("foo.json", example_uuid):
+            with tmp_raw_crash_file("/tmp/", {}, example_uuid):
                 raise KeyError("oops")
         except KeyError:
             pass
         mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
+            "/tmp/%s.MainThread.temp.json" % example_uuid
         )
         mocked_unlink.reset_mock()
 
 
 class TestJitCrashCategorizeRule:
     def build_rule(self):
-        pprcj = ProcessorPipeline.required_config.jit
+        config = ProcessorPipeline.required_config.jit
         return JitCrashCategorizeRule(
-            dump_field=pprcj.dump_field.default,
-            command_pathname=pprcj.command_pathname.default,
-            command_line=pprcj.command_line.default,
+            dump_field=config.dump_field.default,
+            command_path=config.command_path.default,
+            command_line=config.command_line.default,
             kill_timeout=5,
         )
 
@@ -474,6 +468,8 @@ class TestJitCrashCategorizeRule:
         processor_meta = get_basic_processor_meta()
 
         mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
+        # FIXME(willkg): I'm not sure stdout could ever be None; this seems like a bad
+        # test
         mocked_subprocess_handle.stdout.read.return_value = None
         mocked_subprocess_handle.wait.return_value = -1
 
@@ -673,3 +669,244 @@ class TestJitCrashCategorizeRule:
         }
 
         assert rule.predicate({}, {}, processed_crash, {}) is True
+
+
+MINIMAL_STACKWALKER_OUTPUT = {
+    "status": "OK",
+    "crash_info": {
+        "address": "0x0",
+        "assertion": None,
+        "crashing_thread": 0,
+        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+    },
+    "crashing_thread": {
+        "frame_count": 1,
+        "frames_truncated": False,
+        "last_error_value": "ERROR_SUCCESS",
+        "thread_index": 0,
+        "thread_name": None,
+        "total_frames": 1,
+        "frames": [
+            {
+                "file": None,
+                "frame": 0,
+                "function": "NtWaitForMultipleObjects",
+                "function_offset": "0x000000000000000a",
+                "line": None,
+                "missing_symbols": False,
+                "module": "ntdll.dll",
+                "module_offset": "0x0000000000069d5a",
+                "offset": "0x0000000077539d5a",
+                "registers": {
+                    "r10": "0xfefefefefefefeff",
+                    "r11": "0x8080808080808080",
+                    "r12": "0x0000000000000000",
+                    "r13": "0x000000000086c180",
+                    "r14": "0x0000000000000000",
+                    "r15": "0x0000000080000000",
+                    "r8": "0x0000000000000000",
+                    "r9": "0x0000000000000008",
+                    "rax": "0x0000000000000058",
+                    "rbp": "0x0000000000000002",
+                    "rbx": "0x000000000086c210",
+                    "rcx": "0x0000000000000002",
+                    "rdi": "0x0000000000000002",
+                    "rdx": "0x000000000086c180",
+                    "rip": "0x0000000077539d5a",
+                    "rsi": "0x0000000000000001",
+                    "rsp": "0x000000000086c0d8",
+                },
+                "trust": "context",
+            },
+        ],
+    },
+    "lsb_release": None,
+    "mac_crash_info": None,
+    "main_module": 0,
+    "modules": [
+        {
+            "base_addr": "0x00000000774d0000",
+            "cert_subject": "Microsoft Windows",
+            "code_id": "5E0EB67F19f000",
+            "corrupt_symbols": False,
+            "debug_file": "ntdll.pdb",
+            "debug_id": "0A682A2081CD49B19C5CB941603074381",
+            "end_addr": "0x000000007766f000",
+            "filename": "ntdll.dll",
+            "loaded_symbols": True,
+            "missing_symbols": False,
+            "symbol_url": "https://symbols.mozilla.org/try/ntdll.pdb/0A682A2081CD49B19C5CB941603074381/ntdll.sym",
+            "version": "6.1.7601.24545",
+        },
+    ],
+    "system_info": {
+        "cpu_arch": "amd64",
+        "cpu_count": 2,
+        "cpu_info": "family 6 model 23 stepping 10",
+        "cpu_microcode_version": None,
+        "os": "Windows NT",
+        "os_ver": "6.1.7601 Service Pack 1",
+    },
+    "thread_count": 1,
+    "threads": [
+        {
+            "frame_count": 1,
+            "frames_truncated": False,
+            "last_error_value": "ERROR_SUCCESS",
+            "thread_name": None,
+            "total_frames": 1,
+            "frames": [
+                {
+                    "file": None,
+                    "frame": 0,
+                    "function": "NtWaitForMultipleObjects",
+                    "function_offset": "0x000000000000000a",
+                    "line": None,
+                    "missing_symbols": False,
+                    "module": "ntdll.dll",
+                    "module_offset": "0x0000000000069d5a",
+                    "offset": "0x0000000077539d5a",
+                    "registers": {
+                        "r10": "0xfefefefefefefeff",
+                        "r11": "0x8080808080808080",
+                        "r12": "0x0000000000000000",
+                        "r13": "0x000000000086c180",
+                        "r14": "0x0000000000000000",
+                        "r15": "0x0000000080000000",
+                        "r8": "0x0000000000000000",
+                        "r9": "0x0000000000000008",
+                        "rax": "0x0000000000000058",
+                        "rbp": "0x0000000000000002",
+                        "rbx": "0x000000000086c210",
+                        "rcx": "0x0000000000000002",
+                        "rdi": "0x0000000000000002",
+                        "rdx": "0x000000000086c180",
+                        "rip": "0x0000000077539d5a",
+                        "rsi": "0x0000000000000001",
+                        "rsp": "0x000000000086c0d8",
+                    },
+                    "trust": "context",
+                },
+            ],
+        },
+    ],
+    "unloaded_modules": [],
+}
+MINIMAL_STACKWALKER_OUTPUT_STR = json.dumps(MINIMAL_STACKWALKER_OUTPUT)
+
+
+class TestMinidumpStackwalkRule:
+    # NOTE(willkg): this tests the mechanics of the rule that runs minidump-stackwalk,
+    # but doesn't test minidump-stackwalk itself
+    def build_rule(self):
+        config = ProcessorPipeline.required_config.minidumpstackwalk
+
+        return MinidumpStackwalkRule(
+            dump_field="upload_file_minidump",
+            symbols_urls=config.symbols_urls.default,
+            command_path=config.command_path.default,
+            command_line=config.command_line.default,
+            kill_timeout=5,
+            symbol_tmp_path="/tmp/symbols/tmp",
+            symbol_cache_path="/tmp/symbols/cache",
+            tmp_path="/tmp",
+        )
+
+    def test_everything_we_hoped_for(self):
+        rule = self.build_rule()
+
+        raw_crash = {"uuid": example_uuid}
+        dumps = {rule.dump_field: "dumpfile.dmp"}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        with MetricsMock() as mm:
+            with mock.patch(
+                "socorro.processor.rules.breakpad.subprocess"
+            ) as mock_subprocess:
+                mock_subprocess_handle = mock_subprocess.Popen.return_value
+                mock_subprocess_handle.stdout.read.return_value = (
+                    MINIMAL_STACKWALKER_OUTPUT_STR
+                )
+                mock_subprocess_handle.wait.return_value = 0
+
+                rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+            expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
+            expected_output["stackwalk_version"] = rule.stackwalk_version
+
+            assert processed_crash["mdsw_return_code"] == 0
+            assert processed_crash["mdsw_status_string"] == "OK"
+            assert processed_crash["success"] is True
+            assert processed_crash["json_dump"] == expected_output
+
+            mm.assert_incr(
+                "processor.minidumpstackwalk.run",
+                tags=["outcome:success", "exitcode:0"],
+            )
+
+    def test_stackwalker_hangs(self):
+        rule = self.build_rule()
+
+        raw_crash = {"uuid": example_uuid}
+        dumps = {rule.dump_field: "dumpfile.dmp"}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        with MetricsMock() as mm:
+            with mock.patch(
+                "socorro.processor.rules.breakpad.subprocess"
+            ) as mock_subprocess:
+                mock_subprocess_handle = mock_subprocess.Popen.return_value
+                mock_subprocess_handle.stdout.read.return_value = "{}\n"
+                mock_subprocess_handle.wait.return_value = 124
+
+                rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+            assert processed_crash["json_dump"] == {
+                "stackwalk_version": rule.stackwalk_version
+            }
+            assert processed_crash["mdsw_return_code"] == 124
+            assert processed_crash["mdsw_status_string"] == "unknown error"
+            assert processed_crash["success"] is False
+            assert processor_meta["processor_notes"] == [
+                "mdsw (rust) timeout (SIGKILL)"
+            ]
+
+            mm.assert_incr(
+                "processor.minidumpstackwalk.run",
+                tags=["outcome:fail", "exitcode:124"],
+            )
+
+    def test_stackwalker_bad_output(self):
+        rule = self.build_rule()
+
+        raw_crash = {"uuid": example_uuid}
+        dumps = {rule.dump_field: "dumpfile.dmp"}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        with mock.patch(
+            "socorro.processor.rules.breakpad.subprocess"
+        ) as mock_subprocess:
+            mock_subprocess_handle = mock_subprocess.Popen.return_value
+            # This will cause json.loads to throw an error
+            mock_subprocess_handle.stdout.read.return_value = "{ff"
+            mock_subprocess_handle.wait.return_value = -1
+
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash["json_dump"] == {
+            "stackwalk_version": rule.stackwalk_version
+        }
+        assert processed_crash["mdsw_return_code"] == -1
+        assert processed_crash["mdsw_status_string"] == "unknown error"
+        assert not processed_crash["success"]
+        assert (
+            f"{rule.command_path}: non-json output: Expecting property name "
+            + "enclosed in double quotes: line 1 column 2 (char 1)"
+        ) in processor_meta["processor_notes"][0]
+        assert (
+            processor_meta["processor_notes"][1]
+            == "mdsw (rust) failed with -1: unknown error"
+        )
