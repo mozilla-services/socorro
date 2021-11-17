@@ -606,7 +606,6 @@ class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
         name="json_dump_allowlist_keys",
         doc="keys of the json_dump field to keep in the processed crash",
         default=[
-            "write_combine_size",
             "stackwalk_version",
             "system_info",
         ],

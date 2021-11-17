@@ -54,7 +54,6 @@ SAMPLE_PROCESSED_CRASH = {
     "id": 361399767,
     "json_dump": {
         "things": "stackwalker output",
-        "write_combine_size": 43,
         "system_info": {"cpu_count": 42, "os": "Linux"},
     },
     "install_age": 22385,
@@ -350,7 +349,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """Test a successful index of a crash report"""
         modified_config = self.get_tuned_config(ESCrashStorage)
         modified_config.json_dump_allowlist_keys = [
-            "write_combine_size",
             "system_info",
         ]
         modified_config.es_redactor = DotDict()
@@ -377,7 +375,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "json_dump": {
                 # json dump allowed keys
                 "system_info": {"cpu_count": 42, "os": "Linux"},
-                "write_combine_size": 43,
                 # not allowed keys:
                 "badkey1": "foo",
                 "badkey2": {"badsubkey": "foo"},
@@ -419,7 +416,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "json_dump": {
                     # json dump allowed keys
                     "system_info": {"cpu_count": 42},
-                    "write_combine_size": 43,
                 },
             },
         }
