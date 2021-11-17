@@ -8,18 +8,18 @@
       {% if current_page > 1 %}
         <a href="{{ current_url }}{{ separator }}page={{ current_page - 1 }}{{ tab }}" data-page="{{ current_page - 1 }}">&larr; Prev</a>
       {% endif %}
-
+      {% set padding = 4 %}
       {% for page in range(1, report.total_pages + 1) %}
         {%- if page == current_page %}
           <b>{{ page }}</b>
-        {% elif page > 2 and page < (report.total_pages - 2) %}
-          {%- if current_page < 3 and page==7 %}
+        {% elif page > padding and page < (report.total_pages - padding) %}
+          {%- if current_page < (1 + padding) and page == (((1 + padding) * 2) + 1) %}
             &hellip;
-          {% elif current_page> 6 and page == 3 %}
+          {% elif current_page > ((1 + padding) * 2) and page == (1 + padding) %}
             &hellip;
-          {% elif page > (current_page - 3) and page < (current_page + 3) %}
+          {% elif page > (current_page - (1 + padding)) and page < (current_page + (1 + padding)) %}
             <a href="{{ current_url }}{{ separator }}page={{ page }}{{ tab }}" data-page="{{ page }}">{{ page }}</a>
-          {% elif page == (report.total_pages - 3) %}
+          {% elif page == (report.total_pages - (1 + padding)) %}
             &hellip;
           {% endif -%}
         {% else %}
