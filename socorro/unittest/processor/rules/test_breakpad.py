@@ -279,13 +279,16 @@ class TestBreakpadTransformRule2015:
         )
         mocked_subprocess_handle.wait.return_value = 0
 
+        expected_output = copy.deepcopy(canonical_stackwalker_output)
+        expected_output["stackwalk_version"] = "stackwalker unknown"
+
         with MetricsMock() as mm:
             rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
             assert processed_crash["mdsw_return_code"] == 0
             assert processed_crash["mdsw_status_string"] == "OK"
             assert processed_crash["success"] is True
-            assert processed_crash["json_dump"] == canonical_stackwalker_output
+            assert processed_crash["json_dump"] == expected_output
 
             mm.assert_incr(
                 "processor.breakpadstackwalkerrule.run",
@@ -308,7 +311,9 @@ class TestBreakpadTransformRule2015:
         with MetricsMock() as mm:
             rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-            assert processed_crash["json_dump"] == {}
+            assert processed_crash["json_dump"] == {
+                "stackwalk_version": "stackwalker unknown",
+            }
             assert processed_crash["mdsw_return_code"] == 124
             assert processed_crash["mdsw_status_string"] == "unknown error"
             assert processed_crash["success"] is False
@@ -335,7 +340,9 @@ class TestBreakpadTransformRule2015:
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["json_dump"] == {}
+        assert processed_crash["json_dump"] == {
+            "stackwalk_version": "stackwalker unknown",
+        }
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
         assert not processed_crash["success"]
