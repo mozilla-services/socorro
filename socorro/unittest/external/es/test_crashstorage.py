@@ -54,7 +54,6 @@ SAMPLE_PROCESSED_CRASH = {
     "id": 361399767,
     "json_dump": {
         "things": "stackwalker output",
-        "largest_free_vm_block": "0x2F42",
         "write_combine_size": 43,
         "system_info": {"cpu_count": 42, "os": "Linux"},
     },
@@ -351,7 +350,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
         """Test a successful index of a crash report"""
         modified_config = self.get_tuned_config(ESCrashStorage)
         modified_config.json_dump_allowlist_keys = [
-            "largest_free_vm_block",
             "write_combine_size",
             "system_info",
         ]
@@ -378,7 +376,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {
                 # json dump allowed keys
-                "largest_free_vm_block": "0x2F42",
                 "system_info": {"cpu_count": 42, "os": "Linux"},
                 "write_combine_size": 43,
                 # not allowed keys:
@@ -421,7 +418,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "json_dump": {
                     # json dump allowed keys
-                    "largest_free_vm_block": "0x2F42",
                     "system_info": {"cpu_count": 42},
                     "write_combine_size": 43,
                 },
