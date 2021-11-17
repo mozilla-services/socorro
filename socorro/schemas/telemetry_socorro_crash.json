@@ -662,13 +662,6 @@
             }
           }
         },
-        "tiny_block_size": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "If present, the total size of all memory regions in the crashing process that are smaller than 1 MB."
-        },
         "thread_count": {
           "type": [
             "integer",
