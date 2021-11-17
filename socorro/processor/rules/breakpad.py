@@ -330,6 +330,10 @@ class BreakpadStackwalkerRule2015(Rule):
         self.symbol_cache_path = symbol_cache_path
         self.tmp_path = tmp_path
 
+        # NOTE(willkg): we can't get a version from the binary without a lot of work
+        # which we're not going to do now because this is not long for this world
+        self.stackwalk_version = "stackwalker unknown"
+
         self.metrics = markus.get_metrics("processor.breakpadstackwalkerrule")
 
     def __repr__(self):
@@ -385,6 +389,9 @@ class BreakpadStackwalkerRule2015(Rule):
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
             output = {}
+
+        # Add the stackwalk_version to the stackwalk output
+        output["stackwalk_version"] = self.stackwalk_version
 
         stackwalker_data = {
             "json_dump": output,

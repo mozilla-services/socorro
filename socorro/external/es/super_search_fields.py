@@ -2868,6 +2868,12 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
+    "stackwalk_version": keyword_field(
+        name="stackwalk_version",
+        description="binary and version for stackwalker used to process report",
+        namespace="processed_crash.json_dump",
+        is_protected=False,
+    ),
     "startup_crash": {
         "data_validation_type": "bool",
         "description": (
@@ -3291,7 +3297,6 @@ FIELDS = {
             "If we crash while some code is spinning manually the event loop, we will "
             "see the stack of nested annotations here."
         ),
-        in_database_name="xpcom_spin_event_loop_stack",
         is_protected=False,
     ),
 }
