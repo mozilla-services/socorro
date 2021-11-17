@@ -3249,20 +3249,6 @@ FIELDS = {
             "type": "string",
         },
     },
-    "write_combine_size": {
-        "data_validation_type": "int",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "write_combine_size",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "write_combine_size",
-        "namespace": "processed_crash.json_dump",
-        "permissions_needed": [],
-        "query_type": "number",
-        "storage_mapping": {"type": "long"},
-    },
     "xpcom_spin_event_loop_stack": keyword_field(
         name="xpcom_spin_event_loop_stack",
         description=(

@@ -684,13 +684,6 @@
               }
             }
           }
-        },
-        "write_combine_size": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "If present, the total size of all committed memory regions in the crashing process marked with PAGE_WRITECOMBINE."
         }
       }
     },

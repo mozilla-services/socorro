@@ -91,13 +91,17 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
                 "date_processed": self.now,
                 "build": 20000000,
                 "os_name": "Linux",
-                "json_dump": {"write_combine_size": 9823012},
+                "json_dump": {
+                    "system_info": {
+                        "cpu_count": 4,
+                    },
+                }
             }
         )
         self.es_context.refresh()
 
         res = self.api.get(
-            _columns=["date", "build_id", "platform", "signature", "write_combine_size"]
+            _columns=["date", "build_id", "platform", "signature", "cpu_count"]
         )
 
         assert "hits" in res
@@ -120,8 +124,8 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         assert "platform" in res["hits"][0]  # os_name -> platform
 
         # Test namespaces are correctly removed.
-        # processed_crash.json_dump.write_combine_size > write_combine_size
-        assert "write_combine_size" in res["hits"][0]
+        # processed_crash.json_dump.system_info.cpu_count -> cpu_count
+        assert "cpu_count" in res["hits"][0]
 
     def test_get_with_bad_results_number(self):
         """Run a very basic test, just to see if things work"""
