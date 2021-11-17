@@ -529,13 +529,6 @@
             }
           }
         },
-        "largest_free_vm_block": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "If present, the size of the largest free block of virtual memory in the crashing process as a hex string."
-        },
         "main_module": {
           "type": [
             "integer",

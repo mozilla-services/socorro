@@ -2001,20 +2001,6 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
-    "largest_free_vm_block": {
-        "data_validation_type": "enum",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "largest_free_vm_block",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "largest_free_vm_block",
-        "namespace": "processed_crash.json_dump",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "string"},
-    },
     "last_crash": {
         "data_validation_type": "int",
         "description": (
