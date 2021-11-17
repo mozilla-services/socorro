@@ -129,12 +129,12 @@ class Test_build_mapping(ElasticsearchTestCase):
         }
 
         # Test nested objects.
-        assert (
-            processed_crash["json_dump"]["properties"]["system_info"]["properties"]["cpu_count"] == {
-                "type": "short",
-                "doc_values": True,
-            }
-        )
+        assert processed_crash["json_dump"]["properties"]["system_info"]["properties"][
+            "cpu_count"
+        ] == {
+            "type": "short",
+            "doc_values": True,
+        }
 
 
 class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
