@@ -95,7 +95,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
                     "system_info": {
                         "cpu_count": 4,
                     },
-                }
+                },
             }
         )
         self.es_context.refresh()
