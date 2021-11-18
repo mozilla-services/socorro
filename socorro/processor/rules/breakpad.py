@@ -29,13 +29,16 @@ class CrashingThreadInfoRule(Rule):
 
     """
 
+    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+        return bool(processed_crash.get("json_dump", None))
+
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["crashing_thread"] = glom.glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         )
         if processed_crash["crashing_thread"] is None:
             processor_meta["processor_notes"].append(
-                "MDSW did not identify the crashing thread"
+                "mdsw did not identify the crashing thread"
             )
 
         processed_crash["truncated"] = glom.glom(
@@ -76,8 +79,8 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
     path = os.path.join(
         tmp_path, f"{crash_id}.{threading.currentThread().getName()}.temp.json"
     )
-    with open(path, "w") as f:
-        json.dump(dotdict_to_dict(raw_crash), f)
+    with open(path, "w") as fp:
+        json.dump(dotdict_to_dict(raw_crash), fp)
     try:
         yield path
     finally:
@@ -182,7 +185,8 @@ class MinidumpStackwalkRule(Rule):
         output, return_code = execute_process(command_line)
         if return_code != 0:
             raise CommandError(
-                f"mdsw (rust): unknown error when getting version: {return_code} {output}"
+                "MinidumpStackwalkRule: unknown error when getting version: "
+                + f"{return_code} {output}"
             )
         return output.decode("utf-8").strip()
 
@@ -223,13 +227,18 @@ class MinidumpStackwalkRule(Rule):
             output = json.loads(stdout)
         except Exception as exc:
             msg = f"{command_path}: non-json output: {exc}"
-            self.logger.debug(f"{command_path}: non-json output: {stdout[:1000]}")
+            self.logger.debug(
+                f"MinidumpStackwalkRule: {command_path}: non-json output: {stdout[:1000]}"
+            )
             self.logger.error(msg)
             processor_meta["processor_notes"].append(msg)
             output = {}
 
         if not isinstance(output, Mapping):
-            msg = f"mdsw (rust) produced unexpected output: {output[:20]}"
+            msg = (
+                "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
+                + f"output: {output[:20]}"
+            )
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
             output = {}
@@ -253,14 +262,14 @@ class MinidumpStackwalkRule(Rule):
         )
 
         if return_code == 124:
-            msg = "mdsw (rust) timeout (SIGKILL)"
+            msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
 
         elif return_code != 0 or not stackwalker_data["success"]:
-            msg = "mdsw (rust) failed with %s: %s" % (
-                return_code,
-                stackwalker_data["mdsw_status_string"],
+            msg = (
+                "MinidumpStackwalkRule: minidump-stackwalk: failed with "
+                + f"{return_code}: {stackwalker_data['mdsw_status_string']}"
             )
             # subprocess.Popen with shell=False returns negative exit codes
             # where the number is the signal that got kicked up
@@ -280,8 +289,18 @@ class MinidumpStackwalkRule(Rule):
         with tmp_raw_crash_file(self.tmp_path, raw_crash, crash_id) as raw_crash_path:
             for dump_name, dump_file_path in dumps.items():
                 # This rule only works on minidumps which the crash reporter prefixes
-                # with the value of dump_field (defaults to "upload_file_minidump").
+                # with the value of dump_field (defaults to "upload_file_minidump")
                 if not dump_name.startswith(self.dump_field):
+                    continue
+
+                # If the dump file is empty (0-bytes), then we don't want to run
+                file_size = os.path.getsize(dump_file_path)
+                if file_size == 0:
+                    # This is a bad case, so we want to add a note.
+                    processor_meta["processor_notes"].append(
+                        f"MinidumpStackwalkRule: {dump_name} is empty--skipping "
+                        + "minidump processing"
+                    )
                     continue
 
                 command_line = self.expand_commandline(

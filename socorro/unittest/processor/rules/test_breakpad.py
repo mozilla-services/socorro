@@ -202,6 +202,7 @@ class TestCrashingThreadInfoRule:
         assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
 
     def test_stuff_missing(self):
+        """If there's no dump data, then this rule doesn't do anything"""
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {"json_dump": {}}
@@ -210,14 +211,8 @@ class TestCrashingThreadInfoRule:
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["crashing_thread"] is None
-        assert processed_crash["address"] is None
-        assert processed_crash["truncated"] is False
-        assert processed_crash["reason"] == ""
-
-        assert processor_meta["processor_notes"] == [
-            "MDSW did not identify the crashing thread"
-        ]
+        assert processed_crash == {"json_dump": {}}
+        assert processor_meta["processor_notes"] == []
 
 
 class TestMinidumpSha256HashRule:
@@ -819,11 +814,14 @@ class TestMinidumpStackwalkRule:
             tmp_path="/tmp",
         )
 
-    def test_everything_we_hoped_for(self):
+    def test_everything_we_hoped_for(self, tmp_path):
         rule = self.build_rule()
 
+        dumppath = tmp_path / "dumpfile.dmp"
+        dumppath.write_text("abcde")
+
         raw_crash = {"uuid": example_uuid}
-        dumps = {rule.dump_field: "dumpfile.dmp"}
+        dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -852,11 +850,14 @@ class TestMinidumpStackwalkRule:
                 tags=["outcome:success", "exitcode:0"],
             )
 
-    def test_stackwalker_hangs(self):
+    def test_stackwalker_hangs(self, tmp_path):
         rule = self.build_rule()
 
+        dumppath = tmp_path / "dumpfile.dmp"
+        dumppath.write_text("abcde")
+
         raw_crash = {"uuid": example_uuid}
-        dumps = {rule.dump_field: "dumpfile.dmp"}
+        dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -877,7 +878,7 @@ class TestMinidumpStackwalkRule:
             assert processed_crash["mdsw_status_string"] == "unknown error"
             assert processed_crash["success"] is False
             assert processor_meta["processor_notes"] == [
-                "mdsw (rust) timeout (SIGKILL)"
+                "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
             ]
 
             mm.assert_incr(
@@ -885,11 +886,14 @@ class TestMinidumpStackwalkRule:
                 tags=["outcome:fail", "exitcode:124"],
             )
 
-    def test_stackwalker_bad_output(self):
+    def test_stackwalker_bad_output(self, tmp_path):
         rule = self.build_rule()
 
+        dumppath = tmp_path / "dumpfile.dmp"
+        dumppath.write_text("abcde")
+
         raw_crash = {"uuid": example_uuid}
-        dumps = {rule.dump_field: "dumpfile.dmp"}
+        dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
@@ -915,5 +919,5 @@ class TestMinidumpStackwalkRule:
         ) in processor_meta["processor_notes"][0]
         assert (
             processor_meta["processor_notes"][1]
-            == "mdsw (rust) failed with -1: unknown error"
+            == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
         )

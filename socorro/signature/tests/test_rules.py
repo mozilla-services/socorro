@@ -1090,7 +1090,7 @@ class TestSignatureGenerationRule:
         assert "proto_signature" not in result.extra
         assert "normalized_frames" not in result.extra
         assert result.notes == [
-            "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
+            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
     def test_lower_case_modules(self):

@@ -309,15 +309,11 @@ class CSignatureTool:
         # Handle empty signatures to explain why we failed generating them.
         if signature == "" or signature is None:
             if crashed_thread is None:
-                notes.append(
-                    "CSignatureTool: No signature could be created because we do not know which "
-                    "thread crashed"
-                )
+                notes.append("CSignatureTool: no crashing thread identified")
                 signature = "EMPTY: no crashing thread identified"
             else:
                 notes.append(
-                    "CSignatureTool: No proper signature could be created because no good data "
-                    "for the crashing thread ({}) was found".format(crashed_thread)
+                    f"CSignatureTool: no frame data for crashing thread ({crashed_thread})"
                 )
                 try:
                     signature = source_list[0]

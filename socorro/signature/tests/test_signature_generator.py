@@ -23,7 +23,7 @@ class TestSignatureGenerator:
         # SignatureGenerator and the rules in the default pipeline don't fall over.
         assert ret.signature == "EMPTY: no crashing thread identified"
         assert ret.notes == [
-            "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
+            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
     def test_failing_rule(self):
