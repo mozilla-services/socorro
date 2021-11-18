@@ -234,7 +234,7 @@ class TestViews(BaseTestViews):
                     "cpu_arch": "amd64",
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                     "address": "0x8",
-                    "completeddatetime": "2012-06-11T06:08:57",
+                    "completed_datetime": "2012-06-11T06:08:57",
                     "success": True,
                     "upload_file_minidump_browser": "a crash",
                     "upload_file_minidump_flash1": "a crash",
@@ -302,7 +302,7 @@ class TestViews(BaseTestViews):
                     "cpu_arch": "amd64",
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                     "address": "0x8",
-                    "completeddatetime": "2012-06-11T06:08:57",
+                    "completed_datetime": "2012-06-11T06:08:57",
                     "success": True,
                     "upload_file_minidump_browser": "a crash",
                     "upload_file_minidump_flash1": "a crash",
@@ -699,7 +699,7 @@ class TestCrashVerify:
         crash_data = {
             "signature": "[@signature]",
             "uuid": uuid,
-            "completeddatetime": "2018-03-14 10:56:50.902884",
+            "completed_datetime": "2018-03-14 10:56:50.902884",
         }
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]

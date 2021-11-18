@@ -110,7 +110,7 @@ class TestBotoS3CrashStorage:
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
             {
                 "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completeddatetime": "2012-04-08 10:56:50.902884",
+                "completed_datetime": "2012-04-08 10:56:50.902884",
                 "signature": "now_this_is_a_signature",
             },
         )
@@ -123,7 +123,7 @@ class TestBotoS3CrashStorage:
         assert json.loads(processed_crash) == {
             "signature": "now_this_is_a_signature",
             "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-            "completeddatetime": "2012-04-08 10:56:50.902884",
+            "completed_datetime": "2012-04-08 10:56:50.902884",
         }
         # Verify nothing else got saved
         assert boto_helper.list(bucket_name=bucket) == [
@@ -355,7 +355,7 @@ class TestTelemetryBotoS3CrashStorage:
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
             {
                 "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completeddatetime": "2012-04-08 10:56:50.902884",
+                "completed_datetime": "2012-04-08 10:56:50.902884",
                 "signature": "now_this_is_a_signature",
                 "os_name": "Linux",
             },
