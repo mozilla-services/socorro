@@ -659,7 +659,7 @@ class ProcessedCrash(SocorroMiddleware):
         "release_channel",
         "ReleaseChannel",
         "signature",
-        "startedDateTime",
+        "started_datetime",
         "success",
         "topmost_filenames",
         "truncated",

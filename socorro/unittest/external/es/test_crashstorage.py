@@ -72,7 +72,6 @@ SAMPLE_PROCESSED_CRASH = {
     "ReleaseChannel": "default",
     "signature": "libxul.so@0x117441c",
     "started_datetime": "2012-04-08 10:56:50.440752",
-    "startedDateTime": "2012-04-08 10:56:50.440752",
     "success": True,
     "topmost_filenames": [],
     "truncated": False,
