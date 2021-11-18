@@ -354,7 +354,7 @@ class TestBreakpadTransformRule2015:
         with tmp_raw_crash_file("/tmp/", {}, example_uuid):
             pass
         mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.temp.json" % example_uuid
+            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
         )
         mocked_unlink.reset_mock()
 
@@ -364,7 +364,7 @@ class TestBreakpadTransformRule2015:
         except KeyError:
             pass
         mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.temp.json" % example_uuid
+            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
         )
         mocked_unlink.reset_mock()
 

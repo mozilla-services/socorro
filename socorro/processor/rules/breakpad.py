@@ -5,6 +5,7 @@
 from collections import Mapping
 from contextlib import contextmanager, closing
 import json
+import logging
 import os
 import shlex
 import subprocess
@@ -15,6 +16,9 @@ import markus
 
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class CrashingThreadInfoRule(Rule):
@@ -79,8 +83,17 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
     path = os.path.join(
         tmp_path, f"{crash_id}.{threading.currentThread().getName()}.TEMPORARY.json"
     )
-    with open(path, "w") as fp:
-        json.dump(dotdict_to_dict(raw_crash), fp)
+    try:
+        with open(path, "w") as fp:
+            json.dump(dotdict_to_dict(raw_crash), fp)
+    except OSError:
+        # If we can't save the file because there isn't enough space, we want to log
+        # what's there so we can see what's going on
+        LOGGER.error(
+            f"OSError: no space: contents of {tmp_path}: {os.listdir(tmp_path)}"
+        )
+        raise
+
     try:
         yield path
     finally:
