@@ -354,28 +354,19 @@ class ProcessorPipeline(RequiredConfig):
         # transformation rules. Sometimes rules need a bit more extra
         # information about the transformation process itself.
         processor_meta_data = DotDict()
-        processor_meta_data.processor_notes = [
-            self.config.processor_name,
-            self.__class__.__name__,
-        ]
         processor_meta_data.processor = self
         processor_meta_data.config = self.config
-
-        if "processor_notes" in processed_crash:
-            original_processor_notes = [
-                x.strip() for x in processed_crash.processor_notes.split(";")
-            ]
-            processor_meta_data.processor_notes.append(
-                "earlier processing: %s"
-                % processed_crash.get("started_datetime", "Unknown Date")
-            )
-        else:
-            original_processor_notes = []
+        processor_meta_data.processor_notes = []
 
         processed_crash.success = False
-        processed_crash.started_datetime = utc_now()
-        # for backwards compatibility:
-        processed_crash.startedDateTime = processed_crash.started_datetime
+        start_time = utc_now()
+        processed_crash.started_datetime = start_time
+
+        processor_meta_data.processor_notes.append(
+            f">>> Start processing: {start_time:%Y-%m-%d %H:%M:%S} "
+            + f"({self.config.processor_name})"
+        )
+
         processed_crash.signature = "EMPTY: crash failed to process"
 
         crash_id = raw_crash["uuid"]
@@ -412,15 +403,17 @@ class ProcessorPipeline(RequiredConfig):
         # raised, call it a success
         processed_crash.success = True
 
-        # The processor notes are in the form of a list.  Join them all
-        # together to make a single string
-        processor_meta_data.processor_notes.extend(original_processor_notes)
-        processed_crash.processor_notes = "; ".join(processor_meta_data.processor_notes)
-        completed_datetime = utc_now()
-        processed_crash.completed_datetime = completed_datetime
+        # Join notes into a single string
+        if processed_crash.get("processor_notes"):
+            previous_notes = processed_crash["processor_notes"]
+            previous_notes = [line.strip() for line in previous_notes.split("\n")]
+            processor_meta_data.processor_notes.extend(previous_notes)
 
-        # For backwards compatibility
-        processed_crash.completeddatetime = completed_datetime
+        processed_crash["processor_notes"] = "\n".join(
+            processor_meta_data.processor_notes
+        )
+        completed_datetime = utc_now()
+        processed_crash["completed_datetime"] = completed_datetime
 
         self.logger.info(
             "finishing %s transform for crash: %s",
