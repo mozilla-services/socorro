@@ -2053,7 +2053,7 @@ class TestSignatureGeneratorRule:
         assert processed_crash["signature"] == "EMPTY: no crashing thread identified"
         assert "proto_signature" not in processed_crash
         assert processor_meta["processor_notes"] == [
-            "SignatureGenerationRule: CSignatureTool: No signature could be created because we do not know which thread crashed"  # noqa
+            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
     @mock.patch("socorro.lib.sentry_client.get_hub")

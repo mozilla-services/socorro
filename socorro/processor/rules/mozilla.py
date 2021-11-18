@@ -618,16 +618,14 @@ class PluginUserComment(Rule):
 
 
 class ExploitablityRule(Rule):
+    """Copies exploitability bits in json_dump to processed_crash"""
+
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         try:
-            processed_crash["exploitability"] = processed_crash["json_dump"][
-                "sensitive"
-            ]["exploitability"]
+            val = processed_crash["json_dump"]["sensitive"]["exploitability"]
+            processed_crash["exploitability"] = val
         except KeyError:
             processed_crash["exploitability"] = "unknown"
-            processor_meta["processor_notes"].append(
-                "exploitability information missing"
-            )
 
 
 class FlashVersionRule(Rule):
@@ -741,18 +739,11 @@ class TopMostFilesRule(Rule):
         processed_crash["topmost_filenames"] = None
         try:
             crashing_thread = processed_crash["crashing_thread"]
-            stack_frames = processed_crash["json_dump"]["threads"][crashing_thread][
-                "frames"
-            ]
-        except (IndexError, TypeError, KeyError) as x:
-            # guess we don't have frames or crashing_thread or json_dump we have to give
-            # up
-            processor_meta["processor_notes"].append(
-                "no 'topmost_file' name because '%s' is missing" % x
-            )
+            frames = processed_crash["json_dump"]["threads"][crashing_thread]["frames"]
+        except (IndexError, TypeError, KeyError):
             return
 
-        for a_frame in stack_frames:
+        for a_frame in frames:
             source_filename = a_frame.get("file", None)
             if source_filename:
                 processed_crash["topmost_filenames"] = source_filename
