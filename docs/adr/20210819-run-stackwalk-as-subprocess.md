@@ -5,7 +5,7 @@
 - Date: 2021-08-19
 - Tags: processor, stackwalk
 
-NOTE(willkg): This was decided years ago. First commit for running stackwalk as
+NOTE(willkg): This was decided years ago. First commit for running stackwalker as
 a subprocess [is 2008](https://github.com/mozilla-services/socorro/commit/b6a49302918440e896135a2b6b0b82e25f7aa793).
 Discussion of options and what was chosen isn't available. Further, the world has
 changed radically since then, so it's prudent to re-up this decision.
@@ -15,14 +15,14 @@ changed radically since then, so it's prudent to re-up this decision.
 The Socorro processor needs to extract information from the minidump, walk the
 stack of the crashing process, and symbolicate the frames. The stackwalker is a
 separate project that uses the Breakpad library and is written in C++.
-How should the processor run stackwalk on minidumps?
+How should the processor run the stackwalker binary on minidumps?
 
 ## Decision Drivers
 
-- processor is written in Python; stackwalk is written in C++
-- stackwalk code has equivalent code in mozilla-central and the two are
-  developed in tandem
-- minidumps can be malformed; stackwalk can hang and crash
+- processor is written in Python; stackwalker is written in C++
+- stackwalker code has equivalent code in mozilla-central (minidump-analyzer)
+  and the two are developed in tandem
+- minidumps can be malformed; stackwalker can hang and crash
 
 ## Considered Options
 
@@ -33,26 +33,26 @@ How should the processor run stackwalk on minidumps?
 ## Decision Outcome
 
 Chose Option 3: run C++ code as a subprocess because it's the simplest
-implementation that allows stackwalk to hang and crash without crashing the
+implementation that allows stackwalker to hang and crash without crashing the
 processor.
 
 ### Positive Consequences
 
-- running stackwalk as a subprocess makes it easy to swap out for another
+- running stackwalker as a subprocess makes it easy to swap out for another
   executable which makes the Rust rewrite a lot easier to do
 
 ## Pros and Cons of the Options
 
 ### Option 1: wrap C++ code in a microservice with an API used by processor
 
-Wrap the stackwalk code in a microservice that exposes a public API for
+Wrap the stackwalker code in a microservice that exposes a public API for
 extracting information from minidumps.
 
 Goods:
 
-- allows independent stackwalk development making it easier to keep
-  mozilla-central and stackwalk code in sync
-- stackwalk crashing doesn't crash the processor
+- allows independent stackwalker development making it easier to keep
+  mozilla-central minidump-analyzer and stackwalker code in sync
+- stackwalker crashing doesn't crash the processor
 - exposing as an API might enable engineering to do other things; Sentry's
   Symbolicator service exposes minidump stackwalking as an API
 
@@ -69,7 +69,7 @@ imported and used in Python code.
 
 Goods:
 
-- we can make a Pythonic API for using the stackwalk code
+- we can make a Pythonic API for using the stackwalker code
 - runs in-process with processor so we don't incur the performance costs of
   running subprocesses
 
@@ -85,7 +85,7 @@ Bads:
 
 ### Option 3: run C++ code as a subprocess
 
-We can compile stackwalk as a command line executable and run it as a
+We can compile stackwalker as a command line executable and run it as a
 subprocess.
 
 Goods:
@@ -98,7 +98,7 @@ Bads:
 - there's a performance penalty for running subprocesses; this does add up, but
   it's a fraction of the time it takes to extract information from the
   minidump, download and parse SYM files, and symbolicate stacks
-- we have to pass inputs to and outputs from stackwalk through command line
+- we have to pass inputs to and outputs from stackwalker through command line
   execution
 - we have to use temp files
 - we have to differentiate between program output and program diagnostic
