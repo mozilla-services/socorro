@@ -463,7 +463,6 @@ class MacCrashInfoRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         mac_crash_info = processed_crash["json_dump"]["mac_crash_info"]
-        print(f">>> {mac_crash_info})")
         processed_crash["mac_crash_info"] = json.dumps(
             mac_crash_info, indent=2, sort_keys=True
         )
