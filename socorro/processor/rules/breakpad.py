@@ -77,7 +77,7 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
     """
 
     path = os.path.join(
-        tmp_path, f"{crash_id}.{threading.currentThread().getName()}.temp.json"
+        tmp_path, f"{crash_id}.{threading.currentThread().getName()}.TEMPORARY.json"
     )
     with open(path, "w") as fp:
         json.dump(dotdict_to_dict(raw_crash), fp)
