@@ -6,7 +6,9 @@ from unittest import mock
 
 from configman import ConfigurationManager
 from configman.dotdict import DotDict
+import freezegun
 
+from socorro.lib.datetimeutil import utc_now
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
 from socorro.processor.rules.base import Rule
@@ -42,10 +44,8 @@ class TestProcessorPipeline:
         processor.process_crash("default", raw_crash, {}, processed_crash)
 
         # Notes were added
-        assert (
-            processed_crash.processor_notes
-            == "dwight; ProcessorPipeline; rule BadRule failed: KeyError"
-        )
+        notes = processed_crash["processor_notes"].split("\n")
+        assert notes[1] == "rule BadRule failed: KeyError"
         mock_get_hub.assert_not_called()
 
     @mock.patch("socorro.lib.sentry_client.get_hub")
@@ -74,10 +74,8 @@ class TestProcessorPipeline:
         processor.process_crash("default", raw_crash, {}, processed_crash)
 
         # Notes were added again
-        assert (
-            processed_crash.processor_notes
-            == "dwight; ProcessorPipeline; rule BadRule failed: KeyError"
-        )
+        notes = processed_crash["processor_notes"].split("\n")
+        assert notes[1] == "rule BadRule failed: KeyError"
         assert isinstance(captured_exceptions[0], KeyError)
 
     def test_process_crash_existing_processed_crash(self):
@@ -85,27 +83,26 @@ class TestProcessorPipeline:
         dumps = {}
         processed_crash = DotDict(
             {
-                "processor_notes": "we've been here before; yep",
-                "started_datetime": "2014-01-01T00:00:00",
+                "processor_notes": "previousnotes",
             }
         )
 
-        p = ProcessorPipeline(
+        pipeline = ProcessorPipeline(
             self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}
         )
-        with mock.patch("socorro.processor.processor_pipeline.utc_now") as faked_utcnow:
-            faked_utcnow.return_value = "2015-01-01T00:00:00"
-            processed_crash = p.process_crash(
-                "default", raw_crash, dumps, processed_crash
+
+        now = utc_now()
+        with freezegun.freeze_time(now):
+            processed_crash = pipeline.process_crash(
+                ruleset_name="default",
+                raw_crash=raw_crash,
+                dumps=dumps,
+                processed_crash=processed_crash,
             )
 
         assert processed_crash.success
-        assert processed_crash.started_datetime == "2015-01-01T00:00:00"
-        assert processed_crash.startedDateTime == "2015-01-01T00:00:00"
-        assert processed_crash.completed_datetime == "2015-01-01T00:00:00"
-        assert processed_crash.completeddatetime == "2015-01-01T00:00:00"
-        expected = (
-            "dwight; ProcessorPipeline; earlier processing: 2014-01-01T00:00:00;"
-            " we've been here before; yep"
-        )
-        assert processed_crash.processor_notes == expected
+        assert processed_crash.started_datetime == now
+        assert processed_crash.completed_datetime == now
+        notes = processed_crash["processor_notes"].split("\n")
+        assert ">>> Start processing" in notes[0]
+        assert "previousnotes" in notes
