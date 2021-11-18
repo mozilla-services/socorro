@@ -266,6 +266,7 @@ pthread_kill
 __pthread_mutex_lock
 _purecall
 raise
+RaiseFailFastException
 RpcpRaiseException
 RpcRaiseException
 realloc
