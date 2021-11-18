@@ -46,7 +46,6 @@ def reconstitute_datetimes(processed_crash):
         "started_datetime",
         "startedDateTime",
         "completed_datetime",
-        "completeddatetime",
     ]
     for a_key in datetime_fields:
         if a_key not in processed_crash:

@@ -45,7 +45,7 @@ SAMPLE_PROCESSED_CRASH = {
     "app_notes": "...",
     "build": "20120309050057",
     "client_crash_date": "2012-04-08 10:52:42.0",
-    "completeddatetime": "2012-04-08 10:56:50.902884",
+    "completed_datetime": "2012-04-08 10:56:50.902884",
     "cpu_info": "None | 0",
     "cpu_arch": "arm",
     "date_processed": "2012-04-08 10:56:41.558922",

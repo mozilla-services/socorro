@@ -57,7 +57,7 @@ _SAMPLE_UNREDACTED = {
     "cpu_info": "AuthenticAMD family 20 model 2 stepping 0 | 2 ",
     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     "address": "0x8",
-    "completeddatetime": "2012-06-11T06:08:57",
+    "completed_datetime": "2012-06-11T06:08:57",
     "success": True,
     "user_comments": "this is a comment",
     "json_dump": {

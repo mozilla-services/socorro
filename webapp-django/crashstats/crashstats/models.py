@@ -621,7 +621,7 @@ class ProcessedCrash(SocorroMiddleware):
         "app_notes",
         "build",
         "client_crash_date",
-        "completeddatetime",
+        "completed_datetime",
         "cpu_arch",
         "cpu_info",
         "crashedThread",
