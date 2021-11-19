@@ -50,6 +50,7 @@ RUN groupadd --gid $groupid app && \
 # Install OS-level things
 COPY ./docker/set_up_ubuntu.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
+RUN rm /tmp/set_up_ubuntu.sh
 
 # Copy stackwalk bits from mozilla/socorro-minidump-stackwalk image
 COPY --from=breakpad /stackwalk/* /stackwalk/
@@ -81,9 +82,6 @@ USER app
 
 # Copy everything over
 COPY --chown=app:app . /app/
-
-# Build tmp directories for minidump stackwalker
-RUN mkdir -p /tmp/symbols/cache /tmp/symbols/tmp
 
 # Run collectstatic in container which puts files in the default place for
 # static files
