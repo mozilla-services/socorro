@@ -92,6 +92,10 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
         LOGGER.error(
             f"OSError: no space: contents of {tmp_path}: {os.listdir(tmp_path)}"
         )
+        if "symbols" in os.listdir(tmp_path):
+            path = os.path.join(tmp_path, "symbols")
+            LOGGER.error(f"OSError: contents of {path}: {os.listdir(path)}")
+
         raise
 
     try:
