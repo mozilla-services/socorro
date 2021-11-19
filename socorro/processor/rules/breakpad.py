@@ -181,6 +181,7 @@ class MinidumpStackwalkRule(Rule):
         self.tmp_path = tmp_path
 
         self.stackwalk_version = self.get_version()
+        self.build_directories()
 
         self.metrics = markus.get_metrics("processor.minidumpstackwalk")
 
@@ -206,6 +207,10 @@ class MinidumpStackwalkRule(Rule):
                 + f"{return_code} {output}"
             )
         return output.decode("utf-8").strip()
+
+    def build_directories(self):
+        os.makedirs(self.symbol_tmp_path, exist_ok=True)
+        os.makedirs(self.symbol_cache_path, exist_ok=True)
 
     def expand_commandline(self, dump_file_path, raw_crash_path):
         """Expands the command line parameters and returns the final command line
