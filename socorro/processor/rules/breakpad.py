@@ -194,7 +194,16 @@ class MinidumpStackwalkRule(Rule):
                 "MinidumpStackwalkRule: unknown error when getting version: "
                 + f"{return_code} {output}"
             )
-        return output.decode("utf-8").strip()
+        version = output.decode("utf-8").strip()
+
+        # If there's a sha file, then that's the commit sha of the version of
+        # minidump-stackwalk that we installed, so tack that on
+        shafile = self.command_path + ".sha"
+        if os.path.exists(shafile):
+            with open(shafile, "r") as fp:
+                sha = fp.read().strip()[:8]
+            version = f"{version} ({sha})"
+        return version
 
     def build_directories(self):
         os.makedirs(self.symbol_tmp_path, exist_ok=True)

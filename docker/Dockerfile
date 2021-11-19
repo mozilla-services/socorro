@@ -27,7 +27,14 @@ RUN groupadd --gid $groupid app && \
 USER app
 
 # https://crates.io/crates/minidump-stackwalk
-RUN cargo install --locked --root=/app/ minidump-stackwalk --version 0.9.2
+# 2021-11-19
+ARG MINIDUMPREV=e010de7678948eed4190f410e4c680053862c548
+
+RUN cargo install --locked --root=/app/ \
+    --git https://github.com/luser/rust-minidump.git \
+    --rev $MINIDUMPREV \
+    minidump-stackwalk
+RUN echo $MINIDUMPREV > /app/bin/minidump-stackwalk.sha
 RUN ls -al /app/bin/
 
 
@@ -55,7 +62,8 @@ RUN rm /tmp/set_up_ubuntu.sh
 # Copy stackwalk bits from mozilla/socorro-minidump-stackwalk image
 COPY --from=breakpad /stackwalk/* /stackwalk/
 
-# Copy stackwalk bits from rust-minidump minidump-stackwalker
+# Copy stackwalk bits from rust-minidump minidump-stackwalker; this picks
+# up minidump-stackwalk.sha as well
 COPY --from=rustminidump /app/bin/* /stackwalk-rust/
 
 # Install frontend JS deps
