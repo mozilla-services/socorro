@@ -74,7 +74,6 @@ SAMPLE_PROCESSED_CRASH = {
     "started_datetime": "2012-04-08 10:56:50.440752",
     "success": True,
     "topmost_filenames": [],
-    "truncated": False,
     "uptime": 170,
     "url": "http://embarasing.example.com",
     "user_comments": None,

@@ -662,7 +662,6 @@ class ProcessedCrash(SocorroMiddleware):
         "started_datetime",
         "success",
         "topmost_filenames",
-        "truncated",
         "upload_file_minidump_*",
         "uptime",
         "uuid",
