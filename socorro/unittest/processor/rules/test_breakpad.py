@@ -687,7 +687,6 @@ MINIMAL_STACKWALKER_OUTPUT = {
         "last_error_value": "ERROR_SUCCESS",
         "thread_index": 0,
         "thread_name": None,
-        "total_frames": 1,
         "frames": [
             {
                 "file": None,
@@ -756,7 +755,6 @@ MINIMAL_STACKWALKER_OUTPUT = {
             "frames_truncated": False,
             "last_error_value": "ERROR_SUCCESS",
             "thread_name": None,
-            "total_frames": 1,
             "frames": [
                 {
                     "file": None,
