@@ -786,7 +786,6 @@ FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES = {
         },
     ],
     "threads_index": 0,
-    "total_frames": 32,
 }
 
 FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
@@ -905,7 +904,6 @@ FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
         },
     ],
     "threads_index": 0,
-    "total_frames": 32,
 }
 
 

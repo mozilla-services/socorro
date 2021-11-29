@@ -513,13 +513,6 @@
               ],
               "description": "Index of this thread in the list of threads?"
             },
-            "total_frames": {
-              "type": [
-                "integer",
-                "null"
-              ],
-              "description": "Total number of frames in the thread."
-            },
             "frames": {
               "type": "array",
               "description": "Top frames of the crashing thread. Max 10 frames.",
