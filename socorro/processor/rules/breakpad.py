@@ -27,7 +27,6 @@ class CrashingThreadInfoRule(Rule):
     Fills in:
 
     * crashing_thread (int or None): index of the crashing thread
-    * truncated (bool): whether or not the crashing thread frames were truncated
     * address (str or None): the address of the crash
     * type (str): the crash reason
 
@@ -44,10 +43,6 @@ class CrashingThreadInfoRule(Rule):
             processor_meta["processor_notes"].append(
                 "mdsw did not identify the crashing thread"
             )
-
-        processed_crash["truncated"] = glom.glom(
-            processed_crash, "json_dump.crashing_thread.frames_truncated", default=False
-        )
 
         processed_crash["address"] = glom.glom(
             processed_crash, "json_dump.crash_info.address", default=None

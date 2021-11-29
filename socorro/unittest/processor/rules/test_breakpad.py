@@ -198,7 +198,6 @@ class TestCrashingThreadInfoRule:
 
         assert processed_crash["crashing_thread"] == 0
         assert processed_crash["address"] == "0x0"
-        assert processed_crash["truncated"] is False
         assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
 
     def test_stuff_missing(self):
@@ -683,7 +682,6 @@ MINIMAL_STACKWALKER_OUTPUT = {
     },
     "crashing_thread": {
         "frame_count": 1,
-        "frames_truncated": False,
         "last_error_value": "ERROR_SUCCESS",
         "thread_index": 0,
         "thread_name": None,
@@ -752,7 +750,6 @@ MINIMAL_STACKWALKER_OUTPUT = {
     "threads": [
         {
             "frame_count": 1,
-            "frames_truncated": False,
             "last_error_value": "ERROR_SUCCESS",
             "thread_name": None,
             "frames": [
