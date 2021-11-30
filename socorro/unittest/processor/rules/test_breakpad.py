@@ -368,6 +368,15 @@ class TestBreakpadTransformRule2015:
         mocked_unlink.reset_mock()
 
 
+class ProcessCompletedMock:
+    def __init__(self, returncode, stdout, stderr):
+        self.returncode = returncode
+        assert isinstance(stdout, bytes)
+        self.stdout = stdout
+        assert isinstance(stderr, bytes)
+        self.stderr = stderr
+
+
 class TestJitCrashCategorizeRule:
     def build_rule(self):
         config = ProcessorPipeline.required_config.jit
@@ -397,9 +406,11 @@ class TestJitCrashCategorizeRule:
         }
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
-        mocked_subprocess_handle.wait.return_value = 0
+        mocked_subprocess_module.run.return_value = ProcessCompletedMock(
+            returncode=0,
+            stdout=b"EXTRA-SPECIAL",
+            stderr=b"",
+        )
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
@@ -425,9 +436,11 @@ class TestJitCrashCategorizeRule:
         }
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = "EXTRA-SPECIAL"
-        mocked_subprocess_handle.wait.return_value = 0
+        mocked_subprocess_module.run.return_value = ProcessCompletedMock(
+            returncode=0,
+            stdout=b"EXTRA-SPECIAL",
+            stderr=b"",
+        )
 
         signatures = [
             "EnterBaseline",
@@ -468,11 +481,11 @@ class TestJitCrashCategorizeRule:
         }
         processor_meta = get_basic_processor_meta()
 
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        # FIXME(willkg): I'm not sure stdout could ever be None; this seems like a bad
-        # test
-        mocked_subprocess_handle.stdout.read.return_value = None
-        mocked_subprocess_handle.wait.return_value = -1
+        mocked_subprocess_module.run.return_value = ProcessCompletedMock(
+            returncode=-1,
+            stdout=b"",
+            stderr=b"",
+        )
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
@@ -824,11 +837,11 @@ class TestMinidumpStackwalkRule:
             with mock.patch(
                 "socorro.processor.rules.breakpad.subprocess"
             ) as mock_subprocess:
-                mock_subprocess_handle = mock_subprocess.Popen.return_value
-                mock_subprocess_handle.stdout.read.return_value = (
-                    MINIMAL_STACKWALKER_OUTPUT_STR
+                mock_subprocess.run.return_value = ProcessCompletedMock(
+                    returncode=0,
+                    stdout=MINIMAL_STACKWALKER_OUTPUT_STR.encode("utf-8"),
+                    stderr=b"",
                 )
-                mock_subprocess_handle.wait.return_value = 0
 
                 rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
@@ -860,9 +873,9 @@ class TestMinidumpStackwalkRule:
             with mock.patch(
                 "socorro.processor.rules.breakpad.subprocess"
             ) as mock_subprocess:
-                mock_subprocess_handle = mock_subprocess.Popen.return_value
-                mock_subprocess_handle.stdout.read.return_value = "{}\n"
-                mock_subprocess_handle.wait.return_value = 124
+                mock_subprocess.run.return_value = ProcessCompletedMock(
+                    returncode=124, stdout=b"{}\n", stderr=b""
+                )
 
                 rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
@@ -895,10 +908,9 @@ class TestMinidumpStackwalkRule:
         with mock.patch(
             "socorro.processor.rules.breakpad.subprocess"
         ) as mock_subprocess:
-            mock_subprocess_handle = mock_subprocess.Popen.return_value
-            # This will cause json.loads to throw an error
-            mock_subprocess_handle.stdout.read.return_value = "{ff"
-            mock_subprocess_handle.wait.return_value = -1
+            mock_subprocess.run.return_value = ProcessCompletedMock(
+                returncode=-1, stdout=b"{ff", stderr=b"boo hiss"
+            )
 
             rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
@@ -907,12 +919,9 @@ class TestMinidumpStackwalkRule:
         }
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
+        assert processed_crash["mdsw_stderr"] == "boo hiss"
         assert not processed_crash["success"]
         assert (
-            f"{rule.command_path}: non-json output: Expecting property name "
-            + "enclosed in double quotes: line 1 column 2 (char 1)"
-        ) in processor_meta["processor_notes"][0]
-        assert (
-            processor_meta["processor_notes"][1]
+            processor_meta["processor_notes"][0]
             == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
         )

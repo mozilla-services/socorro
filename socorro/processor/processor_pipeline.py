@@ -103,11 +103,13 @@ class ProcessorPipeline(RequiredConfig):
             "format syntax"
         ),
         default=(
-            "timeout --signal KILL {kill_timeout} {command_path} "
-            "--raw-json {raw_crash_path} "
+            "timeout --signal KILL {kill_timeout} "
+            "{command_path} "
+            "--raw-json={raw_crash_path} "
+            "--symbols-cache={symbol_cache_path} "
+            "--symbols-tmp={symbol_tmp_path} "
             "{symbols_urls} "
-            "--symbols-cache {symbol_cache_path} "
-            "--symbols-tmp {symbol_tmp_path} "
+            "--verbose=error "
             "{dump_file_path}"
         ),
     )
