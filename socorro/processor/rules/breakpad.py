@@ -88,26 +88,23 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
 
 
 def execute_process(command_line):
-    """Executes process and returns output and return_code.
+    """Executes process and returns completed process data.
 
     :param command_line: the complete command line to run
 
-    :returns: (output, return_code)
+    :returns: dict with stdout, stderr, and returncode keys
 
     """
     # Tokenize the command line into args
-    command_line_args = shlex.split(command_line, comments=False, posix=True)
-
-    # Execute the command line sending stderr (debug logging) to devnull and
-    # capturing stdout (JSON blob of output)
-    subprocess_handle = subprocess.Popen(
-        command_line_args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
-    )
-    with closing(subprocess_handle.stdout):
-        data = subprocess_handle.stdout.read()
-
-    return_code = subprocess_handle.wait()
-    return data, return_code
+    args = shlex.split(command_line, comments=False, posix=True)
+    completed = subprocess.run(args, capture_output=True)
+    ret = {
+        # NOTE(willkg) stdout and stderr here are bytes
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "returncode": completed.returncode,
+    }
+    return ret
 
 
 class CommandError(Exception):
@@ -141,11 +138,13 @@ class MinidumpStackwalkRule(Rule):
         symbols_urls=None,
         command_path="/stackwalk-rust/minidump-stackwalk",
         command_line=(
-            "timeout --signal KILL {kill_timeout} {command_path} "
-            "--raw-json {raw_crash_path} "
+            "timeout --signal KILL {kill_timeout} "
+            "{command_path} "
+            "--raw-json={raw_crash_path} "
+            "--symbols-cache={symbol_cache_path} "
+            "--symbols-tmp={symbol_tmp_path} "
             "{symbols_urls} "
-            "--symbols-cache {symbol_cache_path} "
-            "--symbols-tmp {symbol_tmp_path} "
+            "--verbose=error "
             "{dump_file_path}"
         ),
         kill_timeout=600,
@@ -183,13 +182,13 @@ class MinidumpStackwalkRule(Rule):
 
     def get_version(self):
         command_line = f"{self.command_path} --version"
-        output, return_code = execute_process(command_line)
-        if return_code != 0:
+        ret = execute_process(command_line)
+        if ret["returncode"] != 0:
             raise CommandError(
                 "MinidumpStackwalkRule: unknown error when getting version: "
-                + f"{return_code} {output}"
+                + f"{ret['returncode']} {ret['stdout']}"
             )
-        version = output.decode("utf-8").strip()
+        version = ret["stdout"].decode("utf-8").strip()
 
         # If there's a JSON file, then that has version information about the
         # minidump-stackwalk that we installed, so tack that information on
@@ -221,7 +220,7 @@ class MinidumpStackwalkRule(Rule):
         # command line.
 
         symbols_urls = " ".join(
-            ['--symbols-url "%s"' % url.strip() for url in self.symbols_urls]
+            ['--symbols-url="%s"' % url.strip() for url in self.symbols_urls]
         )
 
         params = {
@@ -238,65 +237,78 @@ class MinidumpStackwalkRule(Rule):
         return self.command_line.format(**params)
 
     def run_stackwalker(self, crash_id, command_path, command_line, processor_meta):
-        stdout, return_code = execute_process(command_line)
+        ret = execute_process(command_line)
+        returncode = ret["returncode"]
+        stdout = ret["stdout"]
+        stderr = ret["stderr"]
 
-        try:
-            output = json.loads(stdout)
-        except Exception as exc:
-            msg = f"{command_path}: non-json output: {exc}"
-            self.logger.debug(
-                f"MinidumpStackwalkRule: {command_path}: non-json output: {stdout[:1000]}"
-            )
-            self.logger.error(msg)
-            processor_meta["processor_notes"].append(msg)
-            output = {}
+        # Decode stderr and truncate to 10 lines
+        stderr = stderr.decode("utf-8") if stderr else ""
+        if stderr.count("\n") > 10:
+            stderr = "\n".join(["..."] + stderr.splitlines()[-10:])
+        output = {}
 
-        if not isinstance(output, Mapping):
-            msg = (
-                "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
-                + f"output: {output[:20]}"
-            )
-            processor_meta["processor_notes"].append(msg)
-            self.logger.warning(f"{msg} ({crash_id})")
-            output = {}
+        if returncode == 0:
+            try:
+                output = json.loads(ret["stdout"])
+
+            except Exception as exc:
+                msg = f"{command_path}: non-json output: {exc}"
+                self.logger.debug(
+                    f"MinidumpStackwalkRule: {command_path}: non-json output: "
+                    f"{stdout[:1000]}"
+                )
+                self.logger.error(msg)
+                processor_meta["processor_notes"].append(msg)
+
+            if output and not isinstance(output, Mapping):
+                msg = (
+                    "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
+                    + f"output: {output[:20]}"
+                )
+                processor_meta["processor_notes"].append(msg)
+                self.logger.warning(f"{msg} ({crash_id})")
+                output = {}
 
         # Add the stackwalk_version to the stackwalk output
         output["stackwalk_version"] = self.stackwalk_version
 
         stackwalker_data = {
             "json_dump": output,
-            "mdsw_return_code": return_code,
+            "mdsw_return_code": returncode,
             "mdsw_status_string": output.get("status", "unknown error"),
             "success": output.get("status", "") == "OK",
+            # Note: this may contain proected data
+            "mdsw_stderr": stderr,
         }
 
-        self.metrics.incr(
-            "run",
-            tags=[
-                "outcome:%s" % ("success" if stackwalker_data["success"] else "fail"),
-                "exitcode:%s" % return_code,
-            ],
-        )
-
-        if return_code == 124:
+        if returncode == 124:
             msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
 
-        elif return_code != 0 or not stackwalker_data["success"]:
+        elif returncode != 0 or not stackwalker_data["success"]:
             msg = (
                 "MinidumpStackwalkRule: minidump-stackwalk: failed with "
-                + f"{return_code}: {stackwalker_data['mdsw_status_string']}"
+                + f"{returncode}: {stackwalker_data['mdsw_status_string']}"
             )
             # subprocess.Popen with shell=False returns negative exit codes
             # where the number is the signal that got kicked up
-            if return_code == -6:
+            if returncode == -6:
                 msg = msg + " (SIGABRT)"
 
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
 
-        return stackwalker_data, return_code
+        self.metrics.incr(
+            "run",
+            tags=[
+                "outcome:%s" % ("success" if stackwalker_data["success"] else "fail"),
+                "exitcode:%s" % returncode,
+            ],
+        )
+
+        return stackwalker_data
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         crash_id = raw_crash["uuid"]
@@ -325,7 +337,7 @@ class MinidumpStackwalkRule(Rule):
                     raw_crash_path=raw_crash_path,
                 )
 
-                stackwalker_data, return_code = self.run_stackwalker(
+                stackwalker_data = self.run_stackwalker(
                     crash_id=crash_id,
                     command_path=self.command_path,
                     command_line=command_line,
@@ -408,8 +420,32 @@ class BreakpadStackwalkerRule2015(Rule):
         }
         return self.command_line.format(**params)
 
+    def execute_process(self, command_line):
+        """Executes process and returns output and return_code.
+
+        :returns: (output, return_code)
+
+        NOTE(willkg): Having this as part of BreakpadStackwalkerRule2015 means that when
+        we can leave this class as is as we improve MinidumpStackwalkRule and not worry
+        we're breaking it.
+
+        """
+        # Tokenize the command line into args
+        command_line_args = shlex.split(command_line, comments=False, posix=True)
+
+        # Execute the command line sending stderr (debug logging) to devnull and
+        # capturing stdout (JSON blob of output)
+        subprocess_handle = subprocess.Popen(
+            command_line_args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+        )
+        with closing(subprocess_handle.stdout):
+            data = subprocess_handle.stdout.read()
+
+        return_code = subprocess_handle.wait()
+        return data, return_code
+
     def run_stackwalker(self, crash_id, command_path, command_line, processor_meta):
-        stdout, return_code = execute_process(command_line)
+        stdout, return_code = self.execute_process(command_line)
 
         try:
             output = json.loads(stdout)
@@ -434,6 +470,7 @@ class BreakpadStackwalkerRule2015(Rule):
             "mdsw_return_code": return_code,
             "mdsw_status_string": output.get("status", "unknown error"),
             "success": output.get("status", "") == "OK",
+            "mdsw_stderr": "",
         }
 
         self.metrics.incr(
@@ -462,7 +499,7 @@ class BreakpadStackwalkerRule2015(Rule):
             processor_meta["processor_notes"].append(msg)
             self.logger.warning(msg + " (%s)" % crash_id)
 
-        return stackwalker_data, return_code
+        return stackwalker_data
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         crash_id = raw_crash["uuid"]
@@ -488,7 +525,7 @@ class BreakpadStackwalkerRule2015(Rule):
                     raw_crash_path=raw_crash_path,
                 )
 
-                stackwalker_data, return_code = self.run_stackwalker(
+                stackwalker_data = self.run_stackwalker(
                     crash_id=crash_id,
                     command_path=self.command_path,
                     command_line=command_line,
@@ -556,10 +593,19 @@ class JitCrashCategorizeRule(Rule):
         }
         command_line = self.command_line.format(**params)
 
-        stdout, return_code = execute_process(command_line)
-        output = stdout
-        if output:
+        ret = execute_process(command_line)
+        return_code = ret["returncode"]
+
+        try:
+            output = ret["stdout"].decode("utf-8")
             output = output.strip()
+        except UnicodeDecodeError:
+            output = ""
+
+        # NOTE(willkg): this is to maintain existing behavior; I'm not sure if None
+        # is meaningful anywhere
+        if not output:
+            output = None
 
         glom.assign(
             processed_crash, "classifications.jit.category", val=output, missing=dict
