@@ -104,6 +104,8 @@ def time_tag(dt, format="%a, %b %d, %Y at %H:%M %Z", future=False):
 def human_readable_iso_date(dt):
     """Python datetime to a human readable ISO datetime."""
     if not isinstance(dt, (datetime.date, datetime.datetime)):
+        if not dt:
+            return ""
         try:
             dt = parse_isodate(dt)
         except isodate.ISO8601Error:
@@ -277,6 +279,34 @@ def full_url(request, *args, **kwargs):
 @library.global_function
 def is_list(value):
     return isinstance(value, (list, tuple))
+
+
+@library.global_function
+def show_delta_duration(time1, time2, unit="seconds"):
+    """Converts the delta of the two (time2 - time1) and displays in unit.
+
+    Returns "" if time values aren't valid.
+
+    Returns duration in seconds.
+
+    """
+    try:
+        time1_dt = parse_isodate(time1)
+    except isodate.ISO8601Error:
+        time1_dt = None
+
+    try:
+        time2_dt = parse_isodate(time2)
+    except isodate.ISO8601Error:
+        time2_dt = None
+
+    if not time1_dt or not time2_dt:
+        return ""
+
+    delta = time2_dt - time1_dt
+    delta = delta / datetime.timedelta(seconds=1)
+
+    return show_duration(delta, unit=unit)
 
 
 @library.global_function
