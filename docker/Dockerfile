@@ -26,9 +26,9 @@ RUN groupadd --gid $groupid app && \
 
 USER app
 
-# https://crates.io/crates/minidump-stackwalk
-ARG MINIDUMPREV=e010de7678948eed4190f410e4c680053862c548
-ARG MINIDUMPREVDATE=2021-11-19
+# From: https://github.com/luser/rust-minidump
+ARG MINIDUMPREV=5069ee30611c06ca7672f74cbfa055b089c84880
+ARG MINIDUMPREVDATE=2021-11-30
 
 RUN cargo install --locked --root=/app/ \
     --git https://github.com/luser/rust-minidump.git \
