@@ -27,14 +27,14 @@ RUN groupadd --gid $groupid app && \
 USER app
 
 # https://crates.io/crates/minidump-stackwalk
-# 2021-11-19
 ARG MINIDUMPREV=e010de7678948eed4190f410e4c680053862c548
+ARG MINIDUMPREVDATE=2021-11-19
 
 RUN cargo install --locked --root=/app/ \
     --git https://github.com/luser/rust-minidump.git \
     --rev $MINIDUMPREV \
     minidump-stackwalk
-RUN echo $MINIDUMPREV > /app/bin/minidump-stackwalk.sha
+RUN echo "{\"sha\":\"$MINIDUMPREV\",\"date\":\"$MINIDUMPREVDATE\"}" > /app/bin/minidump-stackwalk.version.json
 RUN ls -al /app/bin/
 
 
