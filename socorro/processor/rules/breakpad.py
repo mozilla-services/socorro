@@ -191,13 +191,16 @@ class MinidumpStackwalkRule(Rule):
             )
         version = output.decode("utf-8").strip()
 
-        # If there's a sha file, then that's the commit sha of the version of
-        # minidump-stackwalk that we installed, so tack that on
-        shafile = self.command_path + ".sha"
+        # If there's a JSON file, then that has version information about the
+        # minidump-stackwalk that we installed, so tack that information on
+        shafile = self.command_path + ".version.json"
         if os.path.exists(shafile):
             with open(shafile, "r") as fp:
-                sha = fp.read().strip()[:8]
-            version = f"{version} ({sha})"
+                data = json.load(fp)
+            if data:
+                rev = data["sha"][:8]
+                revdate = data["date"]
+                version = f"{version} ({revdate} {rev})"
         return version
 
     def build_directories(self):
