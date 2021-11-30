@@ -96,6 +96,9 @@
             <li class="ui-state-default ui-corner-top">
               <a href="#correlation" class="ui-tabs-anchor"><span>Correlations</span></a>
             </li>
+            <li class="ui-state-default ui-corner-top">
+              <a href="#debug" class="ui-tabs-anchor"><span>Debug</span></a>
+            </li>
             {% if request.user.has_perm('crashstats.reprocess_crashes') %}
               <li class="ui-state-default ui-corner-top">
                 <a href="#reprocess" class="ui-tabs-anchor"><span>Reprocess</span></a>
@@ -641,27 +644,11 @@
 
                 {# Notes #}
 
-                {% if raw.collector_notes %}
-                  <tr title="{{ fields_desc['raw_crash.collector_notes'] }}">
-                    <th scope="row">Collector Notes</th>
-                    <td>
-                      <pre>{{ raw.collector_notes|join("\n") }}</pre>
-                    </td>
-                  </tr>
-                {% endif %}
                 {% if report.app_notes %}
                   <tr title="{{ fields_desc['processed_crash.app_notes'] }}">
                     <th scope="row">App Notes</th>
                     <td>
                       <pre>{{ report.app_notes }}</pre>
-                    </td>
-                  </tr>
-                {% endif %}
-                {% if report.processor_notes %}
-                  <tr title="{{ fields_desc['processed_crash.processor_notes'] }}">
-                    <th scope="row">Processor Notes</th>
-                    <td>
-                      <pre>{{ report.processor_notes }}</pre>
                     </td>
                   </tr>
                 {% endif %}
@@ -1083,6 +1070,126 @@
             <pre></pre>
           </div>
           <!-- /correlation -->
+
+          <div id="debug" class="ui-tabs-hide">
+            <h3>Debug</h3>
+            <p>Information about ingestion and processing this crash report.</p>
+
+            {% if request.user.has_perm('crashstats.view_pii') and request.user.has_perm('crashstats.view_rawdump') %}
+              {{ protected_warning() }}
+
+              <h4>Timeline</h4>
+              <table class="record data-table vertical hardwrapped">
+                <tbody>
+                  <tr>
+                    <th scope="row">Collected</th>
+                    <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Start processing</th>
+                    <td>{{ report.started_datetime | human_readable_iso_date }} UTC</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">End processing</th>
+                    <td>{{ report.completed_datetime | human_readable_iso_date }} UTC</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Collector</h4>
+              <table class="record data-table vertical hardwrapped">
+                <tbody>
+                  <tr>
+                    <th scope="row">UUID</th>
+                    <td>{{ raw.uuid }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Submitted timestamp</th>
+                    <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Payload</th>
+                    <td>{{ raw.payload }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Payload compressed</th>
+                    <td>{{ raw.payload_compressed }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Dump checksums</th>
+                    <td>
+                      {% if raw.dump_checksums %}
+                        <table class="data-table">
+                          {% for name, sha in raw.dump_checksums.items() %}
+                            <tr><th>{{ name }}:</th><td><code>{{ sha }}</code></td></tr>
+                          {% endfor %}
+                        </table>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Collector notes</th>
+                    <td><pre>{{ raw.collector_notes|join("\n") }}</pre></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Processor</h4>
+              <table class="record data-table vertical hardwrapped">
+                <tbody>
+                  <tr>
+                    <th scope="row">Date processed</th>
+                    <td>{{ report.date_processed | human_readable_iso_date }} UTC</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Start / end</th>
+                    <td>
+                      {{ report.started_datetime | human_readable_iso_date }} UTC &#8594;
+                      {{ report.completed_datetime | human_readable_iso_date }} UTC
+                      {% if report.started_datetime and report.completed_datetime %}
+                        ({{ show_delta_duration(report.started_datetime, report.completed_datetime) }})
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Number of times processed</th>
+                    <td>
+                      {% if report.processor_notes %}
+                        {{ report.processor_notes.count(">>> ") }}
+                      {% else %}
+                        Unknown.
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Stackwalker version</th>
+                    <td>{{ report.json_dump.stackwalk_version }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">MDSW return code</th>
+                    <td>{{ report.mdsw_return_code }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">MDSW status string</th>
+                    <td>{{ report.mdsw_status_string }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Processor notes</th>
+                    <td><pre>{{ report.processor_notes }}</pre></td>
+                  </tr>
+                </tbody>
+              </table>
+            {% else %}
+              <p>
+                You do not have access to protected data.
+                You need to be logged in and have access to protected data to see debug information for
+                crash ingestion.
+                See <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+                for more information.
+              </p>
+            {% endif %}
+          </div>
+          <!-- /debug -->
 
           {% if request.user.has_perm('crashstats.reprocess_crashes') %}
             <div id="reprocess" class="ui-tabs-hide" data-crash-id="{{ report.uuid }}">
