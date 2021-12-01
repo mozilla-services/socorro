@@ -1121,7 +1121,15 @@
                       {% if raw.dump_checksums %}
                         <table class="data-table">
                           {% for name, sha in raw.dump_checksums.items() %}
-                            <tr><th>{{ name }}:</th><td><code>{{ sha }}</code></td></tr>
+                            <tr>
+                              <th>{{ name }}:</th>
+                              <td>
+                                <code>{{ sha }}</code>
+                                {% if sha == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %}
+                                <span class="humanized">(empty minidump)</span>
+                                {% endif %}
+                              </td>
+                            </tr>
                           {% endfor %}
                         </table>
                       {% endif %}
@@ -1163,7 +1171,11 @@
                   </tr>
                   <tr>
                     <th scope="row">Stackwalker version</th>
-                    <td>{{ report.json_dump.stackwalk_version }}</td>
+                    <td>
+                      {% if report and report.json_dump and report.json_dump.stackwalk_version %}
+                        {{ report.json_dump.stackwalk_version }}
+                      {% endif %}
+                    </td>
                   </tr>
                   <tr>
                     <th scope="row">MDSW return code</th>
