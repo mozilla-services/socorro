@@ -121,5 +121,9 @@ testshell: my.env .docker-build  ## | Open a shell in the test environment.
 	${DC} run --rm test shell
 
 .PHONY: rebuildreqs
-rebuildreqs: my.env .docker-build  ## | Rebuild requirements.txt file.
-	${DC} run --rm app shell pip-compile --generate-hashes --upgrade
+rebuildreqs: .env .docker-build  ## | Rebuild requirements.txt file after requirements.in changes.
+	docker-compose run --rm app shell pip-compile --generate-hashes
+
+.PHONY: updatereqs
+updatereqs: .env .docker-build  ## | Update deps in requirements.txt file.
+	docker-compose run --rm app shell pip-compile --generate-hashes -U
