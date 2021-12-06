@@ -171,14 +171,21 @@ Example::
 Collector response
 ------------------
 
-.. Note::
-
-   This is not supported by Breakpad's minidump upload tool which expects
-   an HTTP 200 or something else and that's it.
-
-
 The collector throttles crash reports and returns a response to the crash
 reporter client in the HTTP response.
+
+===================  ==========================================  ==========================
+summary              response code                               notes
+===================  ==========================================  ==========================
+accepted             HTTP 200 with crashid in payload
+rejected; throttled  HTTP 200 with rejection message in payload  client can resubmit
+rejected; malformed  HTTP 400 with error message in payload      client should not resubmit
+===================  ==========================================  ==========================
+
+.. Note::
+
+   This is not supported by Breakpad's minidump upload tool which only handles
+   HTTP 200 response code and nothing in the payload.
 
 
 Accepted
