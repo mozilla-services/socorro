@@ -16,6 +16,7 @@ django-session-csrf==0.7.1
 django-waffle==2.2.1
 django-cors-headers==3.10.1
 django_csp==3.7
+djangorestframework==3.12.4
 dockerflow==2021.7.0
 enforce-typing==1.0.0.post1
 flake8==4.0.1

@@ -79,6 +79,7 @@ INSTALLED_APPS = (
     "session_csrf",
     "django.contrib.admin.apps.SimpleAdminConfig",
     "mozilla_django_oidc",
+    "rest_framework",
     # Socorro apps
     "crashstats.crashstats",
     "crashstats.api",
@@ -244,6 +245,15 @@ else:
         "django.server": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
         "crashstats": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
     }
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ]
+}
+
 
 # Link to source if possible
 VCS_MAPPINGS = {

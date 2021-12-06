@@ -77,16 +77,19 @@ class TestIsValidModelClass:
 
 class TestDocumentationViews(BaseTestViews):
     def test_documentation_home_page(self):
+        from crashstats.api import views
+
+        models_and_names = views.api_models_and_names()
+        valid_names = [pair[1] for pair in models_and_names]
+
         url = reverse("api:documentation")
         response = self.client.get(url)
         assert response.status_code == 200
 
         doc = pyquery.PyQuery(response.content)
 
-        from crashstats.api import views
-
         for elt in doc("#mainbody .panel .title h2 a"):
-            assert elt.text not in views.API_DONT_SERVE_LIST
+            assert elt.text in valid_names
 
 
 class TestViews(BaseTestViews):
@@ -755,6 +758,71 @@ class TestCrashVerify:
         }
 
 
+class TestCrashSignature:
+    # NOTE(willkg): This doesn't test signature generation--just the API wrapper.
+    def test_no_payload(self, client):
+        url = reverse("api:crash_signature")
+        resp = client.post(url, content_type="application/json")
+        assert resp.status_code == 400
+
+    def test_wrong_contenttype(self, client):
+        url = reverse("api:crash_signature")
+        resp = client.post(url, content_type="application/multipart-formdata")
+        assert resp.status_code == 415
+
+    def test_basic(self, client):
+        payload = {
+            "jobs": [
+                {
+                    "os": "Linux",
+                    "crashing_thread": 0,
+                    "threads": [
+                        {
+                            "frames": [
+                                {
+                                    "frame": 0,
+                                    "function": "SomeFunc",
+                                    "line": 20,
+                                    "file": "somefile.cpp",
+                                    "module": "foo.so.5.15.0",
+                                    "module_offset": "0x37a92",
+                                    "offset": "0x7fc641052a92",
+                                },
+                                {
+                                    "frame": 1,
+                                    "function": "SomeOtherFunc",
+                                    "line": 444,
+                                    "file": "someotherfile.cpp",
+                                    "module": "bar.so",
+                                    "module_offset": "0x39a55",
+                                    "offset": "0x7fc641044a55",
+                                },
+                            ]
+                        }
+                    ],
+                }
+            ]
+        }
+
+        url = reverse("api:crash_signature")
+        resp = client.post(url, data=payload, content_type="application/json")
+        expected_payload = {
+            "results": [
+                {
+                    "extra": {
+                        "normalized_frames": ["SomeFunc", "SomeOtherFunc"],
+                        "proto_signature": "SomeFunc | SomeOtherFunc",
+                    },
+                    "notes": [],
+                    "signature": "SomeFunc",
+                }
+            ]
+        }
+
+        assert resp.json() == expected_payload
+        assert resp.status_code == 200
+
+
 class TestMultipleStringField:
     """Test the MultipleStringField class."""
 
@@ -782,6 +850,7 @@ class TestMultipleStringField:
 
 API_MODEL_NAMES = [
     "Bugs",
+    "CrashSignature",
     "NoOp",
     "ProcessedCrash",
     "RawCrash",
