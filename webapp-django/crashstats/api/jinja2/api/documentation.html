@@ -105,17 +105,17 @@
             {% endfor %}
           </tbody>
         </table>
-      {% else %}
-        <p>
-          <em>Takes no parameters</em>
-        </p>
       {% endif %}
 
       <!-- for starting a test drive -->
       <div class="run-test">
-        <button type="submit">Run Test Drive!</button>
-        <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
-        <button type="button" class="close">&times; Close</button>
+        {% if endpoint.test_drive %}
+          <button type="submit">Run Test Drive!</button>
+          <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
+          <button type="button" class="close">&times; Close</button>
+        {% else %}
+          <em>Test drive not supported.</em>
+        {%endif %}
       </div>
 
       <div class="test-drive">

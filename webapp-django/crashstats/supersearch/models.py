@@ -66,6 +66,8 @@ class ESSocorroMiddleware(models.SocorroMiddleware):
 class SuperSearch(ESSocorroMiddleware):
     implementation = supersearch.SuperSearch
 
+    IS_PUBLIC = True
+
     HELP_TEXT = """
     API for searching and faceting on crash reports.
     """
@@ -161,6 +163,8 @@ class SuperSearch(ESSocorroMiddleware):
 
 
 class SuperSearchUnredacted(SuperSearch):
+    IS_PUBLIC = True
+
     HELP_TEXT = """
     API for searching and faceting on crash reports. Requires
     permissions depending on which fields are being queried.
@@ -205,6 +209,8 @@ class SuperSearchFields(ESSocorroMiddleware):
     # Python code changes and if that happens you will have reloaded the
     # Python process.
     _fields = super_search_fields.SuperSearchFieldsData().get()
+
+    IS_PUBLIC = True
 
     HELP_TEXT = """
     API for getting the list of super search fields.

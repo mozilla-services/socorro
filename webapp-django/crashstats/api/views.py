@@ -7,6 +7,13 @@ from functools import wraps
 import inspect
 import re
 
+from ratelimit.exceptions import Ratelimited
+from rest_framework.exceptions import Throttled
+from rest_framework.parsers import JSONParser
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
 from ratelimit.decorators import ratelimit
 from session_csrf import anonymous_csrf_exempt
 
@@ -18,6 +25,7 @@ from django.contrib.sites.requests import RequestSite
 from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from crashstats.api.cleaner import Cleaner
@@ -29,6 +37,7 @@ from crashstats.tokens import models as tokens_models
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError, MissingArgumentError
 from socorro.lib.ooid import is_crash_id_valid
+from socorro.signature.generator import SignatureGenerator
 
 
 # List of all modules that contain models we want to expose.
@@ -92,29 +101,14 @@ class MiddlewareModelForm(forms.Form):
             self.fields[name] = field_class(required=required)
 
 
-# Names of models we don't want to serve at all
-API_DONT_SERVE_LIST = (
-    # Only used for the admin
-    "Field",
-    "SuperSearchMissingFields",
-    # It's very sensitive and we don't want to expose it
-    "Query",
-    # This is only used to rapidly process crash reports that haven't been processed
-    # yet, but someone is trying to look at them
-    "PriorityJob",
-    # This is used by another API to verify crash data
-    "TelemetryCrash",
-    # This is internal and used in the Django admin
-    "SuperSearchStatus",
-)
-
-
 def is_valid_model_class(model):
-    return (
-        isinstance(model, type)
-        and issubclass(model, models.SocorroMiddleware)
-        and model is not models.SocorroMiddleware
-        and model is not supersearch_models.ESSocorroMiddleware
+    return isinstance(model, type) and (
+        (
+            issubclass(model, models.SocorroMiddleware)
+            and model is not models.SocorroMiddleware
+            and model is not supersearch_models.ESSocorroMiddleware
+        )
+        or issubclass(model, SocorroAPIView)
     )
 
 
@@ -176,9 +170,6 @@ def no_csrf_i_mean_it(fun):
 @track_api_pageview
 @utils.json_view
 def model_wrapper(request, model_name):
-    if model_name in API_DONT_SERVE_LIST:
-        return http.JsonResponse({"error": "Not found"}, status=404)
-
     model = None
 
     for source in MODELS_MODULES:
@@ -187,12 +178,13 @@ def model_wrapper(request, model_name):
             break
         except AttributeError:
             pass
+
         try:
             model = getattr(source, model_name + "Middleware")
         except AttributeError:
             pass
 
-    if model is None or not is_valid_model_class(model):
+    if model is None or not is_valid_model_class(model) or not model.IS_PUBLIC:
         return http.JsonResponse(
             {"error": f"No service called '{model_name}'"}, status=404
         )
@@ -362,15 +354,17 @@ def api_models_and_names():
                 all_models.append(value)
                 unique_model_names.add(name)
 
+    # Also document DRF classes which subclass SocorroAPIView
+    for model in SocorroAPIView.__subclasses__():
+        all_models.append(model)
+
     models_with_names = []
     for model in all_models:
-        model_name = model.__name__
+        model_name = getattr(model, "API_NAME", model.__name__)
         if model_name.endswith("Middleware"):
             model_name = model_name[:-10]
 
-        if not is_valid_model_class(model):
-            continue
-        if model_name in API_DONT_SERVE_LIST:
+        if not is_valid_model_class(model) or not model.IS_PUBLIC:
             continue
 
         models_with_names.append((model, model_name))
@@ -415,9 +409,11 @@ def _describe_model(model_name, model):
     params = list(model_inst.get_annotated_params())
     params.sort(key=lambda x: (not x["required"], x["name"]))
     methods = []
-    if model.get:
+
+    # NOTE(willkg): Models can define get = None or not have the method at all
+    if getattr(model, "get", None):
         methods.append("GET")
-    elif model.post:
+    elif getattr(model, "post", None):
         methods.append("POST")
 
     help_text = model.HELP_TEXT or "No description available."
@@ -438,6 +434,7 @@ def _describe_model(model_name, model):
         "help_text": help_text,
         "required_permissions": required_permissions,
         "deprecation_warning": getattr(model, "deprecation_warning", None),
+        "test_drive": getattr(model, "TEST_DRIVE", True),
     }
     return data
 
@@ -463,8 +460,27 @@ def dedent_left(text, spaces):
     return "\n".join(lines)
 
 
+def handle_ratelimit(fun):
+    """Fixes django-ratelimit exception so it ends up as a 429
+
+    Note: This must be before ratelimit so it can handle exceptions.
+
+    """
+
+    @wraps(fun)
+    def _handle_ratelimit(*args, **kwargs):
+        try:
+            return fun(*args, **kwargs)
+        except Ratelimited:
+            # If the view is rate limited, we throw a 429.
+            raise Throttled()
+
+    return _handle_ratelimit
+
+
 @anonymous_csrf_exempt
 @csrf_exempt
+@handle_ratelimit
 @ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
 @utils.json_view
 def crash_verify(request):
@@ -520,3 +536,164 @@ def crash_verify(request):
     data["s3_telemetry_crash"] = has_telemetry_crash
 
     return http.JsonResponse(data, status=200)
+
+
+class SocorroAPIView(APIView):
+    """Django REST Framework APIView that supports CORS"""
+
+    cors_headers = {"Access-Control-Allow-Origin": "*"}
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
+    # Name of the API
+    API_NAME = "Unknown"
+
+    # Whether this API is public and documented or a private API we don't tell anyone
+    # about
+    IS_PUBLIC = False
+
+    # Help text which shows up in the documentation
+    HELP_TEXT = ""
+
+    # Whether or not this class supports the "Run Test Drive!" feature of the API docs;
+    # POST-based APIs with complex payloads don't work so well
+    TEST_DRIVE = False
+
+    # Parity with SocorroMiddleware
+    API_REQUIRED_PERMISSIONS = []
+    API_BINARY_PERMISSIONS = None
+    API_ALLOWLIST = []
+
+    def get_annotated_params(self):
+        """This is for parity with SocorroMiddleware."""
+        return []
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+
+        # Add cors headers
+        for key, val in self.cors_headers.items():
+            response[key] = val
+        return response
+
+
+class CrashVerifyAPI(SocorroAPIView):
+    """
+    API to verify crash data exists in data storage locations.
+    """
+
+    API_NAME = "CrashVerify"
+
+    @method_decorator(anonymous_csrf_exempt)
+    @method_decorator(csrf_exempt)
+    @method_decorator(
+        ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
+    )
+    def get(self, request):
+        crash_id = request.GET.get("crash_id", None)
+
+        if not crash_id or not is_crash_id_valid(crash_id):
+            return http.JsonResponse(
+                {"error": "unknown crash id"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data = {"uuid": crash_id}
+
+        # Check S3 crash bucket for raw and processed crash data
+        raw_api = models.RawCrash()
+        try:
+            raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+            has_raw_crash = True
+        except CrashIDNotFound:
+            has_raw_crash = False
+        data["s3_raw_crash"] = has_raw_crash
+
+        processed_api = models.ProcessedCrash()
+        try:
+            processed_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+            has_processed_crash = True
+        except CrashIDNotFound:
+            has_processed_crash = False
+        data["s3_processed_crash"] = has_processed_crash
+
+        # Check Elasticsearch for crash data
+        supersearch_api = supersearch_models.SuperSearch()
+        params = {
+            "_columns": ["uuid"],
+            "_results_number": 1,
+            "uuid": crash_id,
+            "dont_cache": True,
+            "refresh_cache": True,
+        }
+        results = supersearch_api.get(**params)
+        data["elasticsearch_crash"] = (
+            results["total"] == 1 and results["hits"][0]["uuid"] == crash_id
+        )
+
+        # Check S3 telemetry bucket for crash data
+        telemetry_api = models.TelemetryCrash()
+        try:
+            telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
+            has_telemetry_crash = True
+        except CrashIDNotFound:
+            has_telemetry_crash = False
+        data["s3_telemetry_crash"] = has_telemetry_crash
+
+        return Response(data)
+
+
+class CrashSignatureAPI(SocorroAPIView):
+    API_NAME = "CrashSignature"
+
+    IS_PUBLIC = True
+
+    HELP_TEXT = """
+    Takes memory address, module information, and crash annotation data and generates a
+    crash signature.
+
+    :Method: HTTP POST
+    :Content-Type: application/json
+
+    Payload consists of one or more signature generation jobs. e.g.
+
+        {"jobs": [ JOB+ ]}
+
+    where JOB is the same as the siggen Crash data schema defined here:
+
+    https://github.com/willkg/socorro-siggen/
+
+    This returns results--one for each job. e.g.
+
+        {"results": [ RESULT+ ]}
+
+    where RESULT has "signature", "notes", and "extra" keys.
+    """
+
+    @method_decorator(anonymous_csrf_exempt)
+    @method_decorator(csrf_exempt)
+    @method_decorator(handle_ratelimit)
+    @method_decorator(
+        ratelimit(key="ip", method=["POST"], rate=utils.ratelimit_rate, block=True)
+    )
+    def post(self, request):
+        is_debug = request.META.get("DEBUG", "0") == "1"
+        # FIXME(willkg): add payload schema validation if is_debug is true
+
+        signature_generator = SignatureGenerator()
+
+        jobs = request.data.get("jobs", [])
+        if not jobs:
+            return http.JsonResponse(
+                {"error": "no jobs specified"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        results = []
+        for job in jobs:
+            result = signature_generator.generate(job)
+            result = result.to_dict()
+            # If it's _not_ a debug request, then remove the debug log
+            if not is_debug:
+                del result["debug_log"]
+            results.append(result)
+
+        return Response({"results": results})

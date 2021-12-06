@@ -688,25 +688,18 @@ def find_crash_id(input_str):
 
 
 def ratelimit_rate(group, request):
-    """return None if we don't want to set any rate limit.
-    Otherwise return a number according to
-    https://django-ratelimit.readthedocs.org/en/latest/rates.html#rates-chapter
-    """
-    if group in (
-        "crashstats.api.views.model_wrapper",
-        "crashstats.api.views.crash_verify",
-    ):
-        if request.user.is_active:
-            return settings.API_RATE_LIMIT_AUTHENTICATED
-        else:
-            return settings.API_RATE_LIMIT
-    elif group.startswith("crashstats.supersearch.views.search"):
+    """Returns supersearch or regular rate limits depending on authentication"""
+    if group.startswith("crashstats.supersearch.views.search"):
         # this applies to both the web view and ajax views
         if request.user.is_active:
             return settings.RATELIMIT_SUPERSEARCH_AUTHENTICATED
         else:
             return settings.RATELIMIT_SUPERSEARCH
-    raise NotImplementedError(group)
+
+    if request.user.is_active:
+        return settings.API_RATE_LIMIT_AUTHENTICATED
+    else:
+        return settings.API_RATE_LIMIT
 
 
 def string_hex_to_hex_string(hexcode):
