@@ -13,69 +13,7 @@ Socorro is a crash ingestion pipeline.
 
 The crash ingestion pipeline that we have at Mozilla looks like this:
 
-.. graphviz::
-
-   digraph G {
-      rankdir=LR;
-      splines=lines;
-
-      subgraph coll {
-         rank=same;
-
-         client [shape=box3d, label="firefox"];
-         collector [shape=rect, label="collector"];
-      }
-
-      subgraph stores {
-         rank=same;
-
-         s3raw [shape=tab, label="S3 (Raw)", style=filled, fillcolor=gray];
-         sqs [shape=tab, label="SQS", style=filled, fillcolor=gray];
-      }
-
-      processor [shape=rect, label="processor"];
-
-      subgraph stores2 {
-         rank=same;
-
-         postgres [shape=tab, label="Postgres", style=filled, fillcolor=gray];
-         elasticsearch [shape=tab, label="Elasticsearch", style=filled, fillcolor=gray];
-         s3telemetry [shape=tab, label="S3 (Telemetry)", style=filled, fillcolor=gray];
-         s3processed [shape=tab, label="S3 (Processed)", style=filled, fillcolor=gray];
-      }
-
-      subgraph processing {
-         rank=same;
-
-         crontabber [shape=rect, label="crontabber"];
-         webapp [shape=rect, label="webapp"];
-         telemetry [shape=box3d, label="telemetry"];
-      }
-
-
-      client -> collector [label="HTTP"];
-      collector -> s3raw [label="save raw"];
-      collector -> sqs [label="publish"];
-
-      sqs -> processor [label="crash id"];
-      s3raw -> processor [label="load raw"];
-      webapp -> processor [label="betaversionrule"];
-      processor -> { s3processed, elasticsearch, s3telemetry } [label="save processed"];
-
-      postgres -> webapp;
-      webapp -> postgres;
-      s3raw -> webapp [label="load raw"];
-      s3processed -> webapp [label="load processed"];
-      elasticsearch -> webapp;
-
-      postgres -> crontabber;
-      crontabber -> postgres;
-      elasticsearch -> crontabber;
-
-      s3telemetry -> telemetry [label="telemetry ingestion"];
-
-      { rank=min; client; }
-   }
+.. image:: drawio/socorro_architecture.drawio.png
 
 
 Arrow direction represents actions and flow of information through the
