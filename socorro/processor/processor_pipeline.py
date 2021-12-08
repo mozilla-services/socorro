@@ -109,6 +109,7 @@ class ProcessorPipeline(RequiredConfig):
             "--symbols-cache={symbol_cache_path} "
             "--symbols-tmp={symbol_tmp_path} "
             "{symbols_urls} "
+            "--json "
             "--verbose=error "
             "{dump_file_path}"
         ),
