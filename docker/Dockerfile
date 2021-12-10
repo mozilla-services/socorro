@@ -27,8 +27,8 @@ RUN groupadd --gid $groupid app && \
 USER app
 
 # From: https://github.com/luser/rust-minidump
-ARG MINIDUMPREV=c4617dc2b41133637a2e9b8b704db2320d7fc0d9
-ARG MINIDUMPREVDATE=2021-12-08
+ARG MINIDUMPREV=6ccdead2bffb0c9db60037b1ea6923c69afba023
+ARG MINIDUMPREVDATE=2021-12-10
 
 RUN cargo install --locked --root=/app/ \
     --git https://github.com/luser/rust-minidump.git \
