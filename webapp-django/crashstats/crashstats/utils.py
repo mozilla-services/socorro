@@ -687,16 +687,6 @@ def find_crash_id(input_str):
             pass  # will return None
 
 
-def add_CORS_header(f):
-    @functools.wraps(f)
-    def wrapper(request, *args, **kw):
-        response = f(request, *args, **kw)
-        response["Access-Control-Allow-Origin"] = "*"
-        return response
-
-    return wrapper
-
-
 def ratelimit_rate(group, request):
     """return None if we don't want to set any rate limit.
     Otherwise return a number according to

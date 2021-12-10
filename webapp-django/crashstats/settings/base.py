@@ -71,6 +71,7 @@ ROOT_URLCONF = "crashstats.urls"
 INSTALLED_APPS = (
     "whitenoise.runserver_nostatic",
     "pipeline",
+    "corsheaders",
     "django.contrib.contenttypes",
     "django.contrib.auth",
     "django.contrib.sessions",
@@ -101,6 +102,8 @@ INSTALLED_APPS = (
 
 
 MIDDLEWARE = [
+    # CORS needs to go before other response-generating middlewares
+    "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -284,6 +287,10 @@ LOGIN_URL = "/login/"
 
 # Use memcached for session storage
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
+# django-cors-headers should kick in for all API requests and support all origins
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_URLS_REGEX = r"^/api/.*$"
 
 # Process types to allow in queries.
 # If tuple, the second option is human readable label.

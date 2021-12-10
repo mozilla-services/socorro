@@ -115,10 +115,10 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 404
 
-    def test_CORS(self):
-        """any use of model_wrapper should return a CORS header"""
+    def test_option_CORS(self):
+        """OPTIONS request for model_wrapper returns CORS headers"""
         url = reverse("api:model_wrapper", args=("NoOp",))
-        response = self.client.get(url, {"product": "good"})
+        response = self.client.options(url, HTTP_ORIGIN="http://example.com")
         assert response.status_code == 200
         assert response["Access-Control-Allow-Origin"] == "*"
 
@@ -203,7 +203,7 @@ class TestViews(BaseTestViews):
         url = reverse("api:model_wrapper", args=("ProcessedCrash",))
         response = self.client.get(url)
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
         dump = json.loads(response.content)
         assert dump["errors"]["crash_id"]
 
@@ -270,7 +270,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
         dump = json.loads(response.content)
         assert dump["errors"]["crash_id"]
 
@@ -359,7 +359,7 @@ class TestViews(BaseTestViews):
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(url)
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
         dump = json.loads(response.content)
         assert dump["errors"]["crash_id"]
 
@@ -391,7 +391,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {"crash_id": "abc", "format": "wrong"})  # note
         # invalid format
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
 
         user = self._login()
         self._add_permission(user, "view_pii")
@@ -421,7 +421,7 @@ class TestViews(BaseTestViews):
         url = reverse("api:model_wrapper", args=("Bugs",))
         response = self.client.get(url)
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
         dump = json.loads(response.content)
         assert dump["errors"]["signatures"]
 
@@ -438,7 +438,7 @@ class TestViews(BaseTestViews):
         url = reverse("api:model_wrapper", args=("SignaturesByBugs",))
         response = self.client.get(url)
         assert response.status_code == 400
-        assert response["Content-Type"] == "application/json; charset=UTF-8"
+        assert response["Content-Type"] == "application/json"
         dump = json.loads(response.content)
         assert dump["errors"]["bug_ids"]
 

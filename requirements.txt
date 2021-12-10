@@ -166,9 +166,14 @@ django==2.2.25 \
     --hash=sha256:b1e65eaf371347d4b13eb7e061b09786c973061de95390c327c85c1e2aa2349c
     # via
     #   -r requirements.in
+    #   django-cors-headers
     #   django-csp
     #   django-jinja
     #   mozilla-django-oidc
+django-cors-headers==3.10.1 \
+    --hash=sha256:1390b5846e9835b0911e2574409788af87cd9154246aafbdc8ec546c93698fe6 \
+    --hash=sha256:b5a874b492bcad99f544bb76ef679472259eb41ee5644ca62d1a94ddb26b7f6e
+    # via -r requirements.in
 django_csp==3.7 \
     --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
     --hash=sha256:01eda02ad3f10261c74131cdc0b5a6a62b7c7ad4fd017fbefb7a14776e0a9727
