@@ -436,6 +436,9 @@ class SocorroMiddleware(SocorroCommon):
     def post(self, url, payload):
         return self._post(url, payload)
 
+    def options(self):
+        return self._options()
+
     def put(self, url, payload):
         return self._post(url, payload, method="put")
 
@@ -446,6 +449,9 @@ class SocorroMiddleware(SocorroCommon):
     def _post(self, url, payload, method="post"):
         # set dont_cache=True here because the request depends on the payload
         return self.fetch(url, method=method, data=payload, dont_cache=True)
+
+    def _options(self, method="options"):
+        return {}, False
 
     def parse_parameters(self, kwargs):
         defaults = getattr(self, "defaults", {})

@@ -227,9 +227,7 @@ class Test404:
         assert response.status_code == 404
         assert response["Content-Type"] == "application/json"
         result = json.loads(response.content)
-        assert result["error"] == "Page not found"
-        assert result["path"] == url
-        assert result["query_string"] == "foo=bar"
+        assert result["error"] == "No service called 'Unknown'"
 
 
 class TestContributeJson:

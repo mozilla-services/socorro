@@ -5,7 +5,6 @@
 import datetime
 from functools import wraps
 import inspect
-import json
 import re
 
 from ratelimit.decorators import ratelimit
@@ -175,11 +174,10 @@ def no_csrf_i_mean_it(fun):
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
 @track_api_pageview
-@utils.add_CORS_header  # must be before `utils.json_view`
 @utils.json_view
 def model_wrapper(request, model_name):
     if model_name in API_DONT_SERVE_LIST:
-        raise http.Http404("Don't know what you're talking about!")
+        return http.JsonResponse({"error": "Not found"}, status=404)
 
     model = None
 
@@ -195,7 +193,9 @@ def model_wrapper(request, model_name):
             pass
 
     if model is None or not is_valid_model_class(model):
-        raise http.Http404("no service called `%s`" % model_name)
+        return http.JsonResponse(
+            {"error": f"No service called '{model_name}'"}, status=404
+        )
 
     required_permissions = getattr(model(), "API_REQUIRED_PERMISSIONS", None)
     if required_permissions and (
@@ -226,88 +226,106 @@ def model_wrapper(request, model_name):
     # internally use that to determine its output.
     instance.api_user = request.user
 
+    function = None
     if request.method == "POST":
         function = instance.post
-    else:
+    elif request.method == "GET":
         function = instance.get
-    if not function:
-        return http.HttpResponseNotAllowed([request.method])
+    elif request.method == "OPTIONS":
+        function = instance.options
+
+    if function is None:
+        return http.JsonResponse({"error": "Method not allowed"}, status=405)
 
     # assume first that it won't need a binary response
     binary_response = False
 
-    request_data = request.method == "GET" and request.GET or request.POST
-    form = MiddlewareModelForm(model, request_data)
-    if form.is_valid():
+    if request.method == "OPTIONS":
+        # NOTE(willkg): OPTIONS requests are for CORS preflights. Because of the way
+        # this API infra is written, we don't know whether the API endpoint is a GET or
+        # POST (or both?) so we don't know where the required params are coming from, so
+        # we ignore checking them here.
         try:
-            result = function(**form.cleaned_data)
-        except NOT_FOUND_EXCEPTIONS as exception:
-            return http.HttpResponseNotFound(
-                json.dumps(
-                    {"error": ("%s: %s" % (type(exception).__name__, exception))}
-                ),
-                content_type="application/json; charset=UTF-8",
-            )
+            result = function()
+        except NOT_FOUND_EXCEPTIONS:
+            return http.JsonResponse({"error": "Not found"}, status=404)
         except BAD_REQUEST_EXCEPTIONS as exception:
-            return http.HttpResponseBadRequest(
-                json.dumps(
-                    {"error": ("%s: %s" % (type(exception).__name__, exception))}
-                ),
-                content_type="application/json; charset=UTF-8",
+            return http.JsonResponse(
+                {"error": f"Bad request: {type(exception).__name__} {exception}"},
+                status=400,
             )
 
-        # Some models allows to return a binary reponse. It does so based on
-        # the models `BINARY_RESPONSE` dict in which all keys and values
-        # need to be in the valid query. For example, if the query is
-        # `?foo=bar&other=thing&bar=baz` and the `BINARY_RESPONSE` dict is
-        # exactly: {'foo': 'bar', 'bar': 'baz'} it will return a binary
-        # response with content type `application/octet-stream`.
-        for key, value in model.API_BINARY_RESPONSE.items():
-            if form.cleaned_data.get(key) == value:
-                binary_response = True
-            else:
-                binary_response = False
-                break
-
-        if binary_response:
-            # if you don't have all required permissions, you'll get a 403
-            required_permissions = model.API_BINARY_PERMISSIONS
-            if required_permissions and not request.user.has_perms(
-                required_permissions
-            ):
-                permission_names = []
-                for permission in required_permissions:
-                    codename = permission.split(".", 1)[1]
-                    try:
-                        permission_names.append(
-                            Permission.objects.get(codename=codename).name
-                        )
-                    except Permission.DoesNotExist:
-                        permission_names.append(codename)
-                # you're not allowed to get the binary response
-                return http.HttpResponseForbidden(
-                    "Binary response requires the '%s' permission\n"
-                    % (", ".join(permission_names))
+    elif request.method in ["GET", "POST"]:
+        request_data = request.method == "GET" and request.GET or request.POST
+        form = MiddlewareModelForm(model, request_data)
+        if form.is_valid():
+            try:
+                result = function(**form.cleaned_data)
+            except NOT_FOUND_EXCEPTIONS as exception:
+                return http.JsonResponse(
+                    {"error": f"Not found: {type(exception).__name__} {exception}"},
+                    status=404,
+                )
+            except BAD_REQUEST_EXCEPTIONS as exception:
+                return http.JsonResponse(
+                    {"error": f"Bad request: {type(exception).__name__}: {exception}"},
+                    status=400,
                 )
 
-        elif not request.user.has_perm("crashstats.view_pii"):
-            if callable(model.API_ALLOWLIST):
-                allowlist = model.API_ALLOWLIST()
-            else:
-                allowlist = model.API_ALLOWLIST
+            # Some models allows to return a binary reponse. It does so based on
+            # the models `BINARY_RESPONSE` dict in which all keys and values
+            # need to be in the valid query. For example, if the query is
+            # `?foo=bar&other=thing&bar=baz` and the `BINARY_RESPONSE` dict is
+            # exactly: {'foo': 'bar', 'bar': 'baz'} it will return a binary
+            # response with content type `application/octet-stream`.
+            for key, value in model.API_BINARY_RESPONSE.items():
+                if form.cleaned_data.get(key) == value:
+                    binary_response = True
+                else:
+                    binary_response = False
+                    break
 
-            if result and allowlist:
-                cleaner = Cleaner(
-                    allowlist,
-                    # if True, uses warnings.warn() to show fields
-                    # not allowlisted
-                    debug=settings.DEBUG,
-                )
-                cleaner.start(result)
+            if binary_response:
+                # if you don't have all required permissions, you'll get a 403
+                required_permissions = model.API_BINARY_PERMISSIONS
+                if required_permissions and not request.user.has_perms(
+                    required_permissions
+                ):
+                    permission_names = []
+                    for permission in required_permissions:
+                        codename = permission.split(".", 1)[1]
+                        try:
+                            permission_names.append(
+                                Permission.objects.get(codename=codename).name
+                            )
+                        except Permission.DoesNotExist:
+                            permission_names.append(codename)
+                    # you're not allowed to get the binary response
+                    permissions = ", ".join(permission_names)
+                    return http.JsonResponse(
+                        {
+                            "error": f"Binary response requires permissions: {permissions}"
+                        },
+                        status=403,
+                    )
 
-    else:
-        # custom override of the status code
-        return {"errors": dict(form.errors)}, 400
+            elif not request.user.has_perm("crashstats.view_pii"):
+                if callable(model.API_ALLOWLIST):
+                    allowlist = model.API_ALLOWLIST()
+                else:
+                    allowlist = model.API_ALLOWLIST
+
+                if result and allowlist:
+                    cleaner = Cleaner(
+                        allowlist,
+                        # if True, uses warnings.warn() to show fields
+                        # not allowlisted
+                        debug=settings.DEBUG,
+                    )
+                    cleaner.start(result)
+
+        else:
+            return http.JsonResponse({"errors": dict(form.errors)}, status=400)
 
     if binary_response:
         filename = model.get_binary_filename(form.cleaned_data)
@@ -448,10 +466,12 @@ def dedent_left(text, spaces):
 @anonymous_csrf_exempt
 @csrf_exempt
 @ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
-@utils.add_CORS_header
 @utils.json_view
 def crash_verify(request):
     """Verifies crash data in crash data destinations"""
+    if request.method == "OPTIONS":
+        return http.JsonResponse({}, status=200)
+
     crash_id = request.GET.get("crash_id", None)
 
     if not crash_id or not is_crash_id_valid(crash_id):
@@ -499,4 +519,4 @@ def crash_verify(request):
         has_telemetry_crash = False
     data["s3_telemetry_crash"] = has_telemetry_crash
 
-    return http.HttpResponse(json.dumps(data), content_type="application/json")
+    return http.JsonResponse(data, status=200)
