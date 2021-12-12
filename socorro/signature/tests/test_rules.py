@@ -1402,37 +1402,6 @@ class TestSigTruncate:
         assert result.signature.endswith("9...")
 
 
-class TestStackwalkerErrorSignatureRule:
-    def test_predicate_no_match_signature(self):
-        rule = rules.StackwalkerErrorSignatureRule()
-        result = generator.Result()
-        result.signature = "0" * 100
-        assert rule.predicate({}, result) is False
-
-    def test_predicate_no_match_missing_mdsw_status_string(self):
-        rule = rules.StackwalkerErrorSignatureRule()
-        result = generator.Result()
-        result.signature = "EMPTY: like my soul"
-        assert rule.predicate({}, result) is False
-
-    def test_predicate(self):
-        rule = rules.StackwalkerErrorSignatureRule()
-        crash_data = {"mdsw_status_string": "catastrophic stackwalker failure"}
-        result = generator.Result()
-        result.signature = "EMPTY: like my soul"
-        assert rule.predicate(crash_data, result) is True
-
-    def test_action_success(self):
-        rule = rules.StackwalkerErrorSignatureRule()
-        crash_data = {"mdsw_status_string": "catastrophic stackwalker failure"}
-        result = generator.Result()
-        result.signature = "EMPTY: like my soul"
-        action_result = rule.action(crash_data, result)
-        assert action_result is True
-        expected = "EMPTY: like my soul; catastrophic stackwalker failure"
-        assert result.signature == expected
-
-
 class TestSignatureWatchDogRule:
     def test_predicate(self):
         srwd = rules.SignatureRunWatchDog()

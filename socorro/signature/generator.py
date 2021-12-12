@@ -8,7 +8,6 @@ from typing import Any, Dict, List
 
 from .rules import (
     SignatureGenerationRule,
-    StackwalkerErrorSignatureRule,
     OOMSignature,
     AbortSignature,
     SignatureShutdownTimeout,
@@ -24,7 +23,6 @@ from .rules import (
 
 DEFAULT_PIPELINE = [
     SignatureGenerationRule(),
-    StackwalkerErrorSignatureRule(),
     OOMSignature(),
     AbortSignature(),
     SignatureShutdownTimeout(),

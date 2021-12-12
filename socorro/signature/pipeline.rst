@@ -39,41 +39,37 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
    * ``proto_signature``: a ``" | "`` delimited string of the normalized
      frames
 
-2. **Rule: StackwalkerErrorSignatureRule**
-
-   Appends minidump-stackwalker error to signature.
-
-3. **Rule: OOMSignature**
+2. **Rule: OOMSignature**
 
    Prepends ``OOM | <size>`` to signatures for OOM crashes.
 
    See bug #1007530.
 
-4. **Rule: AbortSignature**
+3. **Rule: AbortSignature**
 
    Prepends abort message to signature.
 
    See bug #803779.
 
-5. **Rule: SignatureShutdownTimeout**
+4. **Rule: SignatureShutdownTimeout**
 
    Replaces signature with async_shutdown_timeout message.
 
-6. **Rule: SignatureRunWatchDog**
+5. **Rule: SignatureRunWatchDog**
 
    Prepends "shutdownhang" to signature for shutdown hang crashes.
 
-7. **Rule: SignatureIPCChannelError**
+6. **Rule: SignatureIPCChannelError**
 
    Stomps on signature with shutdownkill signature
 
    Either "IPCError-browser | ShutDownKill" or "IPCError-content | ShutDownKill".
 
-8. **Rule: SignatureIPCMessageName**
+7. **Rule: SignatureIPCMessageName**
 
    Appends ipc_message_name to signature.
 
-9. **Rule: SignatureParentIDNotEqualsChildID**
+8. **Rule: SignatureParentIDNotEqualsChildID**
 
    Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
 
@@ -81,11 +77,11 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
    different. This causes a lot of strangeness particularly in symbolification, so the signatures
    end up as junk. Instead, we want to bucket all these together so we replace the signature.
 
-10. **Rule: SignatureJitCategory**
+9. **Rule: SignatureJitCategory**
 
-    Replaces signature with JIT classification.
+   Replaces signature with JIT classification.
 
-11. **Rule: SigFixWhitespace**
+10. **Rule: SigFixWhitespace**
 
     Fix whitespace in signatures.
 
@@ -95,7 +91,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
     * converts all non-space whitespace characters to space
     * reduce consecutive spaces to a single space
 
-12. **Rule: SigTruncate**
+11. **Rule: SigTruncate**
 
     Truncates signatures down to SIGNATURE_MAX_LENGTH characters.
 

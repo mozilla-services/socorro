@@ -198,10 +198,10 @@ class CSignatureTool:
     ):
         """Normalizes a single frame
 
-        Returns a structured conglomeration of the input parameters to serve as
-        a signature. The parameter names of this function reflect the exact
-        names of the fields from the jsonMDSW frame output. This allows this
-        function to be invoked by passing a frame as ``**a_frame``.
+        Returns a structured conglomeration of the input parameters to serve as a
+        signature. The parameter names of this function reflect the exact names of the
+        fields from the json frame output. This allows this function to be invoked by
+        passing a frame as ``**a_frame``.
 
         """
         if function:
@@ -727,23 +727,6 @@ class SigTruncate(Rule):
         max_length = SIGNATURE_MAX_LENGTH - 3
         result.set_signature(self.name, "{}...".format(result.signature[:max_length]))
         result.info(self.name, "SigTrunc: signature truncated due to length")
-        return True
-
-
-class StackwalkerErrorSignatureRule(Rule):
-    """Appends minidump-stackwalker error to signature."""
-
-    def predicate(self, crash_data, result):
-        return bool(
-            result.signature.startswith("EMPTY")
-            and crash_data.get("mdsw_status_string")
-        )
-
-    def action(self, crash_data, result):
-        result.set_signature(
-            self.name,
-            "{}; {}".format(result.signature, crash_data["mdsw_status_string"]),
-        )
         return True
 
 

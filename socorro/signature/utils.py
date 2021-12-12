@@ -97,8 +97,6 @@ def convert_to_crash_data(raw_crash, processed_crash):
         ),
         # text or None
         "abort_message": glom(raw_crash, "AbortMessage", default=None),
-        # text or None
-        "mdsw_status_string": glom(processed_crash, "mdsw_status_string", default=None),
         # text json with "phase", "conditions" (complicated--see code) or None
         "async_shutdown_timeout": glom(raw_crash, "AsyncShutdownTimeout", default=None),
         # text or None
