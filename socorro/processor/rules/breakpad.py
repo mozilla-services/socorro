@@ -33,7 +33,7 @@ class CrashingThreadInfoRule(Rule):
     """
 
     def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
-        return bool(processed_crash.get("json_dump", None))
+        return processed_crash.get("json_dump", None) is not None
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         processed_crash["crashing_thread"] = glom.glom(
@@ -333,12 +333,9 @@ class MinidumpStackwalkRule(Rule):
                     # running minidump-stackwalker.
                     #
                     # This is a bad case, so we want to add a note. However, since this
-                    # is a shortcut, we also include a basic stackwalker_data.
+                    # is a shortcut, we also include some stackwalker_data.
                     stackwalker_data = {
-                        "json_dump": {},
-                        "mdsw_return_code": 0,
                         "mdsw_status_string": "EmptyMinidump",
-                        "success": True,
                         "mdsw_stderr": "Shortcut for 0-bytes minidump.",
                     }
 
