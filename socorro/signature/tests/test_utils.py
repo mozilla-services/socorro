@@ -15,6 +15,7 @@ from ..utils import (
     override_values,
     parse_crashid,
     parse_source_file,
+    strip_leading_zeros,
 )
 
 
@@ -329,3 +330,22 @@ def test_drop_prefix_and_return_type(function, expected):
 )
 def test_parse_crashid(item, expected):
     assert parse_crashid(item) == expected
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        # Bad data begets itself
+        (None, None),
+        (16, 16),
+        # Good hex things get fixed correctly
+        ("0x32ec0", "0x32ec0"),
+        ("0x0000000000032ec0", "0x32ec0"),
+        # This is a weird case where it looks like a decimal and should probably be
+        # a decimal, but our code strips it and puts 0x in front. I'm going to leave
+        # it like this for now.
+        ("40", "0x40"),
+    ],
+)
+def test_strip_leading_zeros(text, expected):
+    assert strip_leading_zeros(text) == expected
