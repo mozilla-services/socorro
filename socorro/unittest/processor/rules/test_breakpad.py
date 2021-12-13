@@ -925,3 +925,22 @@ class TestMinidumpStackwalkRule:
             processor_meta["processor_notes"][0]
             == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
         )
+
+    def test_empty_minidump_shortcut(self, tmp_path):
+        rule = self.build_rule()
+
+        # Write a 0-byte minidump file with the correct name
+        dumppath = tmp_path / "upload_file_minidump"
+        dumppath.write_text("")
+
+        raw_crash = {"uuid": example_uuid}
+        dumps = {rule.dump_field: str(dumppath)}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash["mdsw_return_code"] == 0
+        assert processed_crash["mdsw_status_string"] == "EmptyMinidump"
+        assert processed_crash["success"] is True
+        assert processed_crash["mdsw_stderr"] == "Shortcut for 0-bytes minidump."

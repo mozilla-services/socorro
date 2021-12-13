@@ -120,7 +120,11 @@ class MinidumpStackwalkRule(Rule):
 
     * json_dump: output from minidump_stackwalk run
     * mdsw_exit_code: process exit code
-    * mdsw_status_string: string of json_dump["status"]
+    * mdsw_status_string:
+
+      * value of json_dump["status"]
+      * error code derived from mdsw_stderr
+
     * mdsw_success: bool
     * additional_minidumps: list of minidump names that aren't dump_field value
 
@@ -323,27 +327,53 @@ class MinidumpStackwalkRule(Rule):
                 if not dump_name.startswith(self.dump_field):
                     continue
 
-                # If the dump file is empty (0-bytes), then we don't want to run
                 file_size = os.path.getsize(dump_file_path)
                 if file_size == 0:
-                    # This is a bad case, so we want to add a note.
+                    # If the dump file is empty (0-bytes), then we don't want to bother
+                    # running minidump-stackwalker.
+                    #
+                    # This is a bad case, so we want to add a note. However, since this
+                    # is a shortcut, we also include a basic stackwalker_data.
+                    stackwalker_data = {
+                        "json_dump": {},
+                        "mdsw_return_code": 0,
+                        "mdsw_status_string": "EmptyMinidump",
+                        "success": True,
+                        "mdsw_stderr": "Shortcut for 0-bytes minidump.",
+                    }
+
                     processor_meta["processor_notes"].append(
                         f"MinidumpStackwalkRule: {dump_name} is empty--skipping "
                         + "minidump processing"
                     )
-                    continue
 
-                command_line = self.expand_commandline(
-                    dump_file_path=dump_file_path,
-                    raw_crash_path=raw_crash_path,
-                )
+                else:
+                    command_line = self.expand_commandline(
+                        dump_file_path=dump_file_path,
+                        raw_crash_path=raw_crash_path,
+                    )
 
-                stackwalker_data = self.run_stackwalker(
-                    crash_id=crash_id,
-                    command_path=self.command_path,
-                    command_line=command_line,
-                    processor_meta=processor_meta,
-                )
+                    stackwalker_data = self.run_stackwalker(
+                        crash_id=crash_id,
+                        command_path=self.command_path,
+                        command_line=command_line,
+                        processor_meta=processor_meta,
+                    )
+
+                    stderr = stackwalker_data.get("mdsw_stderr", "").strip()
+                    if stderr:
+                        if stderr.startswith("[ERROR]"):
+                            indicator = stderr.split(" ")[1]
+                        else:
+                            indicator = ""
+
+                        status_string = stackwalker_data.get("mdsw_status_string", "")
+                        if indicator and status_string in ["OK", "unknown error"]:
+                            stackwalker_data["mdsw_status_string"] = indicator
+                            processor_meta["processor_notes"].append(
+                                f"MinidumpStackwalkRule: processing {dump_name} had error; "
+                                + "stomped on mdsw_status_string"
+                            )
 
                 if dump_name == self.dump_field:
                     processed_crash.update(stackwalker_data)
