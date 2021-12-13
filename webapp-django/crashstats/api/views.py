@@ -648,6 +648,9 @@ class CrashSignatureAPI(SocorroAPIView):
     IS_PUBLIC = True
 
     HELP_TEXT = """
+    Note: This is currently unsupported and in flux. It's being stabilitized. See:
+    https://bugzilla.mozilla.org/show_bug.cgi?id=828452
+
     Takes memory address, module information, and crash annotation data and generates a
     crash signature.
 
