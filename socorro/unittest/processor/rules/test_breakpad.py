@@ -204,13 +204,13 @@ class TestCrashingThreadInfoRule:
         """If there's no dump data, then this rule doesn't do anything"""
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {"json_dump": {}}
+        processed_crash = {}
         processor_meta = get_basic_processor_meta()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash == {"json_dump": {}}
+        assert processed_crash == {}
         assert processor_meta["processor_notes"] == []
 
 
@@ -940,7 +940,5 @@ class TestMinidumpStackwalkRule:
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["mdsw_return_code"] == 0
         assert processed_crash["mdsw_status_string"] == "EmptyMinidump"
-        assert processed_crash["success"] is True
         assert processed_crash["mdsw_stderr"] == "Shortcut for 0-bytes minidump."
