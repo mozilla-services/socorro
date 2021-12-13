@@ -16,6 +16,7 @@ from .utils import (
     get_crashing_thread,
     override_values,
     parse_source_file,
+    strip_leading_zeros,
 )
 
 
@@ -198,10 +199,10 @@ class CSignatureTool:
     ):
         """Normalizes a single frame
 
-        Returns a structured conglomeration of the input parameters to serve as
-        a signature. The parameter names of this function reflect the exact
-        names of the fields from the jsonMDSW frame output. This allows this
-        function to be invoked by passing a frame as ``**a_frame``.
+        Returns a structured conglomeration of the input parameters to serve as a
+        signature. The parameter names of this function reflect the exact names of the
+        fields from the JSON MDSW frame output. This allows this function to be invoked
+        by passing a frame as ``**a_frame``.
 
         """
         if function:
@@ -224,10 +225,10 @@ class CSignatureTool:
 
         # If there's an offset and no module/module_offset, use that
         if not module and not module_offset and offset:
-            return f"@{offset}"
+            return f"@{strip_leading_zeros(offset)}"
 
         # Return module/module_offset
-        return "{}@{}".format(module or "", module_offset)
+        return "{}@{}".format(module or "", strip_leading_zeros(module_offset))
 
     def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=" | "):
         """Iterate over frames in the crash stack and generate a signature.

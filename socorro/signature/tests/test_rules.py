@@ -81,15 +81,15 @@ class TestCSignatureTool:
         """test_normalize: bunch of variations"""
         s = self.setup_config_c_sig_tool()
         a = [
-            (("module", "", "source/", "23", "0xFFF"), "source#23"),
-            (("module", "", "source\\", "23", "0xFFF"), "source#23"),
-            (("module", "", "/a/b/c/source", "23", "0xFFF"), "source#23"),
-            (("module", "", "\\a\\b\\c\\source", "23", "0xFFF"), "source#23"),
-            (("module", "", "\\a\\b\\c\\source", "23", "0xFFF"), "source#23"),
-            (("module", "", "\\a\\b\\c\\source", "", "0xFFF"), "module@0xFFF"),
-            (("module", "", "", "23", "0xFFF"), "module@0xFFF"),
-            (("module", "", "", "", "0xFFF"), "module@0xFFF"),
-            ((None, "", "", "", "0xFFF"), "@0xFFF"),
+            (("module", "", "source/", "23", "0xfff"), "source#23"),
+            (("module", "", "source\\", "23", "0xfff"), "source#23"),
+            (("module", "", "/a/b/c/source", "23", "0xfff"), "source#23"),
+            (("module", "", "\\a\\b\\c\\source", "23", "0xfff"), "source#23"),
+            (("module", "", "\\a\\b\\c\\source", "23", "0xfff"), "source#23"),
+            (("module", "", "\\a\\b\\c\\source", "", "0xfff"), "module@0xfff"),
+            (("module", "", "", "23", "0xfff"), "module@0xfff"),
+            (("module", "", "", "", "0xfff"), "module@0xfff"),
+            ((None, "", "", "", "0xfff"), "@0xfff"),
             # Make sure frame normalization uses the right function: normalize
             # Rust frame (has a Rust fingerprint)
             (
@@ -98,7 +98,7 @@ class TestCSignatureTool:
                     "expect_failed::h7f635057bfba806a",
                     "hg:hg.mozilla.org/a/b:servio/wrapper.rs:44444444444",
                     "23",
-                    "0xFFF",
+                    "0xfff",
                 ),
                 "expect_failed",
             ),

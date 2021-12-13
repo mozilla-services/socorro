@@ -404,3 +404,22 @@ def parse_crashid(item):
             crash_id = path.split("/")[-1]
             if is_crash_id_valid(crash_id):
                 return crash_id
+
+
+def strip_leading_zeros(text):
+    """Strips leading zeros from a hex string.
+
+    Example:
+
+    >>> strip_leading_zeros("0x0000000000032ec0")
+    "0x32ec0"
+
+    :param text: the text to strip leading zeros from
+
+    :returns: stripped text
+
+    """
+    try:
+        return hex(int(text, base=16))
+    except (ValueError, TypeError):
+        return text
