@@ -186,6 +186,16 @@ Example::
    BINARYDATA
 
 
+.. Note::
+
+   The Socorro processor treats the name ``upload_file_minidump`` as the
+   minidump of the crashing process. It extracts information from it and that's
+   what shows up on Crash Stats.
+
+   If you're writing your own crash reporter client, you should make sure to
+   set the name for dump for the crash report as ``upload_file_minidump``.
+
+
 Collector response
 ==================
 
@@ -388,14 +398,67 @@ It does not support the following things in this specification:
 How to debug problems with submitting crash reports
 ===================================================
 
-1. When the crash reporter submits the crash report to Socorro, what is
+We hang out in `#crashreporting:mozilla.org
+<https://riot.im/app/#/room/#crashreporting:mozilla.org>`_.
+
+Here are some notes for issues you might be having:
+
+**I'm getting back an HTTP 404**
+
+The URL you're using is wrong. Verify the url. If that doesn't work, reach out
+to us.
+
+**I'm getting back an HTTP 413**
+
+The crash report request body is too large. If you aren't compressing it with
+gzip, try that. If you are, then reach out to us but you're probably going to
+need to remove something.
+
+**I'm getting back a rejection**
+
+Check the response body for the rejection code and look it up in the throttling
+rules:
+
+https://github.com/mozilla-services/antenna/blob/main/antenna/throttler.py
+
+If that doesn't help, reach out to us.
+
+**I'm getting back an HTTP 500**
+
+Reach out to us because something is wrong with our server.
+
+**The crash report submitted, but there's very little data on Crash Stats**
+
+Verify that the name (not the filename) is set to "upload_file_minidump".  The
+Socorro processor treats that specific minidump as the one for the crashed
+process and does additional processing for it.
+
+You can see a list of all the dumps that were sent in the Debug tab of the
+report view on Crash Stats.
+
+Verify that you're sending all the crash annotations you're intending to
+send.
+
+You can see a list of all the dump names and crash annotations in the
+``crash_report_keys`` field of the processed crash.
+
+If this is a new crash annotation or one that's not explicitly marked
+as public, the crash annotation will be treated as protected data. If you
+don't have access to protected data, you will not be able to see it on
+Crash Stats.
+
+See our protected data access policy:
+
+https://crash-stats.allizom.org/documentation/protected_data_access/
+
+**None of these are helping me**
+
+Ask yourself these questions and see if they help you at all:
+
+1. When the crash reporter client submits the crash report to Socorro, what is
    the status code that it gets back? What is the HTTP response body?
 
-2. If you search for the crash id that Socorro returns, are there processor
-   notes indicating problems?
+2. If you successfully submit a crash report, search for the crash id on Crash
+   Stats. Are there processor notes indicating problems?
 
-
-If neither of those sets of questions are fruitful, please ask in one of our
-channels.
-
-https://github.com/mozilla-services/socorro/blob/main/README.rst
+If nothing here helps please reach out to us on Matrix.
