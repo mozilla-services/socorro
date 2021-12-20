@@ -1,10 +1,8 @@
 .. _crash-report-spec-chapter:
 
-==========================================
-Specification: Crash report payload format
-==========================================
-
-This is a specification for the format for submitting crash reports.
+=======================================
+Specification: Submitting crash reports
+=======================================
 
 .. contents::
    :local:
@@ -15,16 +13,16 @@ Summary
 
 The Breakpad library includes an `HTTP upload tool
 <https://chromium.googlesource.com/breakpad/breakpad/+/master/src/tools/linux/symupload/minidump_upload.cc>`_.
+However, Mozilla doesn't use that tool for its products. Instead, we have our
+own set of crash reporting clients.
 
-Mozilla doesn't use that tool for its products. Instead, we have our own set of
-crash reporting clients.
-
-This specification points out aspects that are supported by Mozilla's crash
-reporting clients, but not the Breakpad minidump upload tool.
+This specification covers the HTTP POST request and response for submitting
+crash reports to the Socorro collector.
 
 
-Crash report specification
-==========================
+
+History
+=======
 
 History:
 
@@ -32,34 +30,57 @@ History:
 * 2020-01-17: Add specifying annotations as a single JSON-encoded value.
 * 2021-05-26: Add notes about where we stray from the Breakpad crash reporting
   client.
+* 2021-12-20: Generalize to cover HTTP POST request and response for the
+  Socorro collector.
 
 
-Submitting a crash report
--------------------------
+Crash reporter client submission request
+========================================
 
-Crash reports are submitted by HTTP POST to a URL for a crash ingestion
-collector.
+Request method
+--------------
 
-
-Crash report HTTP POST headers
-------------------------------
-
-The content type header of the crash report must be ``multipart/form-data``
-and specify the multipart/form-data boundary.
-
-The content length of the crash report must be set. The value is the length
-of the body.
-
-The ``Content-Encoding`` may be set to ``gzip`` if the HTTP body is gzipped.
+Crash reports are submitted by HTTP POST to the Socorro collector crash
+submission URL.
 
 
-Crash report HTTP body
-----------------------
+Request headers
+---------------
 
-The crash report is in the HTTP POST body.
+The HTTP POST request must include the following headers:
+
+``Content-Type``
+
+   The content type header of the crash report must be ``multipart/form-data``
+   and it must specify the multipart/form-data boundary.
+
+``Content-Length``
+
+   The content length of the crash report must be set. The value is the length
+   of the body.
+
+``Content-Encoding`` (optional)
+
+   If the HTTP body is gzipped, then the ``Content-Encoding`` must be set to
+   ``gzip``.
+
+   Generally, it's good to compress bodies since it reduces the size of the
+   body, reduces the time it takes to upload, and also increases the size of
+   the crash reports you can send.
+
+
+Request body
+------------
+
+The crash report is in the HTTP POST body and consists of crash annotations and
+dumps.
 
 If the ``Content-Encoding`` header is set to ``gzip``, the body must be
 gzipped.
+
+
+Crash annotations
+~~~~~~~~~~~~~~~~~
 
 The body consists of a series of multipart/form-data fields. Each field is
 either an annotation or a binary like a minidump.
@@ -69,9 +90,17 @@ either an annotation or a binary like a minidump.
    RFC for multipart/form-data:
       https://tools.ietf.org/html/rfc7578
 
+There are two ways to provide crash annotations:
 
-Annotations as key/values in multipart/form-data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. annotations as key/value pairs, OR
+2. annotations as a single JSON-encoded value
+
+You can provide crash annotations as EITHER key/value pairs, OR a JSON-encoded
+value for all annotations--you can't do both.
+
+
+Annotations as key/value pairs in multipart/form-data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
@@ -89,11 +118,6 @@ Example::
 
 Annotations as single JSON-encoded value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. Note::
-
-   This is not supported by Breakpad's minidump upload tool.
-
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
@@ -121,12 +145,6 @@ Example::
    {"ProductName":"Firefox","Version":"1.0","TelemetryEnvironment":"{\"build\":{\"applicationName\":\"Firefox\",\"version\":\"72.0.1\",\"vendor\":\"Mozilla\"}}"}
 
 
-.. Note::
-
-   You must do either a JSON-encoded value for all annotations or specify each
-   annotation as a multipart/form-data item. You can't do both.
-
-
 .. versionadded:: 2020-01-17
 
    This was added in `bug 1420363
@@ -134,8 +152,8 @@ Example::
    in December 2019 and is in Firefox 73.
 
 
-Binary fields
-~~~~~~~~~~~~~
+Dumps and other binary data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
@@ -169,119 +187,139 @@ Example::
 
 
 Collector response
-------------------
+==================
 
 The collector throttles crash reports and returns a response to the crash
 reporter client in the HTTP response.
 
-===================  ==========================================  ==========================
-summary              response code                               notes
-===================  ==========================================  ==========================
-accepted             HTTP 200 with crashid in payload
-rejected; throttled  HTTP 200 with rejection message in payload  client can resubmit
-rejected; malformed  HTTP 400 with error message in payload      client should not resubmit
-===================  ==========================================  ==========================
+HTTP 200
+    Crash report submission was successful.
 
-.. Note::
+    Accepted:
+        If the crash report is accepted by the collector, then the collector
+        must return an HTTP status code of 200 with a body specifying the crash
+        id::
 
-   This is not supported by Breakpad's minidump upload tool which only handles
-   HTTP 200 response code and nothing in the payload.
+           "CrashID" "=" CRASHID
 
+        For example::
 
-Accepted
-~~~~~~~~
-
-If the crash report is accepted by the collector, then the collector must
-return an HTTP status code of 200 with a body specifying the crash id::
-
-   "CrashID" "=" CRASHID
-
-For example::
-
-   CrashID=bp-d101d046-638f-42e0-902d-bd245c200115
+           CrashID=bp-d101d046-638f-42e0-902d-bd245c200115
 
 
-.. Note::
+        .. Note::
 
-   It's possible for a crash report to be accepted by the collector, but be
-   malformed in some way. For example, if one of the annotation values was
-   ``null``. The processor has rules that will fix these issues and add
-   processor notes for what it fixed.
-
-
-Rejected because of throttling rule
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If the crash report is rejected by the collector, then the collector must
-return an HTTP status code of 200 with a body specifying the rejection rule::
-
-   "Discarded" "=" RULE
-
-For example::
-
-   Discarded=rule_has_hangid_and_browser
-
-Rejection rules are specified in the collector's throttler. They are added and
-removed as needed.
-
-Some rejection rules are hard-rejections and the collector will never accept
-that crash report.
-
-Some rejection rules are soft-rejections and the collector may accept that
-crash report again in the future.
-
-The crash reporter client may submit the crash report again.
-
-.. seealso::
-
-   Code for throttler:
-      https://github.com/mozilla-services/antenna/blob/main/antenna/throttler.py
+           It's possible for a crash report to be accepted by the collector,
+           but be malformed in some way. For example, if one of the annotation
+           values was ``null``. The processor has rules that will fix these
+           issues and add processor notes for what it fixed.
 
 
-Rejected because it's malformed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Rejected:
+        If the crash report is rejected by the collector, then the collector
+        must return an HTTP status code of 200 with a body specifying the
+        rejection rule::
 
-If the crash report is malformed, then the collector must return an HTTP status
-code of 400 with a body specifying the malformed reason::
+           "Discarded" "=" RULE
 
-   "Discarded" "=" REASON
+        For example::
 
-For example::
+           Discarded=rule_has_hangid_and_browser
 
-   Discarded=no_annotations
+        Rejection rules are specified in the collector's throttler. They change
+        periodically.
 
+        Some rejection rules are hard-rejections and the collector will never
+        accept the crash report.
 
-Non-exhaustive list of reasons the crash report could be malformed:
+        Some rejection rules are soft-rejections from sampling and the
+        collector may accept that crash report again in the future.
 
-``no_content_type``
-   The crash report HTTP POST has no content type in the HTTP headers.
+        The crash reporter client may submit the crash report again.
 
-``wrong_content_type``
-  The crash report HTTP POST content type header exists, bug it's not set to
-  ``malformed/form-data``.
+        .. seealso::
 
-``no_boundary``
-   The content type doesn't include a boundary value, so it can't be parsed as
-   ``multipart/form-data``.
-
-``bad_gzip``
-   The ``Content-Encoding`` header is set to ``gzip``, but the body isn't in
-   gzip format or there's a parsing error.
-
-``no_annotations``
-   The crash report has been parsed, but there were no annotations in it.
-
-``has_json_and_kv``
-   The crash report encodes annotations in ``multipart/form-data`` as well as
-   in the extra JSON-encoded string. It should have either one or the
-   other--not both.
+           Code for throttler:
+              https://github.com/mozilla-services/antenna/blob/main/antenna/throttler.py
 
 
-The crash reporter client shouldn't try to send a malformed crash report again.
+HTTP 400
+    If the crash report is malformed, then the collector must return an HTTP
+    status code of 400 with a body specifying the malformed reason::
+
+       "Discarded" "=" REASON
+
+    For example::
+
+       Discarded=no_annotations
+
+
+    Non-exhaustive list of reasons the crash report could be malformed:
+
+    ``no_content_type``
+       The crash report HTTP POST has no content type in the HTTP headers.
+
+    ``wrong_content_type``
+      The crash report HTTP POST content type header exists, bug it's not set
+      to ``malformed/form-data``.
+
+    ``no_boundary``
+       The content type doesn't include a boundary value, so it can't be parsed
+       as ``multipart/form-data``.
+
+    ``bad_gzip``
+       The ``Content-Encoding`` header is set to ``gzip``, but the body isn't
+       in gzip format or there's a parsing error.
+
+    ``no_annotations``
+       The crash report has been parsed, but there were no annotations in it.
+
+    ``has_json_and_kv``
+       The crash report encodes annotations in ``multipart/form-data`` as well
+       as in the extra JSON-encoded string. It should have either one or the
+       other--not both.
+
+
+    The crash reporter client shouldn't try to send a malformed crash report
+    again.
+
+HTTP 413
+    The HTTP POST body is too large and exceeds the maximum body size.
+
+    The crash reporter client shouldn't try to send this crash report again.
+
+
+HTTP 500
+    This is an internal server error.
+
+    It's possible this is a bug in the collector. If so, an error report gets
+    sent and maintainers will see it.
+
+    It's possible this problem is ephemeral and will go away after some time.
+
+    The crash reporter client may sleep for a bit and retry sending the
+    crash report.
+
+HTTP 502
+    Bad gateway.
+
+    It's possible this problem is ephemeral and will go away after some time.
+    It's possible that this is a bug in the crash reporting client.
+
+    The crash reporter client may sleep for a bit and retry sending the
+    crash report.
+
+HTTP 503
+    Service unavailable.
+
+    It's possible this problem is ephemeral and will go away after some time.
+
+    The crash reporter client may sleep for a bit and retry sending the
+    crash report.
 
 
 Example of crash report HTTP POST
----------------------------------
+=================================
 
 Example with HTTP headers and body::
 
@@ -334,8 +372,21 @@ Example with HTTP headers and body using JSON-encoded value for annotations::
    --------------------------c4ae5238f12b6c82--
 
 
-How to debug crash report submission
-====================================
+Differences from Breakpad upload tool
+=====================================
+
+The Breakpad library comes with an upload tool. That tool lets you upload crash
+annotations and dumps as an HTTP POST to a collector.
+
+It does not support the following things in this specification:
+
+1. returning crash id on successful submission
+2. returning rejection code on rejected crash report
+3. crash annotations as a single JSON-encoded value
+
+
+How to debug problems with submitting crash reports
+===================================================
 
 1. When the crash reporter submits the crash report to Socorro, what is
    the status code that it gets back? What is the HTTP response body?
