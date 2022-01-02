@@ -163,12 +163,22 @@ def es_conn():
     )
     conn = ESConnectionContext(manager.get_config())
 
-    # Create two indexes--this week and last week
+    # Create all the indexes for the last couple of weeks; we have to do it this way to
+    # handle split indexes over the new year
     template = conn.config.elasticsearch_index
-    conn.create_index(utc_now().strftime(template))
-    conn.create_index((utc_now() - datetime.timedelta(weeks=1)).strftime(template))
+    to_create = set()
+
+    for i in range(14):
+        index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
+        to_create.add(index_name)
+
+    for index_name in to_create:
+        print(f"es_conn: creating index: {index_name}")
+        conn.create_index(index_name)
+
     conn.health_check()
 
     yield conn
+
     for index in conn.get_indices():
         conn.delete_index(index)
