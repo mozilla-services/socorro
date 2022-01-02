@@ -101,10 +101,15 @@ class ElasticsearchTestCase(TestCaseWithConfig):
             print(f"setup: delete test index: {index_name}")
             self.es_context.delete_index(index_name)
 
-        to_create = [
-            self.es_context.get_index_for_date(utc_now()),
-            self.es_context.get_index_for_date(utc_now() - timedelta(days=7)),
-        ]
+        # Create all the indexes for the last couple of weeks; we have to do it this way
+        # to handle split indexes over the new year
+        to_create = set()
+        for i in range(14):
+            index_name = self.es_context.get_index_for_date(
+                utc_now() - timedelta(days=i)
+            )
+            to_create.add(index_name)
+
         for index_name in to_create:
             print(f"setup: creating index: {index_name}")
             self.es_context.create_index(index_name)
