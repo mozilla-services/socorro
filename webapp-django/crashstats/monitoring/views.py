@@ -70,6 +70,10 @@ def dockerflow_version(requst):
     return http.HttpResponse(data, content_type="application/json")
 
 
+class HeartbeatException(Exception):
+    pass
+
+
 @utils.json_view
 def dockerflow_heartbeat(request):
     """Dockerflow endpoint that checks backing services for connectivity.
@@ -77,27 +81,58 @@ def dockerflow_heartbeat(request):
     Returns HTTP 200 if everything is ok or HTTP 500 on error.
 
     """
-    # Perform some really basic DB queries.
-    # There will always be permissions created
-    assert Permission.objects.all().count() > 0
+    # Perform a basic DB query
+    Permission.objects.all().count()
 
     # We should also be able to set and get a cache value
     cache_key = "__healthcheck__" + str(uuid.uuid4())
-    cache.set(cache_key, 1, 10)
-    assert cache.get(cache_key), f"cache_key {cache_key} not available"
-    cache.delete(cache_key)
+    try:
+        cache.set(cache_key, 1, 10)
+    except Exception as exc:
+        raise HeartbeatException(f"cache.set failed: {exc}")
 
-    # Do a really basic Elasticsearch query
+    try:
+        val = cache.get(cache_key)
+    except Exception as exc:
+        raise HeartbeatException(f"cache.get failed: {exc}")
+
+    if not val:
+        raise HeartbeatException(f"cache.get failed: {cache_key} not available")
+
+    try:
+        cache.delete(cache_key)
+    except Exception as exc:
+        raise HeartbeatException(f"cache.delete failed: {exc}")
+
+    # Perform a basic Elasticsearch query
     es = elasticsearch.Elasticsearch(
         hosts=settings.ELASTICSEARCH_URLS,
         timeout=30,
         connection_class=elasticsearch.connection.RequestsHttpConnection,
         verify_certs=True,
     )
-    es.info()  # will raise an error if there's a problem with the cluster
+    # This will raise an error if there's a problem with the cluster
+    try:
+        es.info()
+    except Exception as exc:
+        raise HeartbeatException(f"es.info failed: {exc}")
 
     # Check SuperSearch paginated results
-    assert_supersearch_no_errors()
+    supersearch = SuperSearch()
+    supersearch.cache_seconds = 0
+    try:
+        results = supersearch.get(
+            product=productlib.get_default_product().name,
+            _results_number=1,
+            _columns=["uuid"],
+            _facets_size=1,
+        )
+    except Exception as exc:
+        raise HeartbeatException(f"supersearch failed: {exc}")
+
+    if results.get("errors"):
+        raise HeartbeatException(f"supersearch failed: {results['errors']}")
+
     return {"ok": True}
 
 
@@ -105,17 +140,3 @@ def dockerflow_heartbeat(request):
 def dockerflow_lbheartbeat(request):
     """Dockerflow endpoint for load balancer checks."""
     return {"ok": True}
-
-
-def assert_supersearch_no_errors():
-    """Make sure an uncached SuperSearch query doesn't have any errors"""
-    supersearch = SuperSearch()
-    # We don't want any caching this time
-    supersearch.cache_seconds = 0
-    results = supersearch.get(
-        product=productlib.get_default_product().name,
-        _results_number=1,
-        _columns=["uuid"],
-        _facets_size=1,
-    )
-    assert not results["errors"], results["errors"]

@@ -4,45 +4,43 @@
 
 import datetime
 import json
-from unittest import mock
 
 import pytest
+import requests
 
+from django.http import HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import smart_text
 
 from crashstats import productlib
-from crashstats.crashstats.tests.test_views import BaseTestViews, Response
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
-from crashstats.monitoring.views import assert_supersearch_no_errors
+from crashstats.monitoring.views import HeartbeatException
 from crashstats.supersearch.models import SuperSearch
 from socorro.lib import revision_data
 
 
-class TestViews(BaseTestViews):
-    def test_index(self):
-        url = reverse("monitoring:index")
-        response = self.client.get(url)
+class TestViews:
+    def test_index(self, client):
+        response = client.get(reverse("monitoring:index"))
         assert response.status_code == 200
 
         assert reverse("monitoring:cron_status") in smart_text(response.content)
 
 
-class TestCrontabberStatusViews(BaseTestViews):
-    def test_cron_status_ok(self):
+class TestCrontabberStatusViews:
+    def test_cron_status_ok(self, client, db):
         recently = timezone.now()
         CronJob.objects.create(
             app_name="job1", error_count=0, depends_on="", last_run=recently
         )
 
-        url = reverse("monitoring:cron_status")
-        response = self.client.get(url)
+        response = client.get(reverse("monitoring:cron_status"))
         assert response.status_code == 200
         assert json.loads(response.content) == {"status": "ALLGOOD"}
 
-    def test_cron_status_trouble(self):
+    def test_cron_status_trouble(self, client, db):
         recently = timezone.now()
         CronJob.objects.create(
             app_name="job1", error_count=1, depends_on="", last_run=recently
@@ -57,14 +55,13 @@ class TestCrontabberStatusViews(BaseTestViews):
             app_name="job1b", error_count=0, depends_on="", last_run=recently
         )
 
-        url = reverse("monitoring:cron_status")
-        response = self.client.get(url)
+        response = client.get(reverse("monitoring:cron_status"))
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data["status"] == "Broken"
         assert data["broken"] == ["job1"]
 
-    def test_cron_status_not_run_for_a_while(self):
+    def test_cron_status_not_run_for_a_while(self, client, db):
         some_time_ago = timezone.now() - datetime.timedelta(minutes=MAX_ONGOING)
         CronJob.objects.create(
             app_name="job1", error_count=0, depends_on="", last_run=some_time_ago
@@ -73,42 +70,37 @@ class TestCrontabberStatusViews(BaseTestViews):
             app_name="job2", error_count=0, depends_on="job1", last_run=some_time_ago
         )
 
-        url = reverse("monitoring:cron_status")
-        response = self.client.get(url)
+        response = client.get(reverse("monitoring:cron_status"))
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data["status"] == "Stale"
         assert data["last_run"] == some_time_ago.isoformat()
 
-    def test_cron_status_never_run(self):
-        url = reverse("monitoring:cron_status")
-        response = self.client.get(url)
+    def test_cron_status_never_run(self, client, db):
+        response = client.get(reverse("monitoring:cron_status"))
         assert response.status_code == 200
         data = json.loads(response.content)
         assert data["status"] == "Stale"
 
 
-class TestDockerflowHeartbeatViews(BaseTestViews):
-    def test_dockerflow_lbheartbeat(self):
+class TestDockerflowHeartbeatViews:
+    def test_dockerflow_lbheartbeat(self, client, db, django_assert_num_queries):
         # Verify __lbheartbeat__ works
-        url = reverse("monitoring:dockerflow_lbheartbeat")
-        response = self.client.get(url, {"elb": "true"})
-        assert response.status_code == 200
-        assert json.loads(response.content)["ok"] is True
+        with django_assert_num_queries(0):
+            response = client.get(
+                reverse("monitoring:dockerflow_lbheartbeat"), {"elb": "true"}
+            )
+            assert response.status_code == 200
+            assert json.loads(response.content)["ok"] is True
 
-        # Verify it doesn't run ay db queries
-        self.assertNumQueries(0, self.client.get, url)
-
-    @mock.patch("requests.get")
-    @mock.patch("crashstats.monitoring.views.elasticsearch")
-    def test_heartbeat(self, mocked_elasticsearch, rget):
+    def test_heartbeat(self, client, db, monkeypatch):
         searches = []
 
-        def mocked_supersearch_get(**params):
-            searches.append(params)
-            assert params["product"] == [productlib.get_default_product().name]
-            assert params["_results_number"] == 1
-            assert params["_columns"] == ["uuid"]
+        def mocked_supersearch_get(*args, **kwargs):
+            searches.append(kwargs)
+            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["_results_number"] == 1
+            assert kwargs["_columns"] == ["uuid"]
             return {
                 "hits": [{"uuid": "12345"}],
                 "facets": [],
@@ -116,28 +108,27 @@ class TestDockerflowHeartbeatViews(BaseTestViews):
                 "errors": [],
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        monkeypatch.setattr(SuperSearch, "get", mocked_supersearch_get)
 
         def mocked_requests_get(url, **params):
-            return Response(True)
+            return HttpResponse()
 
-        rget.side_effect = mocked_requests_get
+        monkeypatch.setattr(requests, "get", mocked_requests_get)
 
         # Verify the __heartbeat__ endpoint
-        url = reverse("monitoring:dockerflow_heartbeat")
-        response = self.client.get(url)
+        response = client.get(reverse("monitoring:dockerflow_heartbeat"))
         assert response.status_code == 200
         assert json.loads(response.content)["ok"] is True
         assert len(searches) == 1
 
-    def test_assert_supersearch_errors(self):
+    def test_supersearch_errors(self, client, db, monkeypatch):
         searches = []
 
-        def mocked_supersearch_get(**params):
-            searches.append(params)
-            assert params["product"] == [productlib.get_default_product().name]
-            assert params["_results_number"] == 1
-            assert params["_columns"] == ["uuid"]
+        def mocked_supersearch_get(*args, **kwargs):
+            searches.append(kwargs)
+            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["_results_number"] == 1
+            assert kwargs["_columns"] == ["uuid"]
             return {
                 "hits": [{"uuid": "12345"}],
                 "facets": [],
@@ -145,11 +136,9 @@ class TestDockerflowHeartbeatViews(BaseTestViews):
                 "errors": ["bad"],
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
-        with pytest.raises(AssertionError):
-            assert_supersearch_no_errors()
-
-        assert len(searches) == 1
+        monkeypatch.setattr(SuperSearch, "get", mocked_supersearch_get)
+        with pytest.raises(HeartbeatException):
+            client.get(reverse("monitoring:dockerflow_heartbeat"))
 
 
 class TestDockerflowVersionView:
