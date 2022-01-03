@@ -11,6 +11,7 @@ app_name = "monitoring"
 urlpatterns = [
     url(r"^monitoring/$", views.index, name="index"),
     url(r"^monitoring/cron/$", views.cron_status, name="cron_status"),
+    url(r"^__broken__$", views.broken, name="broken"),
     # Dockerflow endpoints
     url(r"^__heartbeat__$", views.dockerflow_heartbeat, name="dockerflow_heartbeat"),
     url(

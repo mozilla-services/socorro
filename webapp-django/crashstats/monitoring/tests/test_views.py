@@ -167,3 +167,9 @@ class TestDockerflowVersionView:
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json"
         assert smart_text(resp.content) == text
+
+
+class TestBroken:
+    def test_broken(self, client):
+        with pytest.raises(Exception):
+            client.get(reverse("monitoring:broken"))

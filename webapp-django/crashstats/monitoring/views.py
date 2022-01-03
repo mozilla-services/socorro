@@ -140,3 +140,8 @@ def dockerflow_heartbeat(request):
 def dockerflow_lbheartbeat(request):
     """Dockerflow endpoint for load balancer checks."""
     return {"ok": True}
+
+
+def broken(request):
+    """Throws an error to test Sentry connetivity."""
+    raise Exception("intentional exception")
