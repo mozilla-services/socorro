@@ -1464,7 +1464,9 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         res = api.get(**params)
         assert res["total"] == 0
         assert len(res["hits"]) == 0
-        assert len(res["errors"]) == 3  # 3 weeks are missing
+        # NOTE(willkg): in the first week of the year, new years day could be such that
+        # this is either 3 or 4 weeks; fun times
+        assert len(res["errors"]) in [3, 4]
 
     def test_get_too_large_date_range(self):
         # this is a whole year apart
