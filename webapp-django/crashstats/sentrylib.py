@@ -20,10 +20,12 @@ logger = logging.getLogger(SENTRY_LOG_NAME)
 def get_before_send():
     """Return a before_send sanitizer for the webapp.
 
-    before_send is called before the event (such as an exception or message) is sent to Sentry.
-    The webapp uses it to sanitize sensitive PII and security data. For more information, see:
+    before_send is called before the event (such as an exception or message) is sent to
+    Sentry. The webapp uses it to sanitize sensitive PII and security data. For more
+    information, see:
 
-    https://docs.sentry.io/error-reporting/configuration/filtering/?platform=python
+    https://docs.sentry.io/platforms/python/configuration/filtering/
+
     """
     sanitizers = (
         SanitizeBreadcrumbs(
@@ -51,14 +53,16 @@ def get_before_send():
 class SentrySanitizer:
     """Sanitize Sentry events.
 
-    SentryProcessor applies a series of simple sanitizers to the Sentry event.
-    The sanitizers are callables (functions or classes implementing __call__) with the form:
+    SentryProcessor applies a series of simple sanitizers to the Sentry event.  The
+    sanitizers are callables (functions or classes implementing __call__) with the form:
 
     sanitizer(event, hint)
 
     Where:
-    - event: the event dict, modified in-place
-    - hint: the hint dict, which may be empty
+
+    * event: the event dict, modified in-place
+    * hint: the hint dict, which may be empty
+
     """
 
     def __init__(self, sanitizers=None):
@@ -83,8 +87,13 @@ class SentrySanitizer:
         try:
             for sanitizer in self.sanitizers:
                 sanitizer(event, hint)
+
         except Exception:
             metrics.incr("before_send_exception")
+
+            # Make sure the exception is logged because otherwise we have no idea what
+            # happened
+            logger.exception("exception thrown when sanitizing error")
             raise
 
         logger.debug("after sanitizing event=%s", event)
