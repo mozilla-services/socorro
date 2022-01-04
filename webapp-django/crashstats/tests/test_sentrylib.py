@@ -6,34 +6,16 @@
 
 from copy import deepcopy
 
-from markus.testing import MetricsMock
 import pytest
 
 from crashstats.sentrylib import (
-    SanitizeBreadcrumbs,
     SanitizeHeaders,
     SanitizePostData,
     SanitizeQueryString,
     SanitizeSQLQueryCrumb,
-    SentrySanitizer,
-    get_before_send,
+    build_before_breadcrumb,
+    build_before_send,
 )
-
-
-class TestSentrySanitizer:
-    """Tests for SentrySanitizer."""
-
-    def test_markus_exception(self):
-        """Exceptions are registered with markus."""
-
-        def test_sanitizer(event, hint):
-            raise RuntimeError("I raise errors.")
-
-        sanitizer = SentrySanitizer([test_sanitizer])
-        with pytest.raises(RuntimeError), MetricsMock() as metrics_mock:
-            sanitizer({}, {})
-
-        metrics_mock.assert_incr("webapp.sentry.before_send_exception", value=1)
 
 
 class TestSanitizeSQLQueryCrumb:
@@ -119,29 +101,6 @@ class TestSanitizeSQLQueryCrumb:
         crumb = {"category": "query", "message": sql}
         SanitizeSQLQueryCrumb(("table.id",))(crumb, {})
         assert crumb == {"category": "query", "message": "[filtered]"}
-
-
-class TestSanitizeBreadcrumbs:
-    """Tests for SanitizeBreadcrumbs."""
-
-    def test_filtered_breadcrumbs(self):
-        """The breadcrumb filter is applied to the event breadcrumbs."""
-        event = {
-            "id": "00d47b89-4c7f-49bf-9f08-d0a65fe58b89",
-            "breadcrumbs": [
-                {
-                    "category": "query",
-                    "message": "SELECT * FROM mytable WHERE secret='my_secret'",
-                }
-            ],
-        }
-        crumb_filter = SanitizeSQLQueryCrumb(["secret"])
-        SanitizeBreadcrumbs([crumb_filter])(event, {})
-        expected = {
-            "id": "00d47b89-4c7f-49bf-9f08-d0a65fe58b89",
-            "breadcrumbs": [{"category": "query", "message": "[filtered]"}],
-        }
-        assert event == expected
 
 
 class TestSanitizeHeaders:
@@ -305,19 +264,6 @@ class TestSanitizeQueryString:
 class TestBeforeSend:
     """Tests for before_send."""
 
-    def test_breadcrumb_queries_truncated(self):
-        """Query breadcrumbs are truncated on sensitive column names."""
-
-        event = {"breadcrumbs": []}
-        expected = {"breadcrumbs": []}
-        for sql in TestSanitizeSQLQueryCrumb.CASES.values():
-            event["breadcrumbs"].append({"category": "query", "message": sql})
-            expected["breadcrumbs"].append(
-                {"category": "query", "message": "[filtered]"}
-            )
-        processed = get_before_send()(event, {})
-        assert processed == expected
-
     @pytest.mark.parametrize(
         "names, url, headers, expected_headers",
         TestSanitizeHeaders.CASES,
@@ -326,7 +272,7 @@ class TestBeforeSend:
     def test_event_headers_sanitized(self, names, url, headers, expected_headers):
         """Request headers are sanitized of sensitive values."""
         event = {"request": {"url": url, "headers": deepcopy(headers)}}
-        processed = get_before_send()(event, {})
+        processed = build_before_send()(event, {})
         expected = {"request": {"url": url, "headers": expected_headers}}
         assert processed == expected
 
@@ -338,7 +284,7 @@ class TestBeforeSend:
     def test_event_post_data_sanitized(self, names, url, post_data, expected_post_data):
         """Request POST data are sanitized of sensitive values."""
         event = {"request": {"url": url, "data": deepcopy(post_data)}}
-        processed = get_before_send()(event, {})
+        processed = build_before_send()(event, {})
         expected = {"request": {"url": url, "data": expected_post_data}}
         assert processed == expected
 
@@ -352,11 +298,19 @@ class TestBeforeSend:
     ):
         """Request querystrings are sanitized of sensitive values."""
         event = {"request": {"url": url, "query_string": query_string}}
-        processed = get_before_send()(event, {})
+        processed = build_before_send()(event, {})
         expected = {"request": {"url": url, "query_string": expected_query_string}}
         assert processed == expected
 
-    def test_repr(self):
-        """The sanitizer has a useful repr without crashes."""
-        before_send = get_before_send()
-        assert "SentrySanitizer" in repr(before_send)
+
+class TestBeforeBreadcrumb:
+    def test_breadcrumb_queries_truncated(self):
+        """Query breadcrumbs are truncated on sensitive column names."""
+
+        for sql in TestSanitizeSQLQueryCrumb.CASES.values():
+            breadcrumb = {"category": "query", "message": sql}
+            hint = {}
+            expected = {"category": "query", "message": "[filtered]"}
+
+            processed = build_before_breadcrumb()(breadcrumb, hint)
+            assert processed == expected

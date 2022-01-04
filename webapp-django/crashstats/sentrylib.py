@@ -17,7 +17,27 @@ SENTRY_LOG_NAME = "crashstats.sentrylib"
 logger = logging.getLogger(SENTRY_LOG_NAME)
 
 
-def get_before_send():
+def run_on(name, sanitizers=None):
+    sanitizers = sanitizers or []
+
+    def sanitizer_hook(thing, hint):
+        for sanitizer in sanitizers:
+            try:
+                sanitizer(thing, hint)
+            except Exception:
+                metrics.incr(f"before_{name}_exception")
+
+                # Make sure the exception is logged because otherwise we have no idea what
+                # happened
+                logger.exception(f"exception thrown when sanitizing: before_{name}")
+                raise
+
+        return thing
+
+    return sanitizer_hook
+
+
+def build_before_send():
     """Return a before_send sanitizer for the webapp.
 
     before_send is called before the event (such as an exception or message) is sent to
@@ -27,114 +47,33 @@ def get_before_send():
     https://docs.sentry.io/platforms/python/configuration/filtering/
 
     """
-    sanitizers = (
-        SanitizeBreadcrumbs(
-            (
-                SanitizeSQLQueryCrumb(
-                    (
-                        "email",
-                        "username",
-                        "password",
-                        "session_data",
-                        "session_key",
-                        "tokens_token.key",
-                        "auth_user.id",
-                    )
-                ),
-            )
-        ),
-        SanitizeHeaders(("Auth-Token", "X-Forwarded-For", "X-Real-Ip")),
-        SanitizePostData(("csrfmiddlewaretoken",)),
-        SanitizeQueryString(("code", "state")),
+    return run_on(
+        name="send",
+        sanitizers=[
+            SanitizeHeaders(("Auth-Token", "X-Forwarded-For", "X-Real-Ip")),
+            SanitizePostData(("csrfmiddlewaretoken",)),
+            SanitizeQueryString(("code", "state")),
+        ],
     )
-    return SentrySanitizer(sanitizers=sanitizers)
 
 
-class SentrySanitizer:
-    """Sanitize Sentry events.
-
-    SentryProcessor applies a series of simple sanitizers to the Sentry event.  The
-    sanitizers are callables (functions or classes implementing __call__) with the form:
-
-    sanitizer(event, hint)
-
-    Where:
-
-    * event: the event dict, modified in-place
-    * hint: the hint dict, which may be empty
-
-    """
-
-    def __init__(self, sanitizers=None):
-        """Initialize a SentryProcessor.
-
-        :arg sanitizers: A sequence of functions or callable instances
-        """
-        self.sanitizers = sanitizers or []
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(sanitizers={self.sanitizers!r})"
-
-    def __call__(self, event, hint):
-        """Sanitize a Sentry event.
-
-        :arg event: A event, as a dict, modified in-place
-        :arg hint: Context for the event, as a dict
-        :return The event after modifications
-        """
-        logger.debug("sanitizing event=%s hint=%s", event, hint)
-
-        try:
-            for sanitizer in self.sanitizers:
-                sanitizer(event, hint)
-
-        except Exception:
-            metrics.incr("before_send_exception")
-
-            # Make sure the exception is logged because otherwise we have no idea what
-            # happened
-            logger.exception("exception thrown when sanitizing error")
-            raise
-
-        logger.debug("after sanitizing event=%s", event)
-        return event
-
-
-class SanitizeBreadcrumbs:
-    """Process breadcrumbs in an event.
-
-    Breadcrumbs are created as a process is executing, and sent with an event.  A crumb can be
-    processed at creation, but most crumbs are discarded since an event isn't usually generated, so
-    it makes sense to wait until event processing to sanitize it.  SanitizeBreadcrumbs runs
-    breadcrumb sanitizers (that don't need data from the hint) at event processing rather than at
-    crumb creation.
-
-    This sanitizer expects an event of the format:
-
-    .. code-block:: json
-        {
-            "breadcrumbs": [
-                { 'category': ... },
-            ]
-        }
-    """
-
-    def __init__(self, crumb_sanitizers):
-        """Initialize a SanitizeBreadcrumbs.
-
-        :arg crumb_sanitizers: A sequence of breadcrumb sanitizer functions or callables
-        """
-        self.crumb_sanitizers = crumb_sanitizers
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.crumb_sanitizers!r})"
-
-    def __call__(self, event, hint):
-        """Filter each breadcrumb in an event."""
-        for crumb in event.get("breadcrumbs", []):
-            for crumb_sanitizer in self.crumb_sanitizers:
-                # Pass an empty hint rather than the event's hint
-                crumb = crumb_sanitizer(crumb, {})
+def build_before_breadcrumb():
+    return run_on(
+        name="breadcrumb",
+        sanitizers=[
+            SanitizeSQLQueryCrumb(
+                [
+                    "email",
+                    "username",
+                    "password",
+                    "session_data",
+                    "session_key",
+                    "tokens_token.key",
+                    "auth_user.id",
+                ]
+            ),
+        ],
+    )
 
 
 class SanitizeSQLQueryCrumb:
@@ -143,16 +82,20 @@ class SanitizeSQLQueryCrumb:
     This sanitizer expects a breadcrumb of the format:
 
     .. code-block:: json
-        {
-            'category': 'query',
-            'message': 'SELECT * from...'
-        }
+
+       {
+           'category': 'query',
+           'message': 'SELECT * from...'
+       }
+
     """
 
     def __init__(self, keywords):
         """Initialize a SanitizeSQLQueryCrumb.
 
-        :arg keywords: A sequence of keywords, such as column names, to trigger truncation
+        :param keywords: A sequence of keywords, such as column names, to trigger
+            truncation
+
         """
         self.keywords = keywords
         self.all_keywords = list(keywords)
@@ -180,9 +123,10 @@ class SanitizeSQLQueryCrumb:
 class SanitizeSectionByKeyName:
     """Sanitize sensitive keys in a section of a Sentry event.
 
-    This class provides a framework for sanitizing a section of a Sentry event. The section is
-    identified by a dotted path, like "request.headers". A section is a dict that has values
-    that should be sanitized if the key is sensitive.
+    This class provides a framework for sanitizing a section of a Sentry event. The
+    section is identified by a dotted path, like "request.headers". A section is a dict
+    that has values that should be sanitized if the key is sensitive.
+
     """
 
     # Set this to the dotted section path in derived classes
@@ -191,8 +135,8 @@ class SanitizeSectionByKeyName:
     def __init__(self, names):
         """Initialize a SanitizeSectionByKeyName
 
-        :arg section: The dotted path identifying the section
-        :arg names: A sequence of sensitive names
+        :param section: The dotted path identifying the section
+        :param names: A sequence of sensitive names
         """
         assert self.section_path, "Need to set section_path"
         self.names = names
@@ -226,14 +170,16 @@ class SanitizeHeaders(SanitizeSectionByKeyName):
     This sanitizer expects an event of the format:
 
     .. code-block:: json
-        {
-            "request": {
-                "headers": {
-                    "Name": "value1",
-                    ...
-                }
-            }
-        }
+
+       {
+           "request": {
+               "headers": {
+                   "Name": "value1",
+                   ...
+               }
+           }
+       }
+
     """
 
     section_path = "request.headers"
@@ -241,7 +187,7 @@ class SanitizeHeaders(SanitizeSectionByKeyName):
     def __init__(self, names):
         """Initialize a SanitizeHeaders
 
-        :arg names: A sequence of Header names (case insensitive) to sanitize
+        :param names: A sequence of Header names (case insensitive) to sanitize
         """
         super().__init__(names)
         self._lower_names = [key.lower() for key in names]
@@ -257,14 +203,16 @@ class SanitizePostData(SanitizeSectionByKeyName):
     This sanitizer expects an event of the format:
 
     .. code-block:: json
-        {
-            "request": {
-                "data": {
-                    "name1": "value1",
-                    ...
-                }
-            }
-        }
+
+       {
+           "request": {
+               "data": {
+                   "name1": "value1",
+                   ...
+               }
+           }
+       }
+
     """
 
     section_path = "request.data"
@@ -282,14 +230,16 @@ class SanitizeQueryString:
             }
         }
 
-    The sanitizer will decode and encode the querystring, and some details may change outside
-    of sanitization, such as non-canonical and maliciously formed querystrings.
+    The sanitizer will decode and encode the querystring, and some details may change
+    outside of sanitization, such as non-canonical and maliciously formed querystrings.
+
     """
 
     def __init__(self, names):
         """Initialize an SanitizeQueryString
 
-        :arg names: A sequence of query string names to sanitize
+        :param names: A sequence of query string names to sanitize
+
         """
         self.names = names
 
