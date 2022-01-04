@@ -20,7 +20,11 @@ from sentry_sdk.integrations.logging import ignore_logger
 import dj_database_url
 import sentry_sdk
 
-from crashstats.sentrylib import get_before_send, SENTRY_LOG_NAME
+from crashstats.sentrylib import (
+    build_before_breadcrumb,
+    build_before_send,
+    SENTRY_LOG_NAME,
+)
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
 from socorro.lib.revision_data import get_version_name
 
@@ -535,7 +539,8 @@ if SENTRY_DSN:
         send_default_pii=False,
         integrations=[DjangoIntegration()],
         debug=SENTRY_DEBUG,
-        before_send=get_before_send(),
+        before_breadcrumb=build_before_breadcrumb(),
+        before_send=build_before_send(),
     )
 
     # Do not generate events for some logs (ERROR or above)
