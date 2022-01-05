@@ -5,8 +5,13 @@
 """Tests for Sentry event processing."""
 
 from copy import deepcopy
+import urllib
 
 import pytest
+import requests
+
+from django.conf import settings
+from django.test.testcases import LiveServerTestCase
 
 from crashstats.sentrylib import (
     SanitizeHeaders,
@@ -314,3 +319,44 @@ class TestBeforeBreadcrumb:
 
             processed = build_before_breadcrumb()(breadcrumb, hint)
             assert processed == expected
+
+
+class TestIntegration(LiveServerTestCase):
+    """Verify that sanitization code works with sentry-sdk."""
+
+    def get_fakesentry_baseurl(self):
+        sentry_dsn = settings.SENTRY_DSN
+
+        parsed_dsn = urllib.parse.urlparse(sentry_dsn)
+        netloc = parsed_dsn.netloc
+        if "@" in netloc:
+            netloc = netloc[netloc.find("@") + 1 :]
+
+        return f"{parsed_dsn.scheme}://{netloc}/"
+
+    def test_integration(self):
+        fakesentry_api = self.get_fakesentry_baseurl()
+
+        # Flush errors so the list is empty
+        resp = requests.get(fakesentry_api + "api/flush/")
+        assert resp.status_code == 200
+
+        resp = requests.get(fakesentry_api + "api/errorlist/")
+        assert len(resp.json()["errors"]) == 0
+
+        # Call /__broken__ which returns an HTTP 500 and sends an error to Sentry
+        resp = requests.get(
+            self.live_server_url + "/__broken__", params={"state": "badvalue"}
+        )
+        assert resp.status_code == 500
+
+        resp = requests.get(fakesentry_api + "api/errorlist/")
+        assert len(resp.json()["errors"]) == 1
+        error_id = resp.json()["errors"][0]
+
+        # This verifies that sanitization code ran by checking to make sure the
+        # querystring was filtered
+        resp = requests.get(f"{fakesentry_api}api/error/{error_id}")
+        assert (
+            resp.json()["payload"]["request"]["query_string"] == "state=%5Bfiltered%5D"
+        )
