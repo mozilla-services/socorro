@@ -457,6 +457,9 @@ class MacCrashInfoRule(Rule):
     """
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        if "mac_crash_info" in processed_crash:
+            del processed_crash["mac_crash_info"]
+
         mac_crash_info = glom(processed_crash, "json_dump.mac_crash_info", default={})
 
         if mac_crash_info.get("num_records", 0) > 0:
