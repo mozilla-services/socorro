@@ -142,6 +142,7 @@ std::__terminate
 std::terminate
 system@framework@.*\.jar@classes\.dex@0x
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
+{virtual override thunk}
 
 # These frames have platform variants and bucket poorly so we nix them
 # from the signature
