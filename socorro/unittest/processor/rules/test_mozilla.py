@@ -2150,11 +2150,19 @@ class TestPHCRule:
 
 
 class TestDistributionIdRule:
-    def test_no_telemetry(self):
+    def test_no_annotation_and_no_telemetry(self):
+        raw_crash = {}
         processed_crash = {}
         rule = DistributionIdRule()
-        rule.action({}, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, {})
         assert processed_crash["distribution_id"] == "unknown"
+
+    def test_annotation(self):
+        raw_crash = {"DistributionID": "mint"}
+        processed_crash = {}
+        rule = DistributionIdRule()
+        rule.action(raw_crash, {}, processed_crash, {})
+        assert processed_crash["distribution_id"] == "mint"
 
     @pytest.mark.parametrize(
         "telemetry_value",
