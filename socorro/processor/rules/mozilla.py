@@ -462,7 +462,7 @@ class MacCrashInfoRule(Rule):
 
         mac_crash_info = glom(processed_crash, "json_dump.mac_crash_info", default={})
 
-        if mac_crash_info.get("num_records", 0) > 0:
+        if mac_crash_info and mac_crash_info.get("num_records", 0) > 0:
             processed_crash["mac_crash_info"] = json.dumps(
                 mac_crash_info, indent=2, sort_keys=True
             )

@@ -743,6 +743,7 @@ class TestMacCrashInfoRule:
             # These shouldn't result in a mac_crash_info
             ({}, False),
             ({"json_dump": {}}, False),
+            ({"json_dump": {"mac_crash_info": None}}, False),
             ({"json_dump": {"mac_crash_info": {}}}, False),
             ({"json_dump": {"mac_crash_info": {"num_records": 0}}}, False),
             # This should
