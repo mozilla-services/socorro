@@ -46,7 +46,7 @@ my.env:
 .PHONY: build
 build: my.env  ## | Build docker images.
 	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} app
-	${DC} build oidcprovider
+	${DC} build oidcprovider fakesentry
 	touch .docker-build
 
 .docker-build-docs:
@@ -66,8 +66,8 @@ updatedata: my.env  ## | Add/update necessary database data.
 	${DC} run --rm app shell /app/bin/update_data.sh
 
 .PHONY: run
-run: my.env  ## | Run processor and webapp and all required services.
-	${DC} up processor webapp
+run: my.env  ## | Run processor, webapp, fakesentry, and all required services.
+	${DC} up processor webapp fakesentry
 
 .PHONY: runservices
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)

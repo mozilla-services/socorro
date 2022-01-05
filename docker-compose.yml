@@ -50,6 +50,7 @@ services:
       - docker/config/local_dev.env
       - my.env
     depends_on:
+      - fakesentry
       - statsd
       - localstack
       - elasticsearch
@@ -63,6 +64,7 @@ services:
       - docker/config/local_dev.env
       - my.env
     depends_on:
+      - fakesentry
       - statsd
       - postgresql
       - elasticsearch
@@ -76,6 +78,7 @@ services:
       - docker/config/local_dev.env
       - my.env
     depends_on:
+      - fakesentry
       - statsd
       - localstack
       - postgresql
@@ -89,6 +92,16 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+
+  # https://github.com/willkg/kent
+  fakesentry:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.fakesentry
+    image: local/socorro_fakesentry
+    ports:
+      - "8090:8090"
+    command: run --host 0.0.0.0 --port 8090
 
   # https://hub.docker.com/r/mozilla/oidc-testprovider
   oidcprovider:
