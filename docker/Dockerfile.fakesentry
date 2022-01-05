@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 RUN pip install -U 'pip>=8' && \
-    pip install --no-cache-dir 'https://github.com/willkg/kent/archive/refs/heads/main.zip'
+    pip install --no-cache-dir 'kent==0.1.0'
 
 USER app
 
