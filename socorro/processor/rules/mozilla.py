@@ -1165,27 +1165,39 @@ class ModuleURLRewriteRule(Rule):
 
 
 class DistributionIdRule(Rule):
-    """Extracts the distributionId from the Telemetry environment
+    """Distribution ID for the product.
+
+    If this is a crash annotation, use that. Otherwise, extracts the distributionId from
+    the Telemetry environment
 
     The distributorid indicates which vendor built the product. This helps to know
     in cases where we might be missing symbols or build context is different.
 
-    Bug #1732414
+    Bug #1732414, #1747846
 
     """
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        try:
-            telemetry = json.loads(raw_crash.get("TelemetryEnvironment", "{}"))
-        except json.JSONDecodeError:
-            telemetry = {}
+        distribution_id = None
+
+        if "DistributionID" in raw_crash:
+            distribution_id = raw_crash["DistributionID"]
+
+        if not distribution_id:
+            try:
+                telemetry = json.loads(raw_crash.get("TelemetryEnvironment", "{}"))
+            except json.JSONDecodeError:
+                telemetry = {}
+
+            distribution_id = glom(
+                telemetry, "partner.distributionId", default="unknown"
+            )
 
         # Values for distribution_id:
         #
         # * not there -> "unknown"
-        # * null -> "mozilla"
-        # * value of the distributionId field
-        distribution_id = glom(telemetry, "partner.distributionId", default="unknown")
+        # * null or "" -> "mozilla" (falsey)
+        # * value of DistributionID annotation or the distributionId field
         if not distribution_id:
             distribution_id = "mozilla"
 
