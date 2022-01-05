@@ -59,6 +59,7 @@ google_breakpad::ReceivePort::WaitForMessage
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
 KiFastSystemCallRet
+libandroid\.so@0x
 libandroid_runtime\.so@0x
 libbinder\.so@0x
 libEGL\.so@
