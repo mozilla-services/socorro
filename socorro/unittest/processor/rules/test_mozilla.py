@@ -740,37 +740,53 @@ class TestMacCrashInfoRule:
     @pytest.mark.parametrize(
         "processed, expected",
         [
+            # These shouldn't result in a mac_crash_info
             ({}, False),
             ({"json_dump": {}}, False),
-            ({"json_dump": {"mac_crash_info": {}}}, True),
+            ({"json_dump": {"mac_crash_info": {}}}, False),
+            ({"json_dump": {"mac_crash_info": {"num_records": 0}}}, False),
+            # This should
+            ({"json_dump": {"mac_crash_info": {"num_records": 1}}}, True),
         ],
     )
-    def test_mac_crash_info_predicate(self, processed, expected):
+    def test_mac_crash_info_variations(self, processed, expected):
         raw_crash = {}
         dumps = {}
         processor_meta = get_basic_processor_meta()
         rule = MacCrashInfoRule()
 
-        assert rule.predicate(raw_crash, dumps, processed, processor_meta) == expected
+        rule.action(raw_crash, dumps, processed, processor_meta)
+
+        assert ("mac_crash_info" in processed) == expected
 
     def test_mac_crash_info_action(self):
         raw_crash = {}
         dumps = {}
-        processed_crash = {"json_dump": {"mac_crash_info": {"key": "val"}}}
+        processed_crash = {
+            "json_dump": {
+                "mac_crash_info": {
+                    "num_records": 1,
+                    "records": [
+                        {"thread": None},
+                    ],
+                },
+            }
+        }
         processor_meta = get_basic_processor_meta()
 
         rule = MacCrashInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash == {
-            "json_dump": {
-                "mac_crash_info": {
-                    "key": "val",
-                }
-            },
-            # The mac_crash_info is a json encoded string
-            "mac_crash_info": '{\n  "key": "val"\n}',
-        }
+        assert processed_crash["mac_crash_info"] == (
+            "{\n"
+            '  "num_records": 1,\n'
+            '  "records": [\n'
+            "    {\n"
+            '      "thread": null\n'
+            "    }\n"
+            "  ]\n"
+            "}"
+        )
 
 
 class TestMajorVersionRule:
