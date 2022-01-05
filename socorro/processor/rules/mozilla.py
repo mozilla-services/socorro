@@ -451,21 +451,18 @@ class BreadcrumbsRule(Rule):
 class MacCrashInfoRule(Rule):
     """Extracts mac_crash_info from json_dump
 
-    If there's a mac_crash_info in the json_dump, this extracts it and keeps
-    it around as a JSON-encoded string.
+    If there's a mac_crash_info in the json_dump and there are valid records, this
+    extracts it and keeps it around as a JSON-encoded string.
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
-        return (
-            glom(processed_crash, "json_dump.mac_crash_info", default=None) is not None
-        )
-
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        mac_crash_info = processed_crash["json_dump"]["mac_crash_info"]
-        processed_crash["mac_crash_info"] = json.dumps(
-            mac_crash_info, indent=2, sort_keys=True
-        )
+        mac_crash_info = glom(processed_crash, "json_dump.mac_crash_info", default={})
+
+        if mac_crash_info.get("num_records", 0) > 0:
+            processed_crash["mac_crash_info"] = json.dumps(
+                mac_crash_info, indent=2, sort_keys=True
+            )
 
 
 class MozCrashReasonRule(Rule):
