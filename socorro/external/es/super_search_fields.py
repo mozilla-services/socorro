@@ -1585,6 +1585,32 @@ FIELDS = {
         "query_type": "flag",
         "storage_mapping": {"None_value": 0, "type": "short"},
     },
+    "dumper_error": {
+        "data_validation_type": "str",
+        "description": (
+            "Error message of the minidump writer, in case there was an error during dumping."
+        ),
+        "form_field_choices": [],
+        "has_full_version": True,
+        "in_database_name": "dumper_error",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "dumper_error",
+        "namespace": "processed_crash",
+        "permissions_needed": ["crashstats.view_pii"],
+        "query_type": "string",
+        "storage_mapping": {
+            "fields": {
+                "full": {"index": "not_analyzed", "type": "string"},
+                "dumper_error": {
+                    "type": "string",
+                    "index": "analyzed",
+                    "analyzer": "standard",
+                },
+            },
+            "type": "multi_field",
+        },
+    },
     "e10s_cohort": {
         "data_validation_type": "enum",
         "description": (
