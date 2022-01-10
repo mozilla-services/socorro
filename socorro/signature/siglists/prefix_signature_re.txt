@@ -181,6 +181,7 @@ mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
 mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
 mozilla::ipc::Shmem::OpenExisting
+mozilla::ipc::IProtocol::ChannelSend
 mozilla::ipc::IToplevelProtocol::ShmemCreated
 mozilla::layers::CompositorD3D11::Failed
 mozilla::layers::CompositorD3D11::HandleError
