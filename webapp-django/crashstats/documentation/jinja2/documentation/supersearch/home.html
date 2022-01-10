@@ -233,26 +233,36 @@
         <tr>
           <td>has terms</td>
           <td><code></code></td>
-          <td>enum, number, string</td>
-          <td>Default operator. The field contains at least once the given substring. </td>
+          <td>enum, keyword, number, string</td>
+          <td>
+            <p>Default operator.</p>
+            <p>
+              For enum, keyword, and number, the field contains
+              at least one instance of the specified term.
+            </p>
+            <p>
+              For analyzed strings, the analyzed field value contains at least
+              one instance of the value. This is case-insensitive.
+            </p>
+          </td>
         </tr>
         <tr>
           <td>contains</td>
           <td><code>~</code></td>
           <td>string</td>
-          <td>The field contains at least once the given substring.</td>
+          <td>The field contains the given substring. This is case-sensitive.</td>
         </tr>
         <tr>
           <td>is exactly</td>
           <td><code>=</code></td>
           <td>string</td>
-          <td>The field is exactly the given substring.</td>
+          <td>The field is exactly the given value.</td>
         </tr>
         <tr>
           <td>starts with</td>
           <td><code>^</code></td>
           <td>string</td>
-          <td>The field starts with the given substring.</td>
+          <td>The field starts with the given value.</td>
         </tr>
         <tr>
           <td>ends with</td>
@@ -267,10 +277,17 @@
           <td>The field matches the given regular expression. The accepted syntax is described in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-regexp-query.html#regexp-syntax">Elasticsearch documentation</a>.</td>
         </tr>
         <tr>
-          <td>is null</td>
+          <td>does not exist</td>
           <td><code>__null__</code></td>
           <td>string, flag</td>
-          <td>The field is missing or has a null value.</td>
+          <td>
+            <p>
+              The field is missing or has a null value.
+            </p>
+            <p>
+              Note: This doesn't work for empty string values.
+            </p>
+          </td>
         </tr>
         <tr>
           <td>greater than</td>
