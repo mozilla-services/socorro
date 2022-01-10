@@ -56,6 +56,11 @@ class CopyFromRawCrashRule(Rule):
         # Other things
         (
             "string",
+            "DumperError",
+            "dumper_error",
+        ),
+        (
+            "string",
             "XPCOMSpinEventLoopStack",
             "xpcom_spin_event_loop_stack",
         ),
