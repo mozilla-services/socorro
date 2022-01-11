@@ -779,14 +779,7 @@ class TestMacCrashInfoRule:
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["mac_crash_info"] == (
-            "{\n"
-            '  "num_records": 1,\n'
-            '  "records": [\n'
-            "    {\n"
-            '      "thread": null\n'
-            "    }\n"
-            "  ]\n"
-            "}"
+            '{"num_records": 1, "records": [{"thread": null}]}'
         )
 
 
