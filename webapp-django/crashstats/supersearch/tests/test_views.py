@@ -216,7 +216,9 @@ class TestViews(BaseTestViews):
         assert '<th scope="col">Bugs</th>' in smart_text(response.content)
         assert "123456" in smart_text(response.content)
         # Test links on terms are existing
-        assert "product=%3DWaterWolf" in smart_text(response.content)
+        assert "build_id=%3D888981" in smart_text(response.content)
+        # refine links to the product should not be "is" queries
+        assert "product=WaterWolf" in smart_text(response.content)
 
         # Test with empty results
         response = self.client.get(url, {"product": "NightTrain", "date": "2012-01-01"})
