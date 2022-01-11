@@ -1,0 +1,21 @@
+{% macro signature_link(name, val) %}
+  <a href="{{ url('signature:signature_report') }}{{ change_query_string(
+    _no_base=True,
+    signature=val,
+    page=None,
+    _columns=None,
+    _facets=None
+    ) }}"
+    title="View signature report"
+  >
+    {{ val }}
+  </a>
+{% endmacro %}
+
+{% macro refine_link(name, val, display_text=None, use_is_query=True) %}
+  {% set filter_val = '=%s' % val if use_is_query else val %}
+  {% set display_text = val if display_text == None else display_text %}
+  <a href="{{ change_query_string(_no_base=True, **{name: filter_val}) }}" class="term" data-field="{{ name }}" data-content="{{ val }}" title="Refine search">
+    {{ display_text }}
+  </a>
+{% endmacro %}

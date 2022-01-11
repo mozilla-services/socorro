@@ -1,4 +1,5 @@
 {% from "macros/pagination.html" import pagination %}
+{% from "supersearch/macros/links.html" import signature_link, refine_link with context %}
 
 {% if query.total > 0 %}
   <ul id="search_results-nav">
@@ -30,35 +31,19 @@
                   {% if column == 'date' %}
                     {{ crash[column] | human_readable_iso_date }}
                   {% elif column == 'signature' %}
-                    <a href="{{ url('signature:signature_report') }}{{ change_query_string(
-                       _no_base=True,
-                       signature=crash.signature,
-                       page=None,
-                       _columns=None,
-                       _facets=None
-                       ) }}"
-                       title="Click to leave this search and go to this signature report"
-                    >
-                      {{ crash[column] }}
-                    </a>
+                    {{ signature_link(column, crash[column]) }}
                     &nbsp;
-                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                      Add term
-                    </a>
+                    {{ refine_link(column, crash[column], "Add term") }}
                   {% elif is_list(crash[column]) %}
                     {% for val in crash[column] %}
-                      <a href="{{ current_url }}&amp;{{ column }}=%3D{{ val | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ val }}" title="Add this term to the search form">
-                        {{ val }}
-                      </a>
+                      {{ refine_link(column, val) }}
                     {% endfor %}
+                  {% elif column in ('product', 'version', 'platform', 'process_type') %}
+                    {{ refine_link(column, crash[column], use_is_query=False) }}
                   {% elif column == 'install_time' %}
-                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                      {{ crash[column] | timestamp_to_date }}
-                    </a>
+                    {{ refine_link(column, crash[column], crash[column] | timestamp_to_date) }}
                   {% else %}
-                    <a href="{{ current_url }}&amp;{{ column }}=%3D{{ crash[column] | urlencode }}" class="term" data-field="{{ column }}" data-content="{{ crash[column] }}" title="Add this term to the search form">
-                      {{ crash[column] }}
-                    </a>
+                    {{ refine_link(column, crash[column]) }}
                   {% endif %}
                 {% endif %}
               </td>
@@ -90,22 +75,14 @@
             <tr>
               <td>{{ loop.index }}</td>
               <td>
-                {% if facet != 'signature' %}
-                  <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">{{ hit.term }}</a>
-                {% else %}
-                  <a href="{{ url('signature:signature_report') }}{{ change_query_string(
-                     _no_base=True,
-                     signature=hit.term,
-                     page=None,
-                     _columns=None,
-                     _facets=None
-                     ) }}"
-                     title="Click to leave this search and go to this signature report"
-                  >
-                    {{ hit.term }}
-                  </a>
+                {% if facet == 'signature' %}
+                  {{ signature_link(facet, hit.term) }}
                   &nbsp;
-                  <a href="{{ current_url }}&amp;{{ facet }}=%3D{{ hit.term | urlencode }}" class="term" data-field="{{ facet }}" data-content="{{ hit.term }}" title="Add this term to the search form">Add term</a>
+                  {{ refine_link(facet, hit.term, "Add term") }}
+                {% elif facet in ('product', 'version', 'platform', 'process_type') %}
+                  {{ refine_link(facet, hit.term, use_is_query=False) }}
+                {% else %}
+                  {{ refine_link(facet, hit.term) }}
                 {% endif %}
               </td>
               <td>{{ hit.count }}</td>
