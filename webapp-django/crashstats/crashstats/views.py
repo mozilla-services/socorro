@@ -172,6 +172,14 @@ def report_index(request, crash_id, default_context=None):
         context["raw"], context["report"]
     )
 
+    # Fix processed_crash.mac_crash_info so it displays better
+    if "mac_crash_info" in context["report"]:
+        mac_crash_info = context["report"]["mac_crash_info"]
+        mac_crash_info = json.dumps(
+            json.loads(mac_crash_info), indent=2, sort_keys=True
+        )
+        context["report"]["mac_crash_info"] = mac_crash_info
+
     context["public_raw_keys"] = [
         x for x in context["raw"] if x in models.RawCrash.API_ALLOWLIST()
     ]
