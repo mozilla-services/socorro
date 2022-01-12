@@ -46,7 +46,6 @@ class TestViews(BaseTestViews):
             assert field.capitalize().replace("_", " ") in smart_text(response.content)
 
     def test_search_fields(self):
-
         user = self._login()
         url = reverse("supersearch:search_fields")
         response = self.client.get(url)
@@ -82,7 +81,7 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             assert "_columns" in params
 
-            if "product" in params and "WaterWolf" in params["product"]:
+            if "WaterWolf" in params.get("product", []):
                 results = {
                     "hits": [
                         {
@@ -91,7 +90,7 @@ class TestViews(BaseTestViews):
                             "uuid": "aaaaaaaaaaaaa1",
                             "product": "WaterWolf",
                             "version": "1.0",
-                            "platform": "Linux",
+                            "platform": "<Linux>",
                             "build_id": 888981,
                         },
                         {
@@ -136,7 +135,8 @@ class TestViews(BaseTestViews):
                     results["hits"], params["_columns"]
                 )
                 return results
-            elif "product" in params and "SeaMonkey" in params["product"]:
+
+            elif "SeaMonkey" in params.get("product", []):
                 results = {
                     "hits": [
                         {
@@ -165,10 +165,8 @@ class TestViews(BaseTestViews):
                     results["hits"], params["_columns"]
                 )
                 return results
-            elif (
-                "signature" in params
-                and "~nsASDOMWindowEnumerator" in params["signature"]
-            ):
+
+            elif "~nsASDOMWindowEnumerator" in params.get("signature", []):
                 results = {
                     "hits": [
                         {
@@ -192,6 +190,7 @@ class TestViews(BaseTestViews):
                     results["hits"], params["_columns"]
                 )
                 return results
+
             else:
                 return {"hits": [], "facets": [], "total": 0}
 
@@ -217,8 +216,11 @@ class TestViews(BaseTestViews):
         assert "123456" in smart_text(response.content)
         # Test links on terms are existing
         assert "build_id=%3D888981" in smart_text(response.content)
-        # refine links to the product should not be "is" queries
+        # Refine links to the product should not be "is" queries
         assert "product=WaterWolf" in smart_text(response.content)
+        # Refine links have values that are urlencoded (this is also a field that should
+        # not be an "is" query)
+        assert "platform=%3CLinux%3E" in smart_text(response.content)
 
         # Test with empty results
         response = self.client.get(url, {"product": "NightTrain", "date": "2012-01-01"})
