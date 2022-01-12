@@ -7,6 +7,7 @@ import os
 import time
 
 from more_itertools import chunked
+from requests.exceptions import ConnectionError, ReadTimeout
 
 from socorro.lib.requestslib import session_with_retries
 from socorro.scripts import FallbackToPipeAction, WrappedTextHelpFormatter
@@ -90,14 +91,24 @@ def main(argv=None):
         if ruleset:
             group = [f"{crash_id}:{ruleset}" for crash_id in group]
 
-        resp = session.post(
-            url, data={"crash_ids": group}, headers={"Auth-Token": api_token}
-        )
-        if resp.status_code != 200:
+        keep_trying = True
+        while keep_trying:
+            try:
+                resp = session.post(
+                    url, data={"crash_ids": group}, headers={"Auth-Token": api_token}
+                )
+            except (ConnectionError, ReadTimeout) as exc:
+                print(f"{exc} ... waiting 10 seconds and retrying")
+                time.sleep(10)
+                continue
+
+            if resp.status_code == 200:
+                keep_trying = False
+                continue
+
             print(
                 "Got back non-200 status code: %s %s" % (resp.status_code, resp.content)
             )
-            continue
 
         # NOTE(willkg): We sleep here because the webapp has a bunch of rate limiting and we don't
         # want to trigger that. It'd be nice if we didn't have to do this.
