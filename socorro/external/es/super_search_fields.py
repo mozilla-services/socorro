@@ -428,9 +428,11 @@ def get_fields_by_item(fields, key, val):
                     return True
         return False
 
-    fields = [field for field in fields.values() if has_key_val(key, val, field)]
-    _FIELDS_CACHE[map_key] = fields
-    return fields
+    fields_by_item = [
+        field for field in fields.values() if has_key_val(key, val, field)
+    ]
+    _FIELDS_CACHE[map_key] = fields_by_item
+    return fields_by_item
 
 
 def flag_field(
