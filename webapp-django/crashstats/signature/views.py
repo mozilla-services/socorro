@@ -376,7 +376,7 @@ def signature_correlations(request, params):
             context["channel"] = "esr"
 
     default_product_name = productlib.get_default_product().name
-    product_name = params.get("product", default_product_name)
+    product_name = params.get("product") or default_product_name
     if isinstance(product_name, (list, tuple)):
         product_name = product_name[0]
 
