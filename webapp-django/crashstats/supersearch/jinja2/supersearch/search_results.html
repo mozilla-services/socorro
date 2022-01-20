@@ -38,7 +38,7 @@
                     {% for val in crash[column] %}
                       {{ refine_link(column, val) }}
                     {% endfor %}
-                  {% elif column in ('product', 'version', 'platform', 'process_type') %}
+                  {% elif column in simple_search_data_fields %}
                     {{ refine_link(column, crash[column], use_is_query=False) }}
                   {% elif column == 'install_time' %}
                     {{ refine_link(column, crash[column], crash[column] | timestamp_to_date) }}
@@ -79,7 +79,7 @@
                   {{ signature_link(facet, hit.term) }}
                   &nbsp;
                   {{ refine_link(facet, hit.term, "Add term") }}
-                {% elif facet in ('product', 'version', 'platform', 'process_type') %}
+                {% elif facet in simple_search_data_fields %}
                   {{ refine_link(facet, hit.term, use_is_query=False) }}
                 {% else %}
                   {{ refine_link(facet, hit.term) }}
