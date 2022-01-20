@@ -139,6 +139,7 @@ def search(request, default_context=None):
         )
         for x in settings.SIMPLE_SEARCH_FIELDS
     ]
+    context["simple_search_data_fields"] = list(settings.SIMPLE_SEARCH_FIELDS)
 
     # Default dates for the date filters.
     now = timezone.now()
@@ -235,6 +236,8 @@ def search_results(request):
                         hit["bugs"] = bugs[sig]
                     # most recent bugs first
                     hit["bugs"].sort(reverse=True)
+
+    context["simple_search_data_fields"] = list(settings.SIMPLE_SEARCH_FIELDS)
 
     search_results["total_pages"] = int(
         math.ceil(search_results["total"] / float(results_per_page))
