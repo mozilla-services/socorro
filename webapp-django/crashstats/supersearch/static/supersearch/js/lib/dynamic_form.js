@@ -48,6 +48,8 @@
    * Create a new dynamic form or run an action on an existing form.
    *
    * Actions:
+   *     removeLine - Remove a line from the dynamic form that has a specified
+   *         field, operator, and value
    *     newLine - Add a new line to this dynamic form
    *     getParams - Return an object with the content of this dynamic form
    *     setParams - Change the content of this dynamic form
@@ -75,12 +77,16 @@
       return Object.keys(OPERATORS);
     }
 
-    if (action === 'newLine' || action === 'getParams' || action === 'setParams') {
+    if (action === 'removeLine' || action === 'newLine' || action === 'getParams' || action === 'setParams') {
       if (!dynamic) {
         throw new Error('Impossible to call ' + action + ' on an object that was not initialized first');
       }
 
-      if (action === 'newLine') {
+      if (action === 'removeLine') {
+        if (initialParams) {
+          return dynamic.removeLine(initialParams.field, initialParams.operator, initialParams.value);
+        }
+      } else if (action === 'newLine') {
         if (initialParams) {
           // there is some data, this should not be a blank line
           return dynamic.createLine(initialParams.field, initialParams.operator, initialParams.value);
@@ -296,6 +302,29 @@
       }
 
       lines.push(line);
+    }
+
+    /**
+     * Remove a single line matching field/operator/value criteria from the
+     * form if it exists.
+     */
+    function removeLine(field, operator, value) {
+      // Find the FormLine in question and remove it if it exists
+      for (var i in lines) {
+        var line = lines[i];
+        var filter = line.get();
+
+        // Skip lines that have a null filter
+        if (filter === null) {
+          continue;
+        }
+
+        // If everything matches, remove this one line and stop iterating
+        if (filter.field === field && filter.operator === operator && filter.value === value) {
+          line.remove();
+          return;
+        }
+      }
     }
 
     /**
@@ -557,6 +586,7 @@
     // Expose the public functions of this form so the context is kept.
     form.data('dynamic', {
       newLine: newLine,
+      removeLine: removeLine,
       createLine: createLine,
       getParams: getParams,
       setParams: setParams,

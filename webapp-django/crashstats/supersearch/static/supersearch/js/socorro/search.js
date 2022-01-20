@@ -305,6 +305,17 @@ $(function () {
   }
 
   /**
+   * Remove any "exists" filters by field name.
+   */
+  function removeExists(name) {
+    form.dynamicForm('removeLine', {
+      field: name,
+      operator: '!__null__',
+      value: '',
+    });
+  }
+
+  /**
    * Handler for browser history state changes.
    */
   window.onpopstate = function (e) {
@@ -503,7 +514,12 @@ $(function () {
     contentElt.on('click', '.term', function (e) {
       e.preventDefault();
 
-      addTerm($(this).data('field'), $(this).data('content'));
+      // First remove any existing filters for this field
+      removeExists($(this).data('field'));
+
+      // Using .attr() here prevents the value from being converted
+      var contentVal = $(this).attr('data-content');
+      addTerm($(this).data('field'), contentVal);
 
       // And then run the new, corresponding search.
       search();
