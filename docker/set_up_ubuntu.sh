@@ -27,9 +27,6 @@ PACKAGES_TO_INSTALL=(
     # For scripts
     git
 
-    # For sentry-cli
-    gawk
-
     # For nodejs and npm
     curl
 )

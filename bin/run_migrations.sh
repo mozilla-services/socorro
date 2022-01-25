@@ -13,11 +13,13 @@
 
 set -euo pipefail
 
+PRECMD=""
+
 # If SENTRY_DSN is defined, then enable the sentry-cli bash hook which will
 # send errors to sentry.
 if [ -n "${SENTRY_DSN:-}" ]; then
     echo "SENTRY_DSN defined--enabling sentry."
-    eval "$(/webapp-frontend-deps/node_modules/.bin/sentry-cli bash-hook)"
+    PRECMD="python bin/sentry-wrap.py --"
 else
     echo "SENTRY_DSN not defined--not enabling sentry."
 fi
@@ -26,7 +28,7 @@ fi
 date
 
 # Run Django migrations
-python webapp-django/manage.py migrate --no-input
+${PRECMD} python webapp-django/manage.py migrate --no-input
 
 # Insert missing versions
-python bin/insert_missing_versions.py
+${PRECMD} python bin/insert_missing_versions.py

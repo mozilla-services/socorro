@@ -19,7 +19,6 @@
     "uglify-js": "3.11.5"
   },
   "dependencies": {
-    "@sentry/cli": "^1.40.0",
     "Select2": "github:select2/select2#3.5.4",
     "ace-builds": "1.4.12",
     "d3": "5.1.0",
