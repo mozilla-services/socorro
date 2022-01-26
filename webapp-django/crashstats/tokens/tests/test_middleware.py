@@ -7,24 +7,29 @@ import json
 
 import pytest
 
-from django.contrib.auth.models import User, Permission
+from django import http
 from django.conf import settings
-from django.test.client import RequestFactory
 from django.contrib.auth.middleware import AuthenticationMiddleware
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import ImproperlyConfigured
-from django.contrib.contenttypes.models import ContentType
+from django.test.client import RequestFactory
 
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.tokens import models
 from crashstats.tokens.middleware import APIAuthenticationMiddleware
 
 
+def get_response(req):
+    return http.HttpResponse("hello")
+
+
 class TestMiddleware(DjangoTestCase):
 
-    django_session_middleware = SessionMiddleware()
-    django_auth_middleware = AuthenticationMiddleware()
-    middleware = APIAuthenticationMiddleware()
+    django_session_middleware = SessionMiddleware(get_response)
+    django_auth_middleware = AuthenticationMiddleware(get_response)
+    middleware = APIAuthenticationMiddleware(get_response)
 
     def test_impropertly_configured(self):
         request = RequestFactory().get("/")
