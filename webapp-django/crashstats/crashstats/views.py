@@ -5,6 +5,7 @@
 from functools import cache as memoized
 import json
 from pathlib import Path
+from urllib.parse import quote
 
 from django import http
 from django.conf import settings
@@ -13,7 +14,6 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.urls import reverse
-from django.utils.http import urlquote
 
 from csp.decorators import csp_update
 
@@ -290,10 +290,7 @@ def quick_search(request):
     if crash_id:
         url = reverse("crashstats:report_index", kwargs=dict(crash_id=crash_id))
     elif query:
-        url = "%s?signature=%s" % (
-            reverse("supersearch:search"),
-            urlquote("~%s" % query),
-        )
+        url = "%s?signature=%s" % (reverse("supersearch:search"), quote("~%s" % query))
     else:
         url = reverse("supersearch:search")
 
