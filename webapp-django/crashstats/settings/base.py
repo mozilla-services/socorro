@@ -449,9 +449,7 @@ else:
 
 CACHES = {
     "default": {
-        "BACKEND": config(
-            "CACHE_BACKEND", "django.core.cache.backends.memcached.MemcachedCache"
-        ),
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
         "LOCATION": config("CACHE_LOCATION", "127.0.0.1:11211"),
         "TIMEOUT": config("CACHE_TIMEOUT", 500),
         "KEY_PREFIX": config("CACHE_KEY_PREFIX", "socorro"),

@@ -41,7 +41,7 @@ pytest-django==4.5.2
 pytest-env==0.6.2
 pytest==6.2.5
 python-decouple==3.5
-python-memcached==1.59
+pymemcache==3.5.0
 requests-mock==1.9.3
 requests==2.26.0
 semver==2.13.0

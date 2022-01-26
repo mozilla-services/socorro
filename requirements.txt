@@ -530,6 +530,10 @@ pygments==2.11.1 \
 pyinotify==0.9.6 \
     --hash=sha256:9c998a5d7606ca835065cdabc013ae6c66eb9ea76a00a1e3bc6e0cfe2b4f71f4
     # via -r requirements.in
+pymemcache==3.5.0 \
+    --hash=sha256:0969cb83db076f54191a39c904217e3db910b1518b0775cf70fa1dcb31a20424 \
+    --hash=sha256:5bf9c94a6bc9ad081dc9b5808284e027d755a0518f6375a57405552938c74d91
+    # via -r requirements.in
 pyopenssl==21.0.0 \
     --hash=sha256:5e2d8c5e46d0d865ae933bef5230090bdaf5506281e9eec60fa250ee80600cb3 \
     --hash=sha256:8935bd4920ab9abfebb07c41a4f58296407ed77f04bd1a92914044b848ba1ed6
@@ -591,10 +595,6 @@ python-dateutil==2.8.2 \
 python-decouple==3.5 \
     --hash=sha256:011d3f785367c54a72cf8a07d3a7a48bb8cc1a0f8e6c70353ca5767ebf7c8c9d \
     --hash=sha256:68e4b3fcc97e24bc90eecc514852d0bf970f4ff031f5f7a6728ddafa9afefcaf
-    # via -r requirements.in
-python-memcached==1.59 \
-    --hash=sha256:4dac64916871bd3550263323fc2ce18e1e439080a2d5670c594cf3118d99b594 \
-    --hash=sha256:a2e28637be13ee0bf1a8b6843e7490f9456fd3f2a4cb60471733c7b5d5557e4f
     # via -r requirements.in
 pytz==2021.3 \
     --hash=sha256:3672058bc3453457b622aab7a1c3bfd5ab0bdae451512f6cf25f64ed37f5b87c \
@@ -674,9 +674,9 @@ six==1.16.0 \
     #   elasticsearch-dsl
     #   isodate
     #   oauth2client
+    #   pymemcache
     #   pyopenssl
     #   python-dateutil
-    #   python-memcached
     #   requests-mock
 sqlparse==0.4.2 \
     --hash=sha256:0c00730c74263a94e5a9919ade150dfc3b19c574389985446148402998287dae \
