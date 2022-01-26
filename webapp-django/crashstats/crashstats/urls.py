@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf import settings
-from django.conf.urls import url
+from django.conf.urls import re_path
 from django.views.generic import RedirectView
 
 from crashstats.crashstats import views
@@ -18,30 +18,32 @@ perm_legacy_redirect = settings.PERMANENT_LEGACY_REDIRECTS
 
 app_name = "crashstats"
 urlpatterns = [
-    url(r"^contribute\.json$", views.contribute_json, name="contribute_json"),
-    url(r"^favicon\.ico$", views.favicon_ico, name="favicon_ico"),
-    url(r"^robots\.txt$", views.robots_txt, name="robots_txt"),
-    url(
+    re_path(r"^contribute\.json$", views.contribute_json, name="contribute_json"),
+    re_path(r"^favicon\.ico$", views.favicon_ico, name="favicon_ico"),
+    re_path(r"^robots\.txt$", views.robots_txt, name="robots_txt"),
+    re_path(
         r"^report/index/(?P<crash_id>[\w-]+)$", views.report_index, name="report_index"
     ),
-    url(r"^search/quick/$", views.quick_search, name="quick_search"),
-    url(r"^buginfo/bug", views.buginfo, name="buginfo"),
-    url(r"^login/$", views.login, name="login"),
-    url(r"^about/throttling/$", views.about_throttling, name="about_throttling"),
-    url(r"^home/product/(?P<product>\w+)$", views.product_home, name="product_home"),
+    re_path(r"^search/quick/$", views.quick_search, name="quick_search"),
+    re_path(r"^buginfo/bug", views.buginfo, name="buginfo"),
+    re_path(r"^login/$", views.login, name="login"),
+    re_path(r"^about/throttling/$", views.about_throttling, name="about_throttling"),
+    re_path(
+        r"^home/product/(?P<product>\w+)$", views.product_home, name="product_home"
+    ),
     # Home page
-    url(r"^$", views.home, name="home"),
+    re_path(r"^$", views.home, name="home"),
     # Redirect deceased Advanced Search URL to Super Search
-    url(
+    re_path(
         r"^query/$",
         RedirectView.as_view(url="/search/", query_string=True, permanent=True),
     ),
     # Redirect old independant pages to the unified Profile page.
-    url(
+    re_path(
         r"^your-crashes/$",
         RedirectView.as_view(url="/profile/", permanent=perm_legacy_redirect),
     ),
-    url(
+    re_path(
         r"^permissions/$",
         RedirectView.as_view(url="/profile/", permanent=perm_legacy_redirect),
     ),
