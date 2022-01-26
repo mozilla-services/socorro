@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 from collections import defaultdict
+import datetime
+from urllib.parse import quote
 
 from django import http
 from django.conf import settings
 from django.shortcuts import redirect, render
 from django.utils import timezone
-from django.utils.http import urlquote
 
 from session_csrf import anonymous_csrf
 
@@ -135,7 +135,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             if pv["is_featured"]:
                 url = "%s&version=%s" % (
                     request.build_absolute_uri(),
-                    urlquote(pv["version"]),
+                    quote(pv["version"]),
                 )
                 return redirect(url)
         if context["active_versions"][product.name]:
@@ -145,7 +145,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
             for pv in context["active_versions"][product.name]:
                 url = "%s&version=%s" % (
                     request.build_absolute_uri(),
-                    urlquote(pv["version"]),
+                    quote(pv["version"]),
                 )
                 return redirect(url)
 
