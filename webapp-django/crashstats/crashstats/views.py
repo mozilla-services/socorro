@@ -28,12 +28,15 @@ def ratelimit_blocked(request, exception):
     # http://tools.ietf.org/html/rfc6585#page-3
     status = 429
 
+    # NOTE(willkg): this may not work if we switch JS frameworks
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+
     # If the request is an AJAX on, we return a plain short string.
     # Also, if the request is coming from something like curl, it will
     # send the header `Accept: */*`. But if you take the same URL and open
     # it in the browser it'll look something like:
     # `Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8`
-    if request.is_ajax() or "text/html" not in request.META.get("HTTP_ACCEPT", ""):
+    if is_ajax or not request.accepts("text/html"):
         # Return a super spartan message.
         # We could also do something like `{"error": "Too Many Requests"}`
         return http.HttpResponse(

@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.shortcuts import render
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 
 class SetRemoteAddrFromRealIP:
@@ -35,18 +35,21 @@ class SetRemoteAddrFromRealIP:
 
 
 class Pretty400Errors:
+    """Convert HTTP 400 errors to JSON if client doesn't accept html"""
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         response = self.get_response(request)
 
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
         if (
             response.status_code == 400
-            and not request.is_ajax()
             and response["Content-Type"].startswith("text/html")
+            and not is_ajax
         ):
             return render(
-                request, "400.html", {"error": smart_text(response.content)}, status=400
+                request, "400.html", {"error": smart_str(response.content)}, status=400
             )
         return response
