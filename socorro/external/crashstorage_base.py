@@ -5,7 +5,7 @@
 """Base classes for crashstorage system."""
 
 import datetime
-import collections
+from collections.abc import MutableSequence, Sequence
 import logging
 import os
 import sys
@@ -273,7 +273,7 @@ class CrashStorageBase(RequiredConfig):
         raise NotImplementedError("remove is not implemented")
 
 
-class PolyStorageError(Exception, collections.MutableSequence):
+class PolyStorageError(Exception, MutableSequence):
     """Exception container holding a sequence of exceptions with tracebacks
 
     :arg message: an optional over all error message
@@ -321,7 +321,7 @@ class PolyStorageError(Exception, collections.MutableSequence):
         return ",".join(output)
 
 
-class StorageNamespaceList(collections.Sequence):
+class StorageNamespaceList(Sequence):
     """A sequence of configuration namespaces for crash stores.
 
     Functionally, this is a list of strings that correspond to a configuration
