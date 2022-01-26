@@ -51,8 +51,6 @@ LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
 
 SITE_ID = 1
 
-LANGUAGE_CODE = "en-US"
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Absolute path to the directory that holds media.
@@ -74,7 +72,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", "", cast=Csv())
 # Defines the views served for root URLs.
 ROOT_URLCONF = "crashstats.urls"
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
     "pipeline",
     "corsheaders",
@@ -105,8 +103,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "waffle",
     "django_jinja",
-)
-
+]
 
 MIDDLEWARE = [
     # CORS needs to go before other response-generating middlewares
@@ -139,13 +136,13 @@ MIDDLEWARE = [
 # Allow inactive users to authenticate
 # FIXME(Osmose): Remove this and the auto-logout code in favor of
 # the default backend, which does not authenticate inactive users.
-AUTHENTICATION_BACKENDS = (
+AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.AllowAllUsersModelBackend",
     "mozilla_django_oidc.auth.OIDCAuthenticationBackend",
-)
+]
 
 
-_CONTEXT_PROCESSORS = (
+_CONTEXT_PROCESSORS = [
     "django.contrib.auth.context_processors.auth",
     "django.template.context_processors.debug",
     "django.template.context_processors.media",
@@ -155,7 +152,7 @@ _CONTEXT_PROCESSORS = (
     "django.template.context_processors.request",
     "crashstats.crashstats.context_processors.settings",
     "crashstats.status.context_processors.status_message",
-)
+]
 
 TEMPLATES = [
     {
@@ -401,9 +398,9 @@ SOUTH_TESTS_MIGRATE = False
 # INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
 # Recipients of traceback emails and other notifications.
-ADMINS = (
+ADMINS = [
     # ('Your Name', 'your_email@domain.com'),
-)
+]
 MANAGERS = ADMINS
 
 # ------------------------------------------------
@@ -473,14 +470,14 @@ DATABASES = {"default": dj_database_url.parse(database_url)}
 SLAVE_DATABASES = config("SLAVE_DATABASES", "", cast=Csv())
 
 
-STATICFILES_FINDERS = (
+STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "npm.finders.NpmFinder",
     "pipeline.finders.PipelineFinder",
     # Make sure this comes last!
     "crashstats.crashstats.finders.LeftoverPipelineFinder",
-)
+]
 
 STATICFILES_STORAGE = "pipeline.storage.PipelineManifestStorage"
 
