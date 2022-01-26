@@ -201,9 +201,9 @@ django-session-csrf==0.7.1 \
     --hash=sha256:e17177e6e2e6518ec7ce6693ad10a5c747f8571d09f4cfa9082599334421605d \
     --hash=sha256:ff8c10e30d312c77fc6a6db7710e22b9383e28c03b7fe958876ca96f39aa6cf2
     # via -r requirements.in
-django-waffle==2.2.1 \
-    --hash=sha256:c078c212b58899d3a1b87ffeec86ea058fe4dd94e8155d8547622899954862e0 \
-    --hash=sha256:ded418a3404e22a77342293b61e7e04d92de500ce724a8c26a6782f2fbcff01c
+django-waffle==2.3.0 \
+    --hash=sha256:8f457523859f39f77b785dfeb18d57d8c80d97ba05698aed7fa587bb86539476 \
+    --hash=sha256:e4c29570d61c5759b07d9c88154c14b0b189dbf772ac8744c44e226cc7bd75bf
     # via -r requirements.in
 djangorestframework==3.13.1 \
     --hash=sha256:0c33407ce23acc68eca2a6e46424b008c9c02eceb8cf18581921d0092bc1f2ee \
