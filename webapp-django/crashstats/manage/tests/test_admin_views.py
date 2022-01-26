@@ -8,7 +8,7 @@ import pytest
 import requests_mock
 
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchFields, SuperSearchMissingFields
@@ -103,6 +103,6 @@ class TestSuperSearchFieldsMissing(SiteAdminTestViews):
 
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "field_a" in smart_text(response.content)
-        assert "namespace1.field_b" in smart_text(response.content)
-        assert "namespace2.subspace1.field_c" in smart_text(response.content)
+        assert "field_a" in smart_str(response.content)
+        assert "namespace1.field_b" in smart_str(response.content)
+        assert "namespace2.subspace1.field_c" in smart_str(response.content)

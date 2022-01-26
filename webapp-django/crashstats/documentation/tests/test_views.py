@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 
@@ -13,27 +13,27 @@ class TestViews(BaseTestViews):
         url = reverse("documentation:supersearch_home")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "What is Super Search?" in smart_text(response.content)
+        assert "What is Super Search?" in smart_str(response.content)
 
     def test_whatsnew(self):
         url = reverse("documentation:whatsnew")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "What's New in Crash Stats" in smart_text(response.content)
+        assert "What's New in Crash Stats" in smart_str(response.content)
 
     def test_supersearch_examples(self):
         url = reverse("documentation:supersearch_examples")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "Examples" in smart_text(response.content)
+        assert "Examples" in smart_str(response.content)
 
     def test_supersearch_api(self):
         url = reverse("documentation:supersearch_api")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "_results_number" in smart_text(response.content)
-        assert "_aggs.*" in smart_text(response.content)
-        assert "signature" in smart_text(response.content)
+        assert "_results_number" in smart_str(response.content)
+        assert "_aggs.*" in smart_str(response.content)
+        assert "signature" in smart_str(response.content)
 
     def test_memory_dump_access_redirect(self):
         """Verify memory_dump_access url redirects

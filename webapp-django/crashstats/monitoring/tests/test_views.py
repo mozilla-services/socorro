@@ -11,7 +11,7 @@ import requests
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats import productlib
 from crashstats.cron import MAX_ONGOING
@@ -26,7 +26,7 @@ class TestViews:
         response = client.get(reverse("monitoring:index"))
         assert response.status_code == 200
 
-        assert reverse("monitoring:cron_status") in smart_text(response.content)
+        assert reverse("monitoring:cron_status") in smart_str(response.content)
 
 
 class TestCrontabberStatusViews:
@@ -151,7 +151,7 @@ class TestDockerflowVersionView:
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json"
-        assert smart_text(resp.content) == "{}"
+        assert smart_str(resp.content) == "{}"
 
     def test_version_with_file(self, client, settings, tmpdir, monkeypatch):
         """Test with a version.json file"""
@@ -166,7 +166,7 @@ class TestDockerflowVersionView:
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json"
-        assert smart_text(resp.content) == text
+        assert smart_str(resp.content) == text
 
 
 class TestBroken:
