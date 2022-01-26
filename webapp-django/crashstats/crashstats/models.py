@@ -57,7 +57,7 @@ class BugAssociation(models.Model):
     objects = BugAssociationManager()
 
     class Meta:
-        unique_together = ("bug_id", "signature")
+        unique_together = ["bug_id", "signature"]
 
 
 class GraphicsDeviceManager(models.Manager):
@@ -98,7 +98,7 @@ class GraphicsDevice(models.Model):
     objects = GraphicsDeviceManager()
 
     class Meta:
-        unique_together = ("vendor_hex", "adapter_hex")
+        unique_together = ["vendor_hex", "adapter_hex"]
 
     def __str__(self):
         return "%s %s %s %s" % (
@@ -167,12 +167,12 @@ class ProductVersion(models.Model):
     )
 
     class Meta:
-        unique_together = (
+        unique_together = [
             "product_name",
             "release_channel",
             "build_id",
             "version_string",
-        )
+        ]
 
 
 class Signature(models.Model):
