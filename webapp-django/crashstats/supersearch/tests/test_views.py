@@ -279,6 +279,8 @@ class TestViews(BaseTestViews):
         # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
         for i in range(limit * 2):
             self.client.get(url, params)
+        # NOTE(willkg): this way of denoting AJAX requests may not work with all
+        # JS frameworks
         response = self.client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         assert response.status_code == 429
         assert smart_text(response.content) == "Too Many Requests"
