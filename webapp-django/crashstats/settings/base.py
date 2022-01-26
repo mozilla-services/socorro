@@ -53,6 +53,8 @@ SITE_ID = 1
 
 LANGUAGE_CODE = "en-US"
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 # Absolute path to the directory that holds media.
 MEDIA_ROOT = path("media")
 
@@ -165,7 +167,6 @@ TEMPLATES = [
             # Don't figure out which template loader to use based on
             # file extension
             "match_extension": "",
-            # 'newstyle_gettext': True,
             "context_processors": _CONTEXT_PROCESSORS,
             "undefined": "jinja2.Undefined",
             "extensions": [
@@ -481,7 +482,7 @@ STATICFILES_FINDERS = (
     "crashstats.crashstats.finders.LeftoverPipelineFinder",
 )
 
-STATICFILES_STORAGE = "pipeline.storage.PipelineCachedStorage"
+STATICFILES_STORAGE = "pipeline.storage.PipelineManifestStorage"
 
 PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,
