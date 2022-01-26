@@ -7,7 +7,7 @@ import pyquery
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.tokens import models
@@ -87,7 +87,7 @@ class TestViews(BaseTestViews):
         # The 'notes' field can't been too long
         response = self.client.post(url, {"notes": "X" * 10000})
         assert response.status_code == 200
-        assert "Text too long" in smart_text(response.content)
+        assert "Text too long" in smart_str(response.content)
 
         group = Group.objects.create(name="Cool people")
         group.permissions.add(p1)
@@ -111,9 +111,7 @@ class TestViews(BaseTestViews):
         # this should be listed on the home page now
         response = self.client.get(url)
         assert response.status_code == 200
-        assert 'data-key="' + smart_text(token.key) + '"' in smart_text(
-            response.content
-        )
+        assert 'data-key="' + smart_str(token.key) + '"' in smart_str(response.content)
 
     def test_delete_token(self):
         user = self._login()

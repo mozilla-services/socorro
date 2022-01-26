@@ -11,7 +11,7 @@ import pyquery
 
 from django.conf import settings
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats.models import BugAssociation
 from crashstats.crashstats.tests.test_views import BaseTestViews
@@ -39,20 +39,20 @@ class TestViews(BaseTestViews):
         url = reverse("supersearch:search")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "Run a search to get some results" in smart_text(response.content)
+        assert "Run a search to get some results" in smart_str(response.content)
 
         # Check the simplified filters are there.
         for field in settings.SIMPLE_SEARCH_FIELDS:
-            assert field.capitalize().replace("_", " ") in smart_text(response.content)
+            assert field.capitalize().replace("_", " ") in smart_str(response.content)
 
     def test_search_fields(self):
         user = self._login()
         url = reverse("supersearch:search_fields")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "WaterWolf" in smart_text(response.content)
-        assert "SeaMonkey" in smart_text(response.content)
-        assert "NightTrain" in smart_text(response.content)
+        assert "WaterWolf" in smart_str(response.content)
+        assert "SeaMonkey" in smart_str(response.content)
+        assert "NightTrain" in smart_str(response.content)
 
         content = json.loads(response.content)
         assert "signature" in content  # It contains at least one known field.
@@ -200,66 +200,66 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {"product": "WaterWolf"})
         assert response.status_code == 200
         # Test results are existing
-        assert 'table id="reports-list"' in smart_text(response.content)
-        assert "nsASDOMWindowEnumerator::GetNext()" in smart_text(response.content)
-        assert "mySignatureIsCool" in smart_text(response.content)
-        assert "mineIsCoolerThanYours" in smart_text(response.content)
-        assert "EMPTY" in smart_text(response.content)
-        assert "aaaaaaaaaaaaa1" in smart_text(response.content)
-        assert "888981" in smart_text(response.content)
-        assert "Linux" in smart_text(response.content)
-        assert "2017-01-31 23:12:57" in smart_text(response.content)
+        assert 'table id="reports-list"' in smart_str(response.content)
+        assert "nsASDOMWindowEnumerator::GetNext()" in smart_str(response.content)
+        assert "mySignatureIsCool" in smart_str(response.content)
+        assert "mineIsCoolerThanYours" in smart_str(response.content)
+        assert "EMPTY" in smart_str(response.content)
+        assert "aaaaaaaaaaaaa1" in smart_str(response.content)
+        assert "888981" in smart_str(response.content)
+        assert "Linux" in smart_str(response.content)
+        assert "2017-01-31 23:12:57" in smart_str(response.content)
         # Test facets are existing
-        assert 'table id="facets-list-' in smart_text(response.content)
+        assert 'table id="facets-list-' in smart_str(response.content)
         # Test bugs are existing
-        assert '<th scope="col">Bugs</th>' in smart_text(response.content)
-        assert "123456" in smart_text(response.content)
+        assert '<th scope="col">Bugs</th>' in smart_str(response.content)
+        assert "123456" in smart_str(response.content)
         # Test links on terms are existing
-        assert "build_id=%3D888981" in smart_text(response.content)
+        assert "build_id=%3D888981" in smart_str(response.content)
         # Refine links to the product should not be "is" queries
-        assert "product=WaterWolf" in smart_text(response.content)
+        assert "product=WaterWolf" in smart_str(response.content)
         # Refine links have values that are urlencoded (this is also a field that should
         # not be an "is" query)
-        assert "platform=%3CLinux%3E" in smart_text(response.content)
+        assert "platform=%3CLinux%3E" in smart_str(response.content)
 
         # Test with empty results
         response = self.client.get(url, {"product": "NightTrain", "date": "2012-01-01"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' not in smart_text(response.content)
-        assert "No results were found" in smart_text(response.content)
+        assert 'table id="reports-list"' not in smart_str(response.content)
+        assert "No results were found" in smart_str(response.content)
 
         # Test with a signature param
         response = self.client.get(url, {"signature": "~nsASDOMWindowEnumerator"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_text(response.content)
-        assert "nsASDOMWindowEnumerator::GetNext()" in smart_text(response.content)
-        assert "123456" in smart_text(response.content)
+        assert 'table id="reports-list"' in smart_str(response.content)
+        assert "nsASDOMWindowEnumerator::GetNext()" in smart_str(response.content)
+        assert "123456" in smart_str(response.content)
 
         # Test with a different facet
         response = self.client.get(url, {"_facets": "build_id", "product": "SeaMonkey"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_text(response.content)
-        assert 'table id="facets-list-' in smart_text(response.content)
-        assert "888981" in smart_text(response.content)
+        assert 'table id="reports-list"' in smart_str(response.content)
+        assert 'table id="facets-list-' in smart_str(response.content)
+        assert "888981" in smart_str(response.content)
         # Bugs should not be there, they appear only in the signature facet
-        assert "<th>Bugs</th>" not in smart_text(response.content)
-        assert "123456" not in smart_text(response.content)
+        assert "<th>Bugs</th>" not in smart_str(response.content)
+        assert "123456" not in smart_str(response.content)
 
         # Test with a different columns list
         response = self.client.get(
             url, {"_columns": ["build_id", "platform"], "product": "WaterWolf"}
         )
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_text(response.content)
-        assert 'table id="facets-list-' in smart_text(response.content)
+        assert 'table id="reports-list"' in smart_str(response.content)
+        assert 'table id="facets-list-' in smart_str(response.content)
         # The build and platform appear
-        assert "888981" in smart_text(response.content)
-        assert "Linux" in smart_text(response.content)
+        assert "888981" in smart_str(response.content)
+        assert "Linux" in smart_str(response.content)
         # The crash id is always shown
-        assert "aaaaaaaaaaaaa1" in smart_text(response.content)
+        assert "aaaaaaaaaaaaa1" in smart_str(response.content)
         # The version and date do not appear
-        assert "1.0" not in smart_text(response.content)
-        assert "2017" not in smart_text(response.content)
+        assert "1.0" not in smart_str(response.content)
+        assert "2017" not in smart_str(response.content)
 
         # Test missing parameters don't raise an exception.
         response = self.client.get(
@@ -283,7 +283,7 @@ class TestViews(BaseTestViews):
         # JS frameworks
         response = self.client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         assert response.status_code == 429
-        assert smart_text(response.content) == "Too Many Requests"
+        assert smart_str(response.content) == "Too Many Requests"
         assert response["content-type"] == "text/plain"
 
     def test_search_results_badargumenterror(self):
@@ -297,8 +297,8 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         assert response.status_code == 400
         assert response["content-type"] == "text/html; charset=utf-8"
-        assert "<script>" not in smart_text(response.content)
-        assert "&lt;script&gt;" in smart_text(response.content)
+        assert "<script>" not in smart_str(response.content)
+        assert "&lt;script&gt;" in smart_str(response.content)
 
     def test_search_results_admin_mode(self):
         """Test that an admin can see more fields, and that a non-admin cannot."""
@@ -376,13 +376,13 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert "Url facet" in smart_text(response.content)
-        assert "http://example.org" in smart_text(response.content)
-        assert "Version" in smart_text(response.content)
-        assert "1.0" in smart_text(response.content)
+        assert "Url facet" in smart_str(response.content)
+        assert "http://example.org" in smart_str(response.content)
+        assert "Version" in smart_str(response.content)
+        assert "1.0" in smart_str(response.content)
 
         # Without the correct permission the user cannot see exploitability.
-        assert "Exploitability" not in smart_text(response.content)
+        assert "Exploitability" not in smart_str(response.content)
 
         exp_group = self._create_group_with_permission("view_exploitability")
         user.groups.add(exp_group)
@@ -396,8 +396,8 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert "Exploitability" in smart_text(response.content)
-        assert "high" in smart_text(response.content)
+        assert "Exploitability" in smart_str(response.content)
+        assert "high" in smart_str(response.content)
 
         # Logged out user, cannot see the protected data fields
         self._logout()
@@ -407,10 +407,10 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert "Url facet" not in smart_text(response.content)
-        assert "http://example.org" not in smart_text(response.content)
-        assert "Version" in smart_text(response.content)
-        assert "1.0" in smart_text(response.content)
+        assert "Url facet" not in smart_str(response.content)
+        assert "http://example.org" not in smart_str(response.content)
+        assert "Version" in smart_str(response.content)
+        assert "1.0" in smart_str(response.content)
 
     def test_search_results_parameters(self):
         def mocked_supersearch_get(**params):
@@ -490,7 +490,7 @@ class TestViews(BaseTestViews):
         )
 
         assert response.status_code == 200
-        assert "140" in smart_text(response.content)
+        assert "140" in smart_str(response.content)
 
         # Check that the pagination URL contains all three expected parameters.
         doc = pyquery.PyQuery(response.content)
@@ -529,7 +529,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "Run a search to get some results" in smart_text(response.content)
+        assert "Run a search to get some results" in smart_str(response.content)
 
     def test_search_custom(self):
         def mocked_supersearch_get(**params):
@@ -542,7 +542,7 @@ class TestViews(BaseTestViews):
         url = reverse("supersearch:search_custom")
         response = self.client.get(url)
         assert response.status_code == 200
-        assert "Run a search to get some results" in smart_text(response.content)
+        assert "Run a search to get some results" in smart_str(response.content)
 
     def test_search_custom_parameters(self):
         self.create_custom_query_perm()
@@ -562,10 +562,10 @@ class TestViews(BaseTestViews):
         url = reverse("supersearch:search_custom")
         response = self.client.get(url, {"signature": "nsA"})
         assert response.status_code == 200
-        assert "Run a search to get some results" in smart_text(response.content)
-        assert "{&#34;query&#34;: null}" in smart_text(response.content)
-        assert "socorro200000" in smart_text(response.content)
-        assert "socorro200001" in smart_text(response.content)
+        assert "Run a search to get some results" in smart_str(response.content)
+        assert "{&#34;query&#34;: null}" in smart_str(response.content)
+        assert "socorro200000" in smart_str(response.content)
+        assert "socorro200001" in smart_str(response.content)
 
     def test_search_query(self):
         self.create_custom_query_perm()
@@ -588,4 +588,4 @@ class TestViews(BaseTestViews):
         # Test a failure.
         response = self.client.post(url)
         assert response.status_code == 400
-        assert "query" in smart_text(response.content)
+        assert "query" in smart_str(response.content)

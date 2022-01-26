@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django import http
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.crashstats import decorators
 
@@ -16,11 +16,11 @@ class TestCheckDays:
 
         request = rf.get("/")
         response = view(request)
-        assert smart_text(response.content) == "10002"  # default
+        assert smart_str(response.content) == "10002"  # default
 
         request = rf.get("/", {"days": "1"})
         response = view(request)
-        assert smart_text(response.content) == "10001"
+        assert smart_str(response.content) == "10001"
 
         # not a number
         request = rf.get("/", {"days": "xxx"})
@@ -41,7 +41,7 @@ class TestCheckDays:
 
         request = rf.get("/", {"days": 1})
         response = view(request)
-        assert smart_text(response.content) == "10001"
+        assert smart_str(response.content) == "10001"
 
         request = rf.get("/")
         response = view(request)
@@ -54,7 +54,7 @@ class TestCheckDays:
 
         request = rf.get("/")
         response = view(request)
-        assert smart_text(response.content) == "None"
+        assert smart_str(response.content) == "None"
 
     def test_using_possible_days(self, rf):
         @decorators.check_days_parameter([1, 2], 2)
@@ -63,4 +63,4 @@ class TestCheckDays:
 
         request = rf.get("/")
         response = view(request)
-        assert smart_text(response.content) == str([1, 2])
+        assert smart_str(response.content) == str([1, 2])

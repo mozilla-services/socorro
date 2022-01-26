@@ -8,7 +8,7 @@ from unittest import mock
 from pygments.formatters import HtmlFormatter
 
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from crashstats.sources.views import ALLOWED_SOURCE_HOSTS
 
@@ -58,7 +58,7 @@ def test_highlight_url(client, requests_mock):
     assert response.status_code == 200
 
     # Make sure it's really an HTML page.
-    assert "</html>" in smart_text(response.content)
+    assert "</html>" in smart_str(response.content)
     assert response["content-type"] == "text/html"
 
     # Our security headers should still be set.

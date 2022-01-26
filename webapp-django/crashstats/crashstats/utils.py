@@ -19,7 +19,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.template import engines
 from django.utils import timezone
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.functional import cached_property
 
 from glom import glom
@@ -752,7 +752,7 @@ def pci_ids__parse_graphics_devices_iterable(iterable, debug=False):
     vendor_hex = vendor_name = None
 
     for line in iterable:
-        line = smart_text(line)
+        line = smart_str(line)
 
         if not line:
             continue

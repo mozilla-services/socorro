@@ -7,7 +7,7 @@ import json
 import os
 
 from django.http import HttpResponse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 import pytest
 
@@ -351,7 +351,7 @@ def test_json_view_indented(rf):
     func = utils.json_view(func)
     response = func(request)
     assert isinstance(response, HttpResponse)
-    assert json.dumps({"one": "One"}, indent=2) == smart_text(response.content)
+    assert json.dumps({"one": "One"}, indent=2) == smart_str(response.content)
     assert response.status_code == 200
 
 
@@ -364,7 +364,7 @@ def test_json_view_already_httpresponse(rf):
     func = utils.json_view(func)
     response = func(request)
     assert isinstance(response, HttpResponse)
-    assert smart_text(response.content) == "something"
+    assert smart_str(response.content) == "something"
     assert response.status_code == 200
 
 
