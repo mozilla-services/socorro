@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf import settings
-from django.conf.urls import re_path
+from django.urls import re_path
 from django.views.generic import RedirectView
 
 from crashstats.crashstats import views

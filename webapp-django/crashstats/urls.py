@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.conf import settings
-from django.conf.urls import include, re_path
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.urls import include, re_path
 from django.views.generic.base import RedirectView
 
 from crashstats.manage import admin_site
