@@ -97,7 +97,7 @@ class ThreadedTaskManager(TaskManager):
             waiting_func - this function will be called every one second while
                            waiting for the queuing thread to quit.  This allows
                            for logging timers, status indicators, etc."""
-        self.logger.debug("waiting to join queuingThread")
+        self.logger.debug("waiting to join queuing_thread")
         self._responsive_join(self.queuing_thread, waiting_func)
 
     def stop(self):
@@ -202,7 +202,6 @@ class ThreadedTaskManager(TaskManager):
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                self.logger.debug("received %r", job_params)
                 if job_params is None:
                     if self.config.quit_on_empty_queue:
                         self.wait_for_empty_queue(
@@ -210,20 +209,17 @@ class ThreadedTaskManager(TaskManager):
                             wait_reason="waiting for queue to drain",
                         )
                         raise KeyboardInterrupt
-                    self.logger.info(
-                        "there is nothing to do.  Sleeping "
-                        "for %d seconds" % self.config.idle_delay
-                    )
                     self._responsive_sleep(self.config.idle_delay)
                     continue
-                # self.logger.debug("queuing job %s", job_params)
+
+                self.logger.debug("received %r", job_params)
                 self.task_queue.put((self.task_func, job_params))
         except Exception:
             self.logger.error("queuing jobs has failed", exc_info=True)
         except KeyboardInterrupt:
-            self.logger.debug("queuingThread gets quit request")
+            self.logger.debug("queuing_thread gets quit request")
         finally:
-            self.logger.debug("we're quitting queuingThread")
+            self.logger.debug("we're quitting queuing_thread")
             self._kill_worker_threads()
             self.logger.debug("all worker threads stopped")
             # now that we've killed all the workers, we can set the quit flag
