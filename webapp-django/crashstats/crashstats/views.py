@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from functools import cache as memoized
 import json
 from pathlib import Path
 from urllib.parse import quote
@@ -10,10 +9,11 @@ from urllib.parse import quote
 from django import http
 from django.conf import settings
 from django.core.cache import cache
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.shortcuts import redirect, render
 from django.template import loader
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
 from csp.decorators import csp_update
 
@@ -53,28 +53,20 @@ def robots_txt(request):
     )
 
 
-@memoized
-def _load_contribute_json():
-    index_path = Path(settings.SOCORRO_ROOT) / "contribute.json"
-    return json.loads(index_path.read_bytes())
-
-
+@require_GET
 def contribute_json(request):
     """Serve contribute.json file"""
-    data = _load_contribute_json()
-    return http.JsonResponse(data, json_dumps_params={"indent": 2})
+    index_path = Path(settings.SOCORRO_ROOT) / "contribute.json"
+    fp = index_path.open("rb")
+    return FileResponse(fp)
 
 
-@memoized
-def _load_favicon():
-    index_path = Path(settings.ROOT) / "crashstats/crashstats/static/img/favicon.ico"
-    return index_path.read_bytes()
-
-
+@require_GET
 def favicon_ico(request):
     """Serve the favicon.ico file"""
-    data = _load_favicon()
-    return HttpResponse(data, content_type="image/vnd.microsoft.icon")
+    index_path = Path(settings.ROOT) / "crashstats/crashstats/static/img/favicon.ico"
+    fp = index_path.open("rb")
+    return FileResponse(fp)
 
 
 def build_id_to_date(build_id):

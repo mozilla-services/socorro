@@ -234,7 +234,7 @@ class TestContributeJson:
     def test_view(self, client):
         response = client.get("/contribute.json")
         assert response.status_code == 200
-        assert json.loads(response.content)
+        assert json.loads(response.getvalue())
         assert response["Content-Type"] == "application/json"
 
 
