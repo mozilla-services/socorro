@@ -5,6 +5,7 @@
 """Tests for Sentry event processing."""
 
 from copy import deepcopy
+import time
 import urllib
 
 import pytest
@@ -349,6 +350,9 @@ class TestIntegration(LiveServerTestCase):
             self.live_server_url + "/__broken__", params={"state": "badvalue"}
         )
         assert resp.status_code == 500
+
+        # Pause allowing sentry-sdk to send the error to fakesentry
+        time.sleep(1)
 
         resp = requests.get(fakesentry_api + "api/errorlist/")
         assert len(resp.json()["errors"]) == 1
