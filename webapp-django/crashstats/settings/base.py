@@ -51,7 +51,7 @@ LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
 
 SITE_ID = 1
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Absolute path to the directory that holds media.
 MEDIA_ROOT = path("media")
