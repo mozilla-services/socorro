@@ -339,7 +339,7 @@ class TestIntegration(LiveServerTestCase):
         fakesentry_api = self.get_fakesentry_baseurl()
 
         # Flush errors so the list is empty
-        resp = requests.get(fakesentry_api + "api/flush/")
+        resp = requests.post(fakesentry_api + "api/flush/")
         assert resp.status_code == 200
 
         resp = requests.get(fakesentry_api + "api/errorlist/")
