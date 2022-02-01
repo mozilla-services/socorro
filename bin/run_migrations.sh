@@ -19,13 +19,12 @@ PRECMD=""
 # send errors to sentry.
 if [ -n "${SENTRY_DSN:-}" ]; then
     echo "SENTRY_DSN defined--enabling sentry."
-    PRECMD="python bin/sentry-wrap.py --"
+    PRECMD="python bin/sentry-wrap.py --timeout=600 --"
 else
     echo "SENTRY_DSN not defined--not enabling sentry."
 fi
 
-# Get a datestamp
-date
+echo "starting run_migrations.sh: $(date)"
 
 # Run Django migrations
 ${PRECMD} python webapp-django/manage.py migrate --no-input
