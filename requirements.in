@@ -43,7 +43,7 @@ pytest==6.2.5
 python-decouple==3.5
 pymemcache==3.5.0
 requests-mock==1.9.3
-requests==2.26.0
+requests==2.27.1
 semver==2.13.0
 sentry-sdk==1.5.1
 statsd==3.3.0
