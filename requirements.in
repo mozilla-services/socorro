@@ -17,7 +17,7 @@ django-waffle==2.3.0
 django-cors-headers==3.10.1
 django_csp==3.7
 djangorestframework==3.13.1
-dockerflow==2021.7.0
+dockerflow==2022.1.0
 enforce-typing==1.0.0.post1
 flake8==4.0.1
 freezegun==1.1.0
