@@ -63,6 +63,7 @@ def main():
 
     except Exception as exc:
         capture_exception(exc)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
