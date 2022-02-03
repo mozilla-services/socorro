@@ -23,6 +23,22 @@ def str_hours_to_time_delta(hours_as_string):
     return datetime.timedelta(hours=int(hours_as_string))
 
 
+def isoformat_to_time(data):
+    """Convert an isoformat string to seconds since epoch
+
+    :arg str data: datetime in isoformat
+
+    :returns: time in seconds as a float (equivalent to time.time() return); or 0.0
+        if it's a bad datetime
+
+    """
+    try:
+        dt = datetime.datetime.fromisoformat(data)
+        return dt.timestamp()
+    except ValueError:
+        return 0.0
+
+
 def utc_now():
     """Return a timezone aware datetime instance in UTC timezone
 
