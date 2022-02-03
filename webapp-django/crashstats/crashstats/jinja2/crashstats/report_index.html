@@ -1104,7 +1104,7 @@
                     <td>{{ raw.uuid }}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Submitted timestamp</th>
+                    <th scope="row">Collected timestamp</th>
                     <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
                   </tr>
                   <tr>
@@ -1126,7 +1126,7 @@
                               <td>
                                 <code>{{ sha }}</code>
                                 {% if sha == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %}
-                                <span class="humanized">(empty minidump)</span>
+                                  <span class="humanized">(empty minidump)</span>
                                 {% endif %}
                               </td>
                             </tr>
@@ -1146,21 +1146,17 @@
               <table class="record data-table vertical hardwrapped">
                 <tbody>
                   <tr>
-                    <th scope="row">Date processed</th>
-                    <td>{{ report.date_processed | human_readable_iso_date }} UTC</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Start / end</th>
+                    <th scope="row">Processing pipeline timestamps<br>(most recent)</th>
                     <td>
-                      {{ report.started_datetime | human_readable_iso_date }} UTC &#8594;
-                      {{ report.completed_datetime | human_readable_iso_date }} UTC
+                      start: {{ report.started_datetime | human_readable_iso_date }} UTC &#8594;
+                      end: {{ report.completed_datetime | human_readable_iso_date }} UTC
                       {% if report.started_datetime and report.completed_datetime %}
-                        ({{ show_delta_duration(report.started_datetime, report.completed_datetime) }})
+                        <span class="humanized">({{ show_delta_duration(report.started_datetime, report.completed_datetime) }})</span>
                       {% endif %}
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Number of times processed</th>
+                    <th scope="row"># of times processed</th>
                     <td>
                       {% if report.processor_notes %}
                         {{ report.processor_notes.count(">>> ") }}
@@ -1170,24 +1166,52 @@
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">Stackwalker version</th>
+                    <th scope="row">Stackwalker</th>
                     <td>
-                      {% if report and report.json_dump and report.json_dump.stackwalk_version %}
-                        {{ report.json_dump.stackwalk_version }}
-                      {% endif %}
+                      <table class="data-table">
+                        <tr>
+                          <th scope="row">version:</th>
+                          <td>
+                            {% if report and report.json_dump and report.json_dump.stackwalk_version %}
+                              {{ report.json_dump.stackwalk_version }}
+                            {% endif %}
+                          </td>
+                        </tr>
+                        <tr>
+                          <th scope="row">return code:</th>
+                          <td>{{ report.mdsw_return_code }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">status string:</th>
+                          <td>{{ report.mdsw_status_string }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">stderr:</th>
+                          <td><pre>{{ report.mdsw_stderr }}</pre></td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   <tr>
-                    <th scope="row">MDSW return code</th>
-                    <td>{{ report.mdsw_return_code }}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">MDSW status string</th>
-                    <td>{{ report.mdsw_status_string }}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">MDSW stderr</th>
-                    <td><pre>{{ report.mdsw_stderr }}</pre></td>
+                    <th scope="row">Signature</th>
+                    <td>
+                      <table class="data-table">
+                        <tr>
+                          <th scope="row">signature:</th>
+                          <td>{{ report.signature }}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">debug:</th>
+                          <td>
+                            {% if report.signature_debug %}
+                              <pre>{{ report.signature_debug }}</pre>
+                            {% else %}
+                              No signature_debug available
+                            {% endif %}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
                   </tr>
                   <tr>
                     <th scope="row">Processor notes</th>

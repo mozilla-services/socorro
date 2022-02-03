@@ -47,7 +47,7 @@ class Result:
     extra: Dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
     def set_signature(self, rule, signature):
-        self.debug(rule, 'change: "%s" -> "%s"', self.signature, signature)
+        self.debug(rule, 'change signature: "%s" -> "%s"', self.signature, signature)
         self.signature = signature
 
     def info(self, rule, msg, *args):
