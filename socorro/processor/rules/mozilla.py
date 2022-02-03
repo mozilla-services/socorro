@@ -1086,11 +1086,12 @@ class SignatureGeneratorRule(Rule):
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
         crash_data = convert_to_crash_data(raw_crash, processed_crash)
-        ret = self.generator.generate(crash_data)
-        processed_crash["signature"] = ret.signature
-        processor_meta["processor_notes"].extend(ret.notes)
-        # NOTE(willkg): this picks up proto_signature
-        processed_crash.update(ret.extra)
+        result = self.generator.generate(crash_data)
+        processed_crash["signature"] = result.signature
+        processor_meta["processor_notes"].extend(result.notes)
+        if "proto_signature" in result.extra:
+            processed_crash["proto_signature"] = result.extra["proto_signature"]
+        processed_crash["signature_debug"] = "\n".join(result.debug_log)
 
 
 class PHCRule(Rule):
