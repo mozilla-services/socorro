@@ -69,6 +69,19 @@ def test_string_to_datetime():
         datetimeutil.string_to_datetime(date)
 
 
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        # Good dates return good times
+        ("2011-09-06T00:00:00+00:00", 1315267200.0),
+        # Bad data returns 0.0
+        ("foo", 0.0),
+    ],
+)
+def test_isoformat_to_time(data, expected):
+    assert datetimeutil.isoformat_to_time(data) == expected
+
+
 def test_string_datetime_with_timezone():
     date = "2001-11-30T12:34:56Z"
     res = datetimeutil.string_to_datetime(date)

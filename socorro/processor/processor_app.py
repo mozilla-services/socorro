@@ -7,6 +7,7 @@
 
 import os
 import sys
+import time
 
 from configman import Namespace
 from configman.converters import class_converter
@@ -16,6 +17,7 @@ import markus
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import sentry_client
+from socorro.lib.datetimeutil import isoformat_to_time
 from socorro.lib.util import dotdict_to_dict
 
 
@@ -195,7 +197,9 @@ class ProcessorApp(FetchTransformSaveApp):
         # been processed, yet
         try:
             processed_crash = self.source.get_unredacted_processed(crash_id)
+            new_crash = False
         except CrashIDNotFound:
+            new_crash = True
             processed_crash = DotDict()
 
         # Process the crash and remove any temporary artifacts from disk
@@ -229,6 +233,16 @@ class ProcessorApp(FetchTransformSaveApp):
                         os.unlink(a_dump_pathname)
                     except OSError as x:
                         self.logger.info("deletion of dump failed: %s", x)
+
+        if ruleset_name == "default" and new_crash:
+            # Capture the total time for ingestion covering when the crash report was
+            # collected (submitted_timestamp) to the end of processing (now). We only
+            # want to do this for crash reports being processed for the first time.
+            collected = raw_crash.get("submitted_timestamp", None)
+            if collected:
+                delta = time.time() - isoformat_to_time(collected)
+                delta = delta * 1000
+                METRICS.timing("ingestion_timing", value=delta)
 
     def _setup_source_and_destination(self):
         """Instantiate classes necessary for processing."""
