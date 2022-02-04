@@ -1,6 +1,6 @@
 Jinja2==3.0.3
 Pygments==2.11.1
-awscli==1.22.26
+awscli==1.22.48
 black==21.12b0
 boto3==1.20.26
 click==8.0.3
