@@ -15,9 +15,9 @@ attrs==21.4.0 \
     #   glom
     #   jsonschema
     #   pytest
-awscli==1.22.26 \
-    --hash=sha256:6ad98ba18ee14cc51f7355ca368f9df01f6f983e5458ed62d0ea6436e8b440eb \
-    --hash=sha256:cd4f526b492bb1491b01360e08d9e0abe309d783dbeebbbfc2b733a74c370542
+awscli==1.22.48 \
+    --hash=sha256:bcdf07573853669e683cc10e4a53b172884f651040d9ba5e20f2ca0c7659cc9c \
+    --hash=sha256:e4c25a15eb37a28d3775b7ee8ec43c72bbebf52c86fe6b35b18b16cbb1b1d0d0
     # via -r requirements.in
 black==21.12b0 \
     --hash=sha256:77b80f693a569e2e527958459634f18df9b0ba2625ba4e0c2d5da5be42e6f2b3 \
@@ -33,9 +33,9 @@ boto3==1.20.26 \
     --hash=sha256:9c13f5c8fadf29088fac5feab849399169b6e8438c3b9a2310abdb7e5013ab65 \
     --hash=sha256:e8787a7f7c212d5b469dd8b998560c1b8e63badad5ceefb8331f4580386af044
     # via -r requirements.in
-botocore==1.23.26 \
-    --hash=sha256:0a933e3af6ecf79666beb2dfcb52a60f8ad1fee7df507f2a9202fe26fe569483 \
-    --hash=sha256:298f4d4e29504f65f73e8f78084f830af45cec49087d7d8fcf09481e243b26ec
+botocore==1.23.48 \
+    --hash=sha256:768acb9a2247155b974a4184b29be321242ef8f61827f4bb958e60f00e476e90 \
+    --hash=sha256:8652c11ff05d11d6cea7096aca8df7f8eb87980469860036ff47e196e4625c96
     # via
     #   awscli
     #   boto3
@@ -178,7 +178,7 @@ django-cors-headers==3.11.0 \
     --hash=sha256:a22be2befd4069c4fc174f11cf067351df5c061a3a5f94a01650b4e928b0372b \
     --hash=sha256:eb98389bf7a2afc5d374806af4a9149697e3a6955b5a2dc2bf049f7d33647456
     # via -r requirements.in
-django-csp==3.7 \
+django_csp==3.7 \
     --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
     --hash=sha256:01eda02ad3f10261c74131cdc0b5a6a62b7c7ad4fd017fbefb7a14776e0a9727
     # via -r requirements.in
