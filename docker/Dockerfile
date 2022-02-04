@@ -12,7 +12,7 @@ RUN ls -al /stackwalk/
 # =========================================================================
 
 # https://hub.docker.com/_/rust/
-FROM rust:1.57.0-buster@sha256:e6bb347e01ca274c3d4511b765f7cb9ce495d8bad3a3a99b46ae1337f7af52f6 as rustminidump
+FROM rust:1.58.1-buster@sha256:311d05f3823e7430bfeb2a743cd1a7895b05db643622d8d38ce18bffa2fa63bf as rustminidump
 
 RUN update-ca-certificates
 ARG groupid=10001
