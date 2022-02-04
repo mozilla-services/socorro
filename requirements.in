@@ -1,6 +1,6 @@
 Jinja2==3.0.3
 Pygments==2.11.1
-awscli==1.22.26
+awscli==1.22.48
 black==21.12b0
 boto3==1.20.26
 click==8.0.3
@@ -14,10 +14,10 @@ django-pipeline==2.0.7
 django-ratelimit==3.0.1
 django-session-csrf==0.7.1
 django-waffle==2.3.0
-django-cors-headers==3.10.1
+django-cors-headers==3.11.0
 django_csp==3.7
 djangorestframework==3.13.1
-dockerflow==2021.7.0
+dockerflow==2022.1.0
 enforce-typing==1.0.0.post1
 flake8==4.0.1
 freezegun==1.1.0
@@ -43,7 +43,7 @@ pytest==6.2.5
 python-decouple==3.5
 pymemcache==3.5.0
 requests-mock==1.9.3
-requests==2.26.0
+requests==2.27.1
 semver==2.13.0
 sentry-sdk==1.5.1
 statsd==3.3.0
