@@ -101,4 +101,4 @@ Questions
 =========
 
 If you have any questions, please ask in
-`#breakpad:mozilla.org <https://riot.im/app/#/room/#breakpad:mozilla.org>`_.
+`#crashreporting:mozilla.org <https://riot.im/app/#/room/#crashreporting:mozilla.org>`_.

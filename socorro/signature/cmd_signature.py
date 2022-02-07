@@ -18,11 +18,6 @@ Given one or more crash ids via command line or stdin (one per line), pulls down
 Socorro, generates signatures, and prints signature information.
 """
 
-EPILOG = """
-Note: In order for the SignatureJitCategory rule to work, you need a valid API token from
-Socorro that has "View Personally Identifiable Information" permission.
-"""
-
 # FIXME(willkg): This hits production. We might want it configurable.
 API_URL = "https://crash-stats.mozilla.org/api"
 
@@ -160,7 +155,7 @@ def fetch(endpoint, crash_id, api_token=None):
 
 def main(argv=None):
     """Takes crash data via args and generates a Socorro signature"""
-    parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG)
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument(
         "-v", "--verbose", help="increase output verbosity", action="store_true"
     )

@@ -1472,42 +1472,6 @@ class TestSignatureWatchDogRule:
         assert result.notes == []
 
 
-class TestSignatureJitCategory:
-    def test_predicate_no_match(self):
-        rule = rules.SignatureJitCategory()
-
-        crash_data = {}
-        result = {"signature": "", "notes": []}
-        assert rule.predicate(crash_data, result) is False
-
-        crash_data = {"jit_category": ""}
-        result = {"signature": "", "notes": []}
-
-        assert rule.predicate(crash_data, result) is False
-
-    def test_predicate(self):
-        rule = rules.SignatureJitCategory()
-
-        crash_data = {"jit_category": "JIT Crash"}
-        result = {"signature": "", "notes": []}
-
-        assert rule.predicate(crash_data, result) is True
-
-    def test_action_success(self):
-        rule = rules.SignatureJitCategory()
-
-        crash_data = {"jit_category": "JIT Crash"}
-        result = generator.Result()
-        result.signature = "foo::bar"
-
-        action_result = rule.action(crash_data, result)
-        assert action_result is True
-        assert result.signature == "jit | JIT Crash"
-        assert result.notes == [
-            'SignatureJitCategory: Signature replaced with a JIT Crash Category, was: "foo::bar"'
-        ]
-
-
 class TestSignatureIPCChannelError:
     def test_predicate_no_match(self):
         rule = rules.SignatureIPCChannelError()

@@ -20,7 +20,6 @@ from socorro.lib.datetimeutil import utc_now
 from socorro.processor.rules.breakpad import (
     BreakpadStackwalkerRule2015,
     CrashingThreadInfoRule,
-    JitCrashCategorizeRule,
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
 )
@@ -197,27 +196,6 @@ class ProcessorPipeline(RequiredConfig):
         default=tempfile.gettempdir(),
     )
 
-    # JitClassCategorizationRule configuration
-    required_config.jit = Namespace()
-    required_config.jit.add_option(
-        "kill_timeout",
-        doc="amount of time to let command run before declaring it hung",
-        default=600,
-    )
-    required_config.jit.add_option(
-        "dump_field", doc="the default name of a dump", default="upload_file_minidump"
-    )
-    required_config.jit.add_option(
-        "command_path",
-        doc="absolute path to external program; quote path with embedded spaces",
-        default="/stackwalk/jit-crash-categorize",
-    )
-    required_config.jit.add_option(
-        "command_line",
-        doc="template for command line; uses Python format syntax",
-        default=("timeout -s KILL {kill_timeout} {command_path} {dump_file_path}"),
-    )
-
     # BetaVersionRule configuration
     required_config.betaversion = Namespace()
     required_config.betaversion.add_option(
@@ -326,14 +304,6 @@ class ProcessorPipeline(RequiredConfig):
                 MemoryReportExtraction(),
                 # generate signature now that we've done all the processing it depends on
                 SignatureGeneratorRule(),
-                # a set of classifiers to help with jit crashes--must be last since it
-                # depends on signature generation
-                JitCrashCategorizeRule(
-                    dump_field=config.jit.dump_field,
-                    command_line=config.jit.command_line,
-                    command_path=config.jit.command_path,
-                    kill_timeout=config.jit.kill_timeout,
-                ),
             ],
             # Regenerate signatures
             "regenerate_signature": [

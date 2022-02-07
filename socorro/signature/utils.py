@@ -102,10 +102,6 @@ def convert_to_crash_data(raw_crash, processed_crash):
         # text json with "phase", "conditions" (complicated--see code) or None
         "async_shutdown_timeout": glom(raw_crash, "AsyncShutdownTimeout", default=None),
         # text or None
-        "jit_category": glom(
-            processed_crash, "classifications.jit.category", default=None
-        ),
-        # text or None
         "ipc_channel_error": glom(raw_crash, "ipc_channel_error", default=None),
         # text or None
         "ipc_message_name": glom(raw_crash, "IPCMessageName", default=None),

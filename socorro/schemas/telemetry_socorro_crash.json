@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "$target_version": 2,
   "type": "object",
-  "description": "This is the JSON Schema of a public crash from Socorro. Its home is github.com/mozilla/socorro",
+  "description": "This is the JSON Schema of a public crash from Socorro. Its home is github.com/mozilla-services/socorro",
   "definitions": {
     "frames": {
       "type": "object",
@@ -240,6 +240,7 @@
       "type": "object",
       "properties": {
         "jit": {
+          "description": "JIT classification information. (deprecated)",
           "type": "object",
           "properties": {
             "category": {
@@ -247,14 +248,14 @@
                 "string",
                 "null"
               ],
-              "description": "JIT classification."
+              "description": "JIT classification (deprecated)."
             },
             "category_return_code": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "JIT classification."
+              "description": "JIT classification (deprecated)."
             }
           }
         },
@@ -471,7 +472,7 @@
         "string",
         "null"
       ],
-      "description": "JIT classification."
+      "description": "JIT classification (deprecated)."
     },
     "json_dump": {
       "type": "object",
