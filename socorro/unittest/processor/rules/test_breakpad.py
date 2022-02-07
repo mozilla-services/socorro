@@ -10,11 +10,9 @@ from markus.testing import MetricsMock
 
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.breakpad import (
-    BreakpadStackwalkerRule2015,
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
-    tmp_raw_crash_file,
 )
 from socorro.unittest.processor import get_basic_processor_meta
 
@@ -236,135 +234,6 @@ class TestMinidumpSha256HashRule:
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert processed_crash["minidump_sha256_hash"] == "hash"
-
-
-canonical_external_output = {"key": "value"}
-canonical_external_output_str = json.dumps(canonical_external_output)
-
-
-class TestBreakpadTransformRule2015:
-    def build_rule(self):
-        config = ProcessorPipeline.required_config.breakpad
-
-        return BreakpadStackwalkerRule2015(
-            dump_field="upload_file_minidump",
-            symbols_urls=config.symbols_urls.default,
-            command_path=config.command_path.default,
-            command_line=config.command_line.default,
-            kill_timeout=5,
-            symbol_tmp_path="/tmp/symbols/tmp",
-            symbol_cache_path="/tmp/symbols/cache",
-            tmp_path="/tmp",
-        )
-
-    @mock.patch("socorro.processor.rules.breakpad.subprocess")
-    def test_everything_we_hoped_for(self, mocked_subprocess_module):
-        rule = self.build_rule()
-
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {rule.dump_field: "a_fake_dump.dump"}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = (
-            canonical_stackwalker_output_str
-        )
-        mocked_subprocess_handle.wait.return_value = 0
-
-        expected_output = copy.deepcopy(canonical_stackwalker_output)
-        expected_output["stackwalk_version"] = "stackwalker unknown"
-
-        with MetricsMock() as mm:
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-            assert processed_crash["mdsw_return_code"] == 0
-            assert processed_crash["mdsw_status_string"] == "OK"
-            assert processed_crash["success"] is True
-            assert processed_crash["json_dump"] == expected_output
-
-            mm.assert_incr(
-                "processor.breakpadstackwalkerrule.run",
-                tags=["outcome:success", "exitcode:0"],
-            )
-
-    @mock.patch("socorro.processor.rules.breakpad.subprocess")
-    def test_stackwalker_fails(self, mocked_subprocess_module):
-        rule = self.build_rule()
-
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {rule.dump_field: "a_fake_dump.dump"}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        mocked_subprocess_handle.stdout.read.return_value = "{}\n"
-        mocked_subprocess_handle.wait.return_value = 124
-
-        with MetricsMock() as mm:
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-            assert processed_crash["json_dump"] == {
-                "stackwalk_version": "stackwalker unknown",
-            }
-            assert processed_crash["mdsw_return_code"] == 124
-            assert processed_crash["mdsw_status_string"] == "unknown error"
-            assert processed_crash["success"] is False
-            assert processor_meta["processor_notes"] == ["MDSW timeout (SIGKILL)"]
-
-            mm.assert_incr(
-                "processor.breakpadstackwalkerrule.run",
-                tags=["outcome:fail", "exitcode:124"],
-            )
-
-    @mock.patch("socorro.processor.rules.breakpad.subprocess")
-    def test_stackwalker_fails_2(self, mocked_subprocess_module):
-        rule = self.build_rule()
-
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {rule.dump_field: "a_fake_dump.dump"}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        mocked_subprocess_handle = mocked_subprocess_module.Popen.return_value
-        # This will cause json.loads to throw an error
-        mocked_subprocess_handle.stdout.read.return_value = "{ff"
-        mocked_subprocess_handle.wait.return_value = -1
-
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["json_dump"] == {
-            "stackwalk_version": "stackwalker unknown",
-        }
-        assert processed_crash["mdsw_return_code"] == -1
-        assert processed_crash["mdsw_status_string"] == "unknown error"
-        assert not processed_crash["success"]
-        assert (
-            f"{rule.command_path}: non-json output: Expecting property name "
-            + "enclosed in double quotes: line 1 column 2 (char 1)"
-        ) in processor_meta["processor_notes"][0]
-        assert (
-            processor_meta["processor_notes"][1] == "MDSW failed with -1: unknown error"
-        )
-
-    @mock.patch("socorro.processor.rules.breakpad.os.unlink")
-    def test_temp_file_context(self, mocked_unlink):
-        with tmp_raw_crash_file("/tmp/", {}, example_uuid):
-            pass
-        mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
-        )
-        mocked_unlink.reset_mock()
-
-        try:
-            with tmp_raw_crash_file("/tmp/", {}, example_uuid):
-                raise KeyError("oops")
-        except KeyError:
-            pass
-        mocked_unlink.assert_called_once_with(
-            "/tmp/%s.MainThread.TEMPORARY.json" % example_uuid
-        )
-        mocked_unlink.reset_mock()
 
 
 class ProcessCompletedMock:
