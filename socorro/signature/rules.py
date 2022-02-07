@@ -808,22 +808,6 @@ class SignatureShutdownTimeout(Rule):
         return True
 
 
-class SignatureJitCategory(Rule):
-    """Replaces signature with JIT classification."""
-
-    def predicate(self, crash_data, result):
-        return bool(crash_data.get("jit_category"))
-
-    def action(self, crash_data, result):
-        result.info(
-            self.name,
-            'Signature replaced with a JIT Crash Category, was: "%s"',
-            result.signature,
-        )
-        result.set_signature(self.name, "jit | {}".format(crash_data["jit_category"]))
-        return True
-
-
 class SignatureIPCChannelError(Rule):
     """Stomps on signature with shutdownkill signature
 

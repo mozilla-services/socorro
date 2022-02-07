@@ -17,7 +17,6 @@ from .rules import (
     SignatureIPCMessageName,
     SigFixWhitespace,
     SigTruncate,
-    SignatureJitCategory,
     SignatureParentIDNotEqualsChildID,
 )
 
@@ -32,7 +31,6 @@ DEFAULT_PIPELINE = [
     SignatureIPCChannelError(),
     SignatureIPCMessageName(),
     SignatureParentIDNotEqualsChildID(),
-    SignatureJitCategory(),
     # NOTE(willkg): These should always come last and in this order
     SigFixWhitespace(),
     SigTruncate(),

@@ -4,8 +4,8 @@
 Crash Annotations
 =================
 
-A breakpad-style crash report contains one or more minidumps plus a series of
-*crash annotations*. For example, a crash report may contain the following
+A crash report contains one or more minidumps plus a series of *crash
+annotations*. For example, a crash report may contain the following
 annotations:
 
 * **ProductName**: Firefox

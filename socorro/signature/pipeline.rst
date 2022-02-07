@@ -81,11 +81,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
    different. This causes a lot of strangeness particularly in symbolification, so the signatures
    end up as junk. Instead, we want to bucket all these together so we replace the signature.
 
-10. **Rule: SignatureJitCategory**
-
-    Replaces signature with JIT classification.
-
-11. **Rule: SigFixWhitespace**
+10. **Rule: SigFixWhitespace**
 
     Fix whitespace in signatures.
 
@@ -95,7 +91,7 @@ This is the signature generation pipeline defined at ``socorro.signature.generat
     * converts all non-space whitespace characters to space
     * reduce consecutive spaces to a single space
 
-12. **Rule: SigTruncate**
+11. **Rule: SigTruncate**
 
     Truncates signatures down to SIGNATURE_MAX_LENGTH characters.
 
