@@ -18,7 +18,6 @@ from configman.dotdict import DotDict
 from socorro.lib import sentry_client
 from socorro.lib.datetimeutil import utc_now
 from socorro.processor.rules.breakpad import (
-    BreakpadStackwalkerRule2015,
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
@@ -71,12 +70,6 @@ class ProcessorPipeline(RequiredConfig):
     """Processor pipeline for Mozilla crash ingestion."""
 
     required_config = Namespace("transform_rules")
-
-    required_config.add_option(
-        "minidump_stackwalker",
-        doc="the minidump stackwalker to use: breakpad or rust",
-        default="breakpad",
-    )
 
     # MinidumpStackwalkRule configuration
     required_config.minidumpstackwalk = Namespace()
@@ -137,65 +130,6 @@ class ProcessorPipeline(RequiredConfig):
         default=tempfile.gettempdir(),
     )
 
-    # BreakpadStackwalkerRule2015 configuration
-    required_config.breakpad = Namespace()
-    required_config.breakpad.add_option(
-        "dump_field", doc="the default name of a dump", default="upload_file_minidump"
-    )
-    required_config.breakpad.add_option(
-        "command_path",
-        doc=(
-            "the absolute path to the external program to run (quote path with "
-            "embedded spaces)"
-        ),
-        default="/stackwalk/stackwalker",
-    )
-    required_config.breakpad.add_option(
-        name="symbols_urls",
-        doc="comma-delimited ordered list of urls for symbol lookup",
-        default="https://localhost",
-        from_string_converter=str_to_list,
-        likely_to_be_changed=True,
-    )
-    required_config.breakpad.add_option(
-        "command_line",
-        doc="template for the command to invoke the external program; uses Python format syntax",
-        default=(
-            "timeout --signal KILL {kill_timeout} {command_path} "
-            "--raw-json {raw_crash_path} "
-            "{symbols_urls} "
-            "--symbols-cache {symbol_cache_path} "
-            "--symbols-tmp {symbol_tmp_path} "
-            "{dump_file_path}"
-        ),
-    )
-    required_config.breakpad.add_option(
-        "kill_timeout",
-        doc="amount of time in seconds to let mdsw run before declaring it hung",
-        default=600,
-    )
-    required_config.breakpad.add_option(
-        "symbol_tmp_path",
-        doc=(
-            "directory to use as temp space for downloading symbols--must be "
-            "on the same filesystem as symbols-cache"
-        ),
-        default=os.path.join(tempfile.gettempdir(), "symbols-tmp"),
-    ),
-    required_config.breakpad.add_option(
-        "symbol_cache_path",
-        doc=(
-            "the path where the symbol cache is found, this location must be "
-            "readable and writeable (quote path with embedded spaces)"
-        ),
-        default=os.path.join(tempfile.gettempdir(), "symbols"),
-    )
-    required_config.breakpad.add_option(
-        "tmp_path",
-        doc="a path where temporary files may be written",
-        default=tempfile.gettempdir(),
-    )
-
     # BetaVersionRule configuration
     required_config.betaversion = Namespace()
     required_config.betaversion.add_option(
@@ -223,31 +157,6 @@ class ProcessorPipeline(RequiredConfig):
         :returns: dict of rulesets
 
         """
-        # Feature flag for determining which parser to use
-        if config.minidump_stackwalker == "rust":
-            minidump_stackwalker_rule = MinidumpStackwalkRule(
-                dump_field=config.minidumpstackwalk.dump_field,
-                symbols_urls=config.minidumpstackwalk.symbols_urls,
-                command_line=config.minidumpstackwalk.command_line,
-                command_path=config.minidumpstackwalk.command_path,
-                kill_timeout=config.minidumpstackwalk.kill_timeout,
-                symbol_tmp_path=config.minidumpstackwalk.symbol_tmp_path,
-                symbol_cache_path=config.minidumpstackwalk.symbol_cache_path,
-                tmp_path=config.minidumpstackwalk.tmp_path,
-            )
-
-        else:
-            minidump_stackwalker_rule = BreakpadStackwalkerRule2015(
-                dump_field=config.breakpad.dump_field,
-                symbols_urls=config.breakpad.symbols_urls,
-                command_line=config.breakpad.command_line,
-                command_path=config.breakpad.command_path,
-                kill_timeout=config.breakpad.kill_timeout,
-                symbol_tmp_path=config.breakpad.symbol_tmp_path,
-                symbol_cache_path=config.breakpad.symbol_cache_path,
-                tmp_path=config.breakpad.tmp_path,
-            )
-
         # NOTE(willkg): the rulesets defined in here must match the set of
         # rulesets in webapp-django/crashstats/settings/base.py VALID_RULESETS
         # for them to be available to the Reprocessing API
@@ -272,7 +181,16 @@ class ProcessorPipeline(RequiredConfig):
                 ProcessTypeRule(),
                 IdentifierRule(),
                 MinidumpSha256Rule(),
-                minidump_stackwalker_rule,
+                MinidumpStackwalkRule(
+                    dump_field=config.minidumpstackwalk.dump_field,
+                    symbols_urls=config.minidumpstackwalk.symbols_urls,
+                    command_line=config.minidumpstackwalk.command_line,
+                    command_path=config.minidumpstackwalk.command_path,
+                    kill_timeout=config.minidumpstackwalk.kill_timeout,
+                    symbol_tmp_path=config.minidumpstackwalk.symbol_tmp_path,
+                    symbol_cache_path=config.minidumpstackwalk.symbol_cache_path,
+                    tmp_path=config.minidumpstackwalk.tmp_path,
+                ),
                 ModuleURLRewriteRule(),
                 CrashingThreadInfoRule(),
                 ProductRule(),

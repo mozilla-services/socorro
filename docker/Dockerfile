@@ -1,13 +1,4 @@
 # =========================================================================
-# Dokcer image with minidump-stackwalk
-# =========================================================================
-
-# https://hub.docker.com/r/mozilla/socorro-minidump-stackwalk
-FROM mozilla/socorro-minidump-stackwalk:2021.09.20@sha256:11dab7a81b6ff64ac16276ff1b1bd901b66cf61dce6cbfe1fbeb52b3508ac4d0 as breakpad
-RUN ls -al /stackwalk/
-
-
-# =========================================================================
 # Dokcer image with https://github.com/luser/rust-minidump
 # =========================================================================
 
@@ -58,9 +49,6 @@ RUN groupadd --gid $groupid app && \
 COPY ./docker/set_up_ubuntu.sh /tmp/
 RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
 RUN rm /tmp/set_up_ubuntu.sh
-
-# Copy stackwalk bits from mozilla/socorro-minidump-stackwalk image
-COPY --from=breakpad /stackwalk/* /stackwalk/
 
 # Copy stackwalk bits from rust-minidump minidump-stackwalker; this picks
 # up minidump-stackwalk.sha as well
