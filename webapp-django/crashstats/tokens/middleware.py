@@ -45,7 +45,7 @@ class APIAuthenticationMiddleware:
                 "before the RemoteUserMiddleware class."
             )
 
-        key = request.META.get("HTTP_AUTH_TOKEN")
+        key = request.headers.get("Auth-Token")
         if not key:
             return
 

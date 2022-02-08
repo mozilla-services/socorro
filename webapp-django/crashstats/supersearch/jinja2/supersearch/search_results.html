@@ -24,7 +24,7 @@
       <tbody>
         {% for crash in query.hits %}
           <tr>
-            <td><a href="{{ url('crashstats:report_index', crash.uuid) }}" class="crash-id">{{ crash.uuid }}</a></td>
+            <td><a href="{{ url('crashstats:report_index', crash_id=crash.uuid) }}" class="crash-id">{{ crash.uuid }}</a></td>
             {% for column in columns %}
               <td>
                 {% if crash[column] %}

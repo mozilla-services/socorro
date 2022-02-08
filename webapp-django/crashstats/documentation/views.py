@@ -12,7 +12,7 @@ from django.conf import settings
 from django.shortcuts import render
 
 from crashstats import productlib
-from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.supersearch.models import SuperSearchFields
 
 
@@ -31,6 +31,7 @@ OPERATORS_MAP = {
 }
 
 
+@track_view
 @pass_default_context
 def home(request, default_context=None):
     context = default_context or {}
@@ -54,6 +55,7 @@ def read_whatsnew():
     return parts["html_body"]
 
 
+@track_view
 @pass_default_context
 def whatsnew(request, default_context=None):
     context = default_context or {}
@@ -61,6 +63,7 @@ def whatsnew(request, default_context=None):
     return render(request, "documentation/whatsnew.html", context)
 
 
+@track_view
 @pass_default_context
 def protected_data_access(request, default_context=None):
     context = default_context or {}
@@ -87,6 +90,7 @@ def get_valid_version(active_versions, product_name):
     return versions[0]["version"]
 
 
+@track_view
 @pass_default_context
 def supersearch_home(request, default_context=None):
     context = default_context or {}
@@ -98,6 +102,7 @@ def supersearch_home(request, default_context=None):
     return render(request, "documentation/supersearch/home.html", context)
 
 
+@track_view
 @pass_default_context
 def supersearch_examples(request, default_context=None):
     context = default_context or {}
@@ -112,6 +117,7 @@ def supersearch_examples(request, default_context=None):
     return render(request, "documentation/supersearch/examples.html", context)
 
 
+@track_view
 @pass_default_context
 def supersearch_api(request, default_context=None):
     context = default_context or {}
@@ -144,6 +150,7 @@ def supersearch_api(request, default_context=None):
     return render(request, "documentation/supersearch/api.html", context)
 
 
+@track_view
 @pass_default_context
 def signup(request, default_context=None):
     context = default_context or {}

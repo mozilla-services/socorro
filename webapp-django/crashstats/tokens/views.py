@@ -9,12 +9,13 @@ from django.db import transaction
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, get_object_or_404, redirect
 
-from crashstats.crashstats.decorators import login_required
+from crashstats.crashstats.decorators import login_required, track_view
 from crashstats.tokens import forms
 from crashstats.tokens import models
 
 
 @login_required
+@track_view
 @transaction.atomic
 def home(request):
     context = {}
@@ -66,6 +67,7 @@ def home(request):
 
 @require_POST
 @login_required
+@track_view
 @transaction.atomic
 def delete_token(request, pk):
     token = get_object_or_404(models.Token, pk=pk, user=request.user)

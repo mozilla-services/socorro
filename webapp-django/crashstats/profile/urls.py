@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from django.urls import re_path
+from django.urls import path
 
 from crashstats.profile import views
 
 
 app_name = "profile"
-urlpatterns = [re_path(r"^$", views.profile, name="profile")]
+urlpatterns = [path("", views.profile, name="profile")]

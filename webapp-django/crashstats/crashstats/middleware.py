@@ -29,7 +29,7 @@ class SetRemoteAddrFromRealIP:
         return self.get_response(request)
 
     def process_request(self, request):
-        real_ip = request.META.get("HTTP_X_REAL_IP")
+        real_ip = request.headers.get("X-Real-Ip")
         if real_ip:
             request.META["REMOTE_ADDR"] = real_ip
 

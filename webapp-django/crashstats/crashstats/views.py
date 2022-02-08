@@ -19,7 +19,7 @@ from csp.decorators import csp_update
 
 from crashstats import productlib
 from crashstats.crashstats import forms, models, utils
-from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.decorators import track_view, pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.crashstorage_base import CrashIDNotFound
 
@@ -74,6 +74,7 @@ def build_id_to_date(build_id):
     return "{}-{}-{}".format(yyyymmdd[:4], yyyymmdd[4:6], yyyymmdd[6:8])
 
 
+@track_view
 @csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
@@ -275,6 +276,7 @@ def login(request, default_context=None):
     return render(request, "crashstats/login.html", context)
 
 
+@track_view
 def quick_search(request):
     query = request.GET.get("query", "").strip()
     crash_id = utils.find_crash_id(query)
@@ -309,12 +311,14 @@ def about_throttling(request, default_context=None):
     return render(request, "crashstats/about_throttling.html", context)
 
 
+@track_view
 @pass_default_context
 def home(request, default_context=None):
     context = default_context or {}
     return render(request, "crashstats/home.html", context)
 
 
+@track_view
 @pass_default_context
 def product_home(request, product, default_context=None):
     context = default_context or {}

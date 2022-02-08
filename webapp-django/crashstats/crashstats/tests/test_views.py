@@ -8,6 +8,7 @@ import re
 from unittest import mock
 
 import pyquery
+from markus.testing import MetricsMock
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -402,7 +403,9 @@ class TestViews(BaseTestViews):
         url = reverse(
             "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
         )
-        response = self.client.get(url)
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+
         assert response.status_code == 200
         # which bug IDs appear is important and the order matters too
         content = smart_str(response.content)
@@ -452,6 +455,16 @@ class TestViews(BaseTestViews):
         # change that we'll need to update this to another description that
         # shows up.
         assert "The crashing address." in content
+
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:report/index/_crashid_crash_id_",
+            ],
+        )
 
         # If the user ceases to be active, these PII fields should disappear
         user.is_active = False
@@ -1660,9 +1673,11 @@ class TestViews(BaseTestViews):
         base_crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         crash_id = settings.CRASH_ID_PREFIX + base_crash_id
         assert len(crash_id) > 36
-        url = reverse("crashstats:report_index", args=[crash_id])
+        url = reverse("crashstats:report_index", kwargs={"crash_id": crash_id})
         response = self.client.get(url, follow=False)
-        expected = reverse("crashstats:report_index", args=[base_crash_id])
+        expected = reverse(
+            "crashstats:report_index", kwargs={"crash_id": base_crash_id}
+        )
         assert response.url == expected
 
     def test_report_index_with_thread_name(self):
