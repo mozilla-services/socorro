@@ -53,7 +53,7 @@ class TestViews(BaseTestViews):
                     "hits": [
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa1",
+                            "uuid": "f74a5763-3270-4151-9c49-853710220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -62,7 +62,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa2",
+                            "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -71,7 +71,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa3",
+                            "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -79,7 +79,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa4",
+                            "uuid": "2e982308-dc57-41a1-b997-b56f40220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -113,7 +113,7 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
-        assert "aaaaaaaaaaaaa1" in smart_str(response.content)
+        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
         assert "888981" in smart_str(response.content)
         assert "Linux" in smart_str(response.content)
         assert "2017-01-31 23:12:57" in smart_str(response.content)
@@ -135,7 +135,7 @@ class TestViews(BaseTestViews):
         assert "888981" in smart_str(response.content)
         assert "Linux" in smart_str(response.content)
         # The crash id is always shown
-        assert "aaaaaaaaaaaaa1" in smart_str(response.content)
+        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
         # The version and date do not appear
         assert "1.0" not in smart_str(response.content)
         assert "2017" not in smart_str(response.content)
@@ -194,11 +194,12 @@ class TestViews(BaseTestViews):
 
             hits = []
             for i in range(140):
+                crash_id = f"{i:04d}b443-1b51-402b-b2c5-ccd630220208"
                 hits.append(
                     {
                         "signature": "nsASDOMWindowEnumerator::GetNext()",
                         "date": "2017-01-31T23:12:57",
-                        "uuid": i,
+                        "uuid": crash_id,
                         "product": "WaterWolf",
                         "version": "1.0",
                         "platform": "Linux",
@@ -375,7 +376,7 @@ class TestViews(BaseTestViews):
                     "hits": [
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa1",
+                            "uuid": "2e982308-dc57-41a1-b997-b56f40220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -384,7 +385,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa2",
+                            "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -393,7 +394,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa3",
+                            "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -402,7 +403,7 @@ class TestViews(BaseTestViews):
                         },
                         {
                             "date": "2017-01-31T23:12:57",
-                            "uuid": "aaaaaaaaaaaaa4",
+                            "uuid": "f74a5763-3270-4151-9c49-853710220208",
                             "product": "WaterWolf",
                             "version": "1.0",
                             "platform": "Linux",
@@ -438,7 +439,7 @@ class TestViews(BaseTestViews):
             url, {"signature": DUMB_SIGNATURE, "product": "WaterWolf"}
         )
         assert response.status_code == 200
-        assert "aaaaaaaaaaaaa1" in smart_str(response.content)
+        assert "2e982308-dc57-41a1-b997-b56f40220208" in smart_str(response.content)
         assert "Crash ID" in smart_str(response.content)
         assert "hello there" in smart_str(response.content)
         assert "WaterWolf Y U SO GOOD" in smart_str(response.content)
@@ -457,8 +458,13 @@ class TestViews(BaseTestViews):
 
             hits = []
             for i in hits_range:
+                crash_id = f"{i:04d}b443-1b51-402b-b2c5-ccd630220208"
                 hits.append(
-                    {"date": "2017-01-31T23:12:57", "uuid": i, "user_comments": "hi"}
+                    {
+                        "date": "2017-01-31T23:12:57",
+                        "uuid": crash_id,
+                        "user_comments": "hi",
+                    }
                 )
 
             return {

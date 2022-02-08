@@ -15,7 +15,11 @@ from session_csrf import anonymous_csrf
 
 from crashstats import productlib
 from crashstats.crashstats import models
-from crashstats.crashstats.decorators import check_days_parameter, pass_default_context
+from crashstats.crashstats.decorators import (
+    check_days_parameter,
+    pass_default_context,
+    track_view,
+)
 from crashstats.crashstats.utils import get_comparison_signatures, SignatureStats
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
@@ -97,6 +101,7 @@ def get_topcrashers_stats(**kwargs):
     return total_results, signatures_stats
 
 
+@track_view
 @pass_default_context
 @anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)

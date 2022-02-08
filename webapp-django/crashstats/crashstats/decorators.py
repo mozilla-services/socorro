@@ -3,9 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import functools
+import time
 from urllib.parse import urlparse
 
 import markus
+from markus.utils import generate_tag
 
 from django.contrib.auth.decorators import REDIRECT_FIELD_NAME, user_passes_test
 from django.http import HttpResponseBadRequest, Http404
@@ -101,26 +103,74 @@ def pass_default_context(view):
     return inner
 
 
-API_METRICS = markus.get_metrics("webapp.api")
+VIEW_METRICS = markus.get_metrics("webapp.view")
+
+# List of url pattern names (see urls.py files) to use the url path
+# instead of the resolver route
+USE_PATH_VIEWS = [
+    # The url arg is the API endpoint
+    "model_wrapper",
+    # The url arg is the product name
+    "product_home",
+]
 
 
-def track_api_pageview(view):
+def track_view(view):
+    """Tracks timings, status codes, and AJAX for views.
+
+    This takes into account paths that include arguments (e.g. report view which has
+    crash ids) that we don't want to track individually as well as paths that include
+    arguments (e.g. api model wrapper that has model name) that we do want to track
+    individually.
+
+    It does this by hard-coding the url names where we want to use request.path instead
+    of request.resolver_match.route.
+
+    """
+
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
+        start_time = time.time()
         response = view(request, *args, **kwargs)
-        if response.status_code < 500:
-            referer = request.META.get("HTTP_REFERER")
-            if referer:
-                # If the referer host is the same as the request host
-                # that implies that the API was used as an AJAX request
-                # in our main webapp itself. If so, don't track.
-                referer_host = urlparse(referer).netloc
-                if referer_host == request.META.get("HTTP_HOST"):
-                    return response
 
-            # Drop all the non-alphanumeric bits from the url and then incr that
-            request_path = "".join([c for c in request.path if c.isalpha()])
-            API_METRICS.incr("pageview", tags=["endpoint:%s" % request_path])
+        is_ajax = False
+        referer = request.headers.get("Referer")
+        if referer:
+            # If the referer host is the same as the request host that implies that the
+            # API was used as an AJAX request in our main webapp itself.
+            referer_host = urlparse(referer).netloc
+            if referer_host == request.headers.get("Host"):
+                is_ajax = True
+
+        # Flag indicating whether this was an api so we can differentiate between API
+        # and non-API things
+        is_api = request.path.startswith("/api/")
+
+        # We track page views by the resolver route. That way the page doesn't include
+        # things like crash ids. However, with the model wrapper API views, we want to
+        # include the model name argument.
+        if (
+            request.resolver_match
+            and request.resolver_match.url_name not in USE_PATH_VIEWS
+        ):
+            path = request.resolver_match.route
+        else:
+            path = request.path
+
+        path = path or "home"
+
+        delta = (time.time() - start_time) * 1000
+        VIEW_METRICS.timing(
+            "pageview",
+            value=delta,
+            tags=[
+                generate_tag("status", value=str(response.status_code)),
+                generate_tag("ajax", value=str(is_ajax).lower()),
+                generate_tag("api", value=str(is_api).lower()),
+                generate_tag("path", value=path),
+            ],
+        )
+
         return response
 
     return inner

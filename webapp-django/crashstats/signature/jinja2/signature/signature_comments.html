@@ -16,7 +16,7 @@
         {% for crash in query.hits %}
           <tr>
             <td>
-              <a href="{{ url('crashstats:report_index', crash.uuid) }}" class="external-link crash-id">
+              <a href="{{ url('crashstats:report_index', crash_id=crash.uuid) }}" class="external-link crash-id">
                 {{ crash.uuid }}
               </a>
             </td>

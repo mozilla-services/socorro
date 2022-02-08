@@ -5,9 +5,14 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Permission
 
-from crashstats.crashstats.decorators import pass_default_context, login_required
+from crashstats.crashstats.decorators import (
+    login_required,
+    pass_default_context,
+    track_view,
+)
 
 
+@track_view
 @pass_default_context
 @login_required
 def profile(request, default_context=None):

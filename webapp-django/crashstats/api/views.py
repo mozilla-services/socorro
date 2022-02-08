@@ -31,7 +31,7 @@ from django.views.decorators.csrf import csrf_exempt
 from crashstats.api.cleaner import Cleaner
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
-from crashstats.crashstats.decorators import track_api_pageview, pass_default_context
+from crashstats.crashstats.decorators import track_view, pass_default_context
 from crashstats.supersearch import models as supersearch_models
 from crashstats.tokens import models as tokens_models
 from socorro.external.crashstorage_base import CrashIDNotFound
@@ -158,6 +158,7 @@ def no_csrf_i_mean_it(fun):
     return _no_csrf
 
 
+@track_view
 @anonymous_csrf_exempt
 @csrf_exempt
 @clear_empty_session
@@ -165,7 +166,6 @@ def no_csrf_i_mean_it(fun):
 @ratelimit(
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
-@track_api_pageview
 @utils.json_view
 def model_wrapper(request, model_name):
     model = None

@@ -19,6 +19,7 @@ from ratelimit.decorators import ratelimit
 
 from crashstats import productlib
 from crashstats.crashstats import models, utils
+from crashstats.crashstats.decorators import track_view
 from crashstats.crashstats.utils import render_exception, urlencode_obj
 from crashstats.crashstats.views import pass_default_context
 from crashstats.supersearch import forms
@@ -109,6 +110,7 @@ def get_params(request):
     return params
 
 
+@track_view
 @pass_default_context
 def search(request, default_context=None):
     allowed_fields = get_allowed_fields(request.user)
@@ -151,6 +153,7 @@ def search(request, default_context=None):
     return render(request, "supersearch/search.html", context)
 
 
+@track_view
 @ratelimit(key="ip", rate=utils.ratelimit_rate, method=ratelimit.ALL, block=True)
 def search_results(request):
     """Return the results of a search"""
@@ -249,6 +252,7 @@ def search_results(request):
     return render(request, "supersearch/search_results.html", context)
 
 
+@track_view
 @utils.json_view
 def search_fields(request):
     """Return JSON document describing fields used by JavaScript dynamic_form library"""
@@ -257,6 +261,7 @@ def search_fields(request):
     return form.get_fields_list(exclude=exclude)
 
 
+@track_view
 @permission_required("crashstats.run_custom_queries")
 @pass_default_context
 def search_custom(request, default_context=None):
@@ -299,6 +304,7 @@ def search_custom(request, default_context=None):
     return render(request, "supersearch/search_custom.html", context)
 
 
+@track_view
 @permission_required("crashstats.run_custom_queries")
 @require_POST
 @utils.json_view

@@ -5,7 +5,6 @@
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, re_path
-from django.views.generic.base import RedirectView
 
 from crashstats.manage import admin_site
 from crashstats.crashstats.monkeypatches import patch
@@ -34,12 +33,6 @@ urlpatterns = [
     re_path(r"^sources/", include("crashstats.sources.urls", namespace="sources")),
     re_path(r"^api/tokens/", include("crashstats.tokens.urls", namespace="tokens")),
     re_path(r"^api/", include("crashstats.api.urls", namespace="api")),
-    # redirect all symbols/ requests to Tecken
-    re_path(
-        r"^symbols/.*",
-        RedirectView.as_view(url="https://symbols.mozilla.org/"),
-        name="redirect-to-tecken",
-    ),
     re_path(r"^profile/", include("crashstats.profile.urls", namespace="profile")),
     re_path(
         r"^documentation/",

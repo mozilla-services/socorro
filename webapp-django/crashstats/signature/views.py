@@ -15,7 +15,7 @@ from socorro.lib import BadArgumentError
 
 from crashstats import productlib
 from crashstats.crashstats import models, utils
-from crashstats.crashstats.decorators import pass_default_context
+from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
 from crashstats.supersearch.utils import get_date_boundaries
 
@@ -71,6 +71,7 @@ def pass_validated_params(view):
     return inner
 
 
+@track_view
 @csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
 @pass_validated_params
 @pass_default_context
@@ -115,6 +116,7 @@ def signature_report(request, params, default_context=None):
     return render(request, "signature/signature_report.html", context)
 
 
+@track_view
 @pass_validated_params
 def signature_reports(request, params):
     """Return the results of a search."""
@@ -211,6 +213,7 @@ def signature_reports(request, params):
     return render(request, "signature/signature_reports.html", context)
 
 
+@track_view
 @pass_validated_params
 def signature_aggregation(request, params, aggregation):
     """Return the aggregation of a field."""
@@ -255,6 +258,7 @@ def signature_aggregation(request, params, aggregation):
     return render(request, "signature/signature_aggregation.html", context)
 
 
+@track_view
 @utils.json_view
 @pass_validated_params
 def signature_graphs(request, params, field):
@@ -298,6 +302,7 @@ def signature_graphs(request, params, field):
     return context
 
 
+@track_view
 @pass_validated_params
 def signature_comments(request, params):
     """Return a list of non-empty comments."""
@@ -359,6 +364,7 @@ def signature_comments(request, params):
     return render(request, "signature/signature_comments.html", context)
 
 
+@track_view
 @pass_validated_params
 def signature_correlations(request, params):
     """Guess the best channel and product to use for correlations."""
@@ -385,6 +391,7 @@ def signature_correlations(request, params):
     return render(request, "signature/signature_correlations.html", context)
 
 
+@track_view
 @pass_validated_params
 def signature_summary(request, params):
     """Return a list of specific aggregations"""
@@ -549,6 +556,7 @@ def _transform_exploitability_summary(facets):
         )
 
 
+@track_view
 @pass_validated_params
 def signature_bugzilla(request, params):
     """Return a list of associated bugs"""

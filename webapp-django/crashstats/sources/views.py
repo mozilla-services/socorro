@@ -11,6 +11,8 @@ import requests
 
 from django import http
 
+from crashstats.crashstats.decorators import track_view
+
 
 # List of hosts that we will fetch source files from that we syntax highlight and return to the
 # user in highlight_file view.
@@ -20,6 +22,7 @@ ALLOWED_SOURCE_HOSTS = ["gecko-generated-sources.s3.amazonaws.com"]
 ALLOWED_SCHEMES = ["http", "https"]
 
 
+@track_view
 def highlight_url(request):
     """Retrieves a generated source file and syntax highlights it
 
