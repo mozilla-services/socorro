@@ -128,7 +128,6 @@ def cached_generate_tag(key, value):
     :returns: tag set item
 
     """
-    value = value.lstrip("/").strip().replace("/", "_").lower()
     value = value or "novalue"
     return generate_tag(key, value=value)
 
@@ -171,11 +170,9 @@ def track_view(view):
             request.resolver_match
             and request.resolver_match.url_name not in USE_PATH_VIEWS
         ):
-            path = request.resolver_match.route
+            path = "/" + request.resolver_match.route
         else:
             path = request.path
-
-        path = path or "home"
 
         delta = (time.time() - start_time) * 1000
         VIEW_METRICS.timing(

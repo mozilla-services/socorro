@@ -144,7 +144,7 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
         metrics_mock.assert_timing(
             "webapp.view.pageview",
-            tags=["ajax:false", "api:true", "path:api_noop_", "status:200"],
+            tags=["ajax:false", "api:true", "path:/api/noop/", "status:200"],
         )
 
     def test_param_exceptions(self):

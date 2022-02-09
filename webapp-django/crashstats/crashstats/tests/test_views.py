@@ -371,7 +371,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:search_quick_",
+                "path:/search/quick/",
                 "status:302",
             ],
         )
@@ -476,7 +476,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:report_index__crashid_crash_id_",
+                "path:/report/index/_crashid_crash_id_",
                 "status:200",
             ],
         )
@@ -1802,7 +1802,7 @@ class TestProductHomeViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:home_product_waterwolf",
+                "path:/home/product/waterwolf",
                 "status:200",
             ],
         )
@@ -1816,5 +1816,5 @@ class TestHomeView:
         assert resp.status_code == 200
         metrics_mock.assert_timing(
             "webapp.view.pageview",
-            tags=["ajax:false", "api:false", "path:home", "status:200"],
+            tags=["ajax:false", "api:false", "path:/", "status:200"],
         )
