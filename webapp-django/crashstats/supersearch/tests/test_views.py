@@ -7,6 +7,7 @@ import re
 from unittest import mock
 from urllib.parse import quote
 
+from markus.testing import MetricsMock
 import pyquery
 
 from django.conf import settings
@@ -34,9 +35,27 @@ class TestViews(BaseTestViews):
         self.mock_gvfp.stop()
         super().tearDown()
 
+    def test_search_metrics(self):
+        url = reverse("supersearch:search")
+
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+
+        assert response.status_code == 200
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:/search/",
+            ],
+        )
+
     def test_search(self):
         self._login()
         url = reverse("supersearch:search")
+
         response = self.client.get(url)
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
@@ -72,6 +91,22 @@ class TestViews(BaseTestViews):
         content = json.loads(response.content)
 
         assert "exploitability" in content
+
+    def test_search_fields_metrics(self):
+        self._login()
+        url = reverse("supersearch:search_fields")
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+        assert response.status_code == 200
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:/search/fields/",
+            ],
+        )
 
     def test_search_results(self):
         BugAssociation.objects.create(
@@ -266,6 +301,26 @@ class TestViews(BaseTestViews):
             url, {"product": "WaterWolf", "date": "", "build_id": ""}
         )
         assert response.status_code == 200
+
+    def test_search_results_metrics(self):
+        def mocked_supersearch_get(**params):
+            return {"hits": [], "facets": [], "total": 0}
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+
+        url = reverse("supersearch:search_results")
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url, {"product": "WaterWolf"})
+        assert response.status_code == 200
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:/search/results/",
+            ],
+        )
 
     def test_search_results_ratelimited(self):
         def mocked_supersearch_get(**params):
@@ -522,7 +577,6 @@ class TestViews(BaseTestViews):
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse("supersearch:search_custom")
-
         response = self.client.get(url)
         assert response.status_code == 302
 
@@ -544,6 +598,29 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
+
+    def test_search_custom_metrics(self):
+        def mocked_supersearch_get(**params):
+            return None
+
+        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+
+        self.create_custom_query_perm()
+
+        url = reverse("supersearch:search_custom")
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+        assert response.status_code == 200
+
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:/search/custom/",
+            ],
+        )
 
     def test_search_custom_parameters(self):
         self.create_custom_query_perm()
