@@ -361,6 +361,21 @@ class TestViews(BaseTestViews):
         assert response.status_code == 302
         assert response["location"].endswith(target)
 
+    def test_quick_search_metrics(self):
+        url = reverse("crashstats:quick_search")
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+        assert response.status_code == 302
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:302",
+                "ajax:false",
+                "api:false",
+                "path:/search/quick/",
+            ],
+        )
+
     def test_report_index(self):
         json_dump = {
             "system_info": {
@@ -462,7 +477,7 @@ class TestViews(BaseTestViews):
                 "status:200",
                 "ajax:false",
                 "api:false",
-                "path:report/index/_crashid_crash_id_",
+                "path:/report/index/_crashid_crash_id_",
             ],
         )
 
@@ -1776,3 +1791,30 @@ class TestProductHomeViews(BaseTestViews):
 
         # Featured versions are based on MAJOR.MINOR, so 18.0 won't show up
         assert "WaterWolf 18.0" not in smart_str(response.content)
+
+    def test_product_home_metrics(self):
+        url = reverse("crashstats:product_home", args=("WaterWolf",))
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
+        assert response.status_code == 200
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=[
+                "status:200",
+                "ajax:false",
+                "api:false",
+                "path:/home/product/waterwolf",
+            ],
+        )
+
+
+class TestHomeView:
+    def test_home_metrics(self, db, client):
+        url = reverse("crashstats:home")
+        with MetricsMock() as metrics_mock:
+            resp = client.get(url)
+        assert resp.status_code == 200
+        metrics_mock.assert_timing(
+            "webapp.view.pageview",
+            tags=["status:200", "ajax:false", "api:false", "path:/"],
+        )
