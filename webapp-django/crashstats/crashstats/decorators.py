@@ -115,6 +115,24 @@ USE_PATH_VIEWS = [
 ]
 
 
+@functools.cache
+def cached_generate_tag(key, value):
+    """Generates a tag set item
+
+    This caches values so it works a little faster. This also strips out some
+    additional characters from the tag value that we're having problems with.
+
+    :param tag: the tag name as a string
+    :param value: the tag value as a string
+
+    :returns: tag set item
+
+    """
+    value = value.lstrip("/").strip().replace("/", "_").lower()
+    value = value or "novalue"
+    return generate_tag(key, value=value)
+
+
 def track_view(view):
     """Tracks timings, status codes, and AJAX for views.
 
@@ -153,19 +171,21 @@ def track_view(view):
             request.resolver_match
             and request.resolver_match.url_name not in USE_PATH_VIEWS
         ):
-            path = "/" + request.resolver_match.route
+            path = request.resolver_match.route
         else:
             path = request.path
+
+        path = path or "home"
 
         delta = (time.time() - start_time) * 1000
         VIEW_METRICS.timing(
             "pageview",
             value=delta,
             tags=[
-                generate_tag("status", value=str(response.status_code)),
-                generate_tag("ajax", value=str(is_ajax).lower()),
-                generate_tag("api", value=str(is_api).lower()),
-                generate_tag("path", value=path),
+                cached_generate_tag("ajax", value=str(is_ajax).lower()),
+                cached_generate_tag("api", value=str(is_api).lower()),
+                cached_generate_tag("path", value=path),
+                cached_generate_tag("status", value=str(response.status_code)),
             ],
         )
 
