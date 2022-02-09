@@ -18,7 +18,7 @@ def test_home_metrics(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_",
+            "path:/documentation/",
             "status:200",
         ],
     )
@@ -35,7 +35,7 @@ def test_supersearch_home(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_supersearch_",
+            "path:/documentation/supersearch/",
             "status:200",
         ],
     )
@@ -52,7 +52,7 @@ def test_whatsnew(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_whatsnew_",
+            "path:/documentation/whatsnew/",
             "status:200",
         ],
     )
@@ -69,7 +69,7 @@ def test_supersearch_examples(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_supersearch_examples_",
+            "path:/documentation/supersearch/examples/",
             "status:200",
         ],
     )
@@ -88,7 +88,7 @@ def test_supersearch_api(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_supersearch_api_",
+            "path:/documentation/supersearch/api/",
             "status:200",
         ],
     )
@@ -116,7 +116,7 @@ def test_signup_renders(client, db):
         tags=[
             "ajax:false",
             "api:false",
-            "path:documentation_signup_",
+            "path:/documentation/signup/",
             "status:200",
         ],
     )

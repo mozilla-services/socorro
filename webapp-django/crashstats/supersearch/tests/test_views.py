@@ -47,7 +47,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:search_",
+                "path:/search/",
                 "status:200",
             ],
         )
@@ -103,7 +103,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:search_fields_",
+                "path:/search/fields/",
                 "status:200",
             ],
         )
@@ -317,7 +317,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:search_results_",
+                "path:/search/results/",
                 "status:200",
             ],
         )
@@ -617,7 +617,7 @@ class TestViews(BaseTestViews):
             tags=[
                 "ajax:false",
                 "api:false",
-                "path:search_custom_",
+                "path:/search/custom/",
                 "status:200",
             ],
         )
