@@ -45,10 +45,10 @@ class TestViews(BaseTestViews):
         metrics_mock.assert_timing(
             "webapp.view.pageview",
             tags=[
-                "status:200",
                 "ajax:false",
                 "api:false",
-                "path:/search/",
+                "path:search_",
+                "status:200",
             ],
         )
 
@@ -101,10 +101,10 @@ class TestViews(BaseTestViews):
         metrics_mock.assert_timing(
             "webapp.view.pageview",
             tags=[
-                "status:200",
                 "ajax:false",
                 "api:false",
-                "path:/search/fields/",
+                "path:search_fields_",
+                "status:200",
             ],
         )
 
@@ -315,10 +315,10 @@ class TestViews(BaseTestViews):
         metrics_mock.assert_timing(
             "webapp.view.pageview",
             tags=[
-                "status:200",
                 "ajax:false",
                 "api:false",
-                "path:/search/results/",
+                "path:search_results_",
+                "status:200",
             ],
         )
 
@@ -615,10 +615,10 @@ class TestViews(BaseTestViews):
         metrics_mock.assert_timing(
             "webapp.view.pageview",
             tags=[
-                "status:200",
                 "ajax:false",
                 "api:false",
-                "path:/search/custom/",
+                "path:search_custom_",
+                "status:200",
             ],
         )
 

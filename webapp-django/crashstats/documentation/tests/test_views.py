@@ -16,10 +16,10 @@ def test_home_metrics(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/",
+            "path:documentation_",
+            "status:200",
         ],
     )
 
@@ -33,10 +33,10 @@ def test_supersearch_home(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/supersearch/",
+            "path:documentation_supersearch_",
+            "status:200",
         ],
     )
 
@@ -50,10 +50,10 @@ def test_whatsnew(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/whatsnew/",
+            "path:documentation_whatsnew_",
+            "status:200",
         ],
     )
 
@@ -67,10 +67,10 @@ def test_supersearch_examples(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/supersearch/examples/",
+            "path:documentation_supersearch_examples_",
+            "status:200",
         ],
     )
 
@@ -86,10 +86,10 @@ def test_supersearch_api(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/supersearch/api/",
+            "path:documentation_supersearch_api_",
+            "status:200",
         ],
     )
 
@@ -114,9 +114,9 @@ def test_signup_renders(client, db):
     metrics_mock.assert_timing(
         "webapp.view.pageview",
         tags=[
-            "status:200",
             "ajax:false",
             "api:false",
-            "path:/documentation/signup/",
+            "path:documentation_signup_",
+            "status:200",
         ],
     )
