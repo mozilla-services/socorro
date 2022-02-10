@@ -156,7 +156,7 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Check super_search_fields.py for valid keys to update this
         raw_crash = {
             "InvalidKey": "alpha",
-            "RecordReplay": "20200506000000",
+            "TotalPageFile": "20200506000000",
         }
         processed_crash = {
             "AnotherInvalidKey": "alpha",
@@ -180,7 +180,7 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Verify keys that aren't in super_search_fields aren't in the raw or processed
         # crash parts
         raw_crash = doc["_source"]["raw_crash"]
-        assert list(sorted(raw_crash.keys())) == ["RecordReplay"]
+        assert list(sorted(raw_crash.keys())) == ["TotalPageFile"]
 
         processed_crash = doc["_source"]["processed_crash"]
         assert list(sorted(processed_crash.keys())) == ["date_processed", "uuid"]
@@ -294,7 +294,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "BuildID": "20200605000",
             "ProductName": "Firefox",
             "ReleaseChannel": "nightly",
-            "RecordReplay": "1",
+            "TotalPageFile": "1",
         }
         processed_crash = {
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
@@ -326,7 +326,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "raw_crash": {
-                "RecordReplay": "1",
+                "TotalPageFile": 1,
             },
             "processed_crash": {
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
@@ -363,7 +363,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
         raw_crash = {
             "ProductName": "Firefox",
-            "RecordReplay": "1",
+            "TotalPageFile": "1",
         }
         processed_crash = {
             "build": "20120309050057",
@@ -404,7 +404,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "raw_crash": {
-                "RecordReplay": "1",
+                "TotalPageFile": 1,
             },
             "processed_crash": {
                 "build": 20120309050057,
@@ -446,7 +446,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "BuildID": "20200605000",
             "ProductName": "Firefox",
             "ReleaseChannel": "nightly",
-            "RecordReplay": "1",
+            "TotalPageFile": "1",
             # Add a 'StackTraces' field to be redacted.
             "StackTraces": "something",
         }
@@ -474,7 +474,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         document = {
             "crash_id": crash_id,
             "raw_crash": {
-                "RecordReplay": "1",
+                "TotalPageFile": 1,
             },
             "processed_crash": {
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
@@ -651,7 +651,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         crash_id = create_new_ooid()
         raw_crash = {
             "ProductName": "Firefox",
-            "RecordReplay": "1",
+            "TotalPageFile": "1",
         }
         processed_crash = {
             "date_processed": date_to_string(utc_now()),
@@ -693,7 +693,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
                 "uuid": crash_id,
             },
             "raw_crash": {
-                "RecordReplay": "1",
+                "TotalPageFile": 1,
             },
         }
         es_class_mock().index.assert_called_with(

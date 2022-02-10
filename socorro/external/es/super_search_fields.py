@@ -587,34 +587,6 @@ def number_field(
 
 # Tree of super search fields
 FIELDS = {
-    "ActiveExperiment": {
-        "data_validation_type": "str",
-        "description": "The telemetry experiment active at the time of the crash, if any.",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "ActiveExperiment",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "ActiveExperiment",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
-    },
-    "ActiveExperimentBranch": {
-        "data_validation_type": "str",
-        "description": "The experiment branch of the ActiveExperiment, if set.",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "ActiveExperimentBranch",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "ActiveExperimentBranch",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
-    },
     "application_build_id": {
         "data_validation_type": "int",
         "description": "Product application's build ID.",
@@ -634,23 +606,6 @@ FIELDS = {
         description="Crash annotation keys and dump filenames from the crash report.",
         is_protected=False,
     ),
-    "bug_1541161": {
-        "data_validation_type": "str",
-        "description": (
-            "Dump JS Stack in case loadinfo is null within "
-            "NewChannelFromURIWithProxyFlagsInternal()."
-        ),
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "Bug_1541161",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "bug_1541161",
-        "namespace": "raw_crash",
-        "permissions_needed": ["crashstats.view_pii"],
-        "query_type": "string",
-        "storage_mapping": {"type": "string"},
-    },
     "phc_kind": {
         "data_validation_type": "str",
         "description": (
@@ -737,43 +692,6 @@ FIELDS = {
         "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
-    },
-    "record_replay": {
-        "data_validation_type": "bool",
-        "description": (
-            "Set to 1 if this crash happened in a Web Replay middleman, recording, "
-            "or replaying process."
-        ),
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "RecordReplay",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "record_replay",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "bool",
-        "storage_mapping": {"type": "boolean"},
-    },
-    "record_replay_error": {
-        "data_validation_type": "str",
-        "description": (
-            "Any fatal error that occurred while recording/replaying a tab."
-        ),
-        "form_field_choices": [],
-        "has_full_version": True,
-        "in_database_name": "RecordReplayError",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "record_replay_error",
-        "namespace": "raw_crash",
-        "permissions_needed": ["crashstats.view_pii"],
-        "query_type": "string",
-        "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
-        },
     },
     "abort_message": {
         "data_validation_type": "str",
@@ -1173,42 +1091,6 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"null_value": "False", "type": "boolean"},
     },
-    "async_plugin_shutdown": {
-        "data_validation_type": "str",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": True,
-        "in_database_name": "AsyncPluginShutdown",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "async_plugin_shutdown",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
-        },
-    },
-    "async_plugin_shutdown_states": {
-        "data_validation_type": "str",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": True,
-        "in_database_name": "AsyncPluginShutdownStates",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "async_plugin_shutdown_states",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
-        },
-    },
     "async_shutdown_timeout": {
         "data_validation_type": "str",
         "description": "",
@@ -1287,20 +1169,6 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
-    "b2g_os_version": {
-        "data_validation_type": "str",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "B2G_OS_Version",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "b2g_os_version",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
-    },
     "bios_manufacturer": {
         "data_validation_type": "enum",
         "description": "The BIOS manufacturer.",
@@ -1331,24 +1199,6 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
-    },
-    "co_get_interface_and_release_stream_failure": {
-        "data_validation_type": "enum",
-        "description": (
-            "Contains the hexadecimal value of the return code from Windows "
-            "CoGetInterfaceAndReleaseStream API when invoked by IPDL serialization and "
-            "deserialization code."
-        ),
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "CoGetInterfaceAndReleaseStreamFailure",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "co_get_interface_and_release_stream_failure",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "string"},
     },
     "co_marshal_interface_failure": {
         "data_validation_type": "enum",
@@ -1821,24 +1671,6 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
-    },
-    "ipc_extra_system_error": {
-        "data_validation_type": "str",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": True,
-        "in_database_name": "IPCExtraSystemError",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "ipc_extra_system_error",
-        "namespace": "raw_crash",
-        "permissions_needed": ["crashstats.view_pii"],
-        "query_type": "string",
-        "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
-        },
     },
     "ipc_fatal_error_msg": {
         "data_validation_type": "str",
@@ -2390,20 +2222,6 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
-    },
-    "min_arm_version": {
-        "data_validation_type": "enum",
-        "description": "",
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "Min_ARM_Version",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "min_arm_version",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "string"},
     },
     "minidump_sha256_hash": {
         "data_validation_type": "str",
