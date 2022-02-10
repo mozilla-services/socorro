@@ -296,7 +296,7 @@ def test_validate_super_search_fields(name, properties):
     # FIXME(willkg): When we start doing schema stuff in Python, we should switch this
     # to a schema validation.
 
-    property_keys = [
+    required_property_keys = {
         "data_validation_type",
         "description",
         "form_field_choices",
@@ -309,10 +309,19 @@ def test_validate_super_search_fields(name, properties):
         "permissions_needed",
         "query_type",
         "storage_mapping",
-    ]
+    }
 
-    # Assert it has all the keys
-    assert sorted(properties.keys()) == sorted(property_keys)
+    all_property_keys = required_property_keys | {
+        "destination_keys",
+        "search_key",
+        "source_key",
+    }
+
+    # Assert it has all the required keys
+    assert required_property_keys - set(properties.keys()) == set()
+
+    # Assert it doesn't have bad keys
+    assert set(properties.keys()) - all_property_keys == set()
 
     # Assert boolean fields have boolean values
     for key in ["has_full_version", "is_exposed", "is_returned"]:

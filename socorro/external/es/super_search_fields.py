@@ -50,7 +50,7 @@ def parse_mapping(mapping, namespace):
     return fields
 
 
-def add_field_to_properties(properties, namespaces, field):
+def add_field_to_properties(properties, key_parts, field):
     """Add a field to a mapping properties
 
     An Elasticsearch mapping is a specification for how to index all
@@ -61,23 +61,104 @@ def add_field_to_properties(properties, namespaces, field):
 
     Note: This inserts things in-place and recurses on namespaces.
 
-    :arg properties: the mapping we're adding the field to
-    :namespaces: a list of strings denoting the branch the field
-        needs to be inserted at
-    :arg field: the field value from super search fields containing
+    :param properties: the mapping we're adding the field to
+    :param key: a list of key parts denoting where the field needs to be inserted
+    :param field: the field value from super search fields containing
         the ``storage_mapping`` to be added to the properties
 
     """
-    if not namespaces or not namespaces[0]:
-        properties[field["in_database_name"]] = field["storage_mapping"]
+    if len(key_parts) == 1:
+        properties[key_parts[0]] = field["storage_mapping"]
         return
 
-    namespace = namespaces.pop(0)
+    namespace = key_parts.pop(0)
 
     if namespace not in properties:
         properties[namespace] = {"type": "object", "dynamic": "true", "properties": {}}
 
-    add_field_to_properties(properties[namespace]["properties"], namespaces, field)
+    add_field_to_properties(properties[namespace]["properties"], key_parts, field)
+
+
+def is_indexable(field):
+    """Returns True if the field is indexable
+
+    :param field: the field to check
+
+    :returns: True if indexable and False if not
+
+    """
+    # All of these things have to be non-None and non-empty for this field to be
+    # indexable
+    return bool(
+        get_source_key(field)
+        and get_destination_keys(field)
+        and field.get("storage_mapping")
+    )
+
+
+def get_search_key(field):
+    """Returns the key in the indexed document to use for search
+
+    This returns either the value of ``search_key`` in the field properties or the first
+    destination key.
+
+    :param field: a super search fields field
+
+    :returns: the search key as a string or None if the field isn't
+        indexable
+
+    """
+    search_key = field.get("search_key")
+    if search_key is not None:
+        return search_key
+
+    destination_keys = get_destination_keys(field)
+    return destination_keys[0]
+
+
+def get_source_key(field):
+    """Returns source key for the field.
+
+    :param field: a super search fields field
+
+    :returns: source key as a string or None if the field isn't indexable
+
+    """
+    src = field.get("source_key")
+    if src:
+        return src
+
+    # If there isn't an explicit source key, derive it from the properties of the field
+    namespace = field.get("namespace")
+    in_database_name = field.get("in_database_name")
+    if namespace and in_database_name:
+        return f"{namespace}.{in_database_name}"
+
+    # If the field has no namespace or in_database_name, then it's not indexable
+    return None
+
+
+def get_destination_keys(field):
+    """Return a list of destination keys for this field.
+
+    :param field: a super search fields field
+
+    :returns: list of destination keys or None if the field is not indexable
+
+    """
+    dests = field.get("destination_keys")
+    if dests:
+        return dests
+
+    # If there aren't explicit destination keys, derive them from the properties of the
+    # field
+    namespace = field.get("namespace")
+    in_database_name = field.get("in_database_name")
+    if namespace and in_database_name:
+        return [f"{namespace}.{in_database_name}"]
+
+    # If the field has no namespace or in_database_name, then it's not indexable
+    return None
 
 
 def build_mapping(doctype, fields=None):
@@ -98,9 +179,10 @@ def build_mapping(doctype, fields=None):
 
         add_doc_values(field["storage_mapping"])
 
-        namespaces = field["namespace"].split(".")
-
-        add_field_to_properties(properties, namespaces, field)
+        destination_keys = get_destination_keys(field)
+        for destination_key in destination_keys:
+            key_parts = destination_key.split(".")
+            add_field_to_properties(properties, key_parts, field)
 
     mapping = {
         doctype: {

@@ -11,6 +11,7 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
+from socorro.external.es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, datetimeutil
 from socorro.lib.datetimeutil import utc_now
 from socorro.lib.search_common import SearchBase
@@ -83,20 +84,13 @@ class SuperSearch(RequiredConfig, SearchBase):
             start_date, end_date, self.context.get_index_template()
         )
 
-    def get_full_field_name(self, field_data):
-        if not field_data["namespace"]:
-            return field_data["in_database_name"]
-
-        return "{}.{}".format(field_data["namespace"], field_data["in_database_name"])
-
     def format_field_names(self, hit):
-        """Return a hit with each field's database name replaced by its
-        exposed name."""
+        """Return hit with field's search_key replaced with name"""
         new_hit = {}
         for field_name in self.request_columns:
             field = self.all_fields[field_name]
-            database_field_name = self.get_full_field_name(field)
-            new_hit[field_name] = hit.get(database_field_name)
+            search_key = get_search_key(field)
+            new_hit[field_name] = hit.get(search_key)
 
         return new_hit
 
@@ -130,7 +124,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 value, msg='Field "%s" is not allowed to be returned' % value
             )
 
-        field_name = self.get_full_field_name(field_)
+        field_name = get_search_key(field_)
 
         if full and field_["has_full_version"]:
             # If the param has a full version, that means what matters
@@ -257,7 +251,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                     continue
 
                 field_data = self.all_fields[param.name]
-                name = self.get_full_field_name(field_data)
+                search_key = get_search_key(field_data)
 
                 if param.data_type in ("date", "datetime"):
                     param.value = datetimeutil.date_to_string(param.value)
@@ -297,7 +291,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                             args = Q(
                                 "simple_query_string",
                                 query=param.value[0],
-                                fields=[name],
+                                fields=[search_key],
                                 default_operator="and",
                             ).to_dict()
                     else:
@@ -307,21 +301,21 @@ class SuperSearch(RequiredConfig, SearchBase):
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
-                        name = "%s.full" % name
+                        search_key = "%s.full" % search_key
                     filter_value = param.value
                 elif param.operator in operator_range:
                     filter_type = "range"
                     filter_value = {operator_range[param.operator]: param.value}
                 elif param.operator == "__null__":
                     filter_type = "missing"
-                    args["field"] = name
+                    args["field"] = search_key
                 elif param.operator == "__true__":
                     filter_type = "term"
                     filter_value = True
                 elif param.operator == "@":
                     filter_type = "regexp"
                     if field_data["has_full_version"]:
-                        name = "%s.full" % name
+                        search_key = "%s.full" % search_key
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
                     filter_type = "query"
@@ -329,15 +323,17 @@ class SuperSearch(RequiredConfig, SearchBase):
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
                     if field_data["has_full_version"]:
-                        name = "%s.full" % name
+                        search_key = "%s.full" % search_key
 
                     q_args = {}
-                    q_args[name] = operator_wildcards[param.operator] % param.value
+                    q_args[search_key] = (
+                        operator_wildcards[param.operator] % param.value
+                    )
                     query = Q("wildcard", **q_args)
                     args = query.to_dict()
 
                 if filter_value is not None:
-                    args[name] = filter_value
+                    args[search_key] = filter_value
 
                 if args:
                     new_filter = F(filter_type, **args)

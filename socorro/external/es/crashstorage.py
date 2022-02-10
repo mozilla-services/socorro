@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import copy
+import datetime
 from functools import cache
 import json
 import re
@@ -18,8 +19,10 @@ import markus
 from socorro.external.crashstorage_base import CrashStorageBase, Redactor
 from socorro.external.es.super_search_fields import (
     FIELDS,
+    get_destination_keys,
+    get_source_key,
+    is_indexable,
     parse_mapping,
-    get_fields_by_item,
 )
 from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
 
@@ -29,28 +32,6 @@ MAX_KEYWORD_FIELD_VALUE_SIZE = 10_000
 
 # Maximum size in utf-8 encoded characters for a string field value
 MAX_STRING_FIELD_VALUE_SIZE = 32_766
-
-
-def reconstitute_datetimes(processed_crash):
-    """Convert string values to datetimes for specified fields
-
-    This operates in-place.
-
-    """
-    # FIXME(willkg): These should be specified in super_search_fields.py
-    # and not hard-coded
-    datetime_fields = [
-        "submitted_timestamp",
-        "date_processed",
-        "client_crash_date",
-        "started_datetime",
-        "completed_datetime",
-    ]
-    for a_key in datetime_fields:
-        if a_key not in processed_crash:
-            continue
-
-        processed_crash[a_key] = string_to_datetime(processed_crash[a_key])
 
 
 class RawCrashRedactor(Redactor):
@@ -87,185 +68,219 @@ def is_valid_key(key):
     return bool(VALID_KEY.match(key))
 
 
-def remove_invalid_keys(tree_name, tree, keys):
-    """Removes invalid keys from the tree
+def fix_keyword(value, max_size):
+    """Truncates keyword value greater than max_size length in characters
 
-    This works for nested trees where the keys
+    :param value: the value to fix
+    :param int max_size: the maximum size for the field value
 
-    :arg str tree_name: "raw" or "processed"
-    :arg dict tree: the tree to copy and remove invalid keys from
-    :arg set keys: the set of all valid keys; example: ``{"key1", "key2.subkey1"}``
-
-    :returns: new tree
+    :returns: fixed value
 
     """
-    # Get the keys for this tree and remove the tree_name at the beginning
-    keys = [key[len(tree_name) + 1 :] for key in keys if key.startswith(tree_name)]
+    if isinstance(value, list):
+        if len(value) == 0:
+            return value
+        if not isinstance(value[0], str):
+            # Return a list of "BAD DATA" so we keep the right shape
+            return ["BAD DATA"]
 
-    new_tree = {}
-    for key in keys:
-        # Pull the value ouf of the original tree. If it is non-None, put it in the new
-        # tree in the same spot as specified by key
-        val = glom.glom(tree, key, default=None)
-        if val is not None:
-            glom.assign(new_tree, key, val, missing=dict)
+        return [fix_keyword(line, max_size=max_size) for line in value]
 
-    # Return reassembled tree
-    return new_tree
+    if not isinstance(value, str):
+        return "BAD DATA"
 
-
-def truncate_keyword_field_values(data, fields, max_size):
-    """Truncates keyword field values greater than max_size length in characters
-
-    This modifies the data dict in-place and only looks at the top level.
-
-    :arg dict data: the data to look through
-    :arg dict fields: the super search fields schema
-    :arg int max_size: the maximum size for the field value
-
-    """
-    keyword_fields = get_fields_by_item(fields, "analyzer", "keyword")
-
-    for field in keyword_fields:
-        field_name = field.get("in_database_name")
-        if not field_name:
-            continue
-
-        value = data.get(field_name)
-        if isinstance(value, str) and len(value) > max_size:
-            data[field_name] = value[:max_size]
+    if len(value) > max_size:
+        value = value[:max_size]
+    return value
 
 
-def truncate_string_field_values(data, fields, max_size):
-    """Truncates string field values greater than max_size length in bytes
+def fix_string(value, max_size):
+    """Truncates string value greater than max_size length in bytes
 
-    This modifies the data dict in-place and only looks at the top level.
-
-    :arg dict data: the data to look through
-    :arg dict fields: the super search fields schema
-    :arg int max_size: the maximum size in bytes to truncate the unicode string encoded
+    :param value: the value to fix
+    :param int max_size: the maximum size in bytes to truncate the unicode string encoded
         as utf-8 to
 
+    :returns: fixed value
+
     """
-    string_fields = get_fields_by_item(fields, "type", "string")
+    if isinstance(value, list):
+        if len(value) == 0:
+            return value
+        if not isinstance(value[0], str):
+            # Return a list of "BAD DATA" so we keep the right shape
+            return ["BAD DATA"]
 
-    for field in string_fields:
-        field_name = field.get("in_database_name")
-        if not field_name:
-            continue
+        return [fix_string(line, max_size=max_size) for line in value]
 
-        value = data.get(field_name)
-        if not isinstance(value, str):
-            continue
+    if not isinstance(value, str):
+        return "BAD DATA"
 
+    try:
+        value_bytes = value.encode("utf-8")
+    except UnicodeEncodeError:
+        # If we hit an encoding error, then it's probably not valid unicode
+        # and we should reject it
+        return "BAD DATA"
+
+    if len(value_bytes) <= max_size:
+        return value
+
+    value_bytes = value_bytes[:max_size]
+    new_value = ""
+
+    # Remove bytes until we either run out of bytes or we can decode to a unicode
+    # string
+    while value_bytes:
         try:
-            value_bytes = value.encode("utf-8")
-        except UnicodeEncodeError:
-            # If we hit an encoding error, then it's probably not valid unicode
-            # and we should reject it
-            data[field_name] = "BAD DATA"
-            continue
+            new_value = value_bytes.decode("utf-8")
+            break
+        except UnicodeDecodeError:
+            value_bytes = value_bytes[:-1]
 
-        if len(value_bytes) <= max_size:
-            continue
-
-        value_bytes = value_bytes[:max_size]
-        new_value = ""
-
-        # Remove bytes until we either run out of bytes or we can decode to a unicode
-        # string
-        while value_bytes:
-            try:
-                new_value = value_bytes.decode("utf-8")
-                break
-            except UnicodeDecodeError:
-                value_bytes = value_bytes[:-1]
-
-        new_value = new_value or "BAD DATA"
-
-        data[field_name] = new_value
+    new_value = new_value or "BAD DATA"
+    return new_value
 
 
 POSSIBLE_TRUE_VALUES = [1, "1", "true", True]
 
 
-def convert_booleans(fields, data):
-    """Converts pseudo-boolean values to boolean values for boolean fields
+def fix_boolean(value):
+    """Converts pseudo-boolean value to boolean value.
 
     Valid boolean values are True, 'true', False, and 'false'.
 
-    Note: This modifies the data dict in-place and only looks at the top level.
+    :param value: the value to fix
 
-    :arg dict fields: the super search fields schema
-    :arg dict data: the data to look through
+    :returns: fixed value
 
     """
-    boolean_fields = get_fields_by_item(fields, "analyzer", "boolean")
-
-    for field in boolean_fields:
-        field_name = field["in_database_name"]
-
-        value = data.get(field_name)
-        data[field_name] = True if value in POSSIBLE_TRUE_VALUES else False
+    return True if value in POSSIBLE_TRUE_VALUES else False
 
 
 INTEGER_BOUNDS = (-2_147_483_648, 2_147_483_647)
+
+
+def fix_integer(value):
+    """Fix integer value so it doesn't exceed Elasticsearch maximums
+
+    :param value: the value to fix
+
+    :returns: fixed value
+
+    """
+    min_int, max_int = INTEGER_BOUNDS
+    if not isinstance(value, int):
+        try:
+            value = int(value)
+        except ValueError:
+            # If the value isn't valid, remove it
+            return None
+
+    if not (min_int <= value <= max_int):
+        # If the value isn't within the bounds, remove it
+        return None
+
+    return value
+
+
 LONG_BOUNDS = (-9_223_372_036_854_775_808, 9_223_372_036_854_775_807)
 
 
-def fix_numbers(fields, data):
-    """Fix number values so they don't exceed Elasticsearch maximums
+def fix_long(value):
+    """Fix long value so it doesn't exceed Elasticsearch maximums
 
-    "long" can be -9,223,372,036,854,775,808
+    :param value: the value to fix
 
-    :arg dict fields: the super search fields schema
-    :arg dict data: the data to look through
+    :returns: fixed value
 
     """
-    integer_fields = get_fields_by_item(fields, "type", "integer")
-    min_int, max_int = INTEGER_BOUNDS
-    for field in integer_fields:
-        field_name = field["in_database_name"]
-
-        value = data.get(field_name)
-        if value is None:
-            continue
-        if not isinstance(value, int):
-            try:
-                value = int(value)
-            except ValueError:
-                # If the value isn't valid, remove it
-                del data[field_name]
-                continue
-
-        if not (min_int <= value <= max_int):
-            # If the value isn't within the bounds, remove it
-            del data[field_name]
-        else:
-            data[field_name] = value
-
-    long_fields = get_fields_by_item(fields, "type", "long")
     min_long, max_long = LONG_BOUNDS
-    for field in long_fields:
-        field_name = field["in_database_name"]
+    if not isinstance(value, int):
+        try:
+            value = int(value)
+        except ValueError:
+            # If the value isn't valid, remove it
+            return None
 
-        value = data.get(field_name)
+    if not (min_long <= value <= max_long):
+        # If the value isn't within the bounds, remove it
+        return None
+    return value
+
+
+def fix_datetime(value):
+    """Fix datetime value to index correctly
+
+    :param value: the value to fix
+
+    :returns: fixed value
+
+    """
+    if isinstance(value, str):
+        return string_to_datetime(value)
+    if not isinstance(value, (datetime.datetime, datetime.time)):
+        return None
+    return value
+
+
+def build_document(src, crash_document, fields, all_keys):
+    """Given a source document and fields and valid keys, builds a document to index.
+
+    :param dict src: the source document with raw_crash and processed_crash keys
+    :param dict crash_document: the document to fill
+    :param list fields: the list of fields in super search fields
+    :param set all_keys: the list of valid keys
+
+    """
+    for field in fields.values():
+        # There are some fields that aren't indexable--skip those
+        if not is_indexable(field):
+            continue
+
+        src_key = get_source_key(field)
+        value = glom.glom(src, src_key, default=None)
         if value is None:
             continue
 
-        if not isinstance(value, int):
-            try:
-                value = int(value)
-            except ValueError:
-                # If the value isn't valid, remove it
-                del data[field_name]
+        # Fix values so they index correctly
+        storage_type = field.get("type", field["storage_mapping"].get("type"))
+
+        if storage_type == "string":
+            analyzer = field.get("analyzer", field["storage_mapping"].get("analyzer"))
+            if analyzer == "keyword":
+                value = fix_keyword(value, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE)
+            else:
+                value = fix_string(value, max_size=MAX_STRING_FIELD_VALUE_SIZE)
+
+        elif storage_type == "boolean":
+            # FIXME(willkg): Previous iteration of the crash storage logic had a
+            # convert_booleans which was implemented wrong, so it didn't do anything.
+            # "booleans" is tricky since we have flags and booleans and they're
+            # different, so it requires more analysis to figure out what to do here.
+            # Meanwhile, I commented this out for now which returns us to the previous
+            # behavior.
+            # value = fix_boolean(value)
+            pass
+
+        elif storage_type == "integer":
+            value = fix_integer(value)
+            if value is None:
                 continue
 
-        if not (min_long <= value <= max_long):
-            # If the value isn't within the bounds, remove it
-            del data[field_name]
-        else:
-            data[field_name] = value
+        elif storage_type == "long":
+            value = fix_long(value)
+            if value is None:
+                continue
+
+        elif storage_type == "date":
+            value = fix_datetime(value)
+            if value is None:
+                continue
+
+        for dest_key in get_destination_keys(field):
+            if dest_key in all_keys:
+                glom.assign(crash_document, dest_key, value, missing=dict)
 
 
 class ESCrashStorage(CrashStorageBase):
@@ -303,11 +318,14 @@ class ESCrashStorage(CrashStorageBase):
         :returns: set of "namespace.key" strings
 
         """
-        return {
-            "%s.%s" % (field["namespace"], field["in_database_name"])
-            for field in FIELDS.values()
-            if field.get("storage_mapping")
-        }
+        keys = set()
+        for field in FIELDS.values():
+            if not is_indexable(field):
+                continue
+
+            keys = keys | set(get_destination_keys(field))
+
+        return keys
 
     def get_keys_for_mapping(self, index_name, es_doctype):
         """Get the keys in "namespace.key" format for a given mapping
@@ -342,39 +360,6 @@ class ESCrashStorage(CrashStorageBase):
 
         return all_valid_keys
 
-    def prepare_crash_data(self, raw_crash, processed_crash):
-        """Returns prepared data
-
-        This mutates the raw and processed crashes in place.
-
-        """
-        # Massage the crash such that the date_processed field is formatted in the
-        # fashion of our established mapping
-        reconstitute_datetimes(processed_crash)
-
-        # Truncate values that are too long
-        truncate_keyword_field_values(
-            raw_crash, fields=FIELDS, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE
-        )
-        truncate_keyword_field_values(
-            processed_crash, fields=FIELDS, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE
-        )
-
-        truncate_string_field_values(
-            raw_crash, fields=FIELDS, max_size=MAX_STRING_FIELD_VALUE_SIZE
-        )
-        truncate_string_field_values(
-            processed_crash, fields=FIELDS, max_size=MAX_STRING_FIELD_VALUE_SIZE
-        )
-
-        # Convert pseudo-boolean values to boolean values
-        convert_booleans(FIELDS, raw_crash)
-        convert_booleans(FIELDS, processed_crash)
-
-        # Fix numbers so they're within bounds
-        fix_numbers(FIELDS, raw_crash)
-        fix_numbers(FIELDS, processed_crash)
-
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash report to Elasticsearch"""
         crash_id = processed_crash["uuid"]
@@ -383,31 +368,22 @@ class ESCrashStorage(CrashStorageBase):
             string_to_datetime(processed_crash["date_processed"])
         )
         es_doctype = self.config.elasticsearch.elasticsearch_doctype
-
         all_valid_keys = self.get_keys(index_name, es_doctype)
 
-        # Copy the crash structures so we can mutate them later and remove everything
-        # that's not a valid key for the index
-        raw_crash = remove_invalid_keys(
-            tree_name="raw_crash", tree=copy.deepcopy(raw_crash), keys=all_valid_keys
-        )
-        processed_crash = remove_invalid_keys(
-            tree_name="processed_crash",
-            tree=copy.deepcopy(processed_crash),
-            keys=all_valid_keys,
-        )
-
-        # Clean up and redact raw and processed crash data
-        self.prepare_crash_data(raw_crash, processed_crash)
+        src = {
+            "raw_crash": copy.deepcopy(raw_crash),
+            "processed_crash": copy.deepcopy(processed_crash),
+        }
 
         crash_document = {
             "crash_id": crash_id,
-            "raw_crash": raw_crash,
-            "processed_crash": processed_crash,
+            "raw_crash": {},
+            "processed_crash": {},
         }
+        build_document(src, crash_document, fields=FIELDS, all_keys=all_valid_keys)
 
         # Capture crash data size metrics
-        self.capture_crash_metrics(raw_crash, processed_crash, crash_document)
+        self.capture_crash_metrics(crash_document)
 
         self._submit_crash_to_elasticsearch(
             crash_id=crash_id,
@@ -416,7 +392,7 @@ class ESCrashStorage(CrashStorageBase):
             crash_document=crash_document,
         )
 
-    def capture_crash_metrics(self, raw_crash, processed_crash, crash_document):
+    def capture_crash_metrics(self, crash_document):
         """Capture metrics about crash data being saved to Elasticsearch"""
 
         def _capture(key, data):
@@ -429,8 +405,8 @@ class ESCrashStorage(CrashStorageBase):
                 # we can fix it later.
                 self.logger.exception(f"something went wrong when capturing {key}")
 
-        _capture("raw_crash_size", raw_crash)
-        _capture("processed_crash_size", processed_crash)
+        _capture("raw_crash_size", crash_document["raw_crash"])
+        _capture("processed_crash_size", crash_document["processed_crash"])
         _capture("crash_document_size", crash_document)
 
     def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
