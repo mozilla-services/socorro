@@ -14,16 +14,16 @@ import pytest
 from socorro.lib.datetimeutil import date_to_string, utc_now
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
-    convert_booleans,
     ESCrashStorage,
-    ESCrashStorageRedactedSave,
     ESCrashStorageRedactedJsonDump,
-    fix_numbers,
+    ESCrashStorageRedactedSave,
+    fix_boolean,
+    fix_integer,
+    fix_keyword,
+    fix_long,
+    fix_string,
     is_valid_key,
     RawCrashRedactor,
-    remove_invalid_keys,
-    truncate_keyword_field_values,
-    truncate_string_field_values,
 )
 from socorro.lib.datetimeutil import string_to_datetime
 from socorro.lib.ooid import create_new_ooid
@@ -804,208 +804,94 @@ class TestESCrashStorage(ElasticsearchTestCase):
 
 
 @pytest.mark.parametrize(
-    "tree, keys, expected",
+    "value, expected",
     [
-        ({}, set(), {}),
-        ({}, {"tree.key1", "tree.key2"}, {}),
-        ({"key1": "a", "key2": "b"}, set(), {}),
-        ({"key1": "a", "key2": "b"}, {"tree.key1", "tree.key3"}, {"key1": "a"}),
-        ({"key1": {"subkey1": "a"}}, {"tree.key1.subkey1"}, {"key1": {"subkey1": "a"}}),
+        # Non-string values are converted to "BAD DATA"
+        (1, "BAD DATA"),
+        # String values are truncated if > 10,000 characters
+        ("a" * 9_999, "a" * 9_999),
+        ("a" * 10_000, "a" * 10_000),
+        ("a" * 10_001, "a" * 10_000),
     ],
 )
-def test_remove_invalid_keys(tree, keys, expected):
-    assert remove_invalid_keys("tree", tree, keys) == expected
+def test_fix_keyword(value, expected):
+    new_value = fix_keyword(value, max_size=10_000)
+    assert new_value == expected
 
 
-class Test_truncate_keyword_field_values:
-    @pytest.mark.parametrize(
-        "data, expected",
-        [
-            # Top-level, non-str values are left alone
-            ({"key": None}, {"key": None}),
-            ({"key": 1}, {"key": 1}),
-            # Second-level values are left alone
-            ({"key": {"key": "a" * 10_001}}, {"key": {"key": "a" * 10_001}}),
-            # Top-level, str values are truncated if > 10,000 characters
-            ({"key": "a" * 9_999}, {"key": "a" * 9_999}),
-            ({"key": "a" * 10_000}, {"key": "a" * 10_000}),
-            ({"key": "a" * 10_001}, {"key": "a" * 10_000}),
-        ],
-    )
-    def test_truncate_keyword_field_values(self, data, expected):
-        fields = {
-            "key": {
-                "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
-            }
-        }
-
-        # Note: data is modified in place
-        truncate_keyword_field_values(data, fields=fields, max_size=10_000)
-        assert data == expected
-
-    @pytest.mark.parametrize(
-        "fields",
-        [
-            # No in_database_name leaves data unchanged
-            {"key": {"storage_mapping": {"analyzer": "keyword", "type": "string"}}},
-            # Wrong in_database_name leaves data unchanged
-            {
-                "key": {
-                    "in_database_name": "different_key",
-                    "storage_mapping": {"analyzer": "keyword", "type": "string"},
-                }
-            },
-        ],
-    )
-    def test_fields_handling(self, fields):
-        """Verify truncation only occurs if all requirements are true
-
-        This also verifies that access of FIELDS handles edge cases like
-        missing data.
-
-        """
-        original_data = {"key": "a" * 10_001}
-        data = deepcopy(original_data)
-
-        truncate_keyword_field_values(data, fields=fields, max_size=10_000)
-        assert original_data == data
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # Non string values are converted to "BAD DATA"
+        (1, "BAD DATA"),
+        # String values are truncated if > 32,766 characters
+        ("a" * 32_765, "a" * 32_765),
+        ("a" * 32_766, "a" * 32_766),
+        ("a" * 32_767, "a" * 32_766),
+        # Bad Unicode values shouldn't throw an exception
+        (
+            b"hi \xc3there".decode("utf-8", "surrogateescape"),
+            "BAD DATA",
+        ),
+    ],
+)
+def test_fix_string(value, expected):
+    new_value = fix_string(value, max_size=32_766)
+    assert new_value == expected
 
 
-class Test_truncate_string_field_values:
-    @pytest.mark.parametrize(
-        "data, expected",
-        [
-            # Top-level, non-str values are left alone
-            ({"key": None}, {"key": None}),
-            ({"key": 1}, {"key": 1}),
-            # Second-level values are left alone
-            ({"key": {"key": "a" * 32_767}}, {"key": {"key": "a" * 32_767}}),
-            # Top-level, str values are truncated if > 32,766 characters
-            ({"key": "a" * 32_765}, {"key": "a" * 32_765}),
-            ({"key": "a" * 32_766}, {"key": "a" * 32_766}),
-            ({"key": "a" * 32_767}, {"key": "a" * 32_766}),
-            # Bad Unicode values shouldn't throw an exception
-            (
-                {"key": b"hi \xc3there".decode("utf-8", "surrogateescape")},
-                {"key": "BAD DATA"},
-            ),
-        ],
-    )
-    def test_truncate_string_field_values(self, data, expected):
-        fields = {
-            "key": {"in_database_name": "key", "storage_mapping": {"type": "string"}}
-        }
-
-        # Note: data is modified in place
-        truncate_string_field_values(data, fields=fields, max_size=32_766)
-        assert data == expected
-
-    @pytest.mark.parametrize(
-        "fields",
-        [
-            # No in_database_name leaves data unchanged
-            {"key": {"storage_mapping": {"type": "string"}}},
-            # Wrong in_database_name leaves data unchanged
-            {
-                "key": {
-                    "in_database_name": "different_key",
-                    "storage_mapping": {"type": "string"},
-                }
-            },
-        ],
-    )
-    def test_fields_handling(self, fields):
-        """Verify truncation only occurs if all requirements are true
-
-        This also verifies that access of FIELDS handles edge cases like
-        missing data.
-
-        """
-        original_data = {"key": "a" * 32_767}
-        data = deepcopy(original_data)
-
-        truncate_string_field_values(data, fields=fields, max_size=32_766)
-        assert original_data == data
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # True-ish values are True
+        (True, True),
+        ("true", True),
+        (1, True),
+        ("1", True),
+        # Everything else is False
+        (None, False),
+        (0, False),
+        ("0", False),
+        ("false", False),
+        ("somethingrandom", False),
+        (False, False),
+    ],
+)
+def test_convert_booleans_values(value, expected):
+    new_value = fix_boolean(value)
+    assert new_value == expected
 
 
-class Test_convert_booleans:
-    @pytest.mark.parametrize(
-        "data, expected",
-        [
-            # True-ish values are True
-            ({"key": True}, {"key": True}),
-            ({"key": "true"}, {"key": True}),
-            ({"key": 1}, {"key": True}),
-            ({"key": "1"}, {"key": True}),
-            # Everything else is False
-            ({"key": None}, {"key": False}),
-            ({"key": 0}, {"key": False}),
-            ({"key": "0"}, {"key": False}),
-            ({"key": "false"}, {"key": False}),
-            ({"key": "somethingrandom"}, {"key": False}),
-            ({"key": False}, {"key": False}),
-        ],
-    )
-    def test_convert_booleans_values(self, data, expected):
-        fields = {
-            "key": {
-                "in_database_name": "key",
-                "storage_mapping": {"analyzer": "boolean"},
-            }
-        }
-        # Note: data is modified in place
-        convert_booleans(fields, data)
-        assert data == expected
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # Field is valid
+        (0, 0),
+        # Field is a string and valid, gets converted to int
+        ("0", 0),
+        # Field is out of bounds, gets removed
+        (-2_147_483_650, None),
+        (2_147_483_650, None),
+    ],
+)
+def test_fix_integer(value, expected):
+    # Note: data is modified in place
+    new_value = fix_integer(value)
+    assert new_value == expected
 
 
-class Testfix_numbers:
-    @pytest.mark.parametrize(
-        "data, expected",
-        [
-            # Field isn't there
-            ({}, {}),
-            # Field is valid
-            ({"key": 0}, {"key": 0}),
-            # Field is a string and valid, gets converted to int
-            ({"key": "0"}, {"key": 0}),
-            # Field is out of bounds, gets removed
-            ({"key": -2_147_483_650}, {}),
-            ({"key": 2_147_483_650}, {}),
-        ],
-    )
-    def test_fix_integer(self, data, expected):
-        fields = {
-            "key": {
-                "in_database_name": "key",
-                "storage_mapping": {"type": "integer"},
-            }
-        }
-        # Note: data is modified in place
-        fix_numbers(fields, data)
-        assert data == expected
-
-    @pytest.mark.parametrize(
-        "data, expected",
-        [
-            # Field isn't there
-            ({}, {}),
-            # Field is valid
-            ({"key": 0}, {"key": 0}),
-            # Field is a string and valid, gets converted to int
-            ({"key": "0"}, {"key": 0}),
-            # Field is out of bounds, gets removed
-            ({"key": -9_223_372_036_854_775_810}, {}),
-            ({"key": 9_223_372_036_854_775_810}, {}),
-        ],
-    )
-    def test_fix_long(self, data, expected):
-        fields = {
-            "key": {
-                "in_database_name": "key",
-                "storage_mapping": {"type": "long"},
-            }
-        }
-        # Note: data is modified in place
-        fix_numbers(fields, data)
-        assert data == expected
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # Field is valid
+        (0, 0),
+        # Field is a string and valid, gets converted to int
+        ("0", 0),
+        # Field is out of bounds, gets removed
+        (-9_223_372_036_854_775_810, None),
+        (9_223_372_036_854_775_810, None),
+    ],
+)
+def test_fix_long(value, expected):
+    new_value = fix_long(value)
+    assert new_value == expected

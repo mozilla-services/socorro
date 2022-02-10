@@ -305,6 +305,10 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         # in there and use that to limit the two following loops to not bother filling
         # up `crash_report` with keys that will never be needed.
 
+        # FIXME(willkg): once we've moved all the raw crash stuff into the processed
+        # crash, we can rework this to just look at the processed crash and reduce it by
+        # the schema
+
         # Rename fields in raw_crash
         raw_fields_map = {
             x["in_database_name"]: x["name"]
