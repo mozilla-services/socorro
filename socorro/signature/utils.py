@@ -96,7 +96,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
             glom(raw_crash, "OOMAllocationSize", default=None)
         ),
         # text or None
-        "abort_message": glom(raw_crash, "AbortMessage", default=None),
+        "abort_message": glom(processed_crash, "abort_message", default=None),
         # text or None
         "mdsw_status_string": glom(processed_crash, "mdsw_status_string", default=None),
         # text json with "phase", "conditions" (complicated--see code) or None
