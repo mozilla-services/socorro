@@ -833,7 +833,6 @@ class RawCrash(SocorroMiddleware):
         "StartupTime",
         "submitted_timestamp",
         "SystemMemoryUsePercentage",
-        "Theme",
         "TotalVirtualMemory",
         "upload_file_minidump_*",
         "useragent_locale",

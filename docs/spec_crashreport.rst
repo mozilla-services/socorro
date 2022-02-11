@@ -111,7 +111,7 @@ Annotations as key/value pairs in multipart/form-data
 
 Example::
 
-   Content-Disposition: form-data; name="AddonsShouldHaveBlockedE10s"
+   Content-Disposition: form-data; name="DOMFissionEnabled"
 
    1
 
@@ -345,7 +345,7 @@ Example with HTTP headers and body::
 
    ubufox%40ubuntu.com:3.2,%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D:48.0,loop%40mozilla.org:1.4.3,e10srollout%40mozilla.org:1.0,firefox%40getpocket.com:1.0.4,langpack-en-GB%40firefox.mozilla.org:48.0,langpack-en-ZA%40firefox.mozilla.org:48.0
    --------------------------c4ae5238f12b6c82
-   Content-Disposition: form-data; name="AddonsShouldHaveBlockedE10s"
+   Content-Disposition: form-data; name="DOMFissionEnabled"
 
    1
    --------------------------c4ae5238f12b6c82
