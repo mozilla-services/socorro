@@ -786,6 +786,12 @@ FIELDS = {
         "name": "abort_message",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        # FIXME(willkg): 7/14 change this to save to the processed_crash
+        "source_key": "processed_crash.abort_message",
+        "destination_keys": [
+            "raw_crash.AbortMessage",
+            "processed_crash.abort_message",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
