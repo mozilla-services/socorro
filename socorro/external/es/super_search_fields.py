@@ -1075,6 +1075,11 @@ FIELDS = {
         "name": "android_device",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_device",
+        "destination_keys": [
+            "raw_crash.Android_Device",
+            "processed_crash.android_device",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
