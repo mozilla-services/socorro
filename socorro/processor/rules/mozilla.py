@@ -57,6 +57,8 @@ class CopyFromRawCrashRule(Rule):
         ("string", "DumperError", "dumper_error"),
         ("string", "XPCOMSpinEventLoopStack", "xpcom_spin_event_loop_stack"),
         ("string", "AbortMessage", "abort_message"),
+        ("string", "AccessibilityClient", "accessibility_client"),
+        ("string", "AccessibilityInProcClient", "accessibility_in_proc_client"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
