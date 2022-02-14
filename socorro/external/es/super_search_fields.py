@@ -888,6 +888,11 @@ FIELDS = {
         "name": "adapter_driver_version",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.adapter_driver_version",
+        "destination_keys": [
+            "raw_crash.AdapterDriverVersion",
+            "processed_crash.adapter_driver_version",
+        ],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
