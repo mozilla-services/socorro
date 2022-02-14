@@ -1132,6 +1132,11 @@ FIELDS = {
         "name": "android_hardware",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_hardware",
+        "destination_keys": [
+            "raw_crash.Android_Hardware",
+            "processed_crash.android_hardware",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
