@@ -930,6 +930,11 @@ FIELDS = {
         "name": "adapter_vendor_id",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.adapter_vendor_id",
+        "destination_keys": [
+            "raw_crash.AdapterVendorID",
+            "processed_crash.adapter_vendor_id",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
