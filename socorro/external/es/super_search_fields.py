@@ -869,6 +869,11 @@ FIELDS = {
         "name": "adapter_device_id",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.adapter_device_id",
+        "destination_keys": [
+            "raw_crash.AdapterDeviceID",
+            "processed_crash.adapter_device_id",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
