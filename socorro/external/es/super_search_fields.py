@@ -907,6 +907,11 @@ FIELDS = {
         "name": "adapter_subsys_id",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.adapter_subsys_id",
+        "destination_keys": [
+            "raw_crash.AdapterSubsysID",
+            "processed_crash.adapter_subsys_id",
+        ],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
