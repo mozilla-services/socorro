@@ -1037,6 +1037,11 @@ FIELDS = {
         "name": "android_cpu_abi",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_cpu_abi",
+        "destination_keys": [
+            "raw_crash.Android_CPU_ABI",
+            "processed_crash.android_cpu_abi",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1051,6 +1056,11 @@ FIELDS = {
         "name": "android_cpu_abi2",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_cpu_abi2",
+        "destination_keys": [
+            "raw_crash.Android_CPU_ABI2",
+            "processed_crash.android_cpu_abi2",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
