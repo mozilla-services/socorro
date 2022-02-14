@@ -826,6 +826,12 @@ FIELDS = {
         "name": "accessibility_client",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        # FIXME(willkg): 7/14 change this to save to the processed_crash
+        "source_key": "processed_crash.accessibility_client",
+        "destination_keys": [
+            "raw_crash.AccessibilityClient",
+            "processed_crash.accessibility_client",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -843,6 +849,12 @@ FIELDS = {
         "name": "accessibility_in_proc_client",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        # FIXME(willkg): 7/14 change this to save to the processed_crash
+        "source_key": "processed_crash.accessibility_in_proc_client",
+        "destination_keys": [
+            "raw_crash.AccessibilityInProcClient",
+            "processed_crash.accessibility_in_proc_client",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
