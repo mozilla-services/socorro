@@ -1195,6 +1195,11 @@ FIELDS = {
         "name": "android_version",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_version",
+        "destination_keys": [
+            "raw_crash.Android_Version",
+            "processed_crash.android_version",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
