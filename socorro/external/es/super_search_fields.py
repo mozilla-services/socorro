@@ -1018,6 +1018,11 @@ FIELDS = {
         "name": "android_brand",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_brand",
+        "destination_keys": [
+            "raw_crash.Android_Brand",
+            "processed_crash.android_brand",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
