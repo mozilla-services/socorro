@@ -64,6 +64,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "AdapterSubsysID", "adapter_subsys_id"),
         ("string", "AdapterVendorID", "adapter_vendor_id"),
         ("string", "Android_Board", "android_board"),
+        ("string", "Android_Brand", "android_brand"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
