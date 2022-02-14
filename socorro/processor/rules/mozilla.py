@@ -68,6 +68,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "Android_CPU_ABI", "android_cpu_abi"),
         ("string", "Android_CPU_ABI2", "android_cpu_abi2"),
         ("string", "Android_Device", "android_device"),
+        ("string", "Android_Display", "android_display"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
