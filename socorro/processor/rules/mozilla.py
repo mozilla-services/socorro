@@ -60,6 +60,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "AccessibilityClient", "accessibility_client"),
         ("string", "AccessibilityInProcClient", "accessibility_in_proc_client"),
         ("string", "AdapterDeviceID", "adapter_device_id"),
+        ("string", "AdapterDriverVersion", "adapter_driver_version"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
