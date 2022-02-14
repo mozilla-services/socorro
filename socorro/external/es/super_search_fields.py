@@ -1214,6 +1214,11 @@ FIELDS = {
         "name": "app_init_dlls",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.app_init_dlls",
+        "destination_keys": [
+            "raw_crash.AppInitDLLs",
+            "processed_crash.app_init_dlls",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
