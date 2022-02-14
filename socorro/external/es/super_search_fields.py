@@ -1094,6 +1094,11 @@ FIELDS = {
         "name": "android_display",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_display",
+        "destination_keys": [
+            "raw_crash.Android_Display",
+            "processed_crash.android_display",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
