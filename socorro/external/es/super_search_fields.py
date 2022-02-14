@@ -1170,6 +1170,11 @@ FIELDS = {
         "name": "android_model",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_model",
+        "destination_keys": [
+            "raw_crash.Android_Model",
+            "processed_crash.android_model",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
