@@ -1113,6 +1113,11 @@ FIELDS = {
         "name": "android_fingerprint",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_fingerprint",
+        "destination_keys": [
+            "raw_crash.Android_Fingerprint",
+            "processed_crash.android_fingerprint",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
