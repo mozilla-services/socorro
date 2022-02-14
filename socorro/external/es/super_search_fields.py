@@ -999,6 +999,11 @@ FIELDS = {
         "name": "android_board",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.android_board",
+        "destination_keys": [
+            "raw_crash.Android_Board",
+            "processed_crash.android_board",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
