@@ -1254,6 +1254,11 @@ FIELDS = {
         "name": "async_shutdown_timeout",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.async_shutdown_timeout",
+        "destination_keys": [
+            "raw_crash.AsyncShutdownTimeout",
+            "processed_crash.async_shutdown_timeout",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
