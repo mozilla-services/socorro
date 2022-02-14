@@ -32,13 +32,15 @@ class TestIntegrationAnalyzers(ElasticsearchTestCase):
         semicolons (;) only.
 
         """
+        value1 = "/path/to/dll;;foo;C:\\bar\\boo"
         self.index_crash(
-            processed_crash={"date_processed": self.now},
-            raw_crash={"AppInitDLLs": "/path/to/dll;;foo;C:\\bar\\boo"},
+            processed_crash={"app_init_dlls": value1, "date_processed": self.now},
+            raw_crash={"AppInitDLLs": value1},
         )
+        value2 = "/path/to/dll;D:\\bar\\boo"
         self.index_crash(
-            processed_crash={"date_processed": self.now},
-            raw_crash={"AppInitDLLs": "/path/to/dll;D:\\bar\\boo"},
+            processed_crash={"app_init_dlls": value2, "date_processed": self.now},
+            raw_crash={"AppInitDLLs": value2},
         )
         self.es_context.refresh()
 
