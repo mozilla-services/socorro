@@ -2839,6 +2839,11 @@ FIELDS = {
         "name": "remote_type",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.remote_type",
+        "destination_keys": [
+            "raw_crash.RemoteType",
+            "processed_crash.remote_type",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
