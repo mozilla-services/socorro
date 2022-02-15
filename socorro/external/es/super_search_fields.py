@@ -1435,6 +1435,11 @@ FIELDS = {
         "query_type": "flag",
         "storage_mapping": {"type": "short"},
     },
+    # FIXME(willkg): We have this indexed as an integer, but the annotation is listed as
+    # a string. The actual value is an int converted to a string so in indexing we
+    # convert that to an integer and that's why this works at all. However, I think this
+    # should match the annotation and be a string and we should fix that somehow some
+    # day.
     "content_sandbox_capabilities": {
         "data_validation_type": "int",
         "description": "",
@@ -1446,6 +1451,11 @@ FIELDS = {
         "name": "content_sandbox_capabilities",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.content_sandbox_capabilities",
+        "destination_keys": [
+            "raw_crash.ContentSandboxCapabilities",
+            "processed_crash.content_sandbox_capabilities",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "integer"},
     },
@@ -1488,6 +1498,11 @@ FIELDS = {
         "name": "content_sandbox_level",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.content_sandbox_level",
+        "destination_keys": [
+            "raw_crash.ContentSandboxLevel",
+            "processed_crash.content_sandbox_level",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "short"},
     },
