@@ -1850,6 +1850,11 @@ FIELDS = {
         "name": "install_time",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.install_time",
+        "destination_keys": [
+            "raw_crash.InstallTime",
+            "processed_crash.install_time",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
