@@ -93,7 +93,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
         "os": glom(processed_crash, "json_dump.system_info.os", default=None),
         # int or None
         "oom_allocation_size": int_or_none(
-            glom(raw_crash, "OOMAllocationSize", default=None)
+            glom(processed_crash, "oom_allocation_size", default=None)
         ),
         # text or None
         "abort_message": glom(processed_crash, "abort_message", default=None),
