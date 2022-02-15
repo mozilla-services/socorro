@@ -3023,6 +3023,11 @@ FIELDS = {
         "name": "system_memory_use_percentage",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.system_memory_use_percentage",
+        "destination_keys": [
+            "raw_crash.SystemMemoryUsePercentage",
+            "processed_crash.system_memory_use_percentage",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
