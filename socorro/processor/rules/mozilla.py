@@ -87,6 +87,9 @@ class CopyFromRawCrashRule(Rule):
         ("string", "GMPLibraryPath", "gmp_library_path"),
         ("string", "GraphicsCriticalError", "graphics_critical_error"),
         ("int", "InstallTime", "install_time"),
+        ("string", "ipc_channel_error", "ipc_channel_error"),
+        ("string", "IPCFatalErrorMsg", "ipc_fatal_error_msg"),
+        ("string", "IPCFatalErrorProtocol", "ipc_fatal_error_protocol"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):

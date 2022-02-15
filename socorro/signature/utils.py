@@ -104,7 +104,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
             processed_crash, "async_shutdown_timeout", default=None
         ),
         # text or None
-        "ipc_channel_error": glom(raw_crash, "ipc_channel_error", default=None),
+        "ipc_channel_error": glom(processed_crash, "ipc_channel_error", default=None),
         # text or None
         "ipc_message_name": glom(raw_crash, "IPCMessageName", default=None),
         # text
