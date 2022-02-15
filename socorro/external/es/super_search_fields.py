@@ -1758,6 +1758,11 @@ FIELDS = {
         "name": "graphics_critical_error",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.graphics_critical_error",
+        "destination_keys": [
+            "raw_crash.GraphicsCriticalError",
+            "processed_crash.graphics_critical_error",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
