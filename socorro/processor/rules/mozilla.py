@@ -98,6 +98,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "OOMAllocationSize", "oom_allocation_size"),
         ("string", "RemoteType", "remote_type"),
         ("string", "ShutdownProgress", "shutdown_progress"),
+        ("int", "StartupTime", "startup_time"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
@@ -343,12 +344,8 @@ class DatesAndTimesRule(Rule):
         if crash_time == submitted_timestamp_epoch:
             processor_notes.append("client_crash_date is unknown")
 
-        # StartupTime: must have started up some time before crash
-        try:
-            startup_time = int(raw_crash.get("StartupTime", crash_time))
-        except ValueError:
-            startup_time = 0
-            processor_notes.append('non-integer value of "StartupTime"')
+        # startup_time: must have started up some time before crash
+        startup_time = int(processed_crash.get("startup_time", crash_time))
 
         # InstallTime: must have installed some time before startup
         try:

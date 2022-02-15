@@ -566,7 +566,9 @@ class TestDatesAndTimesRule:
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "startup_time": raw_crash["StartupTime"],
+        }
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
@@ -588,7 +590,9 @@ class TestDatesAndTimesRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash["CrashTime"]
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "startup_time": raw_crash["StartupTime"],
+        }
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
@@ -637,36 +641,13 @@ class TestDatesAndTimesRule:
         assert processed_crash["last_crash"] == 86985
         assert processor_meta["processor_notes"] == []
 
-    def test_bad_startup_time(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["StartupTime"] = "feed the goats"
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-
-        rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
-        assert (
-            processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
-        )
-        assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
-        assert processed_crash["install_age"] == 1079662
-        assert processed_crash["uptime"] == 1336519554
-        assert processed_crash["last_crash"] == 86985
-        assert processor_meta["processor_notes"] == [
-            'non-integer value of "StartupTime"'
-        ]
-
     def test_bad_install_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["InstallTime"] = "feed the goats"
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "startup_time": raw_crash["StartupTime"],
+        }
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
@@ -691,7 +672,7 @@ class TestDatesAndTimesRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["SecondsSinceLastCrash"] = "feed the goats"
         dumps = {}
-        processed_crash = {}
+        processed_crash = {"startup_time": raw_crash["StartupTime"]}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()
@@ -716,7 +697,7 @@ class TestDatesAndTimesRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.pop("SecondsSinceLastCrash")
         dumps = {}
-        processed_crash = {}
+        processed_crash = {"startup_time": raw_crash["StartupTime"]}
         processor_meta = get_basic_processor_meta()
 
         rule = DatesAndTimesRule()

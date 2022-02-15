@@ -2955,6 +2955,11 @@ FIELDS = {
         "name": "startup_time",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.startup_time",
+        "destination_keys": [
+            "raw_crash.StartupTime",
+            "processed_crash.startup_time",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
