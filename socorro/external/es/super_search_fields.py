@@ -2169,6 +2169,11 @@ FIELDS = {
         "name": "memory_error_correction",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.memory_error_correction",
+        "destination_keys": [
+            "raw_crash.MemoryErrorCorrection",
+            "processed_crash.memory_error_correction",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },

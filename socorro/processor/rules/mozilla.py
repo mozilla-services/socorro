@@ -94,6 +94,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "IPCMessageSize", "ipc_message_size"),
         ("string", "IPCShutdownState", "ipc_shutdown_state"),
         ("int", "IPCSystemError", "ipc_system_error"),
+        ("string", "MemoryErrorCorrection", "memory_error_correction"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
