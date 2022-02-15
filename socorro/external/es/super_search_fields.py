@@ -1725,6 +1725,11 @@ FIELDS = {
             # This contains file paths on the user's computer.
             "crashstats.view_pii"
         ],
+        "source_key": "processed_crash.gmp_library_path",
+        "destination_keys": [
+            "raw_crash.GMPLibraryPath",
+            "processed_crash.gmp_library_path",
+        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
