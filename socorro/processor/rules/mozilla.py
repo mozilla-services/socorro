@@ -104,6 +104,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "TotalPhysicalMemory", "total_physical_memory"),
         ("int", "TotalVirtualMemory", "total_virtual_memory"),
         ("float", "UptimeTS", "uptime_ts"),
+        ("string", "useragent_locale", "useragent_locale"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
