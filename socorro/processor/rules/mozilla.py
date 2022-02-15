@@ -96,6 +96,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "IPCSystemError", "ipc_system_error"),
         ("string", "MemoryErrorCorrection", "memory_error_correction"),
         ("int", "OOMAllocationSize", "oom_allocation_size"),
+        ("string", "RemoteType", "remote_type"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
