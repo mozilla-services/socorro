@@ -1575,6 +1575,11 @@ FIELDS = {
         "name": "cpu_microcode_version",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.cpu_microcode_version",
+        "destination_keys": [
+            "raw_crash.CPUMicrocodeVersion",
+            "processed_crash.cpu_microcode_version",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },

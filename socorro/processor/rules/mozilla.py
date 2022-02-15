@@ -83,6 +83,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
         ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
         ("int", "ContentSandboxLevel", "content_sandbox_level"),
+        ("string", "CPUMicrocodeVersion", "cpu_microcode_version"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
