@@ -3286,6 +3286,11 @@ FIELDS = {
         "name": "vendor",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.vendor",
+        "destination_keys": [
+            "raw_crash.Vendor",
+            "processed_crash.vendor",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
