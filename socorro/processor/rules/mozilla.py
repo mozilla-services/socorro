@@ -99,6 +99,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "RemoteType", "remote_type"),
         ("string", "ShutdownProgress", "shutdown_progress"),
         ("int", "StartupTime", "startup_time"),
+        ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
