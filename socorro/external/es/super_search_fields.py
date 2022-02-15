@@ -1352,6 +1352,11 @@ FIELDS = {
         "name": "bios_manufacturer",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.bios_manufacturer",
+        "destination_keys": [
+            "raw_crash.BIOS_Manufacturer",
+            "processed_crash.bios_manufacturer",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },

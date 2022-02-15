@@ -79,6 +79,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "AvailablePageFile", "available_page_file"),
         ("int", "AvailablePhysicalMemory", "available_physical_memory"),
         ("int", "AvailableVirtualMemory", "available_virtual_memory"),
+        ("string", "BIOS_Manufacturer", "bios_manufacturer"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
