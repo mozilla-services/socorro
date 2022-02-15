@@ -1392,6 +1392,11 @@ FIELDS = {
         "name": "co_marshal_interface_failure",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.co_marshal_interface_failure",
+        "destination_keys": [
+            "raw_crash.CoMarshalInterfaceFailure",
+            "processed_crash.co_marshal_interface_failure",
+        ],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
