@@ -103,6 +103,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "TotalPageFile", "total_page_file"),
         ("int", "TotalPhysicalMemory", "total_physical_memory"),
         ("int", "TotalVirtualMemory", "total_virtual_memory"),
+        ("float", "UptimeTS", "uptime_ts"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
@@ -127,6 +128,14 @@ class CopyFromRawCrashRule(Rule):
                 except ValueError:
                     processor_meta["processor_notes"].append(
                         f"{raw_key} has a non-int value"
+                    )
+
+            elif value_type == "float":
+                try:
+                    processed_crash[processed_key] = float(raw_crash[raw_key])
+                except ValueError:
+                    processor_meta["processor_notes"].append(
+                        f"{raw_key} has a non-float value"
                     )
 
             elif value_type == "string":
