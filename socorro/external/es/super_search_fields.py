@@ -1869,6 +1869,11 @@ FIELDS = {
         "name": "ipc_channel_error",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_channel_error",
+        "destination_keys": [
+            "raw_crash.ipc_channel_error",
+            "processed_crash.ipc_channel_error",
+        ],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -1883,6 +1888,11 @@ FIELDS = {
         "name": "ipc_fatal_error_msg",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_fatal_error_msg",
+        "destination_keys": [
+            "raw_crash.IPCFatalErrorMsg",
+            "processed_crash.ipc_fatal_error_msg",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1901,6 +1911,11 @@ FIELDS = {
         "name": "ipc_fatal_error_protocol",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_fatal_error_protocol",
+        "destination_keys": [
+            "raw_crash.IPCFatalErrorProtocol",
+            "processed_crash.ipc_fatal_error_protocol",
+        ],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
