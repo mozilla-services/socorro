@@ -1309,6 +1309,11 @@ FIELDS = {
         "name": "available_physical_memory",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.available_physical_memory",
+        "destination_keys": [
+            "raw_crash.AvailablePhysicalMemory",
+            "processed_crash.available_physical_memory",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1328,6 +1333,11 @@ FIELDS = {
         "name": "available_virtual_memory",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.available_virtual_memory",
+        "destination_keys": [
+            "raw_crash.AvailableVirtualMemory",
+            "processed_crash.available_virtual_memory",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
