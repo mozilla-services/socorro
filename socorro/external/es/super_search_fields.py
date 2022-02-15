@@ -3253,6 +3253,11 @@ FIELDS = {
         "name": "useragent_locale",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.useragent_locale",
+        "destination_keys": [
+            "raw_crash.useragent_locale",
+            "processed_crash.useragent_locale",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
