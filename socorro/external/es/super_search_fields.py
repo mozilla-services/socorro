@@ -2872,6 +2872,11 @@ FIELDS = {
         "name": "shutdown_progress",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.shutdown_progress",
+        "destination_keys": [
+            "raw_crash.ShutdownProgress",
+            "processed_crash.shutdown_progress",
+        ],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
