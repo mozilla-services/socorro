@@ -76,6 +76,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "Android_Version", "android_version"),
         ("string", "AppInitDLLs", "app_init_dlls"),
         ("string", "AsyncShutdownTimeout", "async_shutdown_timeout"),
+        ("int", "AvailablePageFile", "available_page_file"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):

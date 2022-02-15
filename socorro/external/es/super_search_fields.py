@@ -1286,6 +1286,11 @@ FIELDS = {
         "name": "available_page_file",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.available_page_file",
+        "destination_keys": [
+            "raw_crash.AvailablePageFile",
+            "processed_crash.available_page_file",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
