@@ -2549,6 +2549,11 @@ FIELDS = {
         "name": "oom_allocation_size",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.oom_allocation_size",
+        "destination_keys": [
+            "raw_crash.OOMAllocationSize",
+            "processed_crash.oom_allocation_size",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
