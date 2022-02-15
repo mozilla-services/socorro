@@ -3195,6 +3195,11 @@ FIELDS = {
         "name": "uptime_ts",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.uptime_ts",
+        "destination_keys": [
+            "raw_crash.UptimeTS",
+            "processed_crash.uptime_ts",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "double"},
     },
