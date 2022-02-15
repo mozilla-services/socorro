@@ -86,6 +86,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "CPUMicrocodeVersion", "cpu_microcode_version"),
         ("string", "GMPLibraryPath", "gmp_library_path"),
         ("string", "GraphicsCriticalError", "graphics_critical_error"),
+        ("int", "InstallTime", "install_time"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
