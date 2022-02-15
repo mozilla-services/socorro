@@ -97,6 +97,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "MemoryErrorCorrection", "memory_error_correction"),
         ("int", "OOMAllocationSize", "oom_allocation_size"),
         ("string", "RemoteType", "remote_type"),
+        ("string", "ShutdownProgress", "shutdown_progress"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
