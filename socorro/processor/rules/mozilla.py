@@ -81,6 +81,8 @@ class CopyFromRawCrashRule(Rule):
         ("int", "AvailableVirtualMemory", "available_virtual_memory"),
         ("string", "BIOS_Manufacturer", "bios_manufacturer"),
         ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
+        ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
+        ("int", "ContentSandboxLevel", "content_sandbox_level"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
