@@ -100,6 +100,9 @@ class CopyFromRawCrashRule(Rule):
         ("string", "ShutdownProgress", "shutdown_progress"),
         ("int", "StartupTime", "startup_time"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
+        ("int", "TotalPageFile", "total_page_file"),
+        ("int", "TotalPhysicalMemory", "total_physical_memory"),
+        ("int", "TotalVirtualMemory", "total_virtual_memory"),
     ]
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
