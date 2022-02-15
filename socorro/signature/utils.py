@@ -106,7 +106,7 @@ def convert_to_crash_data(raw_crash, processed_crash):
         # text or None
         "ipc_channel_error": glom(processed_crash, "ipc_channel_error", default=None),
         # text or None
-        "ipc_message_name": glom(raw_crash, "IPCMessageName", default=None),
+        "ipc_message_name": glom(processed_crash, "ipc_message_name", default=None),
         # text
         "moz_crash_reason": glom(processed_crash, "moz_crash_reason", default=None),
         # text; comma-delimited e.g. "browser,flash1,flash2"

@@ -1930,6 +1930,11 @@ FIELDS = {
         "name": "ipc_message_name",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_message_name",
+        "destination_keys": [
+            "raw_crash.IPCMessageName",
+            "processed_crash.ipc_message_name",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1948,6 +1953,11 @@ FIELDS = {
         "name": "ipc_message_size",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_message_size",
+        "destination_keys": [
+            "raw_crash.IPCMessageSize",
+            "processed_crash.ipc_message_size",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1966,6 +1976,11 @@ FIELDS = {
         "name": "ipc_shutdown_state",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_shutdown_state",
+        "destination_keys": [
+            "raw_crash.IPCShutdownState",
+            "processed_crash.ipc_shutdown_state",
+        ],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1983,6 +1998,11 @@ FIELDS = {
         "name": "ipc_system_error",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.ipc_system_error",
+        "destination_keys": [
+            "raw_crash.IPCSystemError",
+            "processed_crash.ipc_system_error",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "integer"},
     },
