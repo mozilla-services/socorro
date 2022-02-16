@@ -4,9 +4,8 @@
 Crash Annotations
 =================
 
-A crash report contains one or more minidumps plus a series of *crash
-annotations*. For example, a crash report may contain the following
-annotations:
+A crash report contains a set of *crash annotations* and zero or more
+minidumps. For example, a crash report may contain the following annotations:
 
 * **ProductName**: Firefox
 * **Version**: 77.0a1
@@ -23,15 +22,49 @@ Adding new crash annotations to a crash report
    `CrashAnnotations.yaml <https://hg.mozilla.org/mozilla-central/file/tip/toolkit/crashreporter/CrashAnnotations.yaml>`_.
 
    Verify your annotation doesn't already exist with a different name. You can't
-   change the meaning of an existing annotation.
+   change the meaning or type of an existing annotation.
 
 2. New annotations need to undergo data collection review:
    https://wiki.mozilla.org/Firefox/Data_Collection
 
-   .. Note::
+   Some things to keep in mind when filling out the review request:
 
-      If the field will be available in crash pings sent to Telemetry, make
+   1. If the field will be available in crash pings sent to Telemetry, make
       sure that's mentioned in the data collection review request.
+
+   2. Collection of crash annotation data never expires.
+
+      The answer to:
+
+          How long will this data be collected?
+
+      is:
+
+          I want to permanently monitor this data.
+
+      And the data request must specify an owner for this data collection.
+
+   3. Crash annotation data sent in crash reports is opt-in by default, bug
+      crash pings are opt-out by default.
+
+      If you only want the crash annotation data showing up in crash reports
+      and showing up in Crash Stats, then:
+
+          If this data collection is default on, what is the opt-out mechanism
+          for users?
+
+      is answered as:
+
+          No mechanism is required.
+
+      If you also want the crash annotation data showing up in crash pings, then:
+
+          If this data collection is default on, what is the opt-out mechanism
+          for users?
+
+      is answered as:
+
+          This data is opt-out via the normal telemetry opt-out mechanism.
 
 3. Once a new annotation is approved, details about the annotation need to be
    added to the ``CrashAnnotations.yaml`` file.
