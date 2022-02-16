@@ -7,10 +7,12 @@ import functools
 
 from django.core.cache import cache
 
+from crashstats import productlib
 from crashstats.crashstats import models
 from socorro.external.es import query
 from socorro.external.es import supersearch
 from socorro.external.es import super_search_fields
+from socorro.lib import BadArgumentError
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -61,6 +63,28 @@ def get_api_allowlist(include_all_fields=False):
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
     implementation_config_namespace = "elasticsearch"
+
+
+def validate_products(product_value):
+    """Validates product values against supported products.
+
+    :param product_value: str or list of str denoting products
+
+    :raises BadArgumentError: if there are invalid products specified
+
+    """
+    if not product_value:
+        return
+
+    if isinstance(product_value, str):
+        product_value = [product_value]
+
+    # Do some data validation here before we go further to reduce efforts
+    valid_products = {product.name for product in productlib.get_products()}
+    invalid_products = set(product_value) - valid_products
+    if invalid_products:
+        invalid_products_str = ", ".join(invalid_products)
+        raise BadArgumentError(f"Not valid products: {invalid_products_str}")
 
 
 class SuperSearch(ESSocorroMiddleware):
@@ -159,6 +183,9 @@ class SuperSearch(ESSocorroMiddleware):
         # SuperSearch requires that the list of fields be passed to it.
         kwargs["_fields"] = self.all_fields
 
+        # Do some data validation here before we go further to reduce efforts
+        validate_products(kwargs.get("product"))
+
         return super().get(**kwargs)
 
 
@@ -197,6 +224,9 @@ class SuperSearchUnredacted(SuperSearch):
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
         kwargs["_fields"] = self.all_fields
+
+        # Do some data validation here before we go further to reduce efforts
+        validate_products(kwargs.get("product"))
 
         # Notice that here we use `SuperSearch` as the class, so that we
         # shortcut the `get` function in that class. The goal is to avoid
