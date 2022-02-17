@@ -50,6 +50,24 @@
         </div>
         <br class="clear" />
       </div>
+
+      {% if product.product_home_links %}
+        <div class="title">
+          <h2>Other links</h2>
+        </div>
+        <div class="body">
+          <div id="release_channels">
+            <div class="release_channel">
+              <ul>
+                {% for text, link in product.product_home_links %}
+                  <li><a href="{{ link }}">{{ text }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          <br class="clear" />
+        </div>
+      {% endif %}
     </div>
     <div class="tip">
       Are the featured versions wrong?

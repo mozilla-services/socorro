@@ -40,6 +40,9 @@ class Product:
     # view of a crash report
     bug_links: List[List[str]]
 
+    # List of [link name, link url] links to display on the product hom epage
+    product_home_links: List[List[str]]
+
 
 # In-memory cache of products files so we're not parsing them over-and-over
 _PRODUCTS = []
@@ -158,6 +161,18 @@ def validate_product_file(fn):
 
                 # NOTE(willkg): This doesn't verify templates are well formed. That's
                 # handled in a test in the code that uses the template.
+
+            for item in json_data["product_home_links"]:
+                if len(item) != 2:
+                    raise ProductValidationError(
+                        "product file %s has invalid product_home_links: %s"
+                        % (fn, repr(item))
+                    )
+                if not isinstance(item[0], str) or not isinstance(item[1], str):
+                    raise ProductValidationError(
+                        "product file %s has invalid product_home_links: %s"
+                        % (fn, repr(item))
+                    )
 
             # Try to build a Product out of it
             Product(**json_data)
