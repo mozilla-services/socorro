@@ -453,6 +453,12 @@ CACHES = {
         "LOCATION": config("CACHE_LOCATION", "127.0.0.1:11211"),
         "TIMEOUT": config("CACHE_TIMEOUT", 500),
         "KEY_PREFIX": config("CACHE_KEY_PREFIX", "socorro"),
+        "OPTIONS": {
+            # Seconds to wait for send/recv calls
+            "timeout": 5,
+            # Seconds to wait for a connection to go through
+            "connect_timeout": 5,
+        },
     }
 }
 
