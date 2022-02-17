@@ -26,5 +26,11 @@
       "Application-Services",
       "https://github.com/mozilla/application-services/issues/new?title=%(title)s&body=%(description)s"
     ]
+  ],
+  "product_home_links": [
+    [
+      "Fenix crash monitoring documentation",
+      "https://github.com/mozilla-mobile/fenix/wiki/Crash-Monitoring"
+    ]
   ]
 }

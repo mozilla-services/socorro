@@ -73,6 +73,7 @@ class ProductVersionsMixin:
                 featured_versions=["auto"],
                 in_buildhub=True,
                 bug_links=[["WaterWolf", "create-waterwolf-bug"]],
+                product_home_links=[["link", "http://example.com/"]],
             ),
             productlib.Product(
                 name="NightTrain",
@@ -81,6 +82,7 @@ class ProductVersionsMixin:
                 featured_versions=["auto"],
                 in_buildhub=False,
                 bug_links=[["NightTrain", "create-nighttrain-bug"]],
+                product_home_links=[],
             ),
             productlib.Product(
                 name="SeaMonkey",
@@ -89,6 +91,7 @@ class ProductVersionsMixin:
                 featured_versions=["auto"],
                 in_buildhub=False,
                 bug_links=[["SeaMonkey", "create-seamonkey-bug"]],
+                product_home_links=[],
             ),
         ]
 
