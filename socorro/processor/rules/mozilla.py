@@ -1131,7 +1131,7 @@ class SignatureGeneratorRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes
-        crash_data = convert_to_crash_data(raw_crash, processed_crash)
+        crash_data = convert_to_crash_data(processed_crash)
         result = self.generator.generate(crash_data)
         processed_crash["signature"] = result.signature
         processor_meta["processor_notes"].extend(result.notes)

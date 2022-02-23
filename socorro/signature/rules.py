@@ -819,14 +819,13 @@ class SignatureIPCChannelError(Rule):
         return bool(crash_data.get("ipc_channel_error"))
 
     def action(self, crash_data, result):
-        if crash_data.get("additional_minidumps") == "browser":
+        minidumps = crash_data.get("additional_minidumps") or []
+        if "upload_file_minidump_browser" in minidumps:
             new_sig = "IPCError-browser | {}"
         else:
             new_sig = "IPCError-content | {}"
         new_sig = new_sig.format(crash_data["ipc_channel_error"][:100])
-
         result.info(self.name, "IPC Channel Error stomped on signature")
-
         result.set_signature(self.name, new_sig)
         return True
 

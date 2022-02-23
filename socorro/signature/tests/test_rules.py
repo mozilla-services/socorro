@@ -1509,7 +1509,7 @@ class TestSignatureIPCChannelError:
         ]
 
         # Now test with a browser crash.
-        crash_data["additional_minidumps"] = "browser"
+        crash_data["additional_minidumps"] = ["upload_file_minidump_browser"]
         result = generator.Result()
         result.signature = original_signature
 
