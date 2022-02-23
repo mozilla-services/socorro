@@ -64,13 +64,11 @@ def override_values(crash_data, values):
     yield crash_data
 
 
-def convert_to_crash_data(raw_crash, processed_crash):
+def convert_to_crash_data(processed_crash):
     """
-    Takes a raw crash and a processed crash (these are Socorro-centric
-    data structures) and converts them to a crash data structure used
-    by signature generation.
+    Takes a processed crash (these are Socorro-centric data structures) and converts
+    them to a crash data structure used by signature generation.
 
-    :arg raw_crash: raw crash data from Socorro
     :arg processed_crash: processed crash data from Socorro
 
     :returns: crash data structure that conforms to the schema
@@ -109,8 +107,11 @@ def convert_to_crash_data(raw_crash, processed_crash):
         "ipc_message_name": glom(processed_crash, "ipc_message_name", default=None),
         # text
         "moz_crash_reason": glom(processed_crash, "moz_crash_reason", default=None),
-        # text; comma-delimited e.g. "browser,flash1,flash2"
-        "additional_minidumps": glom(raw_crash, "additional_minidumps", default=""),
+        # list of str; for example:
+        # ["upload_file_minidump_browser", "upload_file_minidump_flash1"]
+        "additional_minidumps": glom(
+            processed_crash, "additional_minidumps", default=[]
+        ),
         # pull out the original signature if there was one
         "original_signature": glom(processed_crash, "signature", default=""),
     }

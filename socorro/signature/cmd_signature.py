@@ -217,27 +217,6 @@ def main(argv=None):
 
             crash_id = parsed_crash_id
 
-            resp = fetch("/RawCrash/", crash_id, api_token)
-            if resp.status_code == 404:
-                out.warning(f"{crash_id}: does not exist.")
-                continue
-            if resp.status_code == 429:
-                out.warning(f"API rate limit reached. {resp.content}")
-                # FIXME(willkg): Maybe there's something better we could do here. Like maybe wait a
-                # few minutes.
-                return 1
-            if resp.status_code == 500:
-                out.warning(f"HTTP 500: {resp.content}")
-                continue
-
-            raw_crash = resp.json()
-
-            # If there's an error in the raw crash, then something is wrong--probably with the API
-            # token. So print that out and exit.
-            if "error" in raw_crash:
-                out.warning(f"Error fetching raw crash: {raw_crash['error']}")
-                return 1
-
             resp = fetch("/ProcessedCrash/", crash_id, api_token)
             if resp.status_code == 404:
                 out.warning(f"{crash_id}: does not have processed crash.")
@@ -262,7 +241,7 @@ def main(argv=None):
                 return 1
 
             old_signature = processed_crash["signature"]
-            crash_data = convert_to_crash_data(raw_crash, processed_crash)
+            crash_data = convert_to_crash_data(processed_crash)
 
             result = generator.generate(crash_data)
 
