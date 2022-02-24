@@ -530,19 +530,14 @@ def get_fields_by_item(fields, key, val):
     return fields_by_item
 
 
-def flag_field(
+def boolean_field(
     name,
     description,
     namespace="processed_crash",
     in_database_name="",
     is_protected=True,
 ):
-    """Generates a flag field.
-
-    Flag fields are one of a few things:
-
-    1. a boolean value that is either true and false
-    2. a crash annotation flag that is "1" or missing
+    """Generates a boolean field.
 
     These can be searched and aggregated, but documents that are missing the field won't
     show up in aggregations.
@@ -3326,7 +3321,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
-    "windows_error_reporting": flag_field(
+    "windows_error_reporting": boolean_field(
         name="windows_error_reporting",
         description=(
             "Set to 1 if this crash was intercepted via the Windows Error Reporting "

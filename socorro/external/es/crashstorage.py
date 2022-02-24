@@ -253,16 +253,6 @@ def build_document(src, crash_document, fields, all_keys):
             else:
                 value = fix_string(value, max_size=MAX_STRING_FIELD_VALUE_SIZE)
 
-        elif storage_type == "boolean":
-            # FIXME(willkg): Previous iteration of the crash storage logic had a
-            # convert_booleans which was implemented wrong, so it didn't do anything.
-            # "booleans" is tricky since we have flags and booleans and they're
-            # different, so it requires more analysis to figure out what to do here.
-            # Meanwhile, I commented this out for now which returns us to the previous
-            # behavior.
-            # value = fix_boolean(value)
-            pass
-
         elif storage_type == "integer":
             value = fix_integer(value)
             if value is None:

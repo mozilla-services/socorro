@@ -217,7 +217,7 @@
                     </td>
                   </tr>
                 {% endif %}
-                {% if report.windows_error_reporting == "1" %}
+                {% if report.windows_error_reporting in ("1", True) %}
                   <tr title="{{ fields_desc['processed_crash.windows_error_reporting'] }}">
                     <th scope="row">Windows Error Reporting</th>
                     <td>
