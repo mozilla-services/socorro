@@ -41,7 +41,7 @@ class CopyFromRawCrashRule(Rule):
     FIELDS = [
         # type, crash annotation name, processed crash key
         # windows error reporting flag
-        ("flag", "WindowsErrorReporting", "windows_error_reporting"),
+        ("boolean", "WindowsErrorReporting", "windows_error_reporting"),
         # Mac memory pressure annotations
         ("int", "MacMemoryPressureSysctl", "mac_memory_pressure_sysctl"),
         ("int", "MacAvailableMemorySysctl", "mac_available_memory_sysctl"),
@@ -115,13 +115,16 @@ class CopyFromRawCrashRule(Rule):
         for value_type, raw_key, processed_key in self.FIELDS:
             if raw_key not in raw_crash:
                 continue
-            if value_type == "flag":
-                flag_value = raw_crash[raw_key]
-                if flag_value == "1":
-                    processed_crash[processed_key] = "1"
+
+            if value_type == "boolean":
+                value = str(raw_crash[raw_key]).lower()
+                if value in ("1", "true"):
+                    processed_crash[processed_key] = True
+                elif value in ("0", "false"):
+                    processed_crash[processed_key] = False
                 else:
                     processor_meta["processor_notes"].append(
-                        f"{raw_key} has non-1 value"
+                        f"{raw_key} has non-boolean value {raw_crash[raw_key]}"
                     )
 
             elif value_type == "int":
