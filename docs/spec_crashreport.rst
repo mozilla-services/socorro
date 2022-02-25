@@ -51,8 +51,9 @@ The HTTP POST request must include the following headers:
 
 ``Content-Type``
 
-   The content type header of the crash report must be ``multipart/form-data``
-   and it must specify the multipart/form-data boundary.
+   The content type header of the crash report must be either
+   ``multipart/form-data`` or ``multipart/mixed`` and it must specify the
+   multipart boundary.
 
 ``Content-Length``
 
@@ -82,12 +83,12 @@ gzipped.
 Crash annotations
 ~~~~~~~~~~~~~~~~~
 
-The body consists of a series of multipart/form-data fields. Each field is
-either an annotation or a binary like a minidump.
+The body consists of a series of multipart fields. Each field is either an
+annotation or a binary like a minidump.
 
 .. seealso::
 
-   RFC for multipart/form-data:
+   RFC for multipart/form-data and multipart/mixed:
       https://tools.ietf.org/html/rfc7578
 
 There are two ways to provide crash annotations:
@@ -99,13 +100,13 @@ You can provide crash annotations as EITHER key/value pairs, OR a JSON-encoded
 value for all annotations--you can't do both.
 
 
-Annotations as key/value pairs in multipart/form-data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Annotations as key/value pairs in form-data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
 2. The ``Content-Disposition`` must specify a ``name``. This is the annotation
-   name. The value must be in ASCII.
+   name. The value must consist of ASCII characters.
 
 3. The value of this field is the annotation value. It is always a string.
 
@@ -122,20 +123,20 @@ Annotations as single JSON-encoded value
 1. The ``Content-Disposition`` must be ``form-data``.
 
 2. The ``Content-Disposition`` must specify a ``name``. The value should
-   be ``extra``. The value must be in ASCII.
+   be ``extra``.
 
 3. The ``Content-Type`` must be ``application/json``.
 
-4. The value of this field must a JSON-encoded string of all of the crash
+4. The value of this field must a JSON-encoded object of all of the crash
    report annotations.
 
-   Annotation keys and values must be strings.
+   All annotation keys and values must be strings.
 
-   If the annotation value is an object, it must be a JSON-encoded string.
-   Because the annotation value is a JSON-encoded string and it's in a
-   JSON-encoded string, quotes must be escaped in the final field value.
+   If the annotation value is an object, it must be JSON-encoded. Because the
+   annotation value is JSON-encoded object and it is itself in a JSON-encoded
+   object, quotes must be escaped in the final field value.
 
-5. There must be only one of this field.
+5. There must be only one "extra" field in the payload.
 
 Example::
 
@@ -157,7 +158,8 @@ Dumps and other binary data
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
-2. The ``Content-Disposition`` must specify a ``name``. It must be in ASCII.
+2. The ``Content-Disposition`` must specify a ``name``. The name must consist
+   of ASCII characters.
 
    Examples of names:
 
@@ -271,11 +273,11 @@ HTTP 400
 
     ``wrong_content_type``
       The crash report HTTP POST content type header exists, bug it's not set
-      to ``malformed/form-data``.
+      to ``multipart/form-data`` or ``multipart/mixed.
 
     ``no_boundary``
        The content type doesn't include a boundary value, so it can't be parsed
-       as ``multipart/form-data``.
+       as ``multipart``.
 
     ``bad_gzip``
        The ``Content-Encoding`` header is set to ``gzip``, but the body isn't
@@ -285,8 +287,8 @@ HTTP 400
        The crash report has been parsed, but there were no annotations in it.
 
     ``has_json_and_kv``
-       The crash report encodes annotations in ``multipart/form-data`` as well
-       as in the extra JSON-encoded string. It should have either one or the
+       The crash report encodes annotations as ``form-data`` fields as well as
+       in an extra JSON-encoded object. It should have either one or the
        other--not both.
 
 
