@@ -190,6 +190,7 @@ class CSignatureTool:
     def normalize_frame(
         self,
         module=None,
+        unloaded_modules=None,
         function=None,
         file=None,
         line=None,
@@ -222,6 +223,28 @@ class CSignatureTool:
             else:
                 file = filename.rsplit("/")[-1]
             return f"{file}#{line}"
+
+        # If there's unloaded_modules and no module/module_offset, use that
+        if not module and not module_offset and unloaded_modules:
+            # There can be multiple "hits", both with different modules and
+            # offsets. To fully express this, unloaded_modules has this schema:
+            #
+            # "unloaded_modules": [
+            #    {
+            #        "module": <string>,
+            #        "offsets": [<hexstring>],
+            #    }
+            # ]
+            #
+            # Both arrays are pre-sorted to keep the output stable.
+
+            for unloaded in unloaded_modules:
+                if unloaded.module and unloaded.offsets:
+                    for unloaded_offset in unloaded.offsets:
+                        # For now, just grab the first entry and return it.
+                        return "{}@{}".format(
+                            unloaded.module, strip_leading_zeros(unloaded_offset)
+                        )
 
         # If there's an offset and no module/module_offset, use that
         if not module and not module_offset and offset:
