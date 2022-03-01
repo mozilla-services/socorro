@@ -242,7 +242,7 @@ class CSignatureTool:
                 if unloaded.module and unloaded.offsets:
                     for unloaded_offset in unloaded.offsets:
                         # For now, just grab the first entry and return it.
-                        return "{}@{}".format(
+                        return "unloaded {}@{}".format(
                             unloaded.module, strip_leading_zeros(unloaded_offset)
                         )
 
