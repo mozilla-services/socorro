@@ -189,7 +189,7 @@ services:
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake AWS S3 and SQS
   localstack:
-    image: localstack/localstack:0.12.2
+    image: localstack/localstack:0.14.0
     environment:
       - SERVICES=s3,sqs
       - DEFAULT_REGION=us-east-1
