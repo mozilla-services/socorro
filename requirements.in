@@ -48,7 +48,7 @@ semver==2.13.0
 sentry-sdk==1.5.1
 statsd==3.3.0
 urlwait==1.0
-whitenoise==5.3.0
+whitenoise==6.0.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 4.2 (2023).
 Django==3.2.12
