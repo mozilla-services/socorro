@@ -238,13 +238,26 @@ class CSignatureTool:
             #
             # Both arrays are pre-sorted to keep the output stable.
 
+            # We want to generate an output like this:
+            #
+            # @0xf800 (unloaded many.dll@0x460,0x700) (unloaded solo.dll@0x5e0)
+            #
+            # * prefixed with raw address
+            # * parenthetical unloaded modules
+            # * if multiple offsets, comma separated
+
+            prefix = ""
+            if offset:
+                prefix = f"@{strip_leading_zeros(offset)}"
+
+            parts = []
             for unloaded in unloaded_modules:
                 if unloaded.module and unloaded.offsets:
-                    for unloaded_offset in unloaded.offsets:
-                        # For now, just grab the first entry and return it.
-                        return "unloaded {}@{}".format(
-                            unloaded.module, strip_leading_zeros(unloaded_offset)
-                        )
+                    stripped = map(strip_leading_zeros, unloaded.offsets)
+                    offsets = ",".join(stripped)
+                    part = "(unloaded {}@{})".format(unloaded.module, offsets)
+                    parts.append(part)
+            return "{} {}".format(prefix, " ".join(parts))
 
         # If there's an offset and no module/module_offset, use that
         if not module and not module_offset and offset:
