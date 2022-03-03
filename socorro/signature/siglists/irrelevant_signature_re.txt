@@ -15,6 +15,7 @@ __assert_rtn
 app_process@0x
 AppleIntelHD3000GraphicsGLDriver@
 core\.odex@0x
+core::ops::function::FnOnce::call_once<T>
 core::panicking::
 CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
