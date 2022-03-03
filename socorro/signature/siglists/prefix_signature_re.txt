@@ -180,6 +180,7 @@ mozilla::ipc::RPCChannel::Call
 mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
 mozilla::ipc::RPCChannel::EnteredCxxStack
 mozilla::ipc::RPCChannel::Send
+mozilla::ipc::SentinelReadError
 mozilla::ipc::Shmem::OpenExisting
 mozilla::ipc::IProtocol::ChannelSend
 mozilla::ipc::IToplevelProtocol::ShmemCreated
