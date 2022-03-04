@@ -436,6 +436,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 shards = getattr(results, "_shards", {})
 
                 break  # Yay! Results!
+
             except NotFoundError as e:
                 missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
                 if missing_index in indices:
@@ -462,6 +463,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                     aggregations = {}
                     shards = None
                     break
+
             except RequestError as exception:
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
@@ -477,6 +479,11 @@ class SuperSearch(RequiredConfig, SearchBase):
                 except IndexError:
                     # Not an ElasticsearchParseException exception
                     pass
+
+                # If it's a search parse exception, but we don't know what key is the
+                # problem, raise a general BadArgumentError
+                if "Failed to parse source" in str(exception):
+                    raise BadArgumentError("Malformed supersearch query.")
 
                 # Re-raise the original exception
                 raise
