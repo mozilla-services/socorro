@@ -1492,6 +1492,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         with pytest.raises(BadArgumentError):
             self.api.get(_results_number=1001)
 
+    def test_get_with_bad_regex(self):
+        # A bad regex kicks up a SearchParseException which supersearch converts
+        # to a BadArgumentError
+        with pytest.raises(BadArgumentError):
+            self.api.get(
+                signature='@"OOM | ".*" | ".*"()&%<acx><ScRiPt >sruq(9393)</ScRiPt'
+            )
+
     def test_get_with_failing_shards(self):
         # NOTE(willkg): We're asserting on a url which includes the indexes being
         # searched. If the index template includes a date, then the indexes could be in
