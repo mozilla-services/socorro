@@ -25,11 +25,13 @@ jobs:
       # rewrite in Go. So we can install the version from PyPI here.
       - run:
           name: install docker-compose
+          # yamllint disable rule:line-length
           command: |
             # This installs docker-compose 1.29.2 and makes sure that docker-compose
             # shows up in PATH before /usr/local/bin/docker-compose which is v2.
             python -m pip install -r requirements-compose.txt
             ln -s $(pyenv which docker-compose) ~/.local/bin/docker-compose
+          # yamllint enable rule:line-length
 
       - run:
           name: Get info
@@ -41,6 +43,7 @@ jobs:
 
       - run:
           name: Create version.json
+          # yamllint disable rule:line-length
           command: |
             # create a version.json per
             # https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
@@ -50,15 +53,18 @@ jobs:
             "$CIRCLE_PROJECT_USERNAME" \
             "$CIRCLE_PROJECT_REPONAME" \
             "$CIRCLE_BUILD_URL" > version.json
+          # yamllint enable rule:line-length
 
       - run:
           name: Login to Dockerhub
+          # yamllint disable rule:line-length
           command: |
             if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
               echo "Skipping Login to Dockerhub, credentials not available."
             else
               echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
             fi
+          # yamllint enable rule:line-length
 
       - run:
           name: Build Docker images
@@ -82,6 +88,7 @@ jobs:
 
       - run:
           name: Push to Dockerhub
+          # yamllint disable rule:line-length
           command: |
             function retry {
               set +e
@@ -120,6 +127,7 @@ jobs:
                 retry docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
               fi
             fi
+          # yamllint enable rule:line-length
 
 workflows:
   version: 2
