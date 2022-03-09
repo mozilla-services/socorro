@@ -34,13 +34,10 @@ jobs:
       - run:
           name: Get info
           command: |
+            uname -v
             docker info
             which docker-compose
             docker-compose --version
-
-      - run:
-          name: Host info
-          command: uname -v
 
       - run:
           name: Create version.json
