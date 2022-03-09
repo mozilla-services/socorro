@@ -34,8 +34,8 @@ Setup Quickstart
 
        Install `Docker <https://docs.docker.com/engine/installation/>`_.
 
-       Install `docker-compose <https://docs.docker.com/compose/install/>`_. You need
-       1.10 or higher.
+       Install `docker-compose <https://docs.docker.com/compose/install/>`_.
+       You need something higher than 1.10, but less than 2.0.0.
 
        Install `make <https://www.gnu.org/software/make/>`_.
 
