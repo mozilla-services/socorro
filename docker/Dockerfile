@@ -41,14 +41,14 @@ ARG groupid=10001
 ARG userid=10001
 
 WORKDIR /app/
-RUN groupadd --gid $groupid app && \
-    useradd -g app --uid $userid --shell /usr/sbin/nologin --create-home app && \
-    chown app:app /app/
 
 # Install OS-level things
-COPY ./docker/set_up_ubuntu.sh /tmp/
-RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh
-RUN rm /tmp/set_up_ubuntu.sh
+COPY docker/set_up_ubuntu.sh /tmp/set_up_ubuntu.sh
+RUN groupadd --gid $groupid app && \
+    useradd -g app --uid $userid --shell /usr/sbin/nologin --create-home app && \
+    chown app:app /app/ && \
+    DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh && \
+    rm /tmp/set_up_ubuntu.sh
 
 # Copy stackwalk bits from rust-minidump minidump-stackwalker; this picks
 # up minidump-stackwalk.sha as well
