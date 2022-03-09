@@ -88,46 +88,8 @@ jobs:
 
       - run:
           name: Push to Dockerhub
-          # yamllint disable rule:line-length
           command: |
-            function retry {
-              set +e
-              local n=0
-              local max=3
-              while true; do
-              "$@" && break || {
-                if [[ $n -lt $max ]]; then
-                  ((n++))
-                  echo "Command failed. Attempt $n/$max:"
-                else
-                  echo "Failed after $n attempts."
-                  exit 1
-                fi
-              }
-              done
-              set -e
-            }
-
-            export LOCAL_IMAGE="local/socorro_app:latest"
-
-            if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
-              echo "Skipping Login to Dockerhub, credentials not available."
-            else
-              echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
-
-              if [ "${CIRCLE_BRANCH}" == "main" ]; then
-                # deploy main latest
-                docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:latest"
-                retry docker push "${DOCKERHUB_REPO}:latest"
-              elif  [ ! -z "${CIRCLE_TAG}" ]; then
-                # deploy a release tag
-                echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-                docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-                docker images
-                retry docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              fi
-            fi
-          # yamllint enable rule:line-length
+            bin/circleci_push.sh "local/socorro_app:latest"
 
 workflows:
   version: 2
