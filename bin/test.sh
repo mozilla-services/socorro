@@ -47,10 +47,18 @@ pushd webapp-django
 ${PYTHON} manage.py migrate
 popd
 
-# Run tests
-"${PYTEST}"
+TESTSUITE="${1:-}"
 
-# Collect static and then run pytest in the webapp
-pushd webapp-django
-${PYTHON} manage.py collectstatic --noinput
-"${PYTEST}"
+if [[ "$TESTSUITE" == "" ]] || [[ "$TESTSUITE" == "socorro" ]]
+then
+    # Run socorro tests
+    "${PYTEST}"
+fi
+
+if [[ "$TESTSUITE" == "" ]] || [[ "$TESTSUITE" == "webapp" ]]
+then
+    # Collect static and then run pytest in the webapp
+    pushd webapp-django
+    ${PYTHON} manage.py collectstatic --noinput
+    "${PYTEST}"
+fi
