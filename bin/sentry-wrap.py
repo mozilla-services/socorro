@@ -26,8 +26,31 @@ import sentry_sdk
 from sentry_sdk import capture_exception, capture_message
 
 
-@click.command()
-@click.option("--timeout", default=300, help="Timeout in seconds to wait for process before giving up.")
+@click.group()
+def cli_main():
+    pass
+
+
+@cli_main.command()
+@click.pass_context
+def sentry_test(ctx):
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+
+    if not sentry_dsn:
+        print("SENTRY_DSN is not defined. Exiting.")
+        sys.exit(1)
+
+    sentry_sdk.init(sentry_dsn)
+    capture_message("Sentry test")
+    print("Success. Check Sentry.")
+
+
+@cli_main.command()
+@click.option(
+    "--timeout",
+    default=300,
+    help="Timeout in seconds to wait for process before giving up.",
+)
 @click.argument("cmd", nargs=-1)
 @click.pass_context
 def wrap_process(ctx, timeout, cmd):
@@ -83,4 +106,4 @@ def wrap_process(ctx, timeout, cmd):
 
 
 if __name__ == "__main__":
-    wrap_process()
+    cli_main()

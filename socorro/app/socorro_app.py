@@ -110,7 +110,7 @@ class App(RequiredConfig):
     required_config.namespace("sentry")
     required_config.sentry.add_option(
         "dsn",
-        doc="DSN for Sentry",
+        doc="DEPRECATED: set SENTRY_DSN in environment instead",
         default="",
         reference_value_from="secrets.sentry",
         secret=True,
@@ -319,8 +319,13 @@ def setup_crash_reporting(config, version):
     """Setup Sentry crash reporting."""
 
     if config.sentry and config.sentry.dsn:
+        sentry_dsn = config.sentry.dsn
+    else:
+        sentry_dsn = os.environ.get("SENTRY_DSN", "")
+
+    if sentry_dsn:
         sentry_sdk.init(
-            dsn=config.sentry.dsn,
+            dsn=sentry_dsn,
             release=version,
             debug=config.sentry.debug,
             send_default_pii=False,

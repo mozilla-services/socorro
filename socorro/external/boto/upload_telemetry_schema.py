@@ -37,7 +37,7 @@ class UploadTelemetrySchema(App):
     metadata = ""
 
     required_config = Namespace()
-    required_config.telemetry = Namespace()
+    required_config.namespace("telemetry")
     required_config.telemetry.add_option(
         "resource_class",
         default="socorro.external.boto.connection_context.S3Connection",
