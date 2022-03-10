@@ -37,12 +37,12 @@ def test_sentry(ctx):
     sentry_dsn = os.environ.get("SENTRY_DSN")
 
     if not sentry_dsn:
-        print("SENTRY_DSN is not defined. Exiting.")
+        click.echo("SENTRY_DSN is not defined. Exiting.")
         sys.exit(1)
 
     sentry_sdk.init(sentry_dsn)
     capture_message("Sentry test")
-    print("Success. Check Sentry.")
+    click.echo("Success. Check Sentry.")
 
 
 @cli_main.command()
@@ -57,7 +57,7 @@ def wrap_process(ctx, timeout, cmd):
     sentry_dsn = os.environ.get("SENTRY_DSN")
 
     if not sentry_dsn:
-        print("SENTRY_DSN is not defined. Exiting.")
+        click.echo("SENTRY_DSN is not defined. Exiting.")
         sys.exit(1)
 
     if not cmd:
@@ -69,7 +69,7 @@ def wrap_process(ctx, timeout, cmd):
 
     cmd = " ".join(cmd)
     cmd_args = shlex.split(cmd)
-    print(f"Running: {cmd_args}")
+    click.echo(f"Running: {cmd_args}")
 
     try:
         ret = subprocess.run(cmd_args, capture_output=True, timeout=timeout)
@@ -83,25 +83,25 @@ def wrap_process(ctx, timeout, cmd):
                 },
             )
             capture_message(f"Command {cmd!r} failed.")
-            print(ret.stdout.decode("utf-8"))
-            print(ret.stderr.decode("utf-8"))
+            click.echo(ret.stdout.decode("utf-8"))
+            click.echo(ret.stderr.decode("utf-8"))
             time_delta = (time.time() - start_time) / 1000
-            print(f"Fail. {time_delta:.2f}s")
+            click.echo(f"Fail. {time_delta:.2f}s")
             ctx.exit(1)
 
         else:
-            print(ret.stdout.decode("utf-8"))
+            click.echo(ret.stdout.decode("utf-8"))
             time_delta = (time.time() - start_time) / 1000
-            print(f"Success! {time_delta:.2f}s")
+            click.echo(f"Success! {time_delta:.2f}s")
 
     except click.exceptions.Exit:
         raise
 
     except Exception as exc:
         capture_exception(exc)
-        traceback.print_exc()
+        click.echo(traceback.format_exc())
         time_delta = (time.time() - start_time) / 1000
-        print(f"Fail. {time_delta:.2f}s")
+        click.echo(f"Fail. {time_delta:.2f}s")
         ctx.exit(1)
 
 
