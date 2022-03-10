@@ -40,7 +40,8 @@ Documentation about installing Socorro is available on ReadTheDocs:
 Releases
 ========
 
-We use continuous development and we release often. See our list of releases:
+We use continuous development and we release often. See our list of releases
+for what changes were deployed to production when:
 
 https://github.com/mozilla-services/socorro/tags
 
