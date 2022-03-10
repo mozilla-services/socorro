@@ -136,7 +136,6 @@ jobs:
           name: Run tests
           command: |
             make my.env
-            ls -l my.env
             docker-compose up -d localstack elasticsearch postgresql statsd
             docker-compose run --rm test-ci shell ./bin/test.sh socorro
 
