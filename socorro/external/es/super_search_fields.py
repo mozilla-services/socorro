@@ -401,17 +401,30 @@ class SuperSearchFields(SuperSearchFieldsData):
 
         try:
             self.context.create_index(temp_index, mappings=mapping)
+            self.context.refresh()
+            self.context.health_check()
 
             now = datetimeutil.utc_now()
             last_week = now - datetime.timedelta(days=7)
             index_template = self.context.get_index_template()
             current_indices = generate_list_of_indexes(last_week, now, index_template)
 
-            crashes_sample = es_connection.search(
-                index=current_indices,
-                doc_type=self.context.get_doctype(),
-                size=MAPPING_TEST_CRASH_NUMBER,
-            )
+            # Attempt the search a few times to allow for ephemeral failures which keep
+            # happening in CI
+            attempts = 5
+            while attempts > 0:
+                try:
+                    crashes_sample = es_connection.search(
+                        index=current_indices,
+                        doc_type=self.context.get_doctype(),
+                        size=MAPPING_TEST_CRASH_NUMBER,
+                    )
+                    break
+                except elasticsearch.exceptions.TransportError:
+                    attempts -= 1
+                    if attempts == 0:
+                        raise
+
             crashes = [x["_source"] for x in crashes_sample["hits"]["hits"]]
 
             for crash in crashes:
