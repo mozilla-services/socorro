@@ -176,7 +176,9 @@ Dumps and other binary data
 
    * ``6da3499e-f6ae-22d6-1e1fdac8-16464a16.dmp``
 
-4. The ``Content-Type`` must be ``application/octet-stream``.
+4. For minidumps, the ``Content-Type`` must be ``application/octet-stream``.
+
+   For memory reports, the ``Content-Type`` must be ``application/gzip``.
 
 5. The value of this field is binary data.
 
@@ -190,12 +192,13 @@ Example::
 
 .. Note::
 
-   The Socorro processor treats the name ``upload_file_minidump`` as the
-   minidump of the crashing process. It extracts information from it and that's
-   what shows up on Crash Stats.
+   The Socorro processor treats the file with the name ``upload_file_minidump``
+   as the minidump of the crashing process. It extracts information from it and
+   that's what shows up on Crash Stats.
 
    If you're writing your own crash reporter client, you should make sure to
-   set the name for dump for the crash report as ``upload_file_minidump``.
+   set the name for the minidump of the crashing process as
+   ``upload_file_minidump``.
 
 
 Collector response
