@@ -266,33 +266,49 @@ HTTP 400
 
     For example::
 
-       Discarded=no_annotations
-
+       Discarded=malformed_no_annotations
 
     Non-exhaustive list of reasons the crash report could be malformed:
 
-    ``no_content_type``
+    ``malformed_no_content_type``
        The crash report HTTP POST has no content type in the HTTP headers.
 
-    ``wrong_content_type``
+    ``malformed_wrong_content_type``
       The crash report HTTP POST content type header exists, bug it's not set
       to ``multipart/form-data`` or ``multipart/mixed.
 
-    ``no_boundary``
+    ``malformed_no_boundary``
        The content type doesn't include a boundary value, so it can't be parsed
        as ``multipart``.
 
-    ``bad_gzip``
+    ``malformed_bad_gzip``
        The ``Content-Encoding`` header is set to ``gzip``, but the body isn't
        in gzip format or there's a parsing error.
 
-    ``no_annotations``
-       The crash report has been parsed, but there were no annotations in it.
+    ``malformed_invalid_json``
+       The payload included a part named ``extra``, but the value wasn't valid
+       JSON.
 
-    ``has_json_and_kv``
+    ``malformed_invalid_json_value``
+       The payload included a part named ``extra``, but the value wasn't an
+       object--it was some other type (str, int, ...)
+
+    ``malformed_invalid_annotation_value``
+       The payload included a ``text/plain`` part which had a value that wasn't
+       utf-8.
+
+    ``malformed_has_json_and_kv``
        The crash report encodes annotations as ``form-data`` fields as well as
        in an extra JSON-encoded object. It should have either one or the
        other--not both.
+
+    ``malformed_no_annotations``
+       The crash report has been parsed, but there were no annotations in it.
+
+    ``malformed_invalid_payload_structure``
+       The payload was malformed in some way: missing EOL sequences between
+       parts, missing part boundaries, malformed boundary, malformed end
+       sequence, etc.
 
 
     The crash reporter client shouldn't try to send a malformed crash report
