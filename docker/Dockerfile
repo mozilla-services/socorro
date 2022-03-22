@@ -18,11 +18,11 @@ RUN update-ca-certificates && \
 USER app
 
 # From: https://github.com/luser/rust-minidump
-ARG MINIDUMPREV=1c5f5f81f4431f358d5342c7e1114b0737949474
-ARG MINIDUMPREVDATE=2022-01-20
+ARG MINIDUMPREV=b0af5b4ce2e8b5fb680ef006f415744f4a536d8a
+ARG MINIDUMPREVDATE=2022-03-17
 
 RUN cargo install --locked --root=/app/ \
-    --git https://github.com/luser/rust-minidump.git \
+    --git https://github.com/rust-minidump/rust-minidump.git \
     --rev $MINIDUMPREV \
     minidump-stackwalk
 RUN echo "{\"sha\":\"$MINIDUMPREV\",\"date\":\"$MINIDUMPREVDATE\"}" > /app/bin/minidump-stackwalk.version.json
