@@ -1019,7 +1019,31 @@ class TestModuleURLRewriteRule:
         rule.act({}, {}, processed, processor_meta)
         assert processed == expected
 
-    def test_rewrite(self):
+    @pytest.mark.parametrize(
+        "url, expected",
+        [
+            # localhost urls get removed
+            (
+                "http://localhost:8000/bucket/v1/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym",
+                None,
+            ),
+            # symbols.mozilla.org urls have querystring removed
+            (
+                "https://symbols.mozilla.org/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym?foo=bar",
+                "https://symbols.mozilla.org/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym",
+            ),
+            (
+                "https://symbols.mozilla.org/try/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym?foo=bar",
+                "https://symbols.mozilla.org/try/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym",
+            ),
+            # everything else is left alone
+            (
+                "https://example.com/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym?foo=bar",
+                "https://example.com/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym?foo=bar",
+            ),
+        ],
+    )
+    def test_rewrite(self, url, expected):
         processed = {
             "json_dump": {
                 "modules": [
@@ -1033,7 +1057,7 @@ class TestModuleURLRewriteRule:
                         "loaded_symbols": True,
                         "symbol_disk_cache_hit": False,
                         "symbol_fetch_time": 52.86800003051758,
-                        "symbol_url": "https://host/bucket/try/v1/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym",
+                        "symbol_url": url,
                         "version": "88.0.0.7741",
                     },
                 ]
@@ -1042,10 +1066,7 @@ class TestModuleURLRewriteRule:
         processor_meta = get_basic_processor_meta()
         rule = ModuleURLRewriteRule()
         rule.act({}, {}, processed, processor_meta)
-        assert (
-            processed["json_dump"]["modules"][0]["symbol_url"]
-            == "https://symbols.mozilla.org/try/firefox.pdb/3C81DFD6564358244C4C44205044422E1/firefox.sym"
-        )
+        assert processed["json_dump"]["modules"][0]["symbol_url"] == expected
 
 
 class TestMozCrashReasonRule:

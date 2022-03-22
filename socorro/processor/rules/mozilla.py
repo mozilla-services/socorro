@@ -6,7 +6,7 @@ import datetime
 import gzip
 import json
 import re
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlparse, urlunparse
 from zlib import error as ZlibError
 
 from configman.dotdict import DotDict
@@ -1188,14 +1188,11 @@ class PHCRule(Rule):
 class ModuleURLRewriteRule(Rule):
     """Rewrites module urls using symbols.mozilla.org redirector
 
-    minidump-stackwalk caches SYM files on disk. When it's tossing in the url for a SYM
-    file cached on disk, it uses the first item in the symbols_urls list. If it's a try
-    symbol, then it's wrong.
+    The rust-minidump minidump-stackwalk caches SYM files on disk and adds an "INFO URL"
+    line to the end with the source url. This fixes that url up by:
 
-    This stomps on those urls using the redirector url from symbols.mozilla.org which
-    will return the right url regardless of whether it's a try symbol or not.
-
-    Bug #1672406.
+    1. nixing the url altogether if it's for localhost
+    2. removing querystring parameters if it's for symbols.mozilla.org
 
     """
 
@@ -1209,13 +1206,21 @@ class ModuleURLRewriteRule(Rule):
                 continue
 
             url = module["symbol_url"]
-            # FIXME(willkg): errors will bubble up and get to sentry and we can fix
-            # issue as we discover them
-            debug_filename, debug_id, symbol_file = url.split("/")[-3:]
-            # NOTE(willkg): adding the /try/ bit here causes this to check the normal
-            # bucket and then the try bucket.
-            new_url = f"https://symbols.mozilla.org/try/{debug_filename}/{debug_id}/{symbol_file}"
-            module["symbol_url"] = new_url
+            parsed = urlparse(url)
+
+            if "localhost" in parsed.netloc:
+                # If this is a localhost url, then remove it.
+                module["symbol_url"] = None
+                name = module.get("filename", module.get("debug_file", "unknown"))
+                processor_meta["processor_notes"].append(
+                    f"Redacting symbol url for module {name}"
+                )
+                continue
+
+            if "symbols.mozilla.org" in parsed.netloc:
+                # If this is a symbols.mozilla.org url, remove the querystring.
+                parsed = parsed._replace(query="")
+                module["symbol_url"] = urlunparse(parsed)
 
 
 class DistributionIdRule(Rule):
