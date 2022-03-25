@@ -820,6 +820,11 @@ FIELDS = {
         "name": "accessibility",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.accessibility",
+        "destination_keys": [
+            "raw_crash.Accessibility",
+            "processed_crash.accessibility",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },

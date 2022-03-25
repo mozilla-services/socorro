@@ -57,6 +57,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "DumperError", "dumper_error"),
         ("string", "XPCOMSpinEventLoopStack", "xpcom_spin_event_loop_stack"),
         ("string", "AbortMessage", "abort_message"),
+        ("boolean", "Accessibility", "accessibility"),
         ("string", "AccessibilityClient", "accessibility_client"),
         ("string", "AccessibilityInProcClient", "accessibility_in_proc_client"),
         ("string", "AdapterDeviceID", "adapter_device_id"),
