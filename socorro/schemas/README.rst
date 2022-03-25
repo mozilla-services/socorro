@@ -10,29 +10,38 @@ These files will be used as a "contract" between Socorro and other systems to
 which we might send our data.
 
 
-Changing The Schema
-===================
+java_exception
+==============
 
-You can change the schema but if you do, remember to increment the
-``$target_version``.
+This schema covers data in the JavaException crash annotation in incoming crash
+reports.
+
+
+telemetry_socorro_crash.json schema
+===================================
+
+This schema covers documents being sent to Telemetry ingestion.
+
+
+Modifying
+---------
 
 The JSON Schema should contain a key called ``$target_version``.
 
-* It's important this is an integer that goes up
-* *Don't change this* if you're...
+* This is a monotonically increasing integer
+* *Don't increment the version* if you're...
 
-  * Adding more keys at the **root level**
-  * Editing comments (content of ``description`` values)
+  * Adding more keys at the **root level**.
+  * Editing comments (content of ``description`` values).
 
-* *Do change this* if you're...
+* *Do increment the version* if you're...
 
-  * Adding more keys **inside a nested object**
-  * Changing the type definition of an *existing* key in any way
+  * Adding more keys **inside a nested object**.
+  * Changing the type definition of an *existing* key in any way.
   * Add or remove keys from a ``required`` sub-key. For example, if a key
     was required but you've now removed it. This is applicable at any
     nested level.
 
-Yes, if you add more keys, don't change the version.
 For example, if you want to add a new field to the root like this:
 
 .. code-block:: diff
@@ -65,38 +74,18 @@ However, if you add a key inside a nested structure, you have to bump the
                         "address": {
 
 
-Also, if you change the type definition, for example:
-
-.. code-block:: diff
-
-   "addons_checksum": {
-   -   "type": ["string", "null"],
-   +   "type": ["integer", "null"],
-       "description": "Sample specimen"
-   },
+**Don't change the type definition.** That breaks existing data. You must
+create a new field and deprecate the old one.
 
 
-Then you have to increment the ``$target_version`` number by 1.
+Testing schema changes
+-----------------------
 
+After editing the ``telemetry_socorro_crash.json`` file verify it still
+validates.
 
-Testing Schema Changes
-======================
-
-If you desire to edit the ``telemetry_socorro_crash.json`` file, it's
-recommended that you test that it still validates. For example, if you add a
-change like this:
-
-.. code-block:: diff
-
-   +"memory_max_length": {
-   +   "type": ["integer", "null"],
-   +   "description": "Max. amount of memory length for a crash"
-   +},
-
-
-Then, you should test that at least 100 randomly picked crashes have a type on
-that field that is either ``integer`` or ``null``. To do that, from a checkout
-of ``socorro`` run:
+After any change, you should test that at least 100 randomly picked crashes
+from prod. To do that, from a checkout of ``socorro`` run:
 
 .. code-block:: shell
 

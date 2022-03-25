@@ -10,6 +10,7 @@ import datetime
 import io
 import logging
 import os
+import pathlib
 
 import boto3
 from botocore.client import ClientError, Config
@@ -23,6 +24,13 @@ from socorro.external.es.connection_context import (
     ConnectionContext as ESConnectionContext,
 )
 from socorro.lib.datetimeutil import utc_now
+
+
+@pytest.fixture
+def reporoot():
+    """Returns path to repository root directory"""
+    path = pathlib.Path(__file__).parent.parent.parent
+    return path
 
 
 @pytest.fixture
