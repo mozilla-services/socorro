@@ -194,32 +194,32 @@ def build_mapping(doctype, fields=None):
     return mapping
 
 
-def is_doc_values_friendly(field_value):
-    """Predicate denoting whether this field should have doc_values added
+def is_doc_values_friendly(storage_value):
+    """Predicate denoting whether this storage should have doc_values added
 
-    ``doc_values=True`` is a thing we can add to certain fields to reduce the
+    ``doc_values=True`` is a thing we can add to certain storages to reduce the
     memory they use in Elasticsearch.
 
     This predicate determines whether we should add it or not for a given
-    field.
+    storage.
 
-    :arg field_value: a field value from super search fields
+    :arg storage_value: a storage value from super search storages
 
     :returns: True if ``doc_values=True` should be added; False otherwise
 
     """
-    field_type = field_value.get("type")
+    storage_type = storage_value.get("type")
 
     # No clue what type this is--probably false
-    if not field_type:
+    if not storage_type:
         return False
 
-    # object, and multi_fields fields don't work with doc_values=True
-    if field_type in ("object", "multi_field"):
+    # object, and multi_field storages don't work with doc_values=True
+    if storage_type in ("object", "multi_field"):
         return False
 
-    # analyzed string fields don't work with doc_values=True
-    if field_type == "string" and field_value.get("index") != "not_analyzed":
+    # analyzed string storages don't work with doc_values=True
+    if storage_type == "string" and storage_value.get("index") != "not_analyzed":
         return False
 
     # Everything is fine! Yay!
