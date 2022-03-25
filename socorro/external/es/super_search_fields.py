@@ -2050,6 +2050,11 @@ FIELDS = {
         "name": "is_garbage_collecting",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.is_garbage_collecting",
+        "destination_keys": [
+            "raw_crash.IsGarbageCollecting",
+            "processed_crash.is_garbage_collecting",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },

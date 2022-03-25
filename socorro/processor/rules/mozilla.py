@@ -99,6 +99,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "IPCMessageSize", "ipc_message_size"),
         ("string", "IPCShutdownState", "ipc_shutdown_state"),
         ("int", "IPCSystemError", "ipc_system_error"),
+        ("boolean", "IsGarbageCollecting", "is_garbage_collecting"),
         ("string", "MemoryErrorCorrection", "memory_error_correction"),
         ("int", "OOMAllocationSize", "oom_allocation_size"),
         ("string", "RemoteType", "remote_type"),
