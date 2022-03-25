@@ -3027,6 +3027,11 @@ FIELDS = {
         "name": "submitted_from_infobar",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.submitted_from_infobar",
+        "destination_keys": [
+            "raw_crash.SubmittedFromInfobar",
+            "processed_crash.submitted_from_infobar",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },

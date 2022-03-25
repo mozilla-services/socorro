@@ -107,6 +107,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "ShutdownProgress", "shutdown_progress"),
         ("boolean", "StartupCrash", "startup_crash"),
         ("int", "StartupTime", "startup_time"),
+        ("boolean", "SubmittedFromInfobar", "submitted_from_infobar"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
         ("int", "TotalPageFile", "total_page_file"),
         ("int", "TotalPhysicalMemory", "total_physical_memory"),
