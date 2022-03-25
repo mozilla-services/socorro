@@ -2896,6 +2896,11 @@ FIELDS = {
         "name": "safe_mode",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.safe_mode",
+        "destination_keys": [
+            "raw_crash.SafeMode",
+            "processed_crash.safe_mode",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },

@@ -103,6 +103,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "MemoryErrorCorrection", "memory_error_correction"),
         ("int", "OOMAllocationSize", "oom_allocation_size"),
         ("string", "RemoteType", "remote_type"),
+        ("boolean", "SafeMode", "safe_mode"),
         ("string", "ShutdownProgress", "shutdown_progress"),
         ("int", "StartupTime", "startup_time"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
