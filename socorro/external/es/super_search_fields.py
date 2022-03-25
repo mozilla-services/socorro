@@ -1434,6 +1434,7 @@ FIELDS = {
             "type": "string",
         },
     },
+    # DEPRECATED -- remove in 8/2022
     "contains_memory_report": {
         "data_validation_type": "str",
         "description": "Has content for processed_crash.memory_report or not.",
@@ -1447,6 +1448,31 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "flag",
         "storage_mapping": {"type": "short"},
+    },
+    # NOTE(willkg): This populates the new location in processed_crash with data with
+    # the right type. In 8/2022, we can:
+    #
+    # 1. remove contains_memory_report (deprecated)
+    # 2. rename this one to contains_memory_report
+    # 3. change is_exposed and is_returned to True
+    # 4. change the namespace and in_database_name and remove source/destination keys
+    "contains_memory_report_future": {
+        "data_validation_type": "bool",
+        "description": "Has content for processed_crash.memory_report or not.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "ContainsMemoryReport",
+        "is_exposed": False,
+        "is_returned": True,
+        "name": "contains_memory_report_future",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "source_key": "processed_crash.contains_memory_report",
+        "destination_keys": [
+            "processed_crash.contains_memory_report",
+        ],
+        "query_type": "bool",
+        "storage_mapping": {"type": "boolean"},
     },
     # FIXME(willkg): We have this indexed as an integer, but the annotation is listed as
     # a string. The actual value is an int converted to a string so in indexing we
@@ -1631,6 +1657,7 @@ FIELDS = {
         ),
         is_protected=False,
     ),
+    # DEPRECATED -- remove in 8/2022
     "dom_fission_enabled": {
         "data_validation_type": "str",
         "description": (
@@ -1648,6 +1675,35 @@ FIELDS = {
         "query_type": "flag",
         "storage_mapping": {"None_value": 0, "type": "short"},
     },
+    # NOTE(willkg): This populates the new location in processed_crash with data with
+    # the right type. In 8/2022, we can:
+    #
+    # 1. remove dom_fission_enabled (deprecated)
+    # 2. rename this one to dom_fission_enabled
+    # 3. change is_exposed and is_returned to True
+    # 4. change the namespace and in_database_name and remove source/destination keys
+    "dom_fission_enabled_future": {
+        "data_validation_type": "bool",
+        "description": (
+            "Set to 1 when DOM fission is enabled, and subframes are potentially "
+            "loaded in a separate process."
+        ),
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "DOMFissionEnabled",
+        "is_exposed": False,
+        "is_returned": True,
+        "name": "dom_fission_enabled_future",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "source_key": "processed_crash.dom_fission_enabled",
+        "destination_keys": [
+            "processed_crash.dom_fission_enabled",
+        ],
+        "query_type": "bool",
+        "storage_mapping": {"type": "boolean"},
+    },
+    # DEPRECATED -- remove in 8/2022
     "dom_ipc_enabled": {
         "data_validation_type": "str",
         "description": "Set to 1 when a tab is running in a content process.",
@@ -1661,6 +1717,31 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "flag",
         "storage_mapping": {"None_value": 0, "type": "short"},
+    },
+    # NOTE(willkg): This populates the new location in processed_crash with data with
+    # the right type. In 8/2022, we can:
+    #
+    # 1. remove dom_ipc_enabled (deprecated)
+    # 2. rename this one to dom_ipc_enabled
+    # 3. change is_exposed and is_returned to True
+    # 4. change the namespace and in_database_name and remove source/destination keys
+    "dom_ipc_enabled_future": {
+        "data_validation_type": "bool",
+        "description": "Set to 1 when a tab is running in a content process.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "DOMIPCEnabled",
+        "is_exposed": False,
+        "is_returned": True,
+        "name": "dom_ipc_enabled_future",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "source_key": "processed_crash.dom_ipc_enabled",
+        "destination_keys": [
+            "processed_crash.dom_ipc_enabled",
+        ],
+        "query_type": "bool",
+        "storage_mapping": {"type": "boolean"},
     },
     "dumper_error": {
         "data_validation_type": "str",
@@ -1761,6 +1842,7 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
+    # DEPRECATED -- remove in 8/2022
     "gmp_plugin": {
         "data_validation_type": "str",
         "description": "Whether it is a GMP plugin crash.",
@@ -1774,6 +1856,31 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "flag",
         "storage_mapping": {"type": "short"},
+    },
+    # NOTE(willkg): This populates the new location in processed_crash with data with
+    # the right type. In 8/2022, we can:
+    #
+    # 1. remove contains_memory_report (deprecated)
+    # 2. rename this one to contains_memory_report
+    # 3. change is_exposed and is_returned to True
+    # 4. change the namespace and in_database_name and remove source/destination keys
+    "gmp_plugin_future": {
+        "data_validation_type": "bool",
+        "description": "Whether it is a GMP plugin crash.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "GMPPlugin",
+        "is_exposed": False,
+        "is_returned": True,
+        "name": "gmp_plugin_future",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "source_key": "processed_crash.gmp_plugin",
+        "destination_keys": [
+            "processed_crash.gmp_plugin",
+        ],
+        "query_type": "bool",
+        "storage_mapping": {"type": "boolean"},
     },
     "graphics_critical_error": {
         "data_validation_type": "str",
@@ -1798,6 +1905,7 @@ FIELDS = {
             "type": "string",
         },
     },
+    # DEPRECATED -- remove in 8/2022
     "graphics_startup_test": {
         "data_validation_type": "str",
         "description": "Whether the crash occured in the DriverCrashGuard.",
@@ -1811,6 +1919,31 @@ FIELDS = {
         "permissions_needed": [],
         "query_type": "flag",
         "storage_mapping": {"type": "short"},
+    },
+    # NOTE(willkg): This populates the new location in processed_crash with data with
+    # the right type. In 8/2022, we can:
+    #
+    # 1. remove graphics_startup_test (deprecated)
+    # 2. rename this one to graphics_startup_test
+    # 3. change is_exposed and is_returned to True
+    # 4. change the namespace and in_database_name and remove source/destination keys
+    "graphics_startup_test_future": {
+        "data_validation_type": "bool",
+        "description": "Whether the crash occured in the DriverCrashGuard.",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "GraphicsStartupTest",
+        "is_exposed": False,
+        "is_returned": True,
+        "name": "graphics_startup_test_future",
+        "namespace": "raw_crash",
+        "permissions_needed": [],
+        "source_key": "processed_crash.graphics_startup_test",
+        "destination_keys": [
+            "processed_crash.graphics_startup_test",
+        ],
+        "query_type": "bool",
+        "storage_mapping": {"type": "boolean"},
     },
     "hang_type": {
         "data_validation_type": "enum",

@@ -349,27 +349,32 @@ def test_validate_super_search_fields(name, properties):
     # The name in the mapping should be the same as the name in properties
     assert properties["name"] == name
 
+    # If is_exposed and is_returned are both False, then we should remove this field
+    assert properties["is_exposed"] or properties["is_returned"]
+
     # If stroage_mapping is None, then is_exposed must be False
     if properties["storage_mapping"] is None:
         assert properties["is_exposed"] is False
 
-    if properties["is_exposed"] is False:
-        assert properties["storage_mapping"] is None
+    # We occasionally do long-running migrations where we need to accumulate data in
+    # a field and specify it in a way that breaks super_search_fields validation. If
+    # the field name has "_future" at the end, it's one of these, so ignore these
+    # checks.
+    if not properties["name"].endswith("_future"):
+        if properties["is_exposed"] is False:
+            assert properties["storage_mapping"] is None
 
-    # If is_exposed and is_returned are both False, then we should remove this field
-    assert properties["is_exposed"] or properties["is_returned"]
+        # Make sure the source_key is processed_crash + name
+        if properties.get("source_key"):
+            assert properties["source_key"] == f"processed_crash.{properties['name']}"
 
-    # Make sure the source_key is processed_crash + name
-    if properties.get("source_key"):
-        assert properties["source_key"] == f"processed_crash.{properties['name']}"
-
-    if properties.get("destination_keys"):
-        for key in properties["destination_keys"]:
-            possible_keys = [
-                f"raw_crash.{properties['in_database_name']}",
-                f"processed_crash.{properties['name']}",
-            ]
-            assert key in possible_keys
+        if properties.get("destination_keys"):
+            for key in properties["destination_keys"]:
+                possible_keys = [
+                    f"raw_crash.{properties['in_database_name']}",
+                    f"processed_crash.{properties['name']}",
+                ]
+                assert key in possible_keys
 
 
 @pytest.mark.parametrize(
