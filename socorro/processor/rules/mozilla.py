@@ -109,6 +109,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "StartupTime", "startup_time"),
         ("boolean", "SubmittedFromInfobar", "submitted_from_infobar"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
+        ("boolean", "Throttleable", "throttleable"),
         ("int", "TotalPageFile", "total_page_file"),
         ("int", "TotalPhysicalMemory", "total_physical_memory"),
         ("int", "TotalVirtualMemory", "total_virtual_memory"),
