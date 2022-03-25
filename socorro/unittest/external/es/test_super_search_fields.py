@@ -359,6 +359,18 @@ def test_validate_super_search_fields(name, properties):
     # If is_exposed and is_returned are both False, then we should remove this field
     assert properties["is_exposed"] or properties["is_returned"]
 
+    # Make sure the source_key is processed_crash + name
+    if properties.get("source_key"):
+        assert properties["source_key"] == f"processed_crash.{properties['name']}"
+
+    if properties.get("destination_keys"):
+        for key in properties["destination_keys"]:
+            possible_keys = [
+                f"raw_crash.{properties['in_database_name']}",
+                f"processed_crash.{properties['name']}",
+            ]
+            assert key in possible_keys
+
 
 @pytest.mark.parametrize(
     "value, expected",
