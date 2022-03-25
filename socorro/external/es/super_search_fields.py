@@ -1427,6 +1427,11 @@ FIELDS = {
         "name": "collector_notes",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.collector_notes",
+        "destination_keys": [
+            "raw_crash.collector_notes",
+            "processed_crash.collector_notes",
+        ],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -3167,22 +3172,6 @@ FIELDS = {
         ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
-    },
-    # NOTE(willkg): This is only here because the report view in the webapp uses the
-    # description.
-    "submitted_timestamp": {
-        "data_validation_type": "enum",
-        "description": "The datetime when the crash was submitted to the Socorro collector.",
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "submitted_timestamp",
-        "is_exposed": False,
-        "is_returned": True,
-        "name": "submitted_timestamp",
-        "namespace": "raw_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": None,
     },
     "support_classification": {
         "data_validation_type": "enum",
