@@ -359,38 +359,47 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
     def test_get_with_bool_operators(self):
         self.index_crash(
-            processed_crash={"date_processed": self.now},
+            processed_crash={
+                "date_processed": self.now,
+                "accessibility": True,
+            },
             raw_crash={"Accessibility": True},
         )
         self.index_crash(
-            processed_crash={"date_processed": self.now},
+            processed_crash={
+                "date_processed": self.now,
+                "accessibility": False,
+            },
             raw_crash={"Accessibility": False},
         )
         self.index_crash(
-            processed_crash={"date_processed": self.now},
+            processed_crash={
+                "date_processed": self.now,
+                "accessibility": True,
+            },
             raw_crash={"Accessibility": True},
         )
         self.index_crash(
             processed_crash={"date_processed": self.now},
-            # Missing value should also be considered as "false".
+            # Missing value means it's neither true nor false
             raw_crash={},
         )
         self.es_context.refresh()
 
         # Test the "has terms" operator.
-        res = self.api.get(accessibility="__true__", _columns=["accessibility"])
+        resp = self.api.get(accessibility="__true__", _columns=["accessibility"])
 
-        assert res["total"] == 2
-        assert len(res["hits"]) == 2
-        for hit in res["hits"]:
+        assert resp["total"] == 2
+        assert len(resp["hits"]) == 2
+        for hit in resp["hits"]:
             assert hit["accessibility"]
 
-        # Is not true
-        res = self.api.get(accessibility="!__true__", _columns=["accessibility"])
+        # Is not true -- this picks up both False and None
+        resp = self.api.get(accessibility="!__true__", _columns=["accessibility"])
 
-        assert res["total"] == 2
-        assert len(res["hits"]) == 2
-        assert not res["hits"][0]["accessibility"]
+        assert resp["total"] == 2
+        assert len(resp["hits"]) == 2
+        assert not resp["hits"][0]["accessibility"]
 
     def test_get_with_combined_operators(self):
         sigs = (
