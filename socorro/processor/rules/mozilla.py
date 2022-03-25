@@ -90,6 +90,7 @@ class CopyFromRawCrashRule(Rule):
         ("boolean", "EMCheckCompatibility", "em_check_compatibility"),
         ("string", "GMPLibraryPath", "gmp_library_path"),
         ("string", "GraphicsCriticalError", "graphics_critical_error"),
+        ("boolean", "HasDeviceTouchScreen", "has_device_touch_screen"),
         ("int", "InstallTime", "install_time"),
         ("string", "ipc_channel_error", "ipc_channel_error"),
         ("string", "IPCFatalErrorMsg", "ipc_fatal_error_msg"),
