@@ -7,6 +7,7 @@ import pytest
 
 from socorro.processor.rules.general import (
     CPUInfoRule,
+    CollectorInfoRule,
     CrashReportKeysRule,
     DeNoneRule,
     DeNullRule,
@@ -329,6 +330,20 @@ class TestOSInfoRule:
 
         # raw crash should be unchanged
         assert raw_crash == {}
+
+
+class TestCollectorInfoRule:
+    def test_basic(self):
+        raw_crash = {
+            "collector_notes": ["some notes"],
+        }
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = CollectorInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash == raw_crash
 
 
 class TestCrashReportKeysRule:
