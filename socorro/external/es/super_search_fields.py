@@ -971,7 +971,7 @@ FIELDS = {
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
     "addons_checked": {
-        "data_validation_type": "enum",
+        "data_validation_type": "bool",
         "description": "",
         "form_field_choices": [],
         "has_full_version": False,
