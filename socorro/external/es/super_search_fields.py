@@ -1699,6 +1699,11 @@ FIELDS = {
         "name": "em_check_compatibility",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.em_check_compatibility",
+        "destination_keys": [
+            "raw_crash.EMCheckCompatibility",
+            "processed_crash.em_check_compatibility",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },

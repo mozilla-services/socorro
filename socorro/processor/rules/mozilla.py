@@ -87,6 +87,7 @@ class CopyFromRawCrashRule(Rule):
         ("boolean", "ContentSandboxEnabled", "content_sandbox_enabled"),
         ("int", "ContentSandboxLevel", "content_sandbox_level"),
         ("string", "CPUMicrocodeVersion", "cpu_microcode_version"),
+        ("boolean", "EMCheckCompatibility", "em_check_compatibility"),
         ("string", "GMPLibraryPath", "gmp_library_path"),
         ("string", "GraphicsCriticalError", "graphics_critical_error"),
         ("int", "InstallTime", "install_time"),
