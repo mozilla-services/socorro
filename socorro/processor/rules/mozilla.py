@@ -82,6 +82,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "AvailableVirtualMemory", "available_virtual_memory"),
         ("string", "BIOS_Manufacturer", "bios_manufacturer"),
         ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
+        ("boolean", "ContainsMemoryReport", "contains_memory_report"),
         ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
         ("boolean", "ContentSandboxCapable", "content_sandbox_capable"),
         ("boolean", "ContentSandboxEnabled", "content_sandbox_enabled"),
