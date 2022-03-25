@@ -398,11 +398,11 @@ def test_is_doc_values_friendly(value, expected):
 
 
 def test_add_doc_values():
-    data = {"type": "short"}
-    add_doc_values(data)
-    assert data == {"type": "short", "doc_values": True}
+    storage_mapping = {"type": "short"}
+    add_doc_values(storage_mapping)
+    assert storage_mapping == {"type": "short", "doc_values": True}
 
-    data = {
+    storage_mapping = {
         "fields": {
             "AsyncShutdownTimeout": {
                 "analyzer": "standard",
@@ -413,8 +413,8 @@ def test_add_doc_values():
         },
         "type": "multi_field",
     }
-    add_doc_values(data)
-    assert data == {
+    add_doc_values(storage_mapping)
+    assert storage_mapping == {
         "fields": {
             "AsyncShutdownTimeout": {
                 "analyzer": "standard",
