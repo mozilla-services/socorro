@@ -3097,6 +3097,11 @@ FIELDS = {
         "name": "throttleable",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.throttleable",
+        "destination_keys": [
+            "raw_crash.Throttleable",
+            "processed_crash.throttleable",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
