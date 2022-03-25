@@ -1846,6 +1846,11 @@ FIELDS = {
         "name": "has_device_touch_screen",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.has_device_touch_screen",
+        "destination_keys": [
+            "raw_crash.HasDeviceTouchScreen",
+            "processed_crash.has_device_touch_screen",
+        ],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
