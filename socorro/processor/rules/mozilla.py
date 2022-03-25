@@ -105,6 +105,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "RemoteType", "remote_type"),
         ("boolean", "SafeMode", "safe_mode"),
         ("string", "ShutdownProgress", "shutdown_progress"),
+        ("boolean", "StartupCrash", "startup_crash"),
         ("int", "StartupTime", "startup_time"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
         ("int", "TotalPageFile", "total_page_file"),

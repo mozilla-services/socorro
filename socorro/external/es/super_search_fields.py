@@ -2984,7 +2984,14 @@ FIELDS = {
         "name": "startup_crash",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.startup_crash",
+        "destination_keys": [
+            "raw_crash.StartupCrash",
+            "processed_crash.startup_crash",
+        ],
         "query_type": "bool",
+        # NOTE(willkg): startup_crash is used in signature report in some interesting
+        # ways so I think we need to have both T and F values in ES
         "storage_mapping": {"null_value": "False", "type": "boolean"},
     },
     "startup_time": {
