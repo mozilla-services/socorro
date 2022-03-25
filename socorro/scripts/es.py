@@ -144,7 +144,7 @@ def cmd_delete(ctx, index):
     """Delete indices."""
     conn = get_conn()
     if index:
-        indices_to_delete = index
+        indices_to_delete = [index]
     else:
         indices_to_delete = conn.get_indices()
 
