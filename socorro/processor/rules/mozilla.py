@@ -83,6 +83,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "BIOS_Manufacturer", "bios_manufacturer"),
         ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
         ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
+        ("boolean", "ContentSandboxCapable", "content_sandbox_capable"),
         ("int", "ContentSandboxLevel", "content_sandbox_level"),
         ("string", "CPUMicrocodeVersion", "cpu_microcode_version"),
         ("string", "GMPLibraryPath", "gmp_library_path"),

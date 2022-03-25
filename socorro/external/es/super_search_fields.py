@@ -1483,8 +1483,13 @@ FIELDS = {
         "name": "content_sandbox_capable",
         "namespace": "raw_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.content_sandbox_capable",
+        "destination_keys": [
+            "raw_crash.ContentSandboxCapable",
+            "processed_crash.content_sandbox_capable",
+        ],
         "query_type": "bool",
-        "storage_mapping": {"null_value": False, "type": "boolean"},
+        "storage_mapping": {"type": "boolean"},
     },
     "content_sandbox_enabled": {
         "data_validation_type": "bool",
