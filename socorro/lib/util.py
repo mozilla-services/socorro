@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import collections
+import collections.abc
 from functools import wraps
 import time
 
@@ -18,13 +18,13 @@ def dotdict_to_dict(sdotdict):
     """
 
     def _dictify(thing):
-        if isinstance(thing, collections.Mapping):
+        if isinstance(thing, collections.abc.Mapping):
             return {key: _dictify(val) for key, val in thing.items()}
         elif isinstance(thing, str):
             # NOTE(willkg): Need to do this because strings are sequences but
             # we don't want to convert them into lists in the next clause
             return thing
-        elif isinstance(thing, collections.Sequence):
+        elif isinstance(thing, collections.abc.Sequence):
             return [_dictify(item) for item in thing]
         return thing
 

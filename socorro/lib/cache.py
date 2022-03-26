@@ -6,7 +6,8 @@
 In-memory caching utilities.
 """
 
-from collections import MutableMapping, OrderedDict
+from collections import OrderedDict
+from collections.abc import MutableMapping
 import datetime
 import threading
 
