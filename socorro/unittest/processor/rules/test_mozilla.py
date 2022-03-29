@@ -176,9 +176,9 @@ class TestCopyFromRawCrashRule:
 
     @pytest.mark.parametrize(
         "field_data",
-        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "flag"],
+        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "boolean"],
     )
-    def test_flag(self, field_data):
+    def test_boolean(self, field_data):
         value_type, raw_key, processed_key = field_data
 
         rule = CopyFromRawCrashRule()
@@ -189,7 +189,7 @@ class TestCopyFromRawCrashRule:
         processor_meta = get_basic_processor_meta()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "1"}
-        assert processed_crash == {processed_key: "1"}
+        assert processed_crash == {processed_key: True}
         assert processor_meta["processor_notes"] == []
 
         raw_crash = {raw_key: "foo"}
@@ -199,7 +199,9 @@ class TestCopyFromRawCrashRule:
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "foo"}
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [f"{raw_key} has non-1 value"]
+        assert processor_meta["processor_notes"] == [
+            f"{raw_key} has non-boolean value foo"
+        ]
 
     @pytest.mark.parametrize(
         "field_data",
