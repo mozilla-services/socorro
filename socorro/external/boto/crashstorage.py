@@ -15,7 +15,6 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.es.super_search_fields import SuperSearchFieldsData
 from socorro.lib.libjson import schema_reduce
 from socorro.lib.ooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
@@ -287,51 +286,35 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     """
 
-    def __init__(self, config, *args, **kwargs):
-        super().__init__(config, *args, **kwargs)
-        self._all_fields = SuperSearchFieldsData().get()
+    # List of source -> target keys which have different names for historical reasons
+    HISTORICAL_MANUAL_KEYS = [
+        # processed crash source key, crash report target key
+        ("build", "build_id"),
+        ("date_processed", "date"),
+        ("os_pretty_version", "platform_pretty_version"),
+        ("os_name", "platform"),
+        ("os_version", "platform_version"),
+    ]
 
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash data.
 
-        For Telemetry, we combine the raw and processed crash data into a "crash report"
-        which we save to an S3 bucket for the Telemetry system to pick up later.
+        For Telemetry, we reduce the processed crash into a crash report that matches
+        the telemetry_socorro_crash.json schema.
+
+        For historical reasons, we then add some additional fields manually.
 
         """
-        crash_report = {}
-
-        # TODO Opportunity of optimization: We could inspect
-        # TELEMETRY_SOCORRO_CRASH_SCHEMA and get a list of all (recursive) keys that are
-        # in there and use that to limit the two following loops to not bother filling
-        # up `crash_report` with keys that will never be needed.
-
-        # FIXME(willkg): once we've moved all the raw crash stuff into the processed
-        # crash, we can rework this to just look at the processed crash and reduce it by
-        # the schema
-
-        # Rename fields in raw_crash
-        raw_fields_map = {
-            x["in_database_name"]: x["name"]
-            for x in self._all_fields.values()
-            if x["namespace"] == "raw_crash"
-        }
-        for key, val in raw_crash.items():
-            crash_report[raw_fields_map.get(key, key)] = val
-
-        # Rename fields in processed_crash
-        processed_fields_map = {
-            x["in_database_name"]: x["name"]
-            for x in self._all_fields.values()
-            if x["namespace"] == "processed_crash"
-        }
-        for key, val in processed_crash.items():
-            crash_report[processed_fields_map.get(key, key)] = val
-
         # Validate crash_report
         crash_report = schema_reduce(
             schema=TELEMETRY_SOCORRO_CRASH_SCHEMA,
-            document=crash_report,
+            document=processed_crash,
         )
+
+        # Add additional fields that have different names for historical reasons
+        for source_key, target_key in self.HISTORICAL_MANUAL_KEYS:
+            if source_key in processed_crash:
+                crash_report[target_key] = processed_crash[source_key]
 
         crash_id = crash_report["uuid"]
         data = dict_to_str(crash_report).encode("utf-8")
