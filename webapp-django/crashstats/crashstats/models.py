@@ -687,7 +687,6 @@ class ProcessedCrash(SocorroMiddleware):
         "uuid",
         "version",
         "windows_error_reporting",
-        "Winsock_LSP",
     )
 
     # Same as for RawCrash, we supplement with the existing list, on top

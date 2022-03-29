@@ -3503,27 +3503,6 @@ FIELDS = {
         ),
         is_protected=False,
     ),
-    "winsock_lsp": {
-        "data_validation_type": "str",
-        "description": (
-            "On Windows, a string of data from the Windows OS about the list of installed LSPs "
-            "(Layered Service Provider)."
-        ),
-        "form_field_choices": [],
-        "has_full_version": True,
-        "in_database_name": "Winsock_LSP",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "winsock_lsp",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "query_type": "string",
-        "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
-        },
-    },
     "xpcom_spin_event_loop_stack": keyword_field(
         name="xpcom_spin_event_loop_stack",
         description=(
