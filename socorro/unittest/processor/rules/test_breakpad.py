@@ -43,27 +43,6 @@ canonical_standard_raw_crash = {
         "Layers- D3D9 Layers? D3D9 Layers- "
     ),
     "CrashTime": "1336519554",
-    "Winsock_LSP": (
-        "MSAFD Tcpip [TCP/IPv6] : 2 : 1 :  \n "
-        "MSAFD Tcpip [UDP/IPv6] : 2 : 2 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "MSAFD Tcpip [RAW/IPv6] : 2 : 3 :  \n "
-        "MSAFD Tcpip [TCP/IP] : 2 : 1 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "MSAFD Tcpip [UDP/IP] : 2 : 2 :  \n "
-        "MSAFD Tcpip [RAW/IP] : 2 : 3 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP TCPv6 : 2 : 1 :  \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP TCP : 2 : 1 : "
-        "%SystemRoot%\\system32\\mswsock.dll \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP UDPv6 : 2 : 2 :  \n "
-        "\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a "
-        "\u0443\u0441\u043b\u0443\u0433 RSVP UDP : 2 : 2 : "
-        "%SystemRoot%\\system32\\mswsock.dll"
-    ),
     "AvailablePhysicalMemory": "2227773440",
     "StartupTime": "1336499438",
     "Add-ons": (

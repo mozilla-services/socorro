@@ -1089,7 +1089,7 @@
         "string",
         "null"
       ],
-      "description": "On Windows, a string of data from the Windows OS about the list of installed LSPs (Layered Service Provider)."
+      "description": "DEPRECATED EMPTY FIELD. See bug #1762000."
     }
   }
 }
