@@ -71,6 +71,7 @@ jobs:
           name: Build Docker images
           command: |
             make build
+            docker-compose images
 
       - run:
           name: Verify requirements.txt file
@@ -133,11 +134,16 @@ jobs:
             docker load -i workspace/socorro_app.tar.gz
 
       - run:
+          name: Build Docker images
+          command: |
+            make build
+            docker-compose images
+
+      - run:
           name: Run tests
           # yamllint disable rule:line-length
           command: |
             make my.env
-            docker-compose images
             docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh socorro
           # yamllint enable rule:line-length
@@ -162,11 +168,16 @@ jobs:
             docker load -i workspace/socorro_app.tar.gz
 
       - run:
+          name: Build Docker images
+          command: |
+            make build
+            docker-compose images
+
+      - run:
           name: Run tests
           # yamllint disable rule:line-length
           command: |
             make my.env
-            docker-compose images
             docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh webapp
           # yamllint enable rule:line-length
