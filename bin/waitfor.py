@@ -15,6 +15,7 @@ import argparse
 import socket
 import urllib.error
 import urllib.request
+from urllib.parse import urlparse, urlunparse
 import sys
 import time
 
@@ -27,7 +28,7 @@ def main(args):
         )
     )
     parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--timeout", type=int, default=10, help="Wait timeout")
+    parser.add_argument("--timeout", type=int, default=15, help="Wait timeout")
     parser.add_argument(
         "--codes",
         default="200",
@@ -39,10 +40,18 @@ def main(args):
 
     ok_codes = [int(code.strip()) for code in parsed.codes.split(",")]
 
+    url = parsed.url
+    parsed_url = urlparse(url)
+    if "@" in parsed_url.netloc:
+        netloc = parsed_url.netloc
+        netloc = netloc[netloc.find("@") + 1 :]
+        parsed_url = parsed_url._replace(netloc=netloc)
+        url = urlunparse(parsed_url)
+
     if parsed.verbose:
         print(
             "Testing %s for %s with timeout %d..."
-            % (parsed.url, repr(ok_codes), parsed.timeout)
+            % (url, repr(ok_codes), parsed.timeout)
         )
 
     socket.setdefaulttimeout(1)
@@ -52,7 +61,7 @@ def main(args):
     last_fail = ""
     while True:
         try:
-            with urllib.request.urlopen(parsed.url) as resp:
+            with urllib.request.urlopen(url) as resp:
                 if resp.code in ok_codes:
                     sys.exit(0)
                 last_fail = "HTTP status code: %s" % resp.code
