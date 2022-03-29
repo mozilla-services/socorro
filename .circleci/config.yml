@@ -137,6 +137,7 @@ jobs:
           # yamllint disable rule:line-length
           command: |
             make my.env
+            docker-compose images
             docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh socorro
           # yamllint enable rule:line-length
@@ -165,6 +166,7 @@ jobs:
           # yamllint disable rule:line-length
           command: |
             make my.env
+            docker-compose images
             docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh webapp
           # yamllint enable rule:line-length
