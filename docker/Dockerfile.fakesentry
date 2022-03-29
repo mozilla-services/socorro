@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 RUN pip install -U 'pip>=20' && \
-    pip install --no-cache-dir 'kent==0.4.0'
+    pip install --no-cache-dir 'kent==0.4.1'
 
 USER app
 
