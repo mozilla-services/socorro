@@ -134,10 +134,12 @@ jobs:
 
       - run:
           name: Run tests
+          # yamllint disable rule:line-length
           command: |
             make my.env
-            docker-compose up -d localstack elasticsearch postgresql statsd
+            docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh socorro
+          # yamllint enable rule:line-length
 
   testwebapp:
     docker: *docker
@@ -160,10 +162,12 @@ jobs:
 
       - run:
           name: Run tests
+          # yamllint disable rule:line-length
           command: |
             make my.env
-            docker-compose up -d localstack elasticsearch postgresql statsd
+            docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker-compose run --rm test-ci shell ./bin/test.sh webapp
+          # yamllint enable rule:line-length
 
   push:
     docker: *docker
