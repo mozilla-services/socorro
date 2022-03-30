@@ -2796,8 +2796,8 @@ FIELDS = {
     "plugin_filename": {
         "data_validation_type": "enum",
         "description": (
-            "When a plugin process crashes, this is the name of the file of the plugin loaded "
-            "into that process."
+            "When a plugin process crashes, this is the name of the file of the plugin "
+            "loaded into that process."
         ),
         "form_field_choices": [],
         "has_full_version": True,
@@ -2807,9 +2807,15 @@ FIELDS = {
         "name": "plugin_filename",
         "namespace": "processed_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.plugin_filename",
+        "destination_keys": [
+            "processed_crash.PluginFilename",
+            "processed_crash.plugin_filename",
+        ],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
+                "plugin_filename": {"index": "analyzed", "type": "string"},
                 "PluginFilename": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
@@ -2819,8 +2825,8 @@ FIELDS = {
     "plugin_name": {
         "data_validation_type": "enum",
         "description": (
-            "When a plugin process crashes, this is the name of the plugin loaded into that "
-            "process."
+            "When a plugin process crashes, this is the name of the plugin loaded into "
+            "that process."
         ),
         "form_field_choices": [],
         "has_full_version": True,
@@ -2830,10 +2836,16 @@ FIELDS = {
         "name": "plugin_name",
         "namespace": "processed_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.plugin_name",
+        "destination_keys": [
+            "processed_crash.PluginName",
+            "processed_crash.plugin_name",
+        ],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
                 "PluginName": {"index": "analyzed", "type": "string"},
+                "plugin_name": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
             "type": "multi_field",
@@ -2842,8 +2854,8 @@ FIELDS = {
     "plugin_version": {
         "data_validation_type": "enum",
         "description": (
-            "When a plugin process crashes, this is the version of the plugin loaded into that "
-            "process."
+            "When a plugin process crashes, this is the version of the plugin loaded into "
+            "that process."
         ),
         "form_field_choices": [],
         "has_full_version": True,
@@ -2853,10 +2865,16 @@ FIELDS = {
         "name": "plugin_version",
         "namespace": "processed_crash",
         "permissions_needed": [],
+        "source_key": "processed_crash.plugin_version",
+        "destination_keys": [
+            "processed_crash.PluginVersion",
+            "processed_crash.plugin_version",
+        ],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
                 "PluginVersion": {"index": "analyzed", "type": "string"},
+                "plugin_version": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
             "type": "multi_field",

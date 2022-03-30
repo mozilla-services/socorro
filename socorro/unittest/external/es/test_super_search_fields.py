@@ -356,10 +356,10 @@ def test_validate_super_search_fields(name, properties):
     if properties["storage_mapping"] is None:
         assert properties["is_exposed"] is False
 
-    # We occasionally do long-running migrations where we need to accumulate data in
-    # a field and specify it in a way that breaks super_search_fields validation. If
-    # the field name has "_future" at the end, it's one of these, so ignore these
-    # checks.
+    # We occasionally do multi-step migrations that change data types where we need to
+    # accumulate data in a new field and specify it in a way that otherwise breaks
+    # super_search_fields validation. If the field name has "_future" at the end, it's
+    # one of these cases, so ignore these checks.
     if not properties["name"].endswith("_future"):
         if properties["is_exposed"] is False:
             assert properties["storage_mapping"] is None
@@ -371,7 +371,10 @@ def test_validate_super_search_fields(name, properties):
         if properties.get("destination_keys"):
             for key in properties["destination_keys"]:
                 possible_keys = [
+                    # Old keys we're probably migrating from
                     f"raw_crash.{properties['in_database_name']}",
+                    f"processed_crash.{properties['in_database_name']}",
+                    # New key we're probably migrating to
                     f"processed_crash.{properties['name']}",
                 ]
                 assert key in possible_keys

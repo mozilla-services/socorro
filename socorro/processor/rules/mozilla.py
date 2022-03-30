@@ -278,14 +278,11 @@ class PluginRule(Rule):
         else:
             processed_crash["hang_type"] = 0
 
-        process_type = raw_crash.get("ProcessType", None)
-
+        process_type = raw_crash.get("ProcessType", "parent")
         if process_type == "plugin":
-            # Bug#543776 We actually will are relaxing the non-null policy...  a null
-            # filename, name, and version is OK. We'll use empty strings
-            processed_crash["PluginFilename"] = raw_crash.get("PluginFilename", "")
-            processed_crash["PluginName"] = raw_crash.get("PluginName", "")
-            processed_crash["PluginVersion"] = raw_crash.get("PluginVersion", "")
+            processed_crash["plugin_filename"] = raw_crash.get("PluginFilename", "")
+            processed_crash["plugin_name"] = raw_crash.get("PluginName", "")
+            processed_crash["plugin_version"] = raw_crash.get("PluginVersion", "")
 
 
 class AddonsRule(Rule):
