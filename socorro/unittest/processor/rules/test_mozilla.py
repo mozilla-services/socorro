@@ -425,9 +425,10 @@ class TestProcessTypeRule:
 
 class TestPluginRule:
     def test_browser_hang(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["Hang"] = 1
-        raw_crash["ProcessType"] = "parent"
+        raw_crash = {
+            "Hang": "1",
+            "ProcessType": "parent",
+        }
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
@@ -437,9 +438,32 @@ class TestPluginRule:
 
         assert processed_crash["hangid"] is None
         assert processed_crash["hang_type"] == 1
-        assert "PluginFilename" not in processed_crash
-        assert "PluginName" not in processed_crash
-        assert "PluginVersion" not in processed_crash
+        assert "plugin_filename" not in processed_crash
+        assert "plugin_name" not in processed_crash
+        assert "plugin_version" not in processed_crash
+
+    def test_plugin_bits(self):
+        raw_crash = {
+            "ProcessType": "plugin",
+            "PluginName": "name1",
+            "PluginFilename": "filename1",
+            "PluginVersion": "1.0",
+        }
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta()
+
+        rule = PluginRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        expected = {
+            "hang_type": 0,
+            "hangid": None,
+            "plugin_name": "name1",
+            "plugin_filename": "filename1",
+            "plugin_version": "1.0",
+        }
+        assert processed_crash == expected
 
 
 class TestAddonsRule:
