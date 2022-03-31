@@ -9,7 +9,6 @@ import logging
 from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
-import json_schema_reducer
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -17,6 +16,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.external.es.super_search_fields import SuperSearchFieldsData
+from socorro.lib.libjson import schema_reduce
 from socorro.lib.ooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
@@ -328,8 +328,9 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             crash_report[processed_fields_map.get(key, key)] = val
 
         # Validate crash_report
-        crash_report = json_schema_reducer.make_reduced_dict(
-            TELEMETRY_SOCORRO_CRASH_SCHEMA, crash_report
+        crash_report = schema_reduce(
+            schema=TELEMETRY_SOCORRO_CRASH_SCHEMA,
+            document=crash_report,
         )
 
         crash_id = crash_report["uuid"]

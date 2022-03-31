@@ -358,6 +358,23 @@ class TestTelemetryBotoS3CrashStorage:
                 "completed_datetime": "2012-04-08 10:56:50.902884",
                 "signature": "now_this_is_a_signature",
                 "os_name": "Linux",
+                "some_random_key": "should not appear",
+                "json_dump": {
+                    "crash_info": {
+                        "address": "0x6357737b",
+                        "some_random_key": "should not appear",
+                    },
+                    "crashing_thread": {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "xul.dll",
+                                "function": None,
+                                "some_random_key": "should not appear",
+                            },
+                        ],
+                    },
+                },
             },
         )
 
@@ -371,6 +388,20 @@ class TestTelemetryBotoS3CrashStorage:
             "platform": "Linux",
             "signature": "now_this_is_a_signature",
             "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+            "json_dump": {
+                "crash_info": {
+                    "address": "0x6357737b",
+                },
+                "crashing_thread": {
+                    "frames": [
+                        {
+                            "frame": 0,
+                            "function": None,
+                            "module": "xul.dll",
+                        },
+                    ],
+                },
+            },
         }
 
     def test_get_unredacted_processed(self, boto_helper):

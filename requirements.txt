@@ -292,10 +292,6 @@ josepy==1.11.0 \
     --hash=sha256:40ef59f2f537ec01bafe698dad66281f6ccf4642f747411647db403ab8fa9a2d \
     --hash=sha256:8473f6674497383627621b40aacb4955afdd4e7b205dca45a68486aa989bab60
     # via mozilla-django-oidc
-json-schema-reducer==0.1.4 \
-    --hash=sha256:41c674275c2650dadb7f8af1193640ca41eb863926985ecda5bfee93aef265c0 \
-    --hash=sha256:b6fbe437361e0ec14f5c05daf752604834bd9abe5af9ab6bdcb05ea1f8df1df6
-    # via -r requirements.in
 jsonschema==4.3.3 \
     --hash=sha256:eb7a69801beb7325653aa8fd373abbf9ff8f85b536ab2812e5e8287b522fb6a2 \
     --hash=sha256:f210d4ce095ed1e8af635d15c8ee79b586f656ab54399ba87b8ab87e5bff0ade
