@@ -130,9 +130,7 @@ def validate_and_test(ctx, crashes_per_url, url):
 
     click.echo("Testing %s random recent crash reports." % len(uuids))
     for uuid in uuids:
-        resp = requests.get(API_BASE.format("RawCrash"), params={"crash_id": uuid})
-        click.echo("resp.url %s" % resp.url)
-        raw_crash = resp.json()
+        raw_crash = {}
         resp = requests.get(
             API_BASE.format("ProcessedCrash"), params={"crash_id": uuid}
         )
