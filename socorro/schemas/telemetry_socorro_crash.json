@@ -454,7 +454,8 @@
         "string",
         "null"
       ],
-      "description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222"
+      "description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222\n\nNote: this is converted from an integer to a string for historical reasons.",
+      "socorro_convert_to": "string"
     },
     "is_garbage_collecting": {
       "type": [
