@@ -47,8 +47,8 @@ class TestTopCrasherViews(BaseTestViews):
             # the build id.
             assert "build_id" not in params
 
-            if "hang_type" not in params["_aggs.signature"]:
-                # Return results for the previous week.
+            if params["_aggs.signature"] == ["platform"]:
+                # Return results for the previous week for platform.
                 results = {
                     "hits": [],
                     "facets": {
@@ -65,7 +65,7 @@ class TestTopCrasherViews(BaseTestViews):
                     "total": 250,
                 }
             else:
-                # Return results for the current week.
+                # Return results for the current week for a variety of facets.
                 results = {
                     "hits": [],
                     "facets": {
@@ -78,7 +78,6 @@ class TestTopCrasherViews(BaseTestViews):
                                     "is_garbage_collecting": [
                                         {"term": "t", "count": 50}
                                     ],
-                                    "hang_type": [{"term": 1, "count": 50}],
                                     "process_type": [{"term": "plugin", "count": 50}],
                                     "startup_crash": [{"term": "T", "count": 100}],
                                     "dom_fission_enabled": [{"term": 1, "count": 50}],
@@ -94,7 +93,6 @@ class TestTopCrasherViews(BaseTestViews):
                                     "is_garbage_collecting": [
                                         {"term": "t", "count": 50}
                                     ],
-                                    "hang_type": [{"term": 1, "count": 50}],
                                     "process_type": [{"term": "parent", "count": 50}],
                                     "startup_crash": [{"term": "T", "count": 50}],
                                     "dom_fission_enabled": [{"term": 1, "count": 80}],
@@ -173,12 +171,7 @@ class TestTopCrasherViews(BaseTestViews):
             # the build id.
             assert "build_id" not in params
 
-            if "hang_type" not in params["_aggs.signature"]:
-                # Return results for the previous week.
-                results = {"hits": [], "facets": {"signature": []}, "total": 0}
-            else:
-                # Return results for the current week.
-                results = {"hits": [], "facets": {"signature": []}, "total": 0}
+            results = {"hits": [], "facets": {"signature": []}, "total": 0}
 
             results["hits"] = self.only_certain_columns(
                 results["hits"], params["_columns"]

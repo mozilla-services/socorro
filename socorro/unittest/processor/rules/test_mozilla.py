@@ -426,7 +426,6 @@ class TestProcessTypeRule:
 class TestPluginRule:
     def test_browser_hang(self):
         raw_crash = {
-            "Hang": "1",
             "ProcessType": "parent",
         }
         dumps = {}
@@ -436,8 +435,6 @@ class TestPluginRule:
         rule = PluginRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["hangid"] is None
-        assert processed_crash["hang_type"] == 1
         assert "plugin_filename" not in processed_crash
         assert "plugin_name" not in processed_crash
         assert "plugin_version" not in processed_crash
@@ -457,8 +454,6 @@ class TestPluginRule:
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         expected = {
-            "hang_type": 0,
-            "hangid": None,
             "plugin_name": "name1",
             "plugin_filename": "filename1",
             "plugin_version": "1.0",

@@ -229,25 +229,6 @@ class TestCSignatureTool:
         sig, notes, debug_notes = s.generate(a)
         assert sig == "d | e | f | g"
 
-    def test_generate_2(self):
-        """test_generate_2: hang"""
-        s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
-        a = list("abcdefghijklmnopqrstuvwxyz")
-        sig, notes, debug_notes = s.generate(a, hang_type=-1)
-        assert sig == "hang | d | e | f | g"
-
-        a = list("abcdaeafagahijklmnopqrstuvwxyz")
-        sig, notes, debug_notes = s.generate(a, hang_type=-1)
-        assert sig == "hang | d | e | f | g"
-
-        a = list("abcdaeafagahijklmnopqrstuvwxyz")
-        sig, notes, debug_notes = s.generate(a, hang_type=0)
-        assert sig == "d | e | f | g"
-
-        a = list("abcdaeafagahijklmnopqrstuvwxyz")
-        sig, notes, debug_notes = s.generate(a, hang_type=1)
-        assert sig == "chromehang | d | e | f | g"
-
     def test_generate_2a(self):
         """test_generate_2a: way too long"""
         s = self.setup_config_c_sig_tool(ig=["a", "b", "c"], pr=["d", "e", "f"])
@@ -264,15 +245,6 @@ class TestCSignatureTool:
             "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
         )
         sig, notes, debug_notes = s.generate(a)
-        assert sig == expected
-        expected = (
-            "hang | "
-            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd | "
-            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee | "
-            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | "
-            "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
-        )
-        sig, notes, debug_notes = s.generate(a, hang_type=-1)
         assert sig == expected
 
     def test_generate_3(self):

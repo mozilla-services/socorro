@@ -649,8 +649,6 @@ class ProcessedCrash(SocorroMiddleware):
         "date_processed",
         "dump",
         "flash_version",
-        "hangid",
-        "hang_type",
         "id",
         "install_age",
         "java_exception",

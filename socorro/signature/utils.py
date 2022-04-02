@@ -22,22 +22,15 @@ def get_crashing_thread(crash_data):
     """
     Takes crash data and returns the crashing thread as an int.
 
-    If it's a chrome hang (hang_type=1), then use thread 0. Otherwise, use the crashing
-    thread specified in the crash data.
-
     :arg crash_data: crash data structure that conforms to the schema
 
     :returns: crashing thread as an int
 
     """
-    crashing_thread = 0
-    if crash_data.get("hang_type", None) != 1:
-        try:
-            crashing_thread = int(crash_data.get("crashing_thread", 0))
-        except (TypeError, ValueError):
-            pass
-
-    return crashing_thread
+    try:
+        return int(crash_data.get("crashing_thread", 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 DOES_NOT_EXIST = object()
@@ -85,8 +78,6 @@ def convert_to_crash_data(processed_crash):
         "reason": glom(processed_crash, "json_dump.crash_info.type", default=None),
         # list of CStackTrace or None
         "threads": glom(processed_crash, "json_dump.threads", default=None),
-        # int or None
-        "hang_type": glom(processed_crash, "hang_type", default=None),
         # text or None
         "os": glom(processed_crash, "json_dump.system_info.os", default=None),
         # int or None

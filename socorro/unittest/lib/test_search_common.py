@@ -71,15 +71,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "is_exposed": True,
         "is_returned": True,
     },
-    "hang_type": {
-        "name": "hang_type",
-        "data_validation_type": "enum",
-        "query_type": "enum",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "is_exposed": True,
-        "is_returned": True,
-    },
     "user_comments": {
         "name": "user_comments",
         "data_validation_type": "str",
@@ -113,7 +104,6 @@ class TestSearchBase:
         args = {
             "signature": "~js",
             "product": ["WaterWolf", "NightTrain"],
-            "hang_type": "=hang",
         }
         params = search.get_parameters(**args)
         assert params["signature"][0].operator == "~"
@@ -121,7 +111,6 @@ class TestSearchBase:
         assert params["product"][0].operator == ""
         # Test that params with no operator are stacked
         assert params["product"][0].value == ["WaterWolf", "NightTrain"]
-        assert params["hang_type"][0].operator == ""
 
         args = {"signature": ["~Mark", "$js"]}
         params = search.get_parameters(**args)
@@ -219,21 +208,6 @@ class TestSearchBase:
 
         with pytest.raises(BadArgumentError):
             search.get_parameters(date=">1999-01-01")
-
-    def test_hang_type_parameter_correction(self):
-        search = SearchBaseWithFields()
-
-        args = {"hang_type": "hang"}
-        params = search.get_parameters(**args)
-        assert "hang_type" in params
-        assert len(params["hang_type"]) == 1
-        assert params["hang_type"][0].value == [-1, 1]
-
-        args = {"hang_type": "crash"}
-        params = search.get_parameters(**args)
-        assert "hang_type" in params
-        assert len(params["hang_type"]) == 1
-        assert params["hang_type"][0].value == [0]
 
     def test_version_parameter_correction(self):
         search = SearchBaseWithFields()

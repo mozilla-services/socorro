@@ -1950,26 +1950,6 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
-    "hang_type": {
-        "data_validation_type": "enum",
-        "description": (
-            "Tells if a report was caused by a crash or a hang. In the database, the value "
-            "is `0` if the problem was a crash of the software, and `1` or `-1` if the problem "
-            "was a hang of the software. \n\nNote: for querying, you should use `crash` or "
-            "`hang`, since those are automatically transformed into the correct underlying "
-            "values."
-        ),
-        "form_field_choices": ["any", "crash", "hang", "all"],
-        "has_full_version": False,
-        "in_database_name": "hang_type",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "hang_type",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "short"},
-    },
     "has_device_touch_screen": {
         "data_validation_type": "bool",
         "description": (

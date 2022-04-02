@@ -37,10 +37,6 @@ def test_int_or_none(data, expected):
         ({}, 0),
         ({"crashing_thread": ""}, 0),
         ({"crashing_thread": "5"}, 5),
-        ({"hang_type": 0, "crashing_thread": "5"}, 5),
-        # If hang_type == 1, the crashing_thread is always 0
-        ({"hang_type": 1}, 0),
-        ({"hang_type": 1, "crashing_thread": "5"}, 0),
     ],
 )
 def test_get_crashing_thread(crash_data, expected):
