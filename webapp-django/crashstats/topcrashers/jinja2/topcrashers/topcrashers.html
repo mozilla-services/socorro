@@ -3,7 +3,7 @@
                                                      potential_fission_icon,
                                                      potential_startup_crash_icon,
                                                      potential_startup_window_crash_icon,
-                                                     hang_crash_icon, plugin_crash_icon,
+                                                     plugin_crash_icon,
                                                      browser_crash_icon %}
 
 {% extends "crashstats_base.html" %}
@@ -182,10 +182,6 @@
 
                       {% if topcrashers_stats_item.is_startup_window_crash %}
                         {{ potential_startup_window_crash_icon() }}
-                      {% endif %}
-
-                      {% if topcrashers_stats_item.is_hang_crash %}
-                        {{ hang_crash_icon() }}
                       {% endif %}
 
                       {% if topcrashers_stats_item.is_plugin_crash %}

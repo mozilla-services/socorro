@@ -41,7 +41,6 @@ def get_topcrashers_stats(**kwargs):
         "platform",
         "is_garbage_collecting",
         "dom_fission_enabled",
-        "hang_type",
         "process_type",
         "startup_crash",
         "_histogram.uptime",

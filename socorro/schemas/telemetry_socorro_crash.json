@@ -412,7 +412,7 @@
         "integer",
         "null"
       ],
-      "description": "Tells if a report was caused by a crash or a hang. In the database, the value is `0` if the problem was a crash of the software, and `1` or `-1` if the problem was a hang of the software. \n\nNote: for querying, you should use `crash` or `hang`, since those are automatically transformed into the correct underlying values."
+      "description": "DEPRECATED EMPTY FIELD. See bug #1762207."
     },
     "install_age": {
       "type": [

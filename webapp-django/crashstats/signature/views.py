@@ -399,7 +399,6 @@ def signature_summary(request, params):
 
     params["signature"] = "=" + params["signature"][0]
     params["_aggs.signature"] = [
-        "hang_type",
         "process_type",
         "startup_crash",
         "dom_fission_enabled",

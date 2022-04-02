@@ -198,16 +198,6 @@ class SignatureStats:
         return is_startup_window_crash
 
     @cached_property
-    def is_hang_crash(self):
-        num_hang_crashes = 0
-        for row in self.signature["facets"]["hang_type"]:
-            # Hangs have weird values in the database: a value of 1 or -1
-            # means it is a hang, a value of 0 or missing means it is not.
-            if row["term"] in (1, -1):
-                num_hang_crashes += row["count"]
-        return num_hang_crashes > 0
-
-    @cached_property
     def is_plugin_crash(self):
         for row in self.signature["facets"]["process_type"]:
             if row["term"].lower() == "plugin":

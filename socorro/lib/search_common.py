@@ -222,7 +222,6 @@ class SearchBase:
                         parameters[value.name].append(value)
 
         self.fix_date_parameter(parameters)
-        self.fix_hang_type_parameter(parameters)
         self.fix_version_parameter(parameters)
 
         return parameters
@@ -288,29 +287,6 @@ class SearchBase:
 
             parameters["date"].append(lower_than)
             parameters["date"].append(greater_than)
-
-    @staticmethod
-    def fix_hang_type_parameter(parameters):
-        """Correct the hang_type parameter.
-
-        If hang_type is 'crash', replace it with '0', if it's 'hang' replace it
-        with '-1, 1'.
-        """
-        if not parameters.get("hang_type"):
-            return
-
-        for hang_type in parameters["hang_type"]:
-            new_values = []
-            for val in hang_type.value:
-                if val == "crash":
-                    new_values.append(0)
-                elif val == "hang":
-                    new_values.extend([-1, 1])
-                else:
-                    new_values.append(val)
-
-            hang_type.value = new_values
-            hang_type.data_type = "int"
 
     @staticmethod
     def fix_version_parameter(parameters):

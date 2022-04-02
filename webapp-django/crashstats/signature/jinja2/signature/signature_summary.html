@@ -3,7 +3,7 @@
                                                      potential_fission_icon,
                                                      potential_startup_crash_icon,
                                                      potential_startup_window_crash_icon,
-                                                     hang_crash_icon, plugin_crash_icon,
+                                                     plugin_crash_icon,
                                                      browser_crash_icon %}
 
 {% if signature_stats %}
@@ -38,13 +38,6 @@
       <div class="crash-type-indicator-container">
         {{ potential_startup_window_crash_icon() }}
         Potential Startup Crash, more than half of the crashes happened during the first minute after launch
-      </div>
-    {% endif %}
-
-    {% if signature_stats.is_hang_crash %}
-      <div class="crash-type-indicator-container">
-        {{ hang_crash_icon() }}
-        Hanged Crash
       </div>
     {% endif %}
 

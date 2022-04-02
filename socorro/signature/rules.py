@@ -230,7 +230,7 @@ class CSignatureTool:
         # Return module/module_offset
         return "{}@{}".format(module or "", strip_leading_zeros(module_offset))
 
-    def generate(self, source_list, hang_type=0, crashed_thread=None, delimiter=" | "):
+    def generate(self, source_list, crashed_thread=None, delimiter=" | "):
         """Iterate over frames in the crash stack and generate a signature.
 
         First, we look for a sentinel frame and if we find one, we start with that.
@@ -295,15 +295,6 @@ class CSignatureTool:
                 break
 
             debug_notes.append(f'prefix; continue iterating: "{a_signature}"')
-
-        # Add a special marker for hang crash reports.
-        if hang_type:
-            debug_notes.append(
-                "hang_type {}: prepending {}".format(
-                    hang_type, self.hang_prefixes[hang_type]
-                )
-            )
-            new_signature_list.insert(0, self.hang_prefixes[hang_type])
 
         signature = delimiter.join(new_signature_list)
 
@@ -545,7 +536,6 @@ class SignatureGenerationRule(Rule):
 
         signature, notes, debug_notes = self.c_signature_tool.generate(
             signature_list,
-            crash_data.get("hang_type"),
             crash_data.get("crashing_thread"),
         )
 

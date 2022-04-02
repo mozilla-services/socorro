@@ -410,7 +410,6 @@ class TestUtils:
                 "is_garbage_collecting": [],
                 "process_type": [],
                 "platform": [{"count": 2, "term": ""}],
-                "hang_type": [{"count": 2, "term": 0}],
             },
         }
         platforms = [
@@ -446,7 +445,6 @@ class TestUtils:
         assert signature_stats.is_startup_crash == 0
         assert signature_stats.is_potential_startup_crash == 0
         assert signature_stats.is_startup_window_crash is True
-        assert signature_stats.is_hang_crash is False
         assert signature_stats.is_plugin_crash is False
 
 
