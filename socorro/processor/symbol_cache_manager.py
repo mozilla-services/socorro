@@ -105,7 +105,7 @@ def from_string_to_parse_size(size_as_string):
     bytes, with the suffixes representing kilobytes, megabytes or gigabytes
     respectively.
     """
-    suffixes = {"k": 1024, "M": 1024 ** 2, "G": 1024 ** 3}
+    suffixes = {"k": 1024, "M": 1024**2, "G": 1024**3}
     if not isinstance(size_as_string, str) or not size_as_string:
         raise ValueError('Bad size value: "%s"' % size_as_string)
 
