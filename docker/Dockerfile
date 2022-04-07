@@ -18,8 +18,8 @@ RUN update-ca-certificates && \
 USER app
 
 # From: https://github.com/luser/rust-minidump
-ARG MINIDUMPREV=e954907c9f5a69037df459cacb4d0846b0599479
-ARG MINIDUMPREVDATE=2022-03-23
+ARG MINIDUMPREV=d915179ea369e58752d3256a2bc880122df0499f
+ARG MINIDUMPREVDATE=2022-04-07
 
 RUN cargo install --locked --root=/app/ \
     --git https://github.com/rust-minidump/rust-minidump.git \
