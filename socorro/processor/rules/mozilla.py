@@ -988,6 +988,8 @@ class OSPrettyVersionRule(Rule):
 
     """
 
+    MAJOR_MINOR_RE = re.compile(r"^(\d+)\.(\d+)")
+
     WINDOWS_VERSIONS = {
         "3.5": "Windows NT",
         "4.0": "Windows NT",
@@ -1018,18 +1020,15 @@ class OSPrettyVersionRule(Rule):
         processed_crash["os_pretty_version"] = pretty_name
 
         os_version = processed_crash.get("os_version") or ""
-        if not os_version:
-            # The version number is missing, there's nothing more to do.
+        match = self.MAJOR_MINOR_RE.match(os_version)
+        if match is None:
+            # The version number is missing or invalid, there's nothing more to do
             return True
 
-        version_split = os_version.split(".")
-        if len(version_split) < 2:
-            # The version number is invalid, there's nothing more to do.
-            return
+        major_version = int(match.group(1))
+        minor_version = int(match.group(2))
 
         os_name = processed_crash.get("os_name") or ""
-        major_version = int(version_split[0])
-        minor_version = int(version_split[1])
 
         if os_name.lower().startswith("windows"):
             if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":

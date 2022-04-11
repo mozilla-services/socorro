@@ -1847,6 +1847,10 @@ class TestOsPrettyName:
             ("Mac OS X", "11.2.1 20D74", "macOS 11"),
             # Generic Linux
             ("Linux", "0.0.12.13", "Linux"),
+            # Linux with - in version
+            ("Linux", "5.17-0.1 #2 SMP PREEMPT", "Linux"),
+            # Linux with - in version
+            ("Linux", "3.14-2-686-pae #1 SMP Debian 3.14.15-2", "Linux"),
         ],
     )
     def test_everything_we_hoped_for(self, os_name, os_version, expected):
@@ -1885,6 +1889,9 @@ class TestOsPrettyName:
             ("Linux", None, "Linux"),
             (None, None, None),
             ("Windows NT", "NaN", "Windows NT"),
+            ("Linux", "5.abc", "Linux"),
+            ("Linux", "5.", "Linux"),
+            ("Linux", "5", "Linux"),
         ],
     )
     def test_junk_data(self, os_name, os_version, expected):
