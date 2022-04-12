@@ -105,8 +105,8 @@ Adding new crash annotations to a crash report
    to request support for your crash annotation in Crash Stats to:
 
    * make it public
-   * make it searchable in supersearch
-   * make it aggregatable in supersearch
+   * make it searchable in Super Search
+   * make it aggregatable in Super Search
    * add any additional processing in Socorro for the field
 
 6. (Optional) `File a "send field to telemetry" bug <https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=Generalform_name=enter_bug&op_sys=All&product=Socorro&rep_platform=All&short_desc=send%20XXX%20field%20to%20telemetry>`_
