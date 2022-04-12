@@ -1,8 +1,8 @@
 .. _localdevenv-chapter:
 
-===========================
-Local dev environment setup
-===========================
+===========
+Development
+===========
 
 This chapter covers getting started with Socorro using Docker for a local
 development environment.
@@ -12,7 +12,7 @@ development environment.
 
 .. _setup-quickstart:
 
-Setup Quickstart
+Setup quickstart
 ================
 
 1. Install required software: Docker, docker-compose (1.10+), make, and git.
@@ -26,9 +26,11 @@ Setup Quickstart
        Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
        will install Docker and docker-compose.
 
-       Use `homebrew <https://brew.sh>`_ to install make and git::
+       Use `homebrew <https://brew.sh>`_ to install make and git:
 
-         $ brew install make git
+       .. code-block:: shell
+
+          $ brew install make git
 
    **Other**:
 
@@ -49,9 +51,11 @@ Setup Quickstart
 3. (*Optional for Linux users*) Set UID and GID for Docker container user.
 
    If you're on Linux or you want to set the UID/GID of the app user that
-   runs in the Docker containers, run::
+   runs in the Docker containers, run:
 
-     $ make my.env
+   .. code-block:: shell
+
+      $ make my.env
 
    Then edit the file and set the ``SOCORRO_UID`` and ``SOCORRO_GID``
    variables. These will get used when creating the app user in the base
@@ -64,39 +68,45 @@ Setup Quickstart
 
    From the root of this repository, run::
 
-     $ make build
+      $ make build
 
    That will build the app Docker image required for development.
 
 5. Initialize Postgres, Elasticsearch, S3, and Pub/Sub.
 
-   Then you need to set up services. To do that, run::
+   Then you need to set up services. To do that, run:
 
-     $ make runservices
+   .. code-block:: shell
 
-   This starts service containers. Then run::
+      $ make runservices
 
-     $ make setup
+   This starts service containers. Then run:
+
+   .. code-block:: shell
+
+      $ make setup
 
    This creates the Postgres database and sets up tables, stored procedures,
    integrity rules, types, and a bunch of other things. It also adds a bunch of
    static data to lookup tables.
 
-   For Elasticsearch, it sets up Supersearch fields and the index for
+   For Elasticsearch, it sets up Super Search fields and the index for
    processed crash data.
 
    For S3, this creates the required buckets.
 
-   For Pub/Sub, this creates topics and subscriptions.
+   For SQS, this creates queues.
 
 6. Populate data stores with required data.
 
    Then you need to fetch product build data and normalization data that
    Socorro relies on that comes from external systems and changes day-to-day.
 
-   To do that, run::
+   To do that, run:
 
-     $ make updatedata
+   .. code-block:: shell
+
+      $ make updatedata
 
 
 At this point, you should have a basic functional Socorro development
@@ -132,6 +142,335 @@ environment that has no crash data in it.
        See :ref:`cron-chapter` for additional setup and running cronrun.
 
 
+Bugs / Issues
+=============
+
+We use `Bugzilla <https://bugzilla.mozilla.org/>`_ for bug tracking.
+
+`Existing bugs <https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro>`_
+
+`Write up a new bug <https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General>`_
+
+If you want to do work for which there is no bug, please write up a bug first
+so we can work out the problem and how to approach a solution.
+
+
+Code workflow
+=============
+
+Bugs
+----
+
+Either write up a bug or find a bug to work on.
+
+Assign the bug to yourself.
+
+Work out any questions about the problem, the approach to fix it, and any
+additional details by posting comments in the bug.
+
+
+Pull requests
+-------------
+
+Pull request summary should indicate the bug the pull request addresses. For
+example::
+
+    bug nnnnnnn: removed frob from tree class
+
+Pull request descriptions should cover at least some of the following:
+
+1. what is the issue the pull request is addressing?
+2. why does this pull request fix the issue?
+3. how should a reviewer review the pull request?
+4. what did you do to test the changes?
+5. any steps-to-reproduce for the reviewer to use to test the changes
+
+After creating a pull request, attach the pull request to the relevant bugs.
+
+We use the `rob-bugson Firefox addon
+<https://addons.mozilla.org/en-US/firefox/addon/rob-bugson/>`_. If the pull
+request has "bug nnnnnnn: ..." in the summary, then rob-bugson will see that
+and create a "Attach this PR to bug ..." link.
+
+Then ask someone to review the pull request. If you don't know who to ask, look
+at other pull requests to see who's currently reviewing things.
+
+
+Code reviews
+------------
+
+Pull requests should be reviewed before merging.
+
+Style nits should be covered by linting as much as possible.
+
+Code reviews should review the changes in the context of the rest of the system.
+
+
+Landing code
+------------
+
+Once the code has been reviewed and all tasks in CI pass, the pull request
+author should merge the code.
+
+This makes it easier for the author to coordinate landing the changes with
+other things that need to happen like landing changes in another repository,
+data migrations, configuration changes, and so on.
+
+We use "Rebase and merge" in GitHub.
+
+
+Conventions
+===========
+
+For conventions, see:
+`<https://github.com/mozilla-services/socorro/blob/main/.editorconfig>`_
+
+
+Python code conventions
+-----------------------
+
+All Python code files should have an MPL v2 header at the top::
+
+  # This Source Code Form is subject to the terms of the Mozilla Public
+  # License, v. 2.0. If a copy of the MPL was not distributed with this
+  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+To lint the code:
+
+.. code-block:: shell
+
+  $ make lint
+
+If you hit issues, use ``# noqa``.
+
+To run the reformatter:
+
+.. code-block:: shell
+
+  $ make lintfix
+
+We're using:
+
+* `black <https://black.readthedocs.io/en/stable/>`_:  code formatting
+* `flake8 <https://flake8.pycqa.org/en/latest/>`_: linting
+
+
+HTML conventions
+----------------
+
+2-space indentation.
+
+
+Javascript code conventions
+---------------------------
+
+2-space indentation.
+
+We're using:
+
+* `eslint <https://eslint.org/>`_: linting
+
+
+Git conventions
+---------------
+
+First line is a summary of the commit. It should start with::
+
+   bug nnnnnnn: summary
+
+After that, the commit should explain *why* the changes are being made and any
+notes that future readers should know for context.
+
+
+Migrations
+==========
+
+Database migrations (Django)
+----------------------------
+
+We use Django's ORM and thus we do database migrations using Django's
+migration system.
+
+Do this:
+
+.. code-block:: shell
+
+   $ make shell
+   app@socorro:/app$ cd webapp-django
+   app@socorro:/app/webapp-django$ ./manage.py makemigration --name "BUGID_desc" APP
+
+
+Elasticsearch migrations (Elasticsearch)
+----------------------------------------
+
+We don't do migrations of Elasticsearch data. The system creates a new index
+every week, so any changes to new fields or mappings will be reflected the
+next time it creates an index.
+
+
+Dependencies
+============
+
+Python Dependencies
+-------------------
+
+Python dependencies for all parts of Socorro are in ``requirements.in``
+and compiled using ``pip-compile`` with hashes and dependencies of dependencies
+in the ``requirements.txt`` file.
+
+For example, to add ``foobar`` version 5:
+
+1. add ``foobar==5`` to ``requirements.in``
+2. run:
+
+   .. code-block:: shell
+
+      make rebuildreqs
+
+   to apply the updates to ``requirements.txt``
+
+3. rebuild your docker environment:
+
+   .. code-block:: shell
+
+      $ make build
+
+If there are problems, it'll tell you.
+
+In some cases, you might want to update the primary and all the secondary
+dependencies. To do this, run:
+
+.. code-block:: shell
+
+   $ make updatereqs
+
+
+JavaScript Dependencies
+-----------------------
+
+Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
+must be pinned and included in
+`package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
+
+You can add new dependencies using ``npm`` (you must use version 5 or higher):
+
+.. code-block:: shell
+
+   $ npm install --save-exact foobar@1.0.0
+
+Then rebuild your docker environment:
+
+.. code-block:: shell
+
+   $ make build
+
+If there are problems, it'll tell you.
+
+
+Documentation
+=============
+
+Documentation for Socorro is build with `Sphinx
+<http://www.sphinx-doc.org/en/stable/>`_ and is available on ReadTheDocs. API is
+automatically extracted from docstrings in the code.
+
+To build the docs, run this:
+
+.. code-block:: shell
+
+   $ make docs
+
+
+Testing
+=======
+
+Running tests
+-------------
+
+The Socorro tests are in ``socorro/unittests/``.
+
+The webapp tests are in ``webapp-django/``.
+
+Both sets of tests use `pytest <https://pytest.org/>`_.
+
+To run the tests, do:
+
+.. code-block:: shell
+
+   $ make test
+
+
+That runs the ``/app/docker/run_test.sh`` script in the webapp container using
+test configuration.
+
+To run specific tests or specify arguments, you'll want to start a shell in the
+test container:
+
+.. code-block:: shell
+
+   $ make testshell
+
+Then you can run pytest on the Socorro tests or the webapp tests.
+
+Running the Socorro tests:
+
+.. code-block:: shell
+
+   app@socorro:/app$ pytest
+
+Running the webapp tests (make sure you run ``./manage.py collectstatic`` first):
+
+.. code-block:: shell
+
+   app@socorro:/app$ cd webapp-django
+   app@socorro:/app/webapp-django$ ./manage.py collectstatic
+   app@socorro:/app/webapp-django$ ./manage.py test
+
+.. Note::
+
+   For the webapp tests, you have to run ``./manage.py collectstatic`` first.
+
+
+Writing tests
+-------------
+
+For Socorro tests, put them in ``socorro/unittest/`` in a subdirectory parallel
+to the thing you're testing.
+
+For webapp tests, put them in the ``tests/`` directory of the appropriate app in
+``webapp-django/``.
+
+
+Repository structure
+====================
+
+If you clone our `git repository
+<https://github.com/mozilla-services/socorro>`_, you will find the following
+folders.
+
+Here is what each of them contains:
+
+**bin/**
+    Scripts for building Docker images, running Docker containers, deploying,
+    and supporting development in a local development environment.
+
+**docker/**
+    Docker environment related scripts, configuration, and other bits.
+
+**docs/**
+    Documentation of the Socorro project (you're reading it right now).
+
+**requirements/**
+    Files that hold Python library requirements information.
+
+**socorro/**
+    The bulk of the Socorro source code.
+
+**webapp-django/**
+    The webapp source code.
+
+
 .. _gettingstarted-chapter-updating:
 
 Updating data in a dev environment
@@ -141,35 +480,43 @@ Updating the code
 -----------------
 
 Any time you want to update the code in the repostory, run something like this from
-the main branch::
+the main branch:
 
-  $ git pull
+.. code-block:: shell
+
+   $ git pull
 
 
 After you do that, you'll need to update other things.
 
 If there were changes to the requirements files or setup scripts, you'll need to
-build new images::
+build new images:
 
-  $ make build
+.. code-block:: shell
+
+   $ make build
 
 
 If there were changes to the database tables, stored procedures, types,
 migrations, supersearch schema, or anything like that, you'll need to wipe
-state and re-initialize services::
+state and re-initialize services:
 
-  $ make setup
-  $ make updatedata
+.. code-block:: shell
+
+   $ make setup
+   $ make updatedata
 
 
 Wiping crash storage and state
 ------------------------------
 
 Any time you want to wipe all the crash storage destinations, remove all the
-data, and reset the state of the system, run::
+data, and reset the state of the system, run:
 
-  $ make setup
-  $ make updatedata
+.. code-block:: shell
+
+   $ make setup
+   $ make updatedata
 
 
 Updating release data
@@ -178,9 +525,11 @@ Updating release data
 Release data and comes from running archivescraper. This is used by the
 ``BetaVersionRule`` in the processor.
 
-Run::
+Run:
 
-  $ make updatedata
+.. code-block:: shell
+
+   $ make updatedata
 
 
 .. _gettingstarted-chapter-configuration:
@@ -265,9 +614,11 @@ crash id to the AWS SQS standard queue.
 
 We have helper scripts for these steps.
 
-All helper scripts run in the shell in the container::
+All helper scripts run in the shell in the container:
 
-    $ make shell
+.. code-block::
+
+   $ make shell
 
 Some of the scripts require downloading production data from
 `crash-stats.mozilla.org <https://crash-stats.mozilla.org>`_, and it is
@@ -299,7 +650,7 @@ You can generate API tokens at `<https://crash-stats.mozilla.org/api/tokens/>`_.
 
 Add the API token value to your ``my.env`` file::
 
-    SOCORRO_API_TOKEN=apitokenhere
+   SOCORRO_API_TOKEN=apitokenhere
 
 The API token is used by the download scripts (run inside ``$ make shell``),
 but not directly by the processor.

@@ -114,15 +114,6 @@ services:
     ports:
       - "8080:8080"
 
-  # Docs building container
-  docs:
-    build:
-      context: .
-      dockerfile: ./docker/Dockerfile.docs
-    image: local/socorro_docs
-    volumes:
-      - .:/app
-
   # -----------------------------
   # External services
   # -----------------------------

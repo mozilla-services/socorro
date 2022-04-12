@@ -49,14 +49,6 @@ build: my.env  ## | Build docker images.
 	${DC} build oidcprovider fakesentry
 	touch .docker-build
 
-.docker-build-docs:
-	make build-docs
-
-.PHONY: build-docs
-build-docs: my.env
-	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} docs
-	touch .docker-build-docs
-
 .PHONY: setup
 setup: my.env .docker-build  ## | Set up Postgres, Elasticsearch, local SQS, and local S3 services.
 	${DC} run --rm app shell /app/bin/setup_services.sh
@@ -87,8 +79,8 @@ clean:  ## | Remove all build, test, coverage, and Python artifacts.
 	-rm -rf .cache
 
 .PHONY: docs
-docs: my.env .docker-build-docs  ## | Generate Sphinx HTML documetation.
-	${DC} run --rm --user ${SOCORRO_UID} docs make -C docs/ html
+docs: my.env .docker-build  ## | Generate Sphinx HTML documetation.
+	${DC} run --rm --user ${SOCORRO_UID} app shell make -C docs/ html
 
 .PHONY: lint
 lint: my.env  ## | Lint code.

@@ -274,8 +274,8 @@ HTTP 400
        The crash report HTTP POST has no content type in the HTTP headers.
 
     ``malformed_wrong_content_type``
-      The crash report HTTP POST content type header exists, bug it's not set
-      to ``multipart/form-data`` or ``multipart/mixed.
+       The crash report HTTP POST content type header exists, bug it's not set
+       to ``multipart/form-data`` or ``multipart/mixed``.
 
     ``malformed_no_boundary``
        The content type doesn't include a boundary value, so it can't be parsed
