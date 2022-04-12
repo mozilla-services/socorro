@@ -111,7 +111,7 @@ def supersearch_status(request):
     context["indices"] = status["indices"]
     context["latest_index"] = status["latest_index"]
     context["mapping"] = json.dumps(status["mapping"], indent=2)
-    context["title"] = "Supersearch status"
+    context["title"] = "Super Search status"
 
     return render(request, "admin/supersearch_status.html", context)
 

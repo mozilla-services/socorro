@@ -189,7 +189,7 @@ Here is an explanation of each properties of a field:
     If this is set to ``True``, you must specify a ``storage_mapping``.
 
 **is_returned**
-    Is this field returned in Supersearch results or the RawCrash/ProcessedCrash
+    Is this field returned in Super Search results or the RawCrash/ProcessedCrash
     API?
 
 **has_full_version**
