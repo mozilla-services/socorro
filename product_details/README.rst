@@ -100,5 +100,5 @@ be seen.
 Questions
 =========
 
-If you have any questions, please ask in
-`#crashreporting:mozilla.org <https://riot.im/app/#/room/#crashreporting:mozilla.org>`_.
+If you have any questions, please ask in `#crashreporting matrix channel
+<https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`_.

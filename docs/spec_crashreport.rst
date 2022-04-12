@@ -419,8 +419,8 @@ It does not support the following things in this specification:
 How to debug problems with submitting crash reports
 ===================================================
 
-We hang out in `#crashreporting:mozilla.org
-<https://riot.im/app/#/room/#crashreporting:mozilla.org>`_.
+We all hang out in `#crashreporting matrix channel
+<https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`_.
 
 Here are some notes for issues you might be having:
 
