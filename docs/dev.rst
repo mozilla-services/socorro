@@ -66,7 +66,9 @@ Setup quickstart
 
 4. Build Docker images for Socorro services.
 
-   From the root of this repository, run::
+   From the root of this repository, run:
+
+   .. code-block:: shell
 
       $ make build
 
@@ -240,7 +242,7 @@ To lint the code:
 
 .. code-block:: shell
 
-  $ make lint
+   $ make lint
 
 If you hit issues, use ``# noqa``.
 
@@ -248,7 +250,7 @@ To run the reformatter:
 
 .. code-block:: shell
 
-  $ make lintfix
+   $ make lintfix
 
 We're using:
 
@@ -326,7 +328,7 @@ For example, to add ``foobar`` version 5:
 
    .. code-block:: shell
 
-      make rebuildreqs
+      $ make rebuildreqs
 
    to apply the updates to ``requirements.txt``
 
@@ -400,9 +402,8 @@ To run the tests, do:
 
    $ make test
 
-
-That runs the ``/app/docker/run_test.sh`` script in the webapp container using
-test configuration.
+That runs the ``/app/bin/test.sh`` script in the test container using test
+configuration.
 
 To run specific tests or specify arguments, you'll want to start a shell in the
 test container:
@@ -429,7 +430,8 @@ Running the webapp tests (make sure you run ``./manage.py collectstatic`` first)
 
 .. Note::
 
-   For the webapp tests, you have to run ``./manage.py collectstatic`` first.
+   For the webapp tests, you have to run ``./manage.py collectstatic`` before
+   running the tests.
 
 
 Writing tests
@@ -439,7 +441,7 @@ For Socorro tests, put them in ``socorro/unittest/`` in a subdirectory parallel
 to the thing you're testing.
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in
-``webapp-django/``.
+``webapp-django/`` directory tree.
 
 
 Repository structure
@@ -460,9 +462,6 @@ Here is what each of them contains:
 
 **docs/**
     Documentation of the Socorro project (you're reading it right now).
-
-**requirements/**
-    Files that hold Python library requirements information.
 
 **socorro/**
     The bulk of the Socorro source code.
@@ -498,7 +497,7 @@ build new images:
 
 
 If there were changes to the database tables, stored procedures, types,
-migrations, supersearch schema, or anything like that, you'll need to wipe
+migrations, Super Search schema, or anything like that, you'll need to wipe
 state and re-initialize services:
 
 .. code-block:: shell
