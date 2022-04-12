@@ -1,33 +1,4 @@
-==================================
-Socorro - Crash ingestion pipeline
-==================================
-
-Socorro is crash ingestion pipeline consisting of services for collecting,
-processing, and analyzing crash data. It is used by Mozilla. Mozilla's crash
-analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
-
-* Free software: Mozilla Public License version 2.0
-* Socorro (processor/webapp/cron jobs)
-
-  * Code: https://github.com/mozilla-services/socorro/
-  * Documentation: https://socorro.readthedocs.io/
-  * User documentation: https://crash-stats.mozilla.org/documentation/
-  * Bugs: `Report a Socorro bug <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General>`_
-
-* Antenna (collector)
-
-  * Code: https://github.com/mozilla-services/antenna/
-  * Documentation: https://antenna.readthedocs.io/
-  * Bugs: `Report an Antenna bug <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=Antenna>`_
-
-* Chat: `#crashreporting matrix channel <https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`_
-
-
-.. Note::
-
-   This is a very Mozilla-specific product. We do not currently have the
-   capacity to support non-Mozilla uses.
-
+.. include:: ../README.rst
 
 .. toctree::
    :caption: For Socorro/Crash Stats Users
@@ -45,7 +16,7 @@ analysis tool is hosted at `<https://crash-stats.mozilla.org/>`_.
 
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,
-and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`_.
+and Super Search is located at `<https://crash-stats.mozilla.org/documentation/>`_.
 
 
 .. toctree::
@@ -53,7 +24,7 @@ and Supersearch is located at `<https://crash-stats.mozilla.org/documentation/>`
    :includehidden:
    :maxdepth: 1
 
-   localdevenvironment
+   dev
    contributing
    service/index
    flows/index
