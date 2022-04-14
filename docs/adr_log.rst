@@ -1,6 +1,6 @@
-=======
-ADR Log
-=======
+================================
+Architecture decision record log
+================================
 
 This is a log of Architecture Decision Records for critical architecture
 decisions in Socorro.
