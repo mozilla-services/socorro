@@ -52,7 +52,7 @@ whitenoise==6.0.0
 
 # NOTE(willkg): Don't need to update this. We don't really use it and we should
 # remove it.
-django-waffle==2.3.0
+django-waffle==2.4.1
 
 # NOTE(willkg): We stick with LTS releases and the next one is 4.2 (2023).
 Django==3.2.13
