@@ -41,7 +41,7 @@ from socorro.processor.rules.mozilla import (
     ProductRule,
     ProcessTypeRule,
     SignatureGeneratorRule,
-    SubmittedFromInfobarFixRule,
+    SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
@@ -274,36 +274,49 @@ class TestConvertModuleSignatureInfoRule:
         assert processed_crash == {}
 
 
-class TestSubmittedFromInfobarFixRule:
+class TestSubmittedFromRule:
     @pytest.mark.parametrize(
-        "value, expected", [(True, True), ("true", True), ("1", False)]
+        "submitted_from, submitted_from_infobar, expected_submitted_from, expected_submitted_from_infobar",
+        [
+            # If neither are specified
+            (None, None, "Unknown", False),
+            # Test SubmittedFromInfobar variations
+            (None, True, "Infobar", True),
+            (None, "true", "Infobar", True),
+            (None, "1", "Infobar", True),
+            (None, "0", "Unknown", False),
+            (None, False, "Unknown", False),
+            (None, "false", "Unknown", False),
+            # Test SubmittedFrom variations
+            ("Infobar", None, "Infobar", True),
+            ("Auto", None, "Auto", False),
+        ],
     )
-    def test_predicate(self, value, expected):
-        raw_crash = {"SubmittedFromInfobar": value}
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-        rule = SubmittedFromInfobarFixRule()
-        ret = rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
-        assert ret == expected
-
-    def test_predicate_with_not_there(self):
+    def test_action(
+        self,
+        submitted_from,
+        submitted_from_infobar,
+        expected_submitted_from,
+        expected_submitted_from_infobar,
+    ):
         raw_crash = {}
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta()
-        rule = SubmittedFromInfobarFixRule()
-        ret = rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
-        assert ret is False
 
-    def test_action(self):
-        raw_crash = {"SubmittedFromInfobar": "true"}
+        # Crash reports should have one or the other, but not both, but the world is
+        # weird and it's not a property we care enough to enforce
+        if submitted_from is not None:
+            raw_crash["SubmittedFrom"] = submitted_from
+        if submitted_from_infobar is not None:
+            raw_crash["SubmittedFromInfobar"] = submitted_from_infobar
+
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta()
-        rule = SubmittedFromInfobarFixRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {"SubmittedFromInfobar": "1"}
+        rule = SubmittedFromRule()
+        rule.action(raw_crash, dumps, processed_crash, processor_meta)
+        assert processed_crash == {
+            "submitted_from": expected_submitted_from,
+            "submitted_from_infobar": expected_submitted_from_infobar,
+        }
 
 
 class TestProductRule:

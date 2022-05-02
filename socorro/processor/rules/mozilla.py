@@ -108,7 +108,6 @@ class CopyFromRawCrashRule(Rule):
         ("string", "ShutdownProgress", "shutdown_progress"),
         ("boolean", "StartupCrash", "startup_crash"),
         ("int", "StartupTime", "startup_time"),
-        ("boolean", "SubmittedFromInfobar", "submitted_from_infobar"),
         ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
         ("boolean", "Throttleable", "throttleable"),
         ("int", "TotalPageFile", "total_page_file"),
@@ -182,16 +181,38 @@ class ConvertModuleSignatureInfoRule(Rule):
         raw_crash["ModuleSignatureInfo"] = json.dumps(info)
 
 
-class SubmittedFromInfobarFixRule(Rule):
-    """Fix SubmittedFromInfobar annotation values to "1"
+class SubmittedFromRule(Rule):
+    """Determine submitted_from and submitted_from_infobar field values
 
-    SubmittedFromInfobar value was "true", but it should be "1". For crash reports
-    with annotations submitted as a JSON blob, the value is not true (JSON bool true).
-    This fixes both of those to "1" which is what the value should be. Bug #1626048
+    This looks at the SubmittedFrom and SubmittedFromInfobar annotations and fills
+    in the appropriate processed crash fields.
 
-    Crash reports with annotations submitted as a JSON blob.
+    This handles the case where SubmittedFromInfobar had the value true when the
+    annotations were submitted as a JSON blob. Bug #1626048
+
+    NOTE: After August 2022, we can stop populating submitted_from_infobar field.
 
     """
+
+    TRUE_VALUES = ("1", "true", True)
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+        if "SubmittedFromInfobar" in raw_crash:
+            submitted_from_infobar = (
+                raw_crash["SubmittedFromInfobar"] in self.TRUE_VALUES
+            )
+            submitted_from = "Infobar" if submitted_from_infobar else "Unknown"
+
+        else:
+            submitted_from = raw_crash.get("SubmittedFrom", "Unknown")
+            submitted_from_infobar = submitted_from == "Infobar"
+
+        processed_crash["submitted_from"] = submitted_from
+        processed_crash["submitted_from_infobar"] = submitted_from_infobar
+
+
+class SubmittedFromInfobarFixRule(Rule):
+    """Fix SubmittedFromInfobar annotation values to "1" """
 
     def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
         return "SubmittedFromInfobar" in raw_crash and raw_crash[
