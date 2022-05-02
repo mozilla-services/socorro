@@ -3149,6 +3149,16 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    "submitted_from": keyword_field(
+        name="submitted_from",
+        description=(
+            "This annotation can hold one of the following five values depending on how "
+            "this crash was submitted by the user: Auto, Infobar, AboutCrashes, "
+            "CrashedTab, and Client."
+        ),
+        is_protected=False,
+    ),
+    # NOTE(willkg): we can remove this after August 2022
     "submitted_from_infobar": {
         "data_validation_type": "bool",
         "description": (

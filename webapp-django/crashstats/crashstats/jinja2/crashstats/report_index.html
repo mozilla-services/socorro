@@ -1108,6 +1108,18 @@
                     <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
                   </tr>
                   <tr>
+                    <th scope="row">Throttleable</th>
+                    <td>{{ raw.Throttleable|default("--") }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">SubmittedFrom</th>
+                    <td>{{ raw.SubmittedFrom|default("--") }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">SubmittedFromInfobar</th>
+                    <td>{{ raw.SubmittedFromInfobar|default("--") }}</td>
+                  </tr>
+                  <tr>
                     <th scope="row">Payload</th>
                     <td>{{ raw.payload }}</td>
                   </tr>

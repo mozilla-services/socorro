@@ -59,7 +59,7 @@ from socorro.processor.rules.mozilla import (
     PluginUserComment,
     ProductRule,
     SignatureGeneratorRule,
-    SubmittedFromInfobarFixRule,
+    SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UserDataRule,
@@ -169,8 +169,6 @@ class ProcessorPipeline(RequiredConfig):
                 DeNoneRule(),
                 # fix ModuleSignatureInfo if it needs fixing
                 ConvertModuleSignatureInfoRule(),
-                # fix SubmittedFromInfobar value
-                SubmittedFromInfobarFixRule(),
                 # rules to change the internals of the raw crash
                 FenixVersionRewriteRule(),
                 ESRVersionRewrite(),
@@ -178,6 +176,7 @@ class ProcessorPipeline(RequiredConfig):
                 PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
                 CopyFromRawCrashRule(),
+                SubmittedFromRule(),
                 ProcessTypeRule(),
                 IdentifierRule(),
                 MinidumpSha256Rule(),
