@@ -118,7 +118,13 @@ Adding new crash annotations to a crash report
    Stats and require protected data access.
 
 5. (Optional) If you want the field to show up in crash pings sent to Telemetry,
-   you have to update their schema, too.
+   we have to update the crash ping schema.
+
+   `File a bug in Data Platform and Tools :: Datasets: General <https://bugzilla.mozilla.org/enter_bug.cgi?comment=Please%20add%20the%20following%20crash%20annotations%20to%20the%20crash%20ping%20schema%3A%0D%0A%0D%0A%2A%20%0D%0A%0D%0AThe%20data%20review%20for%20these%20annotations%20is%20bug%20%23XYZ.&component=Datasets%3A%20General&bug_type=task&product=Data%20Platform%20and%20Tools&rep_platform=Unspecified&short_desc=add%20crash%20annotation%20XYZ%20to%20crash%20ping%20schema>`_
+   to add the annotation to the crash ping schema.
+
+   You can either wait for someone to update the schema or make the changes
+   yourself following these steps:
 
    1. From a mozilla-pipeline-schemas (https://github.com/mozilla-services/mozilla-pipeline-schemas/)
       checkout, run::
@@ -128,18 +134,13 @@ Adding new crash annotations to a crash report
       If any exist, you will get a list of crash annotations that are contained
       in the ping but are not yet in the schema.
 
-   2. File a bug to add the annotation to crash pings under ``Data Platform and
-      Tools :: Datasets: General``.
-
-      Example: https://bugzilla.mozilla.org/show_bug.cgi?id=1745803
-
-   3. Add the annotation to ``templates/telemetry/crash/crash.4.schema.json`` under
+   2. Add the annotation to ``templates/telemetry/crash/crash.4.schema.json`` under
       the ``payload/metadata`` section.
 
-   4. Follow `<https://github.com/mozilla-services/mozilla-pipeline-schemas#cmake-build-instructions>`_ to
+   3. Follow `<https://github.com/mozilla-services/mozilla-pipeline-schemas#cmake-build-instructions>`_ to
       build the schema files.
 
-   5. Create a pull request against the main branch in mozilla-pipeline-schemas
+   4. Create a pull request against the main branch in mozilla-pipeline-schemas
       referencing that bug.
 
       Example: https://github.com/mozilla-services/mozilla-pipeline-schemas/pull/711
