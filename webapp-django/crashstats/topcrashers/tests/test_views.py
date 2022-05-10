@@ -159,9 +159,6 @@ class TestTopCrasherViews(BaseTestViews):
             in smart_str(response.content)
         )
 
-        # Check the fission icon.
-        assert "Fission Crash" in smart_str(response.content)
-
     def test_product_sans_featured_version(self):
         def mocked_supersearch_get(**params):
             if "_columns" not in params:

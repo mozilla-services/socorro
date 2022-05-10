@@ -1,6 +1,4 @@
 {% from "macros/signature_startup_icons.html" import startup_crash_icon,
-                                                     fission_icon,
-                                                     potential_fission_icon,
                                                      potential_startup_crash_icon,
                                                      potential_startup_window_crash_icon,
                                                      plugin_crash_icon,
@@ -168,12 +166,6 @@
                       <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ topcrashers_stats_item.signature_term }}" />
                     </div>
                     <div class="signature-icons">
-                      {% if topcrashers_stats_item.is_fission_crash %}
-                        {{ fission_icon() }}
-                      {% elif topcrashers_stats_item.is_potential_fission_crash %}
-                        {{ potential_fission_icon() }}
-                      {% endif %}
-
                       {% if topcrashers_stats_item.is_startup_crash %}
                         {{ startup_crash_icon() }}
                       {% elif topcrashers_stats_item.is_potential_startup_crash %}
