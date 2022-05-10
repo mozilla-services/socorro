@@ -82,6 +82,10 @@ class CopyFromRawCrashRule(Rule):
         ("int", "AvailableVirtualMemory", "available_virtual_memory"),
         ("string", "BIOS_Manufacturer", "bios_manufacturer"),
         ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
+        # NOTE(willkg): This is an integer, but it's in hex. I'm treating it as a string
+        # rather than converting it to a decimal integer because I think it's going to
+        # be more helpful.
+        ("string", "CoUnmarshalInterfaceResult", "co_unmarshal_interface_result"),
         ("boolean", "ContainsMemoryReport", "contains_memory_report"),
         ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
         ("boolean", "ContentSandboxCapable", "content_sandbox_capable"),
