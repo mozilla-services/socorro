@@ -3451,6 +3451,12 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
+    "utility_process_sandboxing_kind": number_field(
+        name="utility_process_sandboxing_kind",
+        description="The SandboxingKind passed for this Utility process instance",
+        number_type="integer",
+        is_protected=False,
+    ),
     "uuid": {
         "data_validation_type": "enum",
         "description": "Unique identifier of the report.",

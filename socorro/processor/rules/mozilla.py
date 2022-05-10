@@ -115,6 +115,7 @@ class CopyFromRawCrashRule(Rule):
         ("int", "TotalVirtualMemory", "total_virtual_memory"),
         ("float", "UptimeTS", "uptime_ts"),
         ("string", "useragent_locale", "useragent_locale"),
+        ("int", "UtilityProcessSandboxingKind", "utility_process_sandboxing_kind"),
         ("string", "Vendor", "vendor"),
     ]
 
