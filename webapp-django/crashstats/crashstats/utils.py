@@ -167,25 +167,6 @@ class SignatureStats:
         )
 
     @cached_property
-    def num_fission_crashes(self):
-        return sum(
-            row["count"] for row in self.signature["facets"]["dom_fission_enabled"]
-        )
-
-    @cached_property
-    def is_fission_crash(self):
-        return self.num_fission_crashes == self.num_crashes
-
-    @cached_property
-    def is_potential_fission_crash(self):
-        # It's only a potential fission crash if > 50% are fission-enabled.  Otherwise
-        # it'll create too many false positives.
-        return (
-            self.num_fission_crashes > (self.num_crashes / 2)
-            and self.num_fission_crashes < self.num_crashes
-        )
-
-    @cached_property
     def is_startup_window_crash(self):
         is_startup_window_crash = False
         for row in self.signature["facets"]["histogram_uptime"]:
