@@ -224,7 +224,7 @@ nsThread::nsChainedEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::
 nsINode::Slots
-nsTSubstring<T>::Append
+nsTSubstring<.*>::
 nsJSThingHashtable<.*>::
 nsObjCExceptionLogAbort
 NS_QuickSort
@@ -236,7 +236,6 @@ nsTArray<
 nsTArray_base<
 nsTArray_Impl<
 nsTHashtable<.*>::
-nsTSubstring<.*>::Assign
 nsThread::Shutdown
 NtUser
 NXMapRemove
