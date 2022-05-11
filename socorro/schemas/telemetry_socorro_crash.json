@@ -462,7 +462,8 @@
         "string",
         "null"
       ],
-      "description": "Whether there was a garbage collection in progress."
+      "description": "Whether there was a garbage collection in progress.",
+      "socorro_convert_to": "string"
     },
     "java_stack_trace": {
       "type": [
