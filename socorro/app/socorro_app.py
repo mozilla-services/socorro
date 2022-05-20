@@ -18,6 +18,7 @@ import logging
 import logging.config
 import logging.handlers
 import os
+from pathlib import Path
 import socket
 import sys
 
@@ -38,7 +39,7 @@ from configman.converters import (
 import markus
 import sentry_sdk
 
-from socorro.lib.revision_data import get_version, get_version_name
+from socorro.lib.librevision import get_version_info, get_release_name
 
 
 def cls_to_pypath(cls):
@@ -147,6 +148,8 @@ class App(RequiredConfig):
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
+        basedir = Path(__file__).resolve().parent.parent
+
         # NOTE(willkg): This is a classmethod, so we need a different logger.
         mylogger = logging.getLogger(__name__ + "." + cls.__name__)
         if config_path is None:
@@ -206,7 +209,7 @@ class App(RequiredConfig):
             setup_metrics(config)
 
             # Log revision information
-            version_data = get_version() or {}
+            version_data = get_version_info(basedir)
             version_items = sorted(version_data.items())
             mylogger.info(
                 "version.json: {%s}",
@@ -216,8 +219,8 @@ class App(RequiredConfig):
             config_manager.log_config(mylogger)
 
             # Add version to crash reports
-            version = get_version_name()
-            setup_crash_reporting(config, version)
+            release = get_release_name(basedir)
+            setup_crash_reporting(config, release)
 
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)

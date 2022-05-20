@@ -218,7 +218,7 @@ def json_view(f):
             return response
 
         else:
-            indent = 0
+            indent = None
             request_data = request.method == "GET" and request.GET or request.POST
             if request_data.get("pretty") == "print":
                 indent = 2
@@ -230,8 +230,9 @@ def json_view(f):
                 response, headers = response
             else:
                 headers = {}
+            json_data = json.dumps(response, cls=DateTimeEncoder, indent=indent)
             http_response = http.HttpResponse(
-                _json_clean(json.dumps(response, cls=DateTimeEncoder, indent=indent)),
+                _json_clean(json_data),
                 status=status,
                 content_type="application/json; charset=UTF-8",
             )

@@ -3,12 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 import uuid
 
 import elasticsearch
 
-from django import http
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
@@ -20,7 +18,7 @@ from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
-from socorro.lib.revision_data import get_version
+from socorro.lib.librevision import get_version_info
 
 
 def index(request):
@@ -60,14 +58,14 @@ def cron_status(request):
     return context
 
 
+@utils.json_view
 def dockerflow_version(requst):
     """Dockerflow __version__ endpoint.
 
     Returns contents of /app/version.json or {}.
 
     """
-    data = json.dumps(get_version() or {})
-    return http.HttpResponse(data, content_type="application/json")
+    return get_version_info(settings.SOCORRO_ROOT)
 
 
 class HeartbeatException(Exception):
