@@ -16,7 +16,7 @@ import markus
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
-from socorro.lib import sentry_client
+from socorro.lib import libsentry
 from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.util import dotdict_to_dict
 
@@ -136,7 +136,7 @@ class ProcessorApp(FetchTransformSaveApp):
         if crash_id:
             extra["crash_id"] = crash_id
 
-        sentry_client.capture_error(self.logger, exc_info, extra=extra)
+        libsentry.capture_error(self.logger, exc_info, extra=extra)
 
     def _basic_iterator(self):
         """Yields an infinite list of processing tasks."""

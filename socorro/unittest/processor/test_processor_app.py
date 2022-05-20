@@ -163,8 +163,8 @@ class TestProcessorApp:
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert "Sentry DSN is not configured and an exception happened" in logging_msgs
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.libsentry.get_hub")
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
     def test_transform_polystorage_error_with_sentry_configured_successful(
         self, is_enabled, mock_get_hub, caplogpp
     ):
@@ -202,7 +202,7 @@ class TestProcessorApp:
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert "Error captured in Sentry! Reference: someidentifier" in logging_msgs
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
+    @mock.patch("socorro.lib.libsentry.get_hub")
     def test_transform_save_error_with_sentry_configured_successful(
         self, mock_get_hub, caplogpp
     ):
@@ -230,8 +230,8 @@ class TestProcessorApp:
         assert not mock_hub.capture_exception.called
         assert len(caplogpp.records) == 0
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.libsentry.get_hub")
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
     def test_transform_get_error_with_sentry_configured_successful(
         self, is_enabled, mock_get_hub, caplogpp
     ):
@@ -262,8 +262,8 @@ class TestProcessorApp:
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert "Error captured in Sentry! Reference: someidentifier" in logging_msgs
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.libsentry.get_hub")
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
     def test_transform_polystorage_error_with_sentry_configured_failing(
         self, is_enabled, mock_get_hub, caplogpp
     ):

@@ -31,8 +31,8 @@ class TestProcessorPipeline:
         config.processor_name = "dwight"
         return config
 
-    @mock.patch("socorro.lib.sentry_client.get_hub", side_effect=Exception("fail"))
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=False)
+    @mock.patch("socorro.lib.libsentry.get_hub", side_effect=Exception("fail"))
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=False)
     def test_rule_error_sentry_disabled(self, is_enabled, mock_get_hub):
         config = self.get_config()
 
@@ -48,8 +48,8 @@ class TestProcessorPipeline:
         assert notes[1] == "rule BadRule failed: KeyError"
         mock_get_hub.assert_not_called()
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.libsentry.get_hub")
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
     def test_rule_error_sentry_enabled(self, is_enabled, mock_get_hub):
         config = self.get_config()
         captured_exceptions = []  # a global
