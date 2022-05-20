@@ -2088,8 +2088,8 @@ class TestSignatureGeneratorRule:
             "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
-    @mock.patch("socorro.lib.sentry_client.get_hub")
-    @mock.patch("socorro.lib.sentry_client.is_enabled", return_value=True)
+    @mock.patch("socorro.lib.libsentry.get_hub")
+    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
     def test_rule_fail_and_capture_error(self, client_enabled, mock_get_hub):
         exc_value = Exception("Cough")
 

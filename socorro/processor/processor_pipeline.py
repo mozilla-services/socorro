@@ -15,8 +15,8 @@ from configman import Namespace, RequiredConfig
 from configman.converters import str_to_list
 from configman.dotdict import DotDict
 
-from socorro.lib import sentry_client
 from socorro.lib.libdatetime import utc_now
+from socorro.lib import libsentry
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
@@ -279,7 +279,7 @@ class ProcessorPipeline(RequiredConfig):
             except Exception as exc:
                 # If a rule throws an error, capture it and toss it in the
                 # processor notes
-                sentry_client.capture_error(
+                libsentry.capture_error(
                     logger=self.logger, extra={"crash_id": crash_id}
                 )
                 # NOTE(willkg): notes are public, so we can't put exception
