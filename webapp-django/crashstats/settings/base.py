@@ -26,7 +26,7 @@ from crashstats.sentrylib import (
     SENTRY_LOG_NAME,
 )
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
-from socorro.lib.revision_data import get_version_name
+from socorro.lib.librevision import get_release_name
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -526,7 +526,7 @@ SESSION_COOKIE_HTTPONLY = config("SESSION_COOKIE_HTTPONLY", True, cast=bool)
 # decorator on specific views that can be in a frame.
 X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", "DENY")
 
-SOCORRO_VERSION = get_version_name()
+SOCORRO_RELEASE = get_release_name(SOCORRO_ROOT)
 
 # Comma-separated list of urls that serve version information in JSON format
 OVERVIEW_VERSION_URLS = config("OVERVIEW_VERSION_URLS", "")
@@ -537,7 +537,7 @@ SENTRY_DEBUG = config("SENTRY_DEBUG", False)  # Be noisy at init and processing 
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        release=SOCORRO_VERSION,
+        release=SOCORRO_RELEASE,
         send_default_pii=False,
         integrations=[DjangoIntegration()],
         debug=SENTRY_DEBUG,
