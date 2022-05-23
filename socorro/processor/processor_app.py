@@ -17,7 +17,10 @@ import markus
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import libsentry
+
 from socorro.lib.libdatetime import isoformat_to_time
+from socorro.lib.librevision import get_release_name
+from socorro.lib.libsentry import scrub, Scrubber, set_up_sentry, SCRUB_KEYS_DEFAULT
 from socorro.lib.util import dotdict_to_dict
 
 
@@ -94,6 +97,13 @@ CONFIG_DEFAULTS = {
 METRICS = markus.get_metrics("processor")
 
 
+SCRUB_KEYS_PROCESSOR = [
+    # Wipe out raw and processed crash data
+    ("exception.stacktrace.frames.[].vars.raw_crash", scrub),
+    ("exception.stacktrace.frames.[].vars.processed_crash", scrub),
+]
+
+
 class ProcessorApp(FetchTransformSaveApp):
     """Configman app that transforms raw crashes into processed crashes."""
 
@@ -125,18 +135,24 @@ class ProcessorApp(FetchTransformSaveApp):
         from_string_converter=class_converter,
     )
 
+    @classmethod
+    def set_up_sentry(cls, basedir, host_id, sentry_dsn):
+        release = get_release_name(basedir)
+        scrubber = Scrubber(scrub_keys=SCRUB_KEYS_DEFAULT + SCRUB_KEYS_PROCESSOR)
+        set_up_sentry(release, host_id, sentry_dsn, before_send=scrubber)
+
     def _capture_error(self, exc_info, crash_id=None):
         """Capture an error in sentry if able.
 
-        :arg crash_id: a crash id
         :arg exc_info: the exc info as it comes from sys.exc_info()
+        :arg crash_id: a crash id
 
         """
         extra = {}
         if crash_id:
             extra["crash_id"] = crash_id
 
-        libsentry.capture_error(self.logger, exc_info, extra=extra)
+        libsentry.capture_error(use_logger=self.logger, exc_info=exc_info, extra=extra)
 
     def _basic_iterator(self):
         """Yields an infinite list of processing tasks."""

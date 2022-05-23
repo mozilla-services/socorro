@@ -32,14 +32,13 @@ from configman import (
 )
 from configman.converters import (
     py_obj_to_str,
-    str_to_boolean,
     str_to_list,
     str_to_python_object,
 )
 import markus
-import sentry_sdk
 
 from socorro.lib.librevision import get_version_info, get_release_name
+from socorro.lib.libsentry import set_up_sentry
 
 
 def cls_to_pypath(cls):
@@ -116,13 +115,6 @@ class App(RequiredConfig):
         reference_value_from="secrets.sentry",
         secret=True,
     )
-    required_config.sentry.add_option(
-        "debug",
-        doc="Print details of initialization and event processing (true/false)",
-        reference_value_from="resource.sentry",
-        from_string_converter=str_to_boolean,
-        default=False,
-    )
 
     def __init__(self, config):
         self.config = config
@@ -145,6 +137,11 @@ class App(RequiredConfig):
             os.uname()[1].replace(".", "_"),
             os.getpid(),
         )
+
+    @classmethod
+    def set_up_sentry(cls, basedir, host_id, sentry_dsn):
+        release = get_release_name(basedir)
+        set_up_sentry(release, host_id, sentry_dsn)
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
@@ -209,8 +206,8 @@ class App(RequiredConfig):
             setup_metrics(config)
 
             # Log revision information
-            version_data = get_version_info(basedir)
-            version_items = sorted(version_data.items())
+            version_info = get_version_info(basedir)
+            version_items = sorted(version_info.items())
             mylogger.info(
                 "version.json: {%s}",
                 ", ".join(["%r: %r" % (key, val) for key, val in version_items]),
@@ -219,8 +216,15 @@ class App(RequiredConfig):
             config_manager.log_config(mylogger)
 
             # Add version to crash reports
-            release = get_release_name(basedir)
-            setup_crash_reporting(config, release)
+            host_id = config.host_id
+            if config.sentry and config.sentry.dsn:
+                sentry_dsn = config.sentry.dsn
+            else:
+                # NOTE(willkg): We do this so we can use SENTRY_DSN to configure
+                # it rather than the configman variable. We can get rid of this
+                # when we stop using configman
+                sentry_dsn = os.environ.get("SENTRY_DSN", "")
+            cls.set_up_sentry(basedir, host_id, sentry_dsn)
 
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)
@@ -316,20 +320,3 @@ def setup_metrics(config):
             raise ValueError('Invalid markus backend "%s"' % backend)
 
     markus.configure(backends=backends)
-
-
-def setup_crash_reporting(config, version):
-    """Setup Sentry crash reporting."""
-
-    if config.sentry and config.sentry.dsn:
-        sentry_dsn = config.sentry.dsn
-    else:
-        sentry_dsn = os.environ.get("SENTRY_DSN", "")
-
-    if sentry_dsn:
-        sentry_sdk.init(
-            dsn=sentry_dsn,
-            release=version,
-            debug=config.sentry.debug,
-            send_default_pii=False,
-        )

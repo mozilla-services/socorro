@@ -20,13 +20,16 @@ from sentry_sdk.integrations.logging import ignore_logger
 import dj_database_url
 import sentry_sdk
 
-from crashstats.sentrylib import (
-    build_before_breadcrumb,
-    build_before_send,
-    SENTRY_LOG_NAME,
-)
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
 from socorro.lib.librevision import get_release_name
+from socorro.lib.libsentry import (
+    build_scrub_query_string,
+    scrub,
+    Scrubber,
+    SCRUB_KEYS_DEFAULT,
+    SENTRY_MODULE_NAME,
+    set_up_sentry,
+)
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -193,12 +196,12 @@ ANON_ALWAYS = True
 
 LOGGING_LEVEL = config("LOGGING_LEVEL", "INFO")
 
-host_id = socket.gethostname()
+HOST_ID = socket.gethostname()
 
 
 class AddHostID(logging.Filter):
     def filter(self, record):
-        record.host_id = host_id
+        record.host_id = HOST_ID
         return True
 
 
@@ -526,43 +529,38 @@ SESSION_COOKIE_HTTPONLY = config("SESSION_COOKIE_HTTPONLY", True, cast=bool)
 # decorator on specific views that can be in a frame.
 X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", "DENY")
 
-SOCORRO_RELEASE = get_release_name(SOCORRO_ROOT)
-
 # Comma-separated list of urls that serve version information in JSON format
 OVERVIEW_VERSION_URLS = config("OVERVIEW_VERSION_URLS", "")
 
 # Sentry aggregates reports of uncaught errors and other events
 SENTRY_DSN = config("SENTRY_DSN", "")
-SENTRY_DEBUG = config("SENTRY_DEBUG", False)  # Be noisy at init and processing events
 if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        release=SOCORRO_RELEASE,
-        send_default_pii=False,
+    scrub_keys_django = [
+        # HTTP request bits
+        ("request.headers.Auth-Token", scrub),
+        ("request.headers.Cookie", scrub),
+        ("request.headers.X-Forwarded-For", scrub),
+        ("request.headers.X-Real-Ip", scrub),
+        ("request.data.csrfmiddlewaretoken", scrub),
+        ("request.data.client_secret", scrub),
+        ("request.query_string", build_scrub_query_string(params=["code", "state"])),
+        ("request.cookies", scrub),
+        # "request" shows up in exceptions as a repr which in Django includes the
+        # query_string, so best to scrub it
+        ("exception.values.[].stacktrace.frames.[].vars.request", scrub),
+    ]
+
+    release = get_release_name(SOCORRO_ROOT)
+    set_up_sentry(
+        release=release,
+        host_id=HOST_ID,
+        sentry_dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        debug=SENTRY_DEBUG,
-        before_breadcrumb=build_before_breadcrumb(),
-        before_send=build_before_send(),
+        before_send=Scrubber(scrub_keys=SCRUB_KEYS_DEFAULT + scrub_keys_django),
     )
 
-    # Do not generate events for some logs (ERROR or above)
-    ignore_logger(SENTRY_LOG_NAME)  # avoid infinite logging loops
-    ignore_logger(
-        "django.security.DisallowedHost"
-    )  # no fix needed, the system is working
-
-    if SENTRY_DEBUG:
-        # Add a DEBUG level handler for sentry processing messages
-        LOGGING["handlers"]["sentry"] = {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "socorroapp",
-        }
-        LOGGING["loggers"][SENTRY_LOG_NAME] = {
-            "handlers": ["sentry"],
-            "level": "DEBUG",
-            "propagate": False,
-        }
+    # Ignore DisallowedHost errors
+    ignore_logger("django.security.DisallowedHost")
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
