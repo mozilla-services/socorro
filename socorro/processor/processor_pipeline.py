@@ -280,7 +280,7 @@ class ProcessorPipeline(RequiredConfig):
                 # If a rule throws an error, capture it and toss it in the
                 # processor notes
                 libsentry.capture_error(
-                    logger=self.logger, extra={"crash_id": crash_id}
+                    use_logger=self.logger, extra={"crash_id": crash_id}
                 )
                 # NOTE(willkg): notes are public, so we can't put exception
                 # messages in them

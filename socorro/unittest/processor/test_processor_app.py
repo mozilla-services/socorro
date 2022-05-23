@@ -161,7 +161,9 @@ class TestProcessorApp:
             pa.transform("mycrashid")
 
         logging_msgs = [rec.message for rec in caplogpp.records]
-        assert "Sentry DSN is not configured and an exception happened" in logging_msgs
+        assert (
+            "Sentry has not been configured and an exception happened" in logging_msgs
+        )
 
     @mock.patch("socorro.lib.libsentry.get_hub")
     @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
@@ -304,11 +306,11 @@ class TestProcessorApp:
         expected = [
             # Logs for failed Sentry reporting for first exception
             ("Unable to report error with Sentry", mock.ANY),
-            ("Sentry DSN is not configured and an exception happened", None),
+            ("Sentry has not been configured and an exception happened", None),
             ("Exception occurred", first_exc_info),
             # Logs for failed Sentry reporting for second exception
             ("Unable to report error with Sentry", mock.ANY),
-            ("Sentry DSN is not configured and an exception happened", None),
+            ("Sentry has not been configured and an exception happened", None),
             ("Exception occurred", second_exc_info),
             # Log for failing to process or save the crash
             ("error in processing or saving crash mycrashid", None),

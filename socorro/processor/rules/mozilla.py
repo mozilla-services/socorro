@@ -1139,7 +1139,7 @@ class SignatureGeneratorRule(Rule):
     def _error_handler(self, crash_data, exc_info, extra):
         """Captures errors from signature generation"""
         extra["uuid"] = crash_data.get("uuid", None)
-        libsentry.capture_error(self.logger, exc_info=exc_info, extra=extra)
+        libsentry.capture_error(use_logger=self.logger, exc_info=exc_info, extra=extra)
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
         # Generate a crash signature and capture the signature and notes

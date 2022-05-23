@@ -19,9 +19,9 @@ class TestApp:
         with pytest.raises(NotImplementedError):
             sa.main()
 
-    @mock.patch("socorro.app.socorro_app.setup_crash_reporting")
+    @mock.patch("socorro.app.socorro_app.set_up_sentry")
     @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run(self, setup_logging, setup_crash_reporting):
+    def test_run(self, setup_logging, set_up_sentry):
         with mock.patch("socorro.app.socorro_app.ConfigurationManager") as cm:
             cm.return_value.context.return_value = mock.MagicMock()
 
@@ -83,9 +83,9 @@ class TestApp:
         assert SomeOtherApp.config_path == "my/other/path"
         assert SomeOtherApp.values_source_list == []
 
-    @mock.patch("socorro.app.socorro_app.setup_crash_reporting")
+    @mock.patch("socorro.app.socorro_app.set_up_sentry")
     @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run_with_alternate_class_path(self, setup_logging, setup_crash_reporting):
+    def test_run_with_alternate_class_path(self, setup_logging, set_up_sentry):
         with mock.patch("socorro.app.socorro_app.ConfigurationManager") as cm:
             cm.return_value.context.return_value = mock.MagicMock()
 
