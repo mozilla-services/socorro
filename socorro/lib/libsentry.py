@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import logging
-from urllib.parse import parse_qsl, urlencode
+from urllib.parse import urlparse, parse_qsl, urlencode
 import sys
 
 import markus
@@ -21,6 +21,23 @@ MASK_TEXT = "[Scrubbed]"
 
 ALL_COOKIE_KEYS = object()
 ALL_QUERY_STRING_KEYS = object()
+
+
+def get_sentry_base_url(sentry_dsn):
+    """Given a sentry_dsn, returns the base url
+
+    This is helpful for tests that need the url to the fakesentry api.
+
+    """
+    if not sentry_dsn:
+        raise Exception("sentry_dsn required")
+
+    parsed_dsn = urlparse(sentry_dsn)
+    netloc = parsed_dsn.netloc
+    if "@" in netloc:
+        netloc = netloc[netloc.find("@") + 1 :]
+
+    return f"{parsed_dsn.scheme}://{netloc}/"
 
 
 def scrub(value):
@@ -277,7 +294,6 @@ def set_up_sentry(release, host_id, sentry_dsn, **kwargs):
     :arg kwargs: any additional arguments to pass to sentry_sdk.init()
 
     """
-
     if not sentry_dsn:
         return
 

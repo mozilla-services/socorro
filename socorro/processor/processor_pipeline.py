@@ -138,11 +138,11 @@ class ProcessorPipeline(RequiredConfig):
         default="https://crash-stats.mozilla.org/api/VersionString",
     )
 
-    def __init__(self, config, rules=None):
+    def __init__(self, config, rules=None, host_id=None):
         super().__init__()
         self.config = config
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-
+        self.host_id = host_id or "unknown"
         self.rulesets = rules or self.get_rulesets(config)
         for ruleset_name, ruleset in self.rulesets.items():
             self.logger.info(f"Loading ruleset: {ruleset_name}")
@@ -253,8 +253,7 @@ class ProcessorPipeline(RequiredConfig):
         processed_crash.started_datetime = start_time
 
         processor_meta_data.processor_notes.append(
-            f">>> Start processing: {start_time:%Y-%m-%d %H:%M:%S} "
-            + f"({self.config.processor_name})"
+            f">>> Start processing: {start_time:%Y-%m-%d %H:%M:%S} ({self.host_id})"
         )
 
         processed_crash.signature = "EMPTY: crash failed to process"
