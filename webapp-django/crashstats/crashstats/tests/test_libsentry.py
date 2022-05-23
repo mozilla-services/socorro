@@ -5,29 +5,20 @@
 # This tests whether sentry is set up correctly in the webapp.
 
 import time
-import urllib
 
 import requests
 
 from django.conf import settings
 from django.test.testcases import LiveServerTestCase
 
+from socorro.lib.libsentry import get_sentry_base_url
+
 
 class TestIntegration(LiveServerTestCase):
     """Verify that sanitization code works with sentry-sdk."""
 
-    def get_fakesentry_baseurl(self):
-        sentry_dsn = settings.SENTRY_DSN
-
-        parsed_dsn = urllib.parse.urlparse(sentry_dsn)
-        netloc = parsed_dsn.netloc
-        if "@" in netloc:
-            netloc = netloc[netloc.find("@") + 1 :]
-
-        return f"{parsed_dsn.scheme}://{netloc}/"
-
     def test_integration(self):
-        fakesentry_api = self.get_fakesentry_baseurl()
+        fakesentry_api = get_sentry_base_url(settings.SENTRY_DSN)
 
         # Flush errors so the list is empty
         resp = requests.post(fakesentry_api + "api/flush/")

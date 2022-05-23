@@ -270,13 +270,13 @@ class ProcessorApp(FetchTransformSaveApp):
         else:
             self.companion_process = None
 
-        self.config.processor_name = self.app_instance_name
-
         # This function will be called by the MainThread periodically
         # while the threaded_task_manager processes crashes.
         self.waiting_func = None
 
-        self.processor = self.config.processor.processor_class(self.config.processor)
+        self.processor = self.config.processor.processor_class(
+            config=self.config.processor, host_id=self.app_instance_name
+        )
 
     def close(self):
         """Clean up the processor on shutdown."""
