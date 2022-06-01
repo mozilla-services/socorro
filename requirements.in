@@ -48,7 +48,7 @@ Sphinx==4.4.0
 sphinx_rtd_theme==1.0.0
 statsd==3.3.0
 urlwait==1.0
-whitenoise==6.0.0
+whitenoise==6.1.0
 
 # NOTE(willkg): Don't need to update this. We don't really use it and we should
 # remove it.
