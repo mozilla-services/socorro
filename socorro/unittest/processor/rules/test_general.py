@@ -14,7 +14,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
-from socorro.unittest.processor import get_basic_processor_meta
+from socorro.unittest.processor import get_basic_processor_meta_data
 
 
 canonical_standard_raw_crash = {
@@ -130,7 +130,7 @@ class TestDeNullRule:
         raw_crash = {"key1": "val1", b"\0key2": b"val2\0", "\0key3": "\0val3"}
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, get_basic_processor_meta())
+        rule.act(raw_crash, {}, {}, get_basic_processor_meta_data())
 
         assert raw_crash == {"key1": "val1", b"key2": b"val2", "key3": "val3"}
 
@@ -139,7 +139,7 @@ class TestDeNullRule:
         raw_crash = DotDict({"key1": "val1", "\0key2": b"val2\0", "\0key3": "\0val3"})
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, get_basic_processor_meta())
+        rule.act(raw_crash, {}, {}, get_basic_processor_meta_data())
 
         assert raw_crash == DotDict({"key1": "val1", "key2": b"val2", "key3": "val3"})
 
@@ -150,7 +150,7 @@ class TestIdentifierRule:
         raw_crash = {"uuid": uuid}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = IdentifierRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -162,7 +162,7 @@ class TestIdentifierRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = IdentifierRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -176,7 +176,7 @@ class TestCPUInfoRule:
     def test_cpu_count(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -187,7 +187,7 @@ class TestCPUInfoRule:
     def test_cpu_count_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -198,7 +198,7 @@ class TestCPUInfoRule:
     def test_cpu_info(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -217,7 +217,7 @@ class TestCPUInfoRule:
     def test_cpu_info_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -228,7 +228,7 @@ class TestCPUInfoRule:
     def test_cpu_arch_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -240,7 +240,7 @@ class TestCPUInfoRule:
     def test_cpu_arch_from_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
 
@@ -262,7 +262,7 @@ class TestCPUInfoRule:
         raw_crash = {"Android_CPU_ABI": android_cpu_abi}
         processed_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CPUInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -280,7 +280,7 @@ class TestOSInfoRule:
                 }
             }
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSInfoRule()
 
@@ -296,7 +296,7 @@ class TestOSInfoRule:
     def test_stuff_missing(self):
         raw_crash = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSInfoRule()
 
@@ -318,7 +318,7 @@ class TestCollectorInfoRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CollectorInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -338,7 +338,7 @@ class TestCrashReportKeysRule:
             "upload_file_minidump_flash1": "fake data",
         }
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CrashReportKeysRule()
 

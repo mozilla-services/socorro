@@ -36,7 +36,7 @@ class MemoryReportExtraction(Rule):
         except KeyError:
             return False
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         pid = processed_crash["json_dump"]["pid"]
         memory_report = processed_crash["memory_report"]
 
