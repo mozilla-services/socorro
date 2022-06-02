@@ -39,7 +39,7 @@ class DeNullRule(Rule):
         # return it as is
         return s
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         had_nulls = False
 
         # Go through the raw crash and de-null keys and values
@@ -66,7 +66,7 @@ class DeNoneRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         had_nones = False
 
         # Remove keys that have None values
@@ -80,7 +80,7 @@ class DeNoneRule(Rule):
 
 
 class IdentifierRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         if "uuid" in raw_crash:
             processed_crash["crash_id"] = raw_crash["uuid"]
             processed_crash["uuid"] = raw_crash["uuid"]
@@ -96,7 +96,7 @@ class CPUInfoRule(Rule):
         "x86_64": "amd64",
     }
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # This is the CPU info of the machine the product was running on
         processed_crash["cpu_info"] = glom(
             processed_crash, "json_dump.system_info.cpu_info", default="unknown"
@@ -119,7 +119,7 @@ class CPUInfoRule(Rule):
 
 
 class OSInfoRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         os_name = glom(
             processed_crash, "json_dump.system_info.os", default="Unknown"
         ).strip()
@@ -143,7 +143,7 @@ class CollectorInfoRule(Rule):
         "collector_notes",
     ]
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         for key in self.KEYS:
             processed_crash[key] = raw_crash.get(key, None)
 
@@ -164,7 +164,7 @@ class CrashReportKeysRule(Rule):
 
         return key
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         all_keys = set(raw_crash.keys()) | set(dumps.keys())
 
         # Go through and remove obviously invalid keys
@@ -177,6 +177,6 @@ class CrashReportKeysRule(Rule):
         # not both
         diff = all_keys.symmetric_difference(sanitized_keys)
         if diff:
-            processor_meta["processor_notes"].append(
+            processor_meta_data["processor_notes"].append(
                 "invalidkeys: Crash report contains invalid keys"
             )

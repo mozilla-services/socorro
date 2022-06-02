@@ -123,7 +123,7 @@ class CopyFromRawCrashRule(Rule):
         ("string", "Vendor", "vendor"),
     ]
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # FIXME(willkg): This is currently hard-coded. We should change it to work from
         # a schema.
 
@@ -138,7 +138,7 @@ class CopyFromRawCrashRule(Rule):
                 elif value in ("0", "false"):
                     processed_crash[processed_key] = False
                 else:
-                    processor_meta["processor_notes"].append(
+                    processor_meta_data["processor_notes"].append(
                         f"{raw_key} has non-boolean value {raw_crash[raw_key]}"
                     )
 
@@ -146,7 +146,7 @@ class CopyFromRawCrashRule(Rule):
                 try:
                     processed_crash[processed_key] = int(raw_crash[raw_key])
                 except ValueError:
-                    processor_meta["processor_notes"].append(
+                    processor_meta_data["processor_notes"].append(
                         f"{raw_key} has a non-int value"
                     )
 
@@ -154,7 +154,7 @@ class CopyFromRawCrashRule(Rule):
                 try:
                     processed_crash[processed_key] = float(raw_crash[raw_key])
                 except ValueError:
-                    processor_meta["processor_notes"].append(
+                    processor_meta_data["processor_notes"].append(
                         f"{raw_key} has a non-float value"
                     )
 
@@ -172,12 +172,12 @@ class ConvertModuleSignatureInfoRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "ModuleSignatureInfo" in raw_crash and not isinstance(
             raw_crash["ModuleSignatureInfo"], str
         )
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         info = raw_crash["ModuleSignatureInfo"]
         if isinstance(info, DotDict):
             # Sometimes the value is a DotDict which json.dumps doesn't work with so
@@ -201,7 +201,7 @@ class SubmittedFromRule(Rule):
 
     TRUE_VALUES = ("1", "true", True)
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         if "SubmittedFromInfobar" in raw_crash:
             submitted_from_infobar = (
                 raw_crash["SubmittedFromInfobar"] in self.TRUE_VALUES
@@ -219,19 +219,19 @@ class SubmittedFromRule(Rule):
 class SubmittedFromInfobarFixRule(Rule):
     """Fix SubmittedFromInfobar annotation values to "1" """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "SubmittedFromInfobar" in raw_crash and raw_crash[
             "SubmittedFromInfobar"
         ] in ("true", True)
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         raw_crash["SubmittedFromInfobar"] = "1"
 
 
 class ProductRule(Rule):
     """Copy product data from raw crash to processed crash."""
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["product"] = raw_crash.get("ProductName", "")
         processed_crash["version"] = raw_crash.get("Version", "")
         processed_crash["productid"] = raw_crash.get("ProductID", "")
@@ -250,7 +250,7 @@ class ProductRule(Rule):
 class MajorVersionRule(Rule):
     """Sets "version" to the major version number of the Version annotation or 0"""
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         major_version = None
         try:
             version = raw_crash.get("Version", "")
@@ -263,27 +263,27 @@ class MajorVersionRule(Rule):
 
 
 class UserDataRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["url"] = raw_crash.get("URL", None)
         processed_crash["user_comments"] = raw_crash.get("Comments", None)
 
 
 class EnvironmentRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["app_notes"] = raw_crash.get("Notes", "")
 
 
 class ProcessTypeRule(Rule):
     """Set process_type to ProcessType value or "parent"."""
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["process_type"] = raw_crash.get("ProcessType", "parent")
 
 
 class PluginRule(Rule):
     """Handle plugin-related fields."""
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         process_type = raw_crash.get("ProcessType", "parent")
         if process_type == "plugin":
             processed_crash["plugin_filename"] = raw_crash.get("PluginFilename", "")
@@ -303,7 +303,7 @@ class AddonsRule(Rule):
         """
         return addon if ":" in addon else addon + ":NO_VERSION"
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["addons_checked"] = None
 
         # it's okay to not have EMCheckCompatibility
@@ -340,8 +340,8 @@ class DatesAndTimesRule(Rule):
             )
             return default
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        processor_notes = processor_meta["processor_notes"]
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
+        processor_notes = processor_meta_data["processor_notes"]
 
         # NOTE(willkg): The submitted_timestamp comes from the collector when the crash
         # report is accepted. It should always be there and should always be
@@ -409,12 +409,12 @@ class DatesAndTimesRule(Rule):
 class JavaProcessRule(Rule):
     """Move Java-crash-related bits over."""
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return bool(raw_crash.get("JavaStackTrace", None)) or bool(
             raw_crash.get("JavaException", None)
         )
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         if "JavaStackTrace" in raw_crash:
             # The java_stack_trace_raw version can contain PII in the exception message
             # and should be treated as protected data
@@ -427,7 +427,7 @@ class JavaProcessRule(Rule):
                 )
                 java_stack_trace = parsed_java_stack_trace.to_public_string()
             except libjava.MalformedJavaStackTrace:
-                processor_meta["processor_notes"].append(
+                processor_meta_data["processor_notes"].append(
                     "JavaProcessRule: malformed JavaStackTrace"
                 )
                 java_stack_trace = "malformed"
@@ -450,7 +450,7 @@ class JavaProcessRule(Rule):
                 )
 
             except (libjava.MalformedJavaException, json.JSONDecodeError):
-                processor_meta["processor_notes"].append(
+                processor_meta_data["processor_notes"].append(
                     "JavaProcessRule: malformed JavaException"
                 )
 
@@ -491,10 +491,10 @@ def validate_breadcrumbs(data):
 class BreadcrumbsRule(Rule):
     """Validate and move over breadcrumbs."""
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return bool(raw_crash.get("Breadcrumbs", None))
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         breadcrumbs = raw_crash["Breadcrumbs"]
 
         try:
@@ -509,11 +509,13 @@ class BreadcrumbsRule(Rule):
             validate_breadcrumbs(breadcrumbs_data)
             processed_crash["breadcrumbs"] = breadcrumbs_data
         except json.JSONDecodeError:
-            processor_meta["processor_notes"].append(
+            processor_meta_data["processor_notes"].append(
                 "Breadcrumbs: malformed: not valid json"
             )
         except MalformedBreadcrumbs as exc:
-            processor_meta["processor_notes"].append(f"Breadcrumbs: malformed: {exc}")
+            processor_meta_data["processor_notes"].append(
+                f"Breadcrumbs: malformed: {exc}"
+            )
 
 
 class MacCrashInfoRule(Rule):
@@ -524,7 +526,7 @@ class MacCrashInfoRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         if "mac_crash_info" in processed_crash:
             del processed_crash["mac_crash_info"]
 
@@ -564,10 +566,10 @@ class MozCrashReasonRule(Rule):
             return "sanitized--see moz_crash_reason_raw"
         return reason
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return bool(raw_crash.get("MozCrashReason", None))
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         crash_reason = raw_crash["MozCrashReason"]
 
         # This can contain PII in the exception message
@@ -579,7 +581,7 @@ class OutOfMemoryBinaryRule(Rule):
     # Number of bytes, max, that we accept memory info payloads as JSON.
     MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "memory_report" in dumps
 
     def _extract_memory_info(self, dump_pathname, processor_notes):
@@ -616,12 +618,12 @@ class OutOfMemoryBinaryRule(Rule):
 
         return memory_info
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         pathname = dumps["memory_report"]
         with temp_file_context(pathname):
             memory_report = self._extract_memory_info(
                 dump_pathname=pathname,
-                processor_notes=processor_meta["processor_notes"],
+                processor_notes=processor_meta_data["processor_notes"],
             )
 
             if isinstance(memory_report, dict) and memory_report.get("ERROR"):
@@ -640,56 +642,56 @@ class FenixVersionRewriteRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         is_nightly = (raw_crash.get("Version") or "").startswith("Nightly ")
         return raw_crash.get("ProductName") == "Fenix" and is_nightly
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        processor_meta["processor_notes"].append(
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
+        processor_meta_data["processor_notes"].append(
             "Changed version from %r to 0.0a1" % raw_crash.get("Version")
         )
         raw_crash["Version"] = "0.0a1"
 
 
 class ESRVersionRewrite(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return raw_crash.get("ReleaseChannel", "") == "esr"
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
             raw_crash["Version"] += "esr"
         except KeyError:
-            processor_meta["processor_notes"].append(
+            processor_meta_data["processor_notes"].append(
                 '"Version" missing from esr release raw_crash'
             )
 
 
 class PluginContentURL(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
             return bool(raw_crash["PluginContentURL"])
         except KeyError:
             return False
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         raw_crash["URL"] = raw_crash["PluginContentURL"]
 
 
 class PluginUserComment(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
             return bool(raw_crash["PluginUserComment"])
         except KeyError:
             return False
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         raw_crash["Comments"] = raw_crash["PluginUserComment"]
 
 
 class ExploitablityRule(Rule):
     """Copies exploitability bits in json_dump to processed_crash"""
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
             val = processed_crash["json_dump"]["sensitive"]["exploitability"]
             processed_crash["exploitability"] = val
@@ -771,7 +773,7 @@ class FlashVersionRule(Rule):
             return self.KNOWN_FLASH_IDENTIFIERS.get(debug_id)
         return None
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["flash_version"] = ""
         flash_version = None
 
@@ -804,7 +806,7 @@ class TopMostFilesRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["topmost_filenames"] = None
         try:
             crashing_thread = processed_crash["crashing_thread"]
@@ -840,10 +842,10 @@ class ModulesInStackRule(Rule):
 
         return f"{filename}/{debugid}"
 
-    def predicate(self, raw_crash, dumps, processed_crash, processor_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "json_dump" in processed_crash
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         json_dump = processed_crash["json_dump"]
         crashing_thread = processed_crash["crashing_thread"]
 
@@ -951,7 +953,7 @@ class BetaVersionRule(Rule):
         self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL)
         return real_version
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # Beta and aurora versions send the wrong version in the crash report for
         # certain products
         product = processed_crash.get("product", "")
@@ -961,7 +963,7 @@ class BetaVersionRule(Rule):
             "aurora",
         )
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         product = processed_crash["product"]
         build_id = processed_crash.get("build", "").strip()
         release_channel = processed_crash["release_channel"].lower()
@@ -990,7 +992,7 @@ class BetaVersionRule(Rule):
         # No real version, but this is an aurora or beta crash report, so we
         # tack on "b0" to make it match the channel
         processed_crash["version"] += "b0"
-        processor_meta["processor_notes"].append(
+        processor_meta_data["processor_notes"].append(
             'release channel is %s but no version data was found - added "b0" '
             "suffix to version number" % release_channel
         )
@@ -1028,7 +1030,7 @@ class OSPrettyVersionRule(Rule):
         # NOTE(willkg): Windows 11 is 10.0.21996 and higher, so it's not in this map
     }
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # we will overwrite this field with the current best option
         # in stages, as we divine a better name
         processed_crash["os_pretty_version"] = None
@@ -1104,7 +1106,7 @@ class ThemePrettyNameRule(Rule):
             )
         }
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         """addons is expected to be a list of strings like 'extension:version',
         but we are being overly cautious and consider the case where they
         lack the ':version' part, because user inputs are never reliable.
@@ -1117,7 +1119,7 @@ class ThemePrettyNameRule(Rule):
                 return True
         return False
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         addons = processed_crash["addons"]
 
         for index, addon in enumerate(addons):
@@ -1141,12 +1143,12 @@ class SignatureGeneratorRule(Rule):
         extra["uuid"] = crash_data.get("uuid", None)
         libsentry.capture_error(use_logger=self.logger, exc_info=exc_info, extra=extra)
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # Generate a crash signature and capture the signature and notes
         crash_data = convert_to_crash_data(processed_crash)
         result = self.generator.generate(crash_data)
         processed_crash["signature"] = result.signature
-        processor_meta["processor_notes"].extend(result.notes)
+        processor_meta_data["processor_notes"].extend(result.notes)
         if "proto_signature" in result.extra:
             processed_crash["proto_signature"] = result.extra["proto_signature"]
         processed_crash["signature_debug"] = "\n".join(result.debug_log)
@@ -1162,10 +1164,10 @@ class PHCRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "PHCKind" in raw_crash
 
-    def action(self, raw_crash, dumps, processed_crash, proc_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         # Add PHCKind which is a string
         processed_crash["phc_kind"] = raw_crash["PHCKind"]
 
@@ -1208,10 +1210,10 @@ class ModuleURLRewriteRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return bool(glom(processed_crash, "json_dump.modules", default=None))
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         modules = processed_crash["json_dump"]["modules"]
         for module in modules:
             if not module.get("symbol_url"):
@@ -1224,7 +1226,7 @@ class ModuleURLRewriteRule(Rule):
                 # If this is a localhost url, then remove it.
                 module["symbol_url"] = None
                 name = module.get("filename", module.get("debug_file", "unknown"))
-                processor_meta["processor_notes"].append(
+                processor_meta_data["processor_notes"].append(
                     f"Redacting symbol url for module {name}"
                 )
                 continue
@@ -1248,7 +1250,7 @@ class DistributionIdRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         distribution_id = None
 
         if "DistributionID" in raw_crash:

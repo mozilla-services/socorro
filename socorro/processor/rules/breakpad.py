@@ -32,15 +32,15 @@ class CrashingThreadInfoRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return processed_crash.get("json_dump", None) is not None
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["crashing_thread"] = glom.glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         )
         if processed_crash["crashing_thread"] is None:
-            processor_meta["processor_notes"].append(
+            processor_meta_data["processor_notes"].append(
                 "mdsw did not identify the crashing thread"
             )
 
@@ -56,10 +56,10 @@ class CrashingThreadInfoRule(Rule):
 class MinidumpSha256Rule(Rule):
     """Copy over MinidumpSha256Hash value if there is one"""
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         return "MinidumpSha256Hash" in raw_crash
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         processed_crash["minidump_sha256_hash"] = raw_crash["MinidumpSha256Hash"]
 
 
@@ -241,7 +241,9 @@ class MinidumpStackwalkRule(Rule):
         }
         return self.command_line.format(**params)
 
-    def run_stackwalker(self, crash_id, command_path, command_line, processor_meta):
+    def run_stackwalker(
+        self, crash_id, command_path, command_line, processor_meta_data
+    ):
         ret = execute_process(command_line)
         returncode = ret["returncode"]
         stdout = ret["stdout"]
@@ -264,14 +266,14 @@ class MinidumpStackwalkRule(Rule):
                     f"{stdout[:1000]}"
                 )
                 self.logger.error(msg)
-                processor_meta["processor_notes"].append(msg)
+                processor_meta_data["processor_notes"].append(msg)
 
             if output and not isinstance(output, Mapping):
                 msg = (
                     "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
                     + f"output: {output[:20]}"
                 )
-                processor_meta["processor_notes"].append(msg)
+                processor_meta_data["processor_notes"].append(msg)
                 self.logger.warning(f"{msg} ({crash_id})")
                 output = {}
 
@@ -289,7 +291,7 @@ class MinidumpStackwalkRule(Rule):
 
         if returncode == 124:
             msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
-            processor_meta["processor_notes"].append(msg)
+            processor_meta_data["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
 
         elif returncode != 0 or not stackwalker_data["success"]:
@@ -302,7 +304,7 @@ class MinidumpStackwalkRule(Rule):
             if returncode == -6:
                 msg = msg + " (SIGABRT)"
 
-            processor_meta["processor_notes"].append(msg)
+            processor_meta_data["processor_notes"].append(msg)
             self.logger.warning(f"{msg} ({crash_id})")
 
         self.metrics.incr(
@@ -315,7 +317,7 @@ class MinidumpStackwalkRule(Rule):
 
         return stackwalker_data
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta):
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         crash_id = raw_crash["uuid"]
 
         processed_crash.setdefault("additional_minidumps", [])
@@ -339,7 +341,7 @@ class MinidumpStackwalkRule(Rule):
                         "mdsw_stderr": "Shortcut for 0-bytes minidump.",
                     }
 
-                    processor_meta["processor_notes"].append(
+                    processor_meta_data["processor_notes"].append(
                         f"MinidumpStackwalkRule: {dump_name} is empty--skipping "
                         + "minidump processing"
                     )
@@ -354,7 +356,7 @@ class MinidumpStackwalkRule(Rule):
                         crash_id=crash_id,
                         command_path=self.command_path,
                         command_line=command_line,
-                        processor_meta=processor_meta,
+                        processor_meta_data=processor_meta_data,
                     )
 
                     stderr = stackwalker_data.get("mdsw_stderr", "").strip()
@@ -367,7 +369,7 @@ class MinidumpStackwalkRule(Rule):
                         status_string = stackwalker_data.get("mdsw_status_string", "")
                         if indicator and status_string in ["OK", "unknown error"]:
                             stackwalker_data["mdsw_status_string"] = indicator
-                            processor_meta["processor_notes"].append(
+                            processor_meta_data["processor_notes"].append(
                                 f"MinidumpStackwalkRule: processing {dump_name} had error; "
                                 + "stomped on mdsw_status_string"
                             )

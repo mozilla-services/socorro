@@ -14,7 +14,7 @@ from socorro.processor.rules.breakpad import (
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
 )
-from socorro.unittest.processor import get_basic_processor_meta
+from socorro.unittest.processor import get_basic_processor_meta_data
 
 
 example_uuid = "00000000-0000-0000-0000-000002140504"
@@ -167,7 +167,7 @@ class TestCrashingThreadInfoRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {"json_dump": copy.deepcopy(canonical_stackwalker_output)}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -181,7 +181,7 @@ class TestCrashingThreadInfoRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -195,7 +195,7 @@ class TestMinidumpSha256HashRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = MinidumpSha256Rule()
         assert (
@@ -206,12 +206,15 @@ class TestMinidumpSha256HashRule:
         raw_crash = {"MinidumpSha256Hash": "hash"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta_data = get_basic_processor_meta_data()
 
         rule = MinidumpSha256Rule()
-        assert rule.predicate(raw_crash, dumps, processed_crash, processor_meta) is True
+        assert (
+            rule.predicate(raw_crash, dumps, processed_crash, processor_meta_data)
+            is True
+        )
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
 
@@ -370,7 +373,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with MetricsMock() as mm:
             with mock.patch(
@@ -406,7 +409,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with MetricsMock() as mm:
             with mock.patch(
@@ -442,7 +445,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with mock.patch(
             "socorro.processor.rules.breakpad.subprocess"
@@ -475,7 +478,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 

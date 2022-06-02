@@ -59,8 +59,19 @@ class Rule:
         """
         rule_name = self.__class__.__name__
         with metrics.timer("act.timing", tags=["rule:%s" % rule_name]):
-            if self.predicate(raw_crash, dumps, processed_crash, processor_meta_data):
-                self.action(raw_crash, dumps, processed_crash, processor_meta_data)
+            ret = self.predicate(
+                raw_crash=raw_crash,
+                dumps=dumps,
+                processed_crash=processed_crash,
+                processor_meta_data=processor_meta_data,
+            )
+            if ret:
+                self.action(
+                    raw_crash=raw_crash,
+                    dumps=dumps,
+                    processed_crash=processed_crash,
+                    processor_meta_data=processor_meta_data,
+                )
 
     def close(self):
         pass

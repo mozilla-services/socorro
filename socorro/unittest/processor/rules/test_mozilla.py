@@ -48,7 +48,7 @@ from socorro.processor.rules.mozilla import (
     validate_breadcrumbs,
 )
 from socorro.signature.generator import SignatureGenerator
-from socorro.unittest.processor import get_basic_processor_meta
+from socorro.unittest.processor import get_basic_processor_meta_data
 
 
 canonical_standard_raw_crash = {
@@ -146,7 +146,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = CopyFromRawCrashRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {}
@@ -165,7 +165,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {raw_key: "1"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "1"}
         assert processed_crash == {processed_key: True}
@@ -174,7 +174,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {raw_key: "foo"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "foo"}
         assert processed_crash == {}
@@ -194,7 +194,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {raw_key: "1"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "1"}
         assert processed_crash == {processed_key: 1}
@@ -203,7 +203,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {raw_key: "foo"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "foo"}
         assert processed_crash == {}
@@ -221,7 +221,7 @@ class TestCopyFromRawCrashRule:
         raw_crash = {raw_key: "123"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {raw_key: "123"}
         assert processed_crash == {processed_key: "123"}
@@ -233,7 +233,7 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ConvertModuleSignatureInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -244,7 +244,7 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": "{}"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ConvertModuleSignatureInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -255,7 +255,7 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ConvertModuleSignatureInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -266,7 +266,7 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ConvertModuleSignatureInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -310,7 +310,7 @@ class TestSubmittedFromRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = SubmittedFromRule()
         rule.action(raw_crash, dumps, processed_crash, processor_meta)
         assert processed_crash == {
@@ -324,7 +324,7 @@ class TestProductRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ProductRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -344,7 +344,7 @@ class TestProductRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ProductRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -361,7 +361,7 @@ class TestUserDataRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = UserDataRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -376,7 +376,7 @@ class TestUserDataRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = UserDataRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -390,7 +390,7 @@ class TestEnvironmentRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = EnvironmentRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -403,7 +403,7 @@ class TestEnvironmentRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = EnvironmentRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -417,7 +417,7 @@ class TestProcessTypeRule:
         raw_crash["ProcessType"] = "gpu"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ProcessTypeRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -428,7 +428,7 @@ class TestProcessTypeRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ProcessTypeRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -443,7 +443,7 @@ class TestPluginRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -461,7 +461,7 @@ class TestPluginRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -479,7 +479,7 @@ class TestAddonsRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         addons_rule = AddonsRule()
         addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -510,7 +510,7 @@ class TestAddonsRule:
         raw_crash["EMCheckCompatibility"] = "Nope"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         addons_rule = AddonsRule()
         addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -524,7 +524,7 @@ class TestAddonsRule:
         raw_crash["Add-ons"] = "naoenut813teq;mz;<[`19ntaotannn8999anxse `"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         addons_rule = AddonsRule()
         addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -582,7 +582,7 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -606,7 +606,7 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -636,7 +636,7 @@ class TestDatesAndTimesRule:
         del raw_crash["StartupTime"]
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -661,7 +661,7 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -686,7 +686,7 @@ class TestDatesAndTimesRule:
         raw_crash["SecondsSinceLastCrash"] = "feed the goats"
         dumps = {}
         processed_crash = {"startup_time": raw_crash["StartupTime"]}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -711,7 +711,7 @@ class TestDatesAndTimesRule:
         raw_crash.pop("SecondsSinceLastCrash")
         dumps = {}
         processed_crash = {"startup_time": raw_crash["StartupTime"]}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -747,7 +747,7 @@ class TestMacCrashInfoRule:
     def test_mac_crash_info_variations(self, processed, expected):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = MacCrashInfoRule()
 
         rule.action(raw_crash, dumps, processed, processor_meta)
@@ -767,7 +767,7 @@ class TestMacCrashInfoRule:
                 },
             }
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = MacCrashInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -796,7 +796,7 @@ class TestMajorVersionRule:
             raw_crash["Version"] = version
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = MajorVersionRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -834,7 +834,7 @@ class TestBreadcrumbRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = BreadcrumbsRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -850,7 +850,7 @@ class TestBreadcrumbRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = BreadcrumbsRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -861,7 +861,7 @@ class TestBreadcrumbRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = BreadcrumbsRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert processed_crash == {}
@@ -871,7 +871,7 @@ class TestBreadcrumbRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = BreadcrumbsRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -894,7 +894,7 @@ class TestJavaProcessRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -914,7 +914,7 @@ class TestJavaProcessRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -947,7 +947,7 @@ class TestJavaProcessRule:
         raw_crash = {"JavaException": json.dumps(java_exception)}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -967,7 +967,7 @@ class TestJavaProcessRule:
         raw_crash = {"JavaException": json.dumps(java_exception)}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -993,7 +993,7 @@ class TestModuleURLRewriteRule:
         ],
     )
     def test_predicate(self, processed, expected):
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = ModuleURLRewriteRule()
         assert rule.predicate({}, {}, processed, processor_meta) == expected
 
@@ -1001,7 +1001,7 @@ class TestModuleURLRewriteRule:
         processed = {"json_dump": {"modules": []}}
         # The rule shouldn't change the processed crash at all
         expected = copy.deepcopy(processed)
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = ModuleURLRewriteRule()
         rule.act({}, {}, processed, processor_meta)
         assert processed == expected
@@ -1027,7 +1027,7 @@ class TestModuleURLRewriteRule:
         }
         # The rule shouldn't change the processed crash at all
         expected = copy.deepcopy(processed)
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = ModuleURLRewriteRule()
         rule.act({}, {}, processed, processor_meta)
         assert processed == expected
@@ -1076,7 +1076,7 @@ class TestModuleURLRewriteRule:
                 ]
             }
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = ModuleURLRewriteRule()
         rule.act({}, {}, processed, processor_meta)
         assert processed["json_dump"]["modules"][0]["symbol_url"] == expected
@@ -1087,7 +1087,7 @@ class TestMozCrashReasonRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = MozCrashReasonRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1097,7 +1097,7 @@ class TestMozCrashReasonRule:
         raw_crash = {"MozCrashReason": "MOZ_CRASH(OOM)"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = MozCrashReasonRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1118,7 +1118,7 @@ class TestMozCrashReasonRule:
             raw_crash = {"MozCrashReason": reason}
             dumps = {}
             processed_crash = {}
-            processor_meta = get_basic_processor_meta()
+            processor_meta = get_basic_processor_meta_data()
 
             rule.action(raw_crash, dumps, processed_crash, processor_meta)
             assert processed_crash == {
@@ -1129,7 +1129,7 @@ class TestMozCrashReasonRule:
 
 class TestOutOfMemoryBinaryRule:
     def test_extract_memory_info(self):
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1150,7 +1150,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1188,7 +1188,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1216,7 +1216,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1246,7 +1246,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
             @staticmethod
@@ -1265,7 +1265,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OutOfMemoryBinaryRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1292,7 +1292,7 @@ class TestFenixVersionRewriteRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = FenixVersionRewriteRule()
         ret = rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
@@ -1305,7 +1305,7 @@ class TestFenixVersionRewriteRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = FenixVersionRewriteRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1321,7 +1321,7 @@ class TestESRVersionRewrite:
         raw_crash["ReleaseChannel"] = "esr"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1336,7 +1336,7 @@ class TestESRVersionRewrite:
         raw_crash["ReleaseChannel"] = "not_esr"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1352,7 +1352,7 @@ class TestESRVersionRewrite:
         del raw_crash["Version"]
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1373,7 +1373,7 @@ class TestPluginContentURL:
         raw_crash["URL"] = "http://google.com"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginContentURL()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1388,7 +1388,7 @@ class TestPluginContentURL:
         raw_crash["URL"] = "http://google.com"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginContentURL()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1406,7 +1406,7 @@ class TestPluginUserComment:
         raw_crash["Comments"] = "I wrote something here, too"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginUserComment()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1421,7 +1421,7 @@ class TestPluginUserComment:
         raw_crash["Comments"] = "I wrote something here"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = PluginUserComment()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1437,7 +1437,7 @@ class TestExploitablityRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ExploitablityRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1451,7 +1451,7 @@ class TestExploitablityRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ExploitablityRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1511,7 +1511,7 @@ class TestFlashVersionRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = FlashVersionRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1539,7 +1539,7 @@ class TestTopMostFilesRule:
             "threads": [{"frames": [{"source": "dwight.dll"}, {"file": "wilma.cpp"}]}],
         }
 
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1554,7 +1554,7 @@ class TestTopMostFilesRule:
         expected_raw_crash = copy.deepcopy(raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1574,7 +1574,7 @@ class TestTopMostFilesRule:
             }
         }
 
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1604,7 +1604,7 @@ class TestModulesInStackRule:
             },
         }
 
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ModulesInStackRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
@@ -1647,7 +1647,7 @@ class TestModulesInStackRule:
         ],
     )
     def test_missing_things(self, processed_crash):
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = ModulesInStackRule()
 
         rule.act({}, {}, processed_crash, processor_meta)
@@ -1696,7 +1696,7 @@ class TestBetaVersionRule:
             "version": "3.0",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         rule = self.build_rule()
         assert (
             rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
@@ -1713,7 +1713,7 @@ class TestBetaVersionRule:
             "version": "3.0",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1735,7 +1735,7 @@ class TestBetaVersionRule:
             "release_channel": "release",
             "build": "20000801101010",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker():
@@ -1754,7 +1754,7 @@ class TestBetaVersionRule:
             "release_channel": "nightly",
             "build": "20000105101010",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker():
@@ -1773,7 +1773,7 @@ class TestBetaVersionRule:
             "version": "5.0",
             "build": '2",381,,"',
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1801,7 +1801,7 @@ class TestBetaVersionRule:
             "release_channel": "beta",
             "build": "220000101101011",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1827,7 +1827,7 @@ class TestBetaVersionRule:
             "release_channel": "aurora",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1869,7 +1869,7 @@ class TestOsPrettyName:
     def test_everything_we_hoped_for(self, os_name, os_version, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSPrettyVersionRule()
 
@@ -1883,7 +1883,7 @@ class TestOsPrettyName:
         # use that
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSPrettyVersionRule()
 
@@ -1910,7 +1910,7 @@ class TestOsPrettyName:
     def test_junk_data(self, os_name, os_version, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSPrettyVersionRule()
 
@@ -1927,7 +1927,7 @@ class TestOsPrettyName:
     def test_dotdict(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSPrettyVersionRule()
 
@@ -1938,7 +1938,7 @@ class TestOsPrettyName:
     def test_none(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = OSPrettyVersionRule()
 
@@ -1952,7 +1952,7 @@ class TestThemePrettyNameRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
         processed_crash["addons"] = [
             "adblockpopups@jessehakanen.net:0.3",
             "dmpluginff@westbyte.com:1,4.8",
@@ -1991,7 +1991,7 @@ class TestThemePrettyNameRule:
 
     def test_missing_key(self):
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule = ThemePrettyNameRule()
 
@@ -2016,7 +2016,7 @@ class TestThemePrettyNameRule:
         rule = ThemePrettyNameRule()
 
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         processed_crash["addons"] = [
             "addon_with_no_version",
@@ -2059,7 +2059,7 @@ class TestSignatureGeneratorRule:
                 ],
             }
         }
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule.action(raw_crash, {}, processed_crash, processor_meta)
 
@@ -2074,7 +2074,7 @@ class TestSignatureGeneratorRule:
         rule = SignatureGeneratorRule()
         raw_crash = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule.action(raw_crash, {}, processed_crash, processor_meta)
 
@@ -2107,7 +2107,7 @@ class TestSignatureGeneratorRule:
 
         raw_crash = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta()
+        processor_meta = get_basic_processor_meta_data()
 
         rule.action(raw_crash, {}, processed_crash, processor_meta)
 
