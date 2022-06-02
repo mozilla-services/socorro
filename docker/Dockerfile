@@ -59,7 +59,7 @@ COPY ./webapp-django/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
 COPY --chown=app:app requirements.txt /app/
-RUN pip install -U 'pip>=20' && \
+RUN pip install -U 'pip==22.1.2' && \
     pip install --no-cache-dir -r requirements.txt && \
     pip check --disable-pip-version-check
 
