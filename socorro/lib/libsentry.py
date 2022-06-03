@@ -285,12 +285,17 @@ class Scrubber:
         return event
 
 
-def set_up_sentry(release, host_id, sentry_dsn, **kwargs):
+def set_up_sentry(release, host_id, sentry_dsn, integrations=None, **kwargs):
     """Set up Sentry
+
+    By default, this will set up default integrations
+    (https://docs.sentry.io/platforms/python/configuration/integrations/default-integrations/),
+    but not the auto-enabling ones.
 
     :arg release: the release name to tag events with
     :arg host_id: some str representing the host this service is running on
     :arg sentry_dsn: the Sentry DSN
+    :arg integrations: list of sentry integrations to set up;
     :arg kwargs: any additional arguments to pass to sentry_sdk.init()
 
     """
@@ -302,6 +307,12 @@ def set_up_sentry(release, host_id, sentry_dsn, **kwargs):
         release=release,
         send_default_pii=False,
         server_name=host_id,
+        # This prevents Sentry from trying to enable all the auto-enabling
+        # integrations. We only want the ones we explicitly set up. This
+        # provents sentry from loading the Falcon integration (which fails) in a Django
+        # context.
+        auto_enabling_integrations=False,
+        integrations=integrations or [],
         **kwargs,
     )
 
