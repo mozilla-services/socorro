@@ -37,7 +37,7 @@ from configman.converters import (
 )
 import markus
 
-from socorro.lib.librevision import get_version_info, get_release_name
+from socorro.lib.libdockerflow import get_version_info, get_release_name
 from socorro.lib.libsentry import set_up_sentry
 
 

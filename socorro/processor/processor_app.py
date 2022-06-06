@@ -19,7 +19,7 @@ from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import libsentry
 
 from socorro.lib.libdatetime import isoformat_to_time
-from socorro.lib.librevision import get_release_name
+from socorro.lib.libdockerflow import get_release_name
 from socorro.lib.libsentry import scrub, Scrubber, set_up_sentry, SCRUB_KEYS_DEFAULT
 from socorro.lib.util import dotdict_to_dict
 
