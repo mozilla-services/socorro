@@ -99,8 +99,11 @@ METRICS = markus.get_metrics("processor")
 
 SCRUB_KEYS_PROCESSOR = [
     # Wipe out raw and processed crash data
-    ("exception.values.[].stacktrace.frames.[].vars.raw_crash", scrub),
-    ("exception.values.[].stacktrace.frames.[].vars.processed_crash", scrub),
+    (
+        "exception.values.[].stacktrace.frames.[].vars",
+        ("raw_crash", "processed_crash"),
+        scrub,
+    ),
 ]
 
 
