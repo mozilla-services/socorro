@@ -21,7 +21,7 @@ import dj_database_url
 import sentry_sdk
 
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
-from socorro.lib.librevision import get_release_name
+from socorro.lib.libdockerflow import get_release_name
 from socorro.lib.libsentry import (
     build_scrub_query_string,
     scrub,

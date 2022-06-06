@@ -18,7 +18,7 @@ from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
-from socorro.lib.librevision import get_version_info
+from socorro.lib.libdockerflow import get_version_info
 
 
 def index(request):

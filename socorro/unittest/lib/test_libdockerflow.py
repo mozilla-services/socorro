@@ -5,7 +5,7 @@
 import json
 from pathlib import Path
 
-from socorro.lib.librevision import get_version_info
+from socorro.lib.libdockerflow import get_version_info
 
 
 def test_get_version_info(tmpdir):
