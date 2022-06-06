@@ -180,27 +180,23 @@ def build_scrub_query_string(params):
 
 SCRUB_KEYS_DEFAULT = [
     # Hide stacktrace variables
-    ("exception.values.[].stacktrace.frames.[].vars.username", scrub),
-    ("exception.values.[].stacktrace.frames.[].vars.password", scrub),
+    ("exception.values.[].stacktrace.frames.[].vars", ("username", "password"), scrub),
 ]
 
 
 def get_target_dicts(event, key_path):
-    """Given a key_path, yields the dicts that hold given key.
+    """Given a key_path, yields the target dicts.
 
-    Uses a dotted path of key names. To traverse arrays, use `[]`.
+    Uses a dotted path of keys. To traverse arrays, use `[]`.
 
     Examples::
 
-        request.query_string
-        exception.stacktrace.frames.[].vars.code_id
+        request
+        exception.stacktrace.frames.[].vars
 
     """
-    if not key_path:
-        return
-
     parent = event
-    for i, part in enumerate(key_path[:-1]):
+    for i, part in enumerate(key_path):
         if part == "[]" and isinstance(parent, (tuple, list)):
             for item in parent:
                 yield from get_target_dicts(item, key_path[i + 1 :])
@@ -209,7 +205,7 @@ def get_target_dicts(event, key_path):
         elif part in parent:
             parent = parent[part]
 
-    if isinstance(parent, dict) and key_path[-1] in parent:
+    if isinstance(parent, dict):
         yield parent
 
 
@@ -222,16 +218,12 @@ class Scrubber:
 
     def __init__(self, scrub_keys=SCRUB_KEYS_DEFAULT):
         """
-        :arg scrub_keys: list of ``(key_path, scrub function)`` tuples
+        :arg scrub_keys: list of ``(key_path, keys, scrub function)`` tuples
 
-            A key_path is a Python dotted path of keys with ``[]`` to denote arrays
-            to traverse.
+            ``key_path`` is a Python dotted path of key names with ``[]`` to denote
+            arrays to traverse pointing to a dict with values to scrub.
 
-            Example of scrub keys::
-
-                ("request.data.csrfmiddlewaretoken", scrub()),
-
-                ("exception.stacktrace.frames.[].vars.code_id", scrub()),
+            ``keys`` is a list of keys to scrub values of
 
             A scrub function takes a value and returns a scrubbed value. For
             example::
@@ -239,10 +231,17 @@ class Scrubber:
                 def hide_letter_a(value):
                     return "".join([letter if letter != "a" else "*" for letter in value])
 
+            Example of ``scrub_keys``::
+
+                ("request.data", ("csrfmiddlewaretoken",), scrub()),
+
+                ("exception.stacktrace.frames.[].vars", ("code_id",), scrub()),
+
         """
+        # Split key_path into parts and verify that scrub_keys has the right shape
         self.scrub_keys = [
-            (key_path.split("."), scrub_function)
-            for key_path, scrub_function in scrub_keys
+            (key_path.split("."), keys, scrub_function)
+            for key_path, keys, scrub_function in scrub_keys
         ]
 
     def __call__(self, event, hint):
@@ -257,27 +256,33 @@ class Scrubber:
 
         Further, they emit two incr metrics:
 
-        * hide_fun_error
+        * scrub_fun_error
         * get_target_dicts_error
 
         Put those in a dashboard with alerts so you know when to look in the logs.
 
         """
 
-        for key_path, hide_fun in self.scrub_keys:
-            key_to_scrub = key_path[-1]
+        for key_path, keys, scrub_fun in self.scrub_keys:
             try:
                 for parent in get_target_dicts(event, key_path):
-                    val = parent[key_to_scrub]
+                    if not parent:
+                        continue
 
-                    try:
-                        filtered_val = hide_fun(val)
-                    except Exception:
-                        logger.exception(f"LIBSENTRYERROR: Error in {hide_fun}")
-                        metrics.incr("hide_fun_error")
-                        filtered_val = "ERROR WHEN SCRUBBING"
+                    for key in keys:
+                        if key not in parent:
+                            continue
 
-                    parent[key_to_scrub] = filtered_val
+                        val = parent[key]
+
+                        try:
+                            filtered_val = scrub_fun(val)
+                        except Exception:
+                            logger.exception(f"LIBSENTRYERROR: Error in {scrub_fun}")
+                            metrics.incr("scrub_fun_error")
+                            filtered_val = "ERROR WHEN SCRUBBING"
+
+                        parent[key] = filtered_val
             except Exception:
                 logger.exception("LIBSENTRYERROR: Error in get_target_dicts")
                 metrics.incr("get_target_dicts_error")
@@ -285,7 +290,9 @@ class Scrubber:
         return event
 
 
-def set_up_sentry(release, host_id, sentry_dsn, integrations=None, **kwargs):
+def set_up_sentry(
+    release, host_id, sentry_dsn, integrations=None, before_send=None, **kwargs
+):
     """Set up Sentry
 
     By default, this will set up default integrations
@@ -296,6 +303,14 @@ def set_up_sentry(release, host_id, sentry_dsn, integrations=None, **kwargs):
     :arg host_id: some str representing the host this service is running on
     :arg sentry_dsn: the Sentry DSN
     :arg integrations: list of sentry integrations to set up;
+    :arg before_send: set this to a callable to handle the Sentry before_send hook
+
+        For scrubbing, do something like this::
+
+            scrubber = Scrubbing(scrub_keys=SCRUB_KEYS_DEFAULT + my_scrub_keys)
+
+        and then pass that as the ``before_send`` value.
+
     :arg kwargs: any additional arguments to pass to sentry_sdk.init()
 
     """
@@ -313,6 +328,7 @@ def set_up_sentry(release, host_id, sentry_dsn, integrations=None, **kwargs):
         # context.
         auto_enabling_integrations=False,
         integrations=integrations or [],
+        before_send=before_send or None,
         **kwargs,
     )
 

@@ -537,17 +537,21 @@ SENTRY_DSN = config("SENTRY_DSN", "")
 if SENTRY_DSN:
     scrub_keys_django = [
         # HTTP request bits
-        ("request.headers.Auth-Token", scrub),
-        ("request.headers.Cookie", scrub),
-        ("request.headers.X-Forwarded-For", scrub),
-        ("request.headers.X-Real-Ip", scrub),
-        ("request.data.csrfmiddlewaretoken", scrub),
-        ("request.data.client_secret", scrub),
-        ("request.query_string", build_scrub_query_string(params=["code", "state"])),
-        ("request.cookies", scrub),
+        (
+            "request.headers",
+            ("Auth-Token", "Cookie", "X-Forwarded-For", "X-Real-Ip"),
+            scrub,
+        ),
+        ("request.data", ("csrfmiddlewaretoken", "client_secret"), scrub),
+        (
+            "request",
+            ("query_string",),
+            build_scrub_query_string(params=["code", "state"]),
+        ),
+        ("request", ("cookies",), scrub),
         # "request" shows up in exceptions as a repr which in Django includes the
         # query_string, so best to scrub it
-        ("exception.values.[].stacktrace.frames.[].vars.request", scrub),
+        ("exception.values.[].stacktrace.frames.[].vars", ("request",), scrub),
     ]
 
     release = get_release_name(SOCORRO_ROOT)

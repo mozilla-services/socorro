@@ -164,17 +164,17 @@ def test_scrub_query_string(qs, keys, expected):
         (
             {},
             [],
-            [],
+            [{}],
         ),
         # Test key traversal
         (
             {"foo": "bar"},
-            ["foo"],
+            [],
             [{"foo": "bar"}],
         ),
         (
             {"foo1": {"foo2": "bar"}},
-            ["foo1", "foo2"],
+            ["foo1"],
             [{"foo2": "bar"}],
         ),
         # Test [] array traversal
@@ -188,9 +188,10 @@ def test_scrub_query_string(qs, keys, expected):
                     ]
                 }
             },
-            ["stack", "frames", "[]", "values", "code_id"],
+            ["stack", "frames", "[]", "values"],
             [
                 {"code_id": "abcd"},
+                {"state": "state_abcd"},
                 {"code_id": "2_abcd"},
             ],
         ),
@@ -205,14 +206,13 @@ def test_get_target_paths(event, key_path, expected):
     [
         ([], {}, {}),
         (
-            [("foo.bar", scrub)],
+            [("foo", ("bar",), scrub)],
             {"foo": {"bar": "somevalue"}, "foo2": "othervalue"},
             {"foo": {"bar": "[Scrubbed]"}, "foo2": "othervalue"},
         ),
         (
             [
-                ("frames.[].vars.code_id", scrub),
-                ("frames.[].vars.state", scrub),
+                ("frames.[].vars", ("code_id", "state"), scrub),
             ],
             {
                 "frames": [
@@ -239,12 +239,12 @@ def test_get_target_paths(event, key_path, expected):
         # us support a possible structure variation of request.data which could be a
         # data structure or a string.
         (
-            [("request.data.bar", scrub)],
+            [("request.data", ("bar",), scrub)],
             {"request": {"data": "abcde"}},
             {"request": {"data": "abcde"}},
         ),
         (
-            [("request.data.bar", scrub)],
+            [("request.data", ("bar",), scrub)],
             {"request": {"data": {"bar": "abcde"}}},
             {"request": {"data": {"bar": "[Scrubbed]"}}},
         ),
