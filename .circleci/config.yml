@@ -6,8 +6,8 @@
 # DOCKER_PASS
 version: 2.1
 jobs:
-  build:
-    docker: &docker
+  main:
+    docker:
       - image: cimg/python:3.10.2
         auth:
           username: $DOCKER_USER
@@ -16,12 +16,11 @@ jobs:
     steps:
       - checkout
 
-      - &setup_remote_docker
-        setup_remote_docker:
+      - setup_remote_docker:
           version: 20.10.11
           docker_layer_caching: true
 
-      - run: &dockercompose
+      - run:
           # We need docker-compose < v2 because of the configman environment
           # variables. Version 1.29.2 is in PyPI and installable via pip. v2 is
           # a rewrite in Go. So we can install the version from PyPI here.
@@ -56,7 +55,7 @@ jobs:
             "$CIRCLE_BUILD_URL" > version.json
           # yamllint enable rule:line-length
 
-      - run: &dockerhublogin
+      - run:
           name: Login to Dockerhub
           # yamllint disable rule:line-length
           command: |
@@ -79,127 +78,18 @@ jobs:
             docker run --rm local/socorro_app shell ./bin/run_verify_reqs.sh
 
       - run:
-          name: Save image
-          # yamllint disable rule:line-length
-          command: |
-            mkdir -p workspace
-            docker save -o workspace/socorro_app.tar local/socorro_app:latest
-            gzip --fast workspace/socorro_app.tar
-          # yamllint enable rule:line-length
-
-      - persist_to_workspace:
-          root: workspace
-          paths:
-            - socorro_app.tar.gz
-
-  lint:
-    docker: *docker
-    steps:
-      - checkout
-
-      - *setup_remote_docker
-
-      - run: *dockercompose
-
-      - attach_workspace:
-          at: workspace
-
-      - run:
-          name: Load from workspace
-          command: |
-            docker load -i workspace/socorro_app.tar.gz
-
-      - run:
           name: Lint
           command: |
             docker run --rm local/socorro_app shell ./bin/lint.sh
 
-  testsocorro:
-    docker: *docker
-    steps:
-      - checkout
-
-      - *setup_remote_docker
-
-      - run: *dockercompose
-
-      - run: *dockerhublogin
-
-      - attach_workspace:
-          at: workspace
-
-      - run:
-          name: Load from workspace
-          command: |
-            docker load -i workspace/socorro_app.tar.gz
-
-      - run:
-          name: Build Docker images
-          command: |
-            make build
-            docker-compose images
-
       - run:
           name: Run tests
           # yamllint disable rule:line-length
           command: |
             make my.env
             docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
-            docker-compose run --rm test-ci shell ./bin/test.sh socorro
+            docker-compose run --rm test-ci shell ./bin/test.sh
           # yamllint enable rule:line-length
-
-  testwebapp:
-    docker: *docker
-    steps:
-      - checkout
-
-      - *setup_remote_docker
-
-      - run: *dockercompose
-
-      - run: *dockerhublogin
-
-      - attach_workspace:
-          at: workspace
-
-      - run:
-          name: Load from workspace
-          command: |
-            docker load -i workspace/socorro_app.tar.gz
-
-      - run:
-          name: Build Docker images
-          command: |
-            make build
-            docker-compose images
-
-      - run:
-          name: Run tests
-          # yamllint disable rule:line-length
-          command: |
-            make my.env
-            docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
-            docker-compose run --rm test-ci shell ./bin/test.sh webapp
-          # yamllint enable rule:line-length
-
-  push:
-    docker: *docker
-    steps:
-      - checkout
-
-      - *setup_remote_docker
-
-      - run: *dockercompose
-
-      - run: *dockerhublogin
-
-      - attach_workspace:
-          at: workspace
-
-      - run:
-          name: Load from workspace
-          command: |
-            docker load -i workspace/socorro_app.tar.gz
 
       - run:
           name: Push to Dockerhub
@@ -211,34 +101,7 @@ workflows:
 
   build-test-push:
     jobs:
-      - build:
-          filters:
-            tags:
-              only: /.*/
-      - lint:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-      - testsocorro:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-      - testwebapp:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-      - push:
-          requires:
-            - build
-            - lint
-            - testsocorro
-            - testwebapp
+      - main:
           filters:
             tags:
               only: /.*/

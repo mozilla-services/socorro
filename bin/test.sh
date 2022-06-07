@@ -13,6 +13,7 @@
 set -euxo pipefail
 
 echo ">>> set up environment"
+
 # Set up environment variables
 
 # First convert configman environment vars which have bad identifiers to ones
@@ -32,6 +33,7 @@ PYTEST="$(which pytest)"
 PYTHON="$(which python)"
 
 echo ">>> wait for services to be ready"
+
 urlwait "${DATABASE_URL}"
 urlwait "${ELASTICSEARCH_URL}"
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
@@ -39,6 +41,7 @@ python ./bin/waitfor.py --verbose "${S3_ENDPOINT_URL}health"
 python ./bin/waitfor.py --verbose "${SQS_ENDPOINT_URL}health"
 
 echo ">>> build sqs things and db things"
+
 # Clear SQS for tests
 ./socorro-cmd sqs delete-all
 
@@ -49,18 +52,14 @@ pushd webapp-django
 ${PYTHON} manage.py migrate
 popd
 
-TESTSUITE="${1:-}"
 
-if [[ "$TESTSUITE" == "" ]] || [[ "$TESTSUITE" == "socorro" ]]
-then
-    # Run socorro tests
-    "${PYTEST}"
-fi
+echo ">>> run tests"
 
-if [[ "$TESTSUITE" == "" ]] || [[ "$TESTSUITE" == "webapp" ]]
-then
-    # Collect static and then run pytest in the webapp
-    pushd webapp-django
-    ${PYTHON} manage.py collectstatic --noinput
-    "${PYTEST}"
-fi
+# Run socorro tests
+"${PYTEST}"
+
+# Collect static and then run pytest in the webapp
+pushd webapp-django
+${PYTHON} manage.py collectstatic --noinput
+"${PYTEST}"
+popd
