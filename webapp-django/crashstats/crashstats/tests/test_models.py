@@ -16,7 +16,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
-from socorro.lib.ooid import create_new_ooid
+from socorro.lib.libooid import create_new_ooid
 from socorro.unittest.external.sqs import get_sqs_config, SQSHelper
 
 

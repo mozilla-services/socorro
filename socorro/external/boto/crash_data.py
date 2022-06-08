@@ -4,7 +4,7 @@
 
 import logging
 
-from socorro.lib import external_common, MissingArgumentError, BadArgumentError, ooid
+from socorro.lib import external_common, MissingArgumentError, BadArgumentError, libooid
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
     CrashIDNotFound,
@@ -44,7 +44,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
         if not params.uuid:
             raise MissingArgumentError("uuid")
 
-        if not ooid.is_crash_id_valid(params.uuid):
+        if not libooid.is_crash_id_valid(params.uuid):
             raise BadArgumentError("uuid")
 
         if not params.datatype:

@@ -36,7 +36,7 @@ from crashstats.supersearch import models as supersearch_models
 from crashstats.tokens import models as tokens_models
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import BadArgumentError, MissingArgumentError
-from socorro.lib.ooid import is_crash_id_valid
+from socorro.lib.libooid import is_crash_id_valid
 from socorro.signature.generator import SignatureGenerator
 
 

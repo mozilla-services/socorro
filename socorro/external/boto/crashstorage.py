@@ -16,7 +16,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.lib.libjson import schema_reduce
-from socorro.lib.ooid import date_from_ooid
+from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 

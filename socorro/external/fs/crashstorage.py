@@ -18,7 +18,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
 )
 from socorro.lib.libdatetime import utc_now, JsonDTISOEncoder
-from socorro.lib.ooid import date_from_ooid, depth_from_ooid
+from socorro.lib.libooid import date_from_ooid, depth_from_ooid
 
 
 @contextmanager
