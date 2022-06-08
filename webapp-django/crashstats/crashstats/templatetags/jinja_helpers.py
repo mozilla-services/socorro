@@ -173,11 +173,11 @@ def generate_create_bug_url(
     elif op_sys in ("Windows Unknown", "Windows 2000"):
         op_sys = "Windows"
 
-    crashing_thread_frames = None
-    if parsed_dump.get("threads") and crashing_thread is not None:
-        crashing_thread_frames = bugzilla_thread_frames(
-            parsed_dump["threads"][crashing_thread]
-        )
+    frames = None
+    threads = parsed_dump.get("threads")
+    if threads:
+        thread_index = crashing_thread or 0
+        frames = bugzilla_thread_frames(parsed_dump["threads"][thread_index])
 
     comment = render_to_string(
         "crashstats/bug_comment.txt",
@@ -191,7 +191,8 @@ def generate_create_bug_url(
             # can have PII in it
             "moz_crash_reason": report.get("moz_crash_reason", None),
             "reason": report.get("reason", None),
-            "crashing_thread_frames": crashing_thread_frames,
+            "frames": frames,
+            "crashing_thread": crashing_thread,
         },
     )
 

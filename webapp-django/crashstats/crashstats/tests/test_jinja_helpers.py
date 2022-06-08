@@ -547,6 +547,32 @@ class Test_generate_create_bug_url:
         assert quote_plus("MOZ_CRASH Reason: ```good_data```") in url
         assert quote_plus("bad_data") not in url
 
+    def test_comment_crashing_thread_none(self):
+        """Verify Reason makes it into the comment."""
+        req = RequestFactory().get("/report/index")
+        raw_crash = {}
+        report = self._create_report()
+        parsed_dump = self._create_dump(
+            threads=[
+                self._create_thread(
+                    frames=[
+                        self._create_frame(
+                            frame=0,
+                            module="test_module",
+                            signature="foo::bar",
+                            file="foo.cpp",
+                            line=7,
+                        ),
+                    ]
+                ),
+            ]
+        )
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, None
+        )
+        assert quote_plus("No crashing thread identified; using thread 0.") in url
+        assert quote_plus("0 test_module foo::bar") in url
+
     @pytest.mark.parametrize("fn", productlib.get_product_files())
     def test_product_bug_links(self, fn):
         """Verify bug links templates are well-formed."""

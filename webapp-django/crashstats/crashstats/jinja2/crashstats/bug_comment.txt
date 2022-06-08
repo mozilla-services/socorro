@@ -8,16 +8,18 @@ Java stack trace:
 ```
 {{ java_stack_trace|safe }}
 ```
-{% elif crashing_thread_frames -%}
+{% elif frames -%}
 {%- if moz_crash_reason -%}
 MOZ_CRASH Reason: ```{{ moz_crash_reason|safe }}```
 {%- elif reason -%}
 Reason: ```{{ reason|safe }}```
 {%- endif %}
-
-Top {{ crashing_thread_frames|length }} frames of crashing thread:
+{% if crashing_thread is none %}
+No crashing thread identified; using thread 0.
+{% endif %}
+Top {{ frames|length }} frames of crashing thread:
 ```
-{% for frame in crashing_thread_frames -%}
+{% for frame in frames -%}
 {{ frame.frame|safe}} {{ frame.module|safe }} {{ frame.signature|safe }} {{ frame.source|safe }}
 {% endfor -%}
 ```
