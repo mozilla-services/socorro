@@ -9,7 +9,7 @@ import time
 from more_itertools import chunked
 from requests.exceptions import ConnectionError, ReadTimeout
 
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 from socorro.scripts import FallbackToPipeAction, WrappedTextHelpFormatter
 
 

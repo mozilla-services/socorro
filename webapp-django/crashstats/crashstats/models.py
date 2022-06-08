@@ -27,7 +27,7 @@ from pymemcache.exceptions import MemcacheServerError
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.lib import BadArgumentError
 from socorro.lib.ooid import is_crash_id_valid
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 
 from crashstats.crashstats.configman_utils import config_from_configman
 

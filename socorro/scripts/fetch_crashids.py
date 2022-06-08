@@ -9,7 +9,7 @@ from urllib.parse import urlparse, parse_qs
 
 
 from socorro.lib.datetimeutil import utc_now
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 from socorro.scripts import WrappedTextHelpFormatter
 
 
