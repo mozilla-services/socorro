@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
 from crashstats.crashstats.models import BugAssociation
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 
 
 # Query all bugs that changed since a given date, and that either were created

@@ -18,7 +18,7 @@ from socorro.lib import sentry_client
 from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.datetimeutil import UTC
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator

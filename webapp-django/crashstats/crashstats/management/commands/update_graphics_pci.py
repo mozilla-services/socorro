@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 
 from crashstats.crashstats import utils
 from crashstats.crashstats.models import GraphicsDevice
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 
 
 PCI_IDS_URL = "https://pci-ids.ucw.cz/v2.2/pci.ids"

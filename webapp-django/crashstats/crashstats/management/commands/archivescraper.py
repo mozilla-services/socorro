@@ -63,7 +63,7 @@ from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
 from crashstats.crashstats.models import ProductVersion
-from socorro.lib.requestslib import session_with_retries
+from socorro.lib.librequests import session_with_retries
 
 
 # Substrings that indicate the directory is not a platform we want to traverse
