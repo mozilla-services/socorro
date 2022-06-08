@@ -4,7 +4,7 @@
 
 import pytest
 
-from socorro.lib import javautil
+from socorro.lib import libjava
 
 
 EXC = """\
@@ -16,7 +16,7 @@ Exception: msg
 
 def test_parse_basic():
     """Parse a basic exception with a class, message, and some stack lines"""
-    java_exc = javautil.parse_java_stack_trace(EXC)
+    java_exc = libjava.parse_java_stack_trace(EXC)
     assert java_exc.exception_class == "Exception"
     assert java_exc.exception_message == "msg"
     assert java_exc.stack == [
@@ -35,7 +35,7 @@ Exception
 
 def test_no_message():
     """Parse a basic exception with a class, message, and some stack lines"""
-    java_exc = javautil.parse_java_stack_trace(EXC_NO_MESSAGE)
+    java_exc = libjava.parse_java_stack_trace(EXC_NO_MESSAGE)
     assert java_exc.exception_class == "Exception"
     assert java_exc.exception_message == ""
     assert java_exc.stack == [
@@ -65,7 +65,7 @@ Caused By : The database file is locked.
 
 def test_parse_multi_line_msg():
     """Parse an exception where the exception message is multiple lines"""
-    java_exc = javautil.parse_java_stack_trace(EXC_WITH_MULTILINE_MSG)
+    java_exc = libjava.parse_java_stack_trace(EXC_WITH_MULTILINE_MSG)
     assert (
         java_exc.exception_class
         == "android.database.sqlite.SQLiteDatabaseLockedException"
@@ -95,7 +95,7 @@ Exception: msg
 
 def test_parse_suppressed():
     """Parse an exception with a "Suppressed" section"""
-    java_exc = javautil.parse_java_stack_trace(EXC_WITH_SUPPRESSED)
+    java_exc = libjava.parse_java_stack_trace(EXC_WITH_SUPPRESSED)
     assert java_exc.exception_class == "Exception"
     assert java_exc.exception_message == "msg"
     assert java_exc.stack == ["at org.File.function(File.java:100)"]
@@ -114,7 +114,7 @@ Exception: msg
 
 def test_parse_caused_by():
     """Parse an exception with a "Caused by" section with no stack"""
-    java_exc = javautil.parse_java_stack_trace(EXC_WITH_CAUSED_BY)
+    java_exc = libjava.parse_java_stack_trace(EXC_WITH_CAUSED_BY)
     assert java_exc.exception_class == "Exception"
     assert java_exc.exception_message == "msg"
     assert java_exc.stack == ["at org.File.function(File.java:100)"]
@@ -132,7 +132,7 @@ Caused by: Exception2: msg2; no stack trace available
 
 def test_parse_unindented_caused_by():
     """Parse an exception with an unindented "Caused by" section."""
-    java_exc = javautil.parse_java_stack_trace(EXC_WITH_UNINDENTED_CAUSED_BY)
+    java_exc = libjava.parse_java_stack_trace(EXC_WITH_UNINDENTED_CAUSED_BY)
     assert java_exc.exception_class == "Exception"
     assert java_exc.exception_message == "msg"
     assert java_exc.stack == ["at org.File.function(File.java:100)"]
@@ -151,7 +151,7 @@ General Error: "No subscriptions created yet.")
 
 def test_parenthesized_msg():
     """Parse an exception with a exception message in parentheses."""
-    java_exc = javautil.parse_java_stack_trace(EXC_MSG_WITH_PARENS)
+    java_exc = libjava.parse_java_stack_trace(EXC_MSG_WITH_PARENS)
     assert java_exc.exception_class == "Exception"
     assert (
         java_exc.exception_message
@@ -172,8 +172,8 @@ def test_parenthesized_msg():
     ],
 )
 def test_malformed(text):
-    with pytest.raises(javautil.MalformedJavaStackTrace):
-        javautil.parse_java_stack_trace(text)
+    with pytest.raises(libjava.MalformedJavaStackTrace):
+        libjava.parse_java_stack_trace(text)
 
 
 @pytest.mark.parametrize(
@@ -231,7 +231,7 @@ def test_malformed(text):
     ],
 )
 def test_valid_java_exception(data):
-    assert javautil.validate_java_exception(data) is True
+    assert libjava.validate_java_exception(data) is True
 
 
 @pytest.mark.parametrize(
@@ -343,8 +343,8 @@ def test_valid_java_exception(data):
     ],
 )
 def test_invalid_java_exception(data):
-    with pytest.raises(javautil.MalformedJavaException):
-        javautil.validate_java_exception(data)
+    with pytest.raises(libjava.MalformedJavaException):
+        libjava.validate_java_exception(data)
 
 
 @pytest.mark.parametrize(
@@ -439,4 +439,4 @@ def test_invalid_java_exception(data):
     ],
 )
 def test_sanitize_java_exception(data, expected):
-    assert javautil.sanitize_java_exception(data) == expected
+    assert libjava.sanitize_java_exception(data) == expected
