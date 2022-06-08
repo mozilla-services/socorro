@@ -24,7 +24,7 @@ from socorro.external.es.super_search_fields import (
     is_indexable,
     parse_mapping,
 )
-from socorro.lib.datetimeutil import JsonDTEncoder, string_to_datetime
+from socorro.lib.libdatetime import JsonDTEncoder, string_to_datetime
 
 
 # Maximum size in characters for a keyword field value

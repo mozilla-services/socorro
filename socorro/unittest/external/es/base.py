@@ -13,7 +13,7 @@ import pytest
 
 from socorro.external.es.connection_context import ConnectionContext
 from socorro.external.es.crashstorage import ESCrashStorage
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 
 
 DEFAULT_VALUES = {

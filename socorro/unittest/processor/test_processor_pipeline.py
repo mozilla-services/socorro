@@ -8,7 +8,7 @@ from configman import ConfigurationManager
 from configman.dotdict import DotDict
 import freezegun
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
 from socorro.processor.rules.base import Rule

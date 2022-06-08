@@ -11,7 +11,7 @@ from unittest import mock
 import requests_mock
 import pytest
 
-from socorro.lib.datetimeutil import datetime_from_isodate_string, UTC
+from socorro.lib.libdatetime import datetime_from_isodate_string, UTC
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,

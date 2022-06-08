@@ -15,7 +15,7 @@ from django.utils.dateparse import parse_datetime
 from crashstats.crashstats.models import Signature
 from crashstats.supersearch.models import SuperSearch
 from socorro.external.es.super_search_fields import SuperSearchFieldsData
-from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.libdatetime import string_to_datetime
 
 
 # Maximum number of results returned for a super search query

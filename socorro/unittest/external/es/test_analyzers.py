@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from socorro.lib import datetimeutil
+from socorro.lib import libdatetime
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.external.es.supersearch import SuperSearch
 from socorro.unittest.external.es.base import ElasticsearchTestCase
@@ -23,7 +23,7 @@ class TestIntegrationAnalyzers(ElasticsearchTestCase):
 
         config = self.get_base_config(cls=SuperSearch)
         self.api = SuperSearch(config=config)
-        self.now = datetimeutil.utc_now()
+        self.now = libdatetime.utc_now()
 
     def test_semicolon_keywords(self):
         """Test the analyzer called `semicolon_keywords`.

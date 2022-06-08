@@ -12,7 +12,7 @@ from configman import RequiredConfig, Namespace, class_converter
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
-from socorro.lib import datetimeutil, external_common
+from socorro.lib import libdatetime, external_common
 
 
 class Query(RequiredConfig):
@@ -47,7 +47,7 @@ class Query(RequiredConfig):
         indices = []
         if not params.indices:
             # By default, use the last two indices.
-            today = datetimeutil.utc_now()
+            today = libdatetime.utc_now()
             last_week = today - datetime.timedelta(days=7)
 
             index_template = self.context.get_index_template()

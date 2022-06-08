@@ -11,7 +11,6 @@ import elasticsearch
 from markus.testing import MetricsMock
 import pytest
 
-from socorro.lib.datetimeutil import date_to_string, utc_now
 from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
@@ -25,7 +24,7 @@ from socorro.external.es.crashstorage import (
     is_valid_key,
     RawCrashRedactor,
 )
-from socorro.lib.datetimeutil import string_to_datetime
+from socorro.lib.libdatetime import date_to_string, utc_now, string_to_datetime
 from socorro.lib.ooid import create_new_ooid
 from socorro.external.es.super_search_fields import build_mapping
 from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig

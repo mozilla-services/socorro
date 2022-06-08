@@ -12,7 +12,7 @@ import json
 from configman.dotdict import DotDict
 
 from socorro.lib import BadArgumentError
-import socorro.lib.datetimeutil as dtutil
+import socorro.lib.libdatetime as dtutil
 
 
 def parse_arguments(filters, arguments, modern=False):

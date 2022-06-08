@@ -16,7 +16,7 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict
 
 from socorro.lib import sentry_client
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,

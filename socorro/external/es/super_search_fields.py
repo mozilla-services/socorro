@@ -11,7 +11,7 @@ import elasticsearch
 from elasticsearch_dsl import Search
 
 from socorro.external.es.base import generate_list_of_indexes
-from socorro.lib import datetimeutil, BadArgumentError
+from socorro.lib import libdatetime, BadArgumentError
 
 
 logger = logging.getLogger(__name__)
@@ -345,7 +345,7 @@ class SuperSearchFields(SuperSearchFieldsData):
             fields (``total``)
 
         """
-        now = datetimeutil.utc_now()
+        now = libdatetime.utc_now()
         two_weeks_ago = now - datetime.timedelta(weeks=2)
         index_template = self.context.get_index_template()
         indices = generate_list_of_indexes(two_weeks_ago, now, index_template)
@@ -404,7 +404,7 @@ class SuperSearchFields(SuperSearchFieldsData):
             self.context.refresh()
             self.context.health_check()
 
-            now = datetimeutil.utc_now()
+            now = libdatetime.utc_now()
             last_week = now - datetime.timedelta(days=7)
             index_template = self.context.get_index_template()
             current_indices = generate_list_of_indexes(last_week, now, index_template)

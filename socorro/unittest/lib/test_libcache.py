@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 
-from socorro.lib.datetimeutil import utc_now
 from socorro.lib.libcache import ExpiringCache
+from socorro.lib.libdatetime import utc_now
 
 
 class TestExpiringCache:

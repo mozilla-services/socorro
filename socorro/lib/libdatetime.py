@@ -44,7 +44,7 @@ def utc_now():
 
     This funciton is mainly for convenience. Compare:
 
-        >>> from datetimeutil import utc_now
+        >>> from libdatetime import utc_now
         >>> utc_now()
         datetime.datetime(2012, 1, 5, 16, 42, 13, 639834,
           tzinfo=<isodate.tzinfo.Utc object at 0x101475210>)
@@ -52,7 +52,7 @@ def utc_now():
     Versus:
 
         >>> import datetime
-        >>> from datetimeutil import UTC
+        >>> from libdatetime import UTC
         >>> datetime.datetime.now(UTC)
         datetime.datetime(2012, 1, 5, 16, 42, 13, 639834,
           tzinfo=<isodate.tzinfo.Utc object at 0x101475210>)

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import datetime
 from typing import Any, Optional
 
-from socorro.lib import BadArgumentError, datetimeutil
+from socorro.lib import BadArgumentError, libdatetime
 import socorro.lib.external_common as extern
 
 
@@ -237,7 +237,7 @@ class SearchBase:
         maximum_date_range = datetime.timedelta(days=MAXIMUM_DATE_RANGE)
 
         if not parameters.get("date"):
-            now = datetimeutil.utc_now()
+            now = libdatetime.utc_now()
             lastweek = now - default_date_range
 
             parameters["date"] = []
@@ -269,7 +269,7 @@ class SearchBase:
             if not lower_than:
                 # add a lower than that is now
                 lower_than = SearchParam(
-                    "date", datetimeutil.utc_now(), "<=", "datetime"
+                    "date", libdatetime.utc_now(), "<=", "datetime"
                 )
 
             if not greater_than:
@@ -346,9 +346,9 @@ def convert_to_type(value, data_type):
     elif data_type == "bool" and not isinstance(value, bool):
         value = str(value).lower() in ("true", "t", "1", "y", "yes")
     elif data_type == "datetime" and not isinstance(value, datetime.datetime):
-        value = datetimeutil.string_to_datetime(value)
+        value = libdatetime.string_to_datetime(value)
     elif data_type == "date" and not isinstance(value, datetime.date):
-        value = datetimeutil.string_to_datetime(value).date()
+        value = libdatetime.string_to_datetime(value).date()
     return value
 
 
@@ -414,7 +414,7 @@ def get_parameters(kwargs):
         Default is 0.
     """
     # Default dates
-    now = datetimeutil.utc_now()
+    now = libdatetime.utc_now()
     lastweek = now - datetime.timedelta(7)
 
     filters = [

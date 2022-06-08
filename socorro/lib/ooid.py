@@ -10,7 +10,7 @@ import datetime
 import re
 import uuid
 
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.libdatetime import utc_now, UTC
 
 
 DEFAULT_DEPTH = 2

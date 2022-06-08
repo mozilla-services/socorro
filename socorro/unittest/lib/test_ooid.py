@@ -7,7 +7,7 @@ import datetime
 import pytest
 
 from socorro.lib import ooid
-from socorro.lib.datetimeutil import UTC
+from socorro.lib.libdatetime import UTC
 
 
 @pytest.mark.parametrize(

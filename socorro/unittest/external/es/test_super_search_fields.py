@@ -16,7 +16,7 @@ from socorro.external.es.super_search_fields import (
     get_fields_by_item,
     SuperSearchFieldsModel,
 )
-from socorro.lib import datetimeutil
+from socorro.lib import libdatetime
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
@@ -215,7 +215,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         self.es_context.refresh()
         self.es_context.health_check()
 
-        now = datetimeutil.utc_now()
+        now = libdatetime.utc_now()
         template = api.context.get_index_template()
 
         # Create an index for now
@@ -269,7 +269,7 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
         # that's indexed as a string so test_mapping throws an error because those
         # are incompatible types
         self.index_crash(
-            {"date_processed": datetimeutil.utc_now(), "product": "WaterWolf"}
+            {"date_processed": libdatetime.utc_now(), "product": "WaterWolf"}
         )
         self.es_context.refresh()
         fields = {

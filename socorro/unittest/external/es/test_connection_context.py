@@ -4,7 +4,7 @@
 
 import datetime
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.
