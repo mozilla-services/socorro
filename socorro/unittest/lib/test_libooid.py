@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from socorro.lib import ooid
+from socorro.lib import libooid
 from socorro.lib.libdatetime import UTC
 
 
@@ -22,20 +22,22 @@ from socorro.lib.libdatetime import UTC
     ],
 )
 def test_validate_crash_id(crashid, expected):
-    assert ooid.is_crash_id_valid(crashid) == expected
+    assert libooid.is_crash_id_valid(crashid) == expected
 
 
 def test_date_from_ooid():
     crash_id = "3efa014e-a9e9-405d-ae7e-9def54181210"
-    assert ooid.date_from_ooid(crash_id) == datetime.datetime(2018, 12, 10, tzinfo=UTC)
+    assert libooid.date_from_ooid(crash_id) == datetime.datetime(
+        2018, 12, 10, tzinfo=UTC
+    )
 
     crash_id = "3efa014e-a9e9-405d-ae7e-9def54ffffff"
-    assert ooid.date_from_ooid(crash_id) is None
+    assert libooid.date_from_ooid(crash_id) is None
 
 
 def test_depth_from_ooid():
     crash_id = "3efa014e-a9e9-405d-ae7e-9def54181210"
-    assert ooid.depth_from_ooid(crash_id) == 4
+    assert libooid.depth_from_ooid(crash_id) == 4
 
     crash_id = "3efa014e-a9e9-405d-ae7e-9def5fffffff"
-    assert ooid.depth_from_ooid(crash_id) is None
+    assert libooid.depth_from_ooid(crash_id) is None

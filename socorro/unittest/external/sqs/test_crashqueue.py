@@ -7,7 +7,7 @@ import time
 import pytest
 
 from socorro.external.sqs.crashqueue import SQSCrashQueue
-from socorro.lib.ooid import create_new_ooid
+from socorro.lib.libooid import create_new_ooid
 from socorro.unittest.external.sqs import get_sqs_config, VISIBILITY_TIMEOUT
 
 

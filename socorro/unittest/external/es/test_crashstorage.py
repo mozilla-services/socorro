@@ -25,7 +25,7 @@ from socorro.external.es.crashstorage import (
     RawCrashRedactor,
 )
 from socorro.lib.libdatetime import date_to_string, utc_now, string_to_datetime
-from socorro.lib.ooid import create_new_ooid
+from socorro.lib.libooid import create_new_ooid
 from socorro.external.es.super_search_fields import build_mapping
 from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig
 

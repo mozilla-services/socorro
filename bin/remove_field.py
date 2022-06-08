@@ -32,7 +32,7 @@ from more_itertools import chunked
 from socorro.external.boto.connection_context import S3Connection
 from socorro.external.boto.crashstorage import dict_to_str
 from socorro.external.es.connection_context import ConnectionContext
-from socorro.lib.ooid import date_from_ooid
+from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import retry
 
 

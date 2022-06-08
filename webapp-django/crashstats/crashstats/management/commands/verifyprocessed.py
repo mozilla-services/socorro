@@ -24,7 +24,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.supersearch.models import SuperSearchUnredacted
-from socorro.lib.ooid import date_from_ooid
+from socorro.lib.libooid import date_from_ooid
 
 
 RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"

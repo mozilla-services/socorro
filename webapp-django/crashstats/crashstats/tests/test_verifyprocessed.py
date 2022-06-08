@@ -9,7 +9,7 @@ from django.conf import settings
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.crashstats.management.commands.verifyprocessed import Command
 from socorro.lib.libdatetime import utc_now
-from socorro.lib.ooid import create_new_ooid, date_from_ooid
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 TODAY = utc_now().strftime("%Y%m%d")

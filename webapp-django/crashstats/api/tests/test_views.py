@@ -41,7 +41,7 @@ from crashstats.supersearch.models import (
     ESSocorroMiddleware,
 )
 from crashstats.tokens.models import Token
-from socorro.lib.ooid import create_new_ooid
+from socorro.lib.libooid import create_new_ooid
 
 
 class TestDedentLeft:
