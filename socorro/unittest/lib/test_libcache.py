@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 
-from socorro.lib.cache import ExpiringCache
 from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libcache import ExpiringCache
 
 
 class TestExpiringCache:
@@ -20,7 +20,7 @@ class TestExpiringCache:
         cache["foo"] = "bar"
         assert cache["foo"] == "bar"
 
-    @mock.patch("socorro.lib.cache.utc_now")
+    @mock.patch("socorro.lib.libcache.utc_now")
     def test_expiration(self, mock_utc_now):
         # Mock utc_now to return the current time so we can set the expiry for
         # the key
@@ -62,7 +62,7 @@ class TestExpiringCache:
 
         assert list(cache.keys()) == ["foo2", "foo3", "foo4", "foo5", "foo6"]
 
-    @mock.patch("socorro.lib.cache.utc_now")
+    @mock.patch("socorro.lib.libcache.utc_now")
     def test_flush(self, mock_utc_now):
         now = utc_now()
         now_plus_10 = now + datetime.timedelta(seconds=10)
