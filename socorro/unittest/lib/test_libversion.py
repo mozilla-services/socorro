@@ -4,10 +4,7 @@
 
 import pytest
 
-from socorro.lib.versionutil import (
-    generate_semver,
-    VersionParseError,
-)
+from socorro.lib.libversion import generate_semver, VersionParseError
 
 
 @pytest.mark.parametrize(

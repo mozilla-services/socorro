@@ -27,7 +27,7 @@ from glom import glom
 from crashstats import productlib
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
-from socorro.lib.versionutil import generate_semver, VersionParseError
+from socorro.lib.libversion import generate_semver, VersionParseError
 
 
 logger = logging.getLogger(__name__)
