@@ -7,18 +7,18 @@ import datetime
 import isodate
 import pytest
 
-from socorro.lib import datetimeutil
+from socorro.lib import libdatetime
 
 
-UTC = datetimeutil.UTC
+UTC = libdatetime.UTC
 PLUS3 = isodate.tzinfo.FixedOffset(3, 0, "+03:00")
 
 
 def test_utc_now():
     """
-    Test datetimeutil.utc_now()
+    Test libdatetime.utc_now()
     """
-    res = datetimeutil.utc_now()
+    res = libdatetime.utc_now()
     assert res.strftime("%Z") == "UTC"
     assert res.strftime("%z") == "+0000"
     assert res.tzinfo is not None
@@ -26,16 +26,16 @@ def test_utc_now():
 
 def test_string_to_datetime():
     """
-    Test datetimeutil.string_to_datetime()
+    Test libdatetime.string_to_datetime()
     """
     # Empty date
     date = ""
     with pytest.raises(ValueError):
-        res = datetimeutil.string_to_datetime(date)
+        res = libdatetime.string_to_datetime(date)
 
     # already a date
     date = datetime.datetime.utcnow()
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
 
     assert res == date.replace(tzinfo=UTC)
     assert res.strftime("%Z") == "UTC"
@@ -43,30 +43,30 @@ def test_string_to_datetime():
 
     # YY-mm-dd date
     date = "2001-11-03"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 3, tzinfo=UTC)
     assert res.strftime("%Z") == "UTC"  # timezone aware
 
     # and naughty YY-m-d date
     date = "2001-1-3"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 1, 3, tzinfo=UTC)
     assert res.strftime("%Z") == "UTC"  # timezone aware
 
     # YY-mm-dd HH:ii:ss.S date
     date = "2001-11-30 12:34:56.123456"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, 123456, tzinfo=UTC)
 
     # Separated date
     date = ["2001-11-30", "12:34:56"]
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, tzinfo=UTC)
 
     # Invalid date
     date = "2001-11-32"
     with pytest.raises(ValueError):
-        datetimeutil.string_to_datetime(date)
+        libdatetime.string_to_datetime(date)
 
 
 @pytest.mark.parametrize(
@@ -79,12 +79,12 @@ def test_string_to_datetime():
     ],
 )
 def test_isoformat_to_time(data, expected):
-    assert datetimeutil.isoformat_to_time(data) == expected
+    assert libdatetime.isoformat_to_time(data) == expected
 
 
 def test_string_datetime_with_timezone():
     date = "2001-11-30T12:34:56Z"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, tzinfo=UTC)
     assert res.strftime("%H") == "12"
     # because it's a timezone aware datetime
@@ -94,18 +94,18 @@ def test_string_datetime_with_timezone():
 
     # plus 3 hours east of Zulu means minus 3 hours on UTC
     date = "2001-11-30T12:10:56+03:00"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     expected = datetime.datetime(2001, 11, 30, 12 - 3, 10, 56, tzinfo=UTC)
     assert res == expected
 
     # similar example
     date = "2001-11-30T12:10:56-01:30"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12 + 1, 10 + 30, 56, tzinfo=UTC)
 
     # YY-mm-dd+HH:ii:ss.S date
     date = "2001-11-30 12:34:56.123456Z"
-    res = datetimeutil.string_to_datetime(date)
+    res = libdatetime.string_to_datetime(date)
     assert res == datetime.datetime(2001, 11, 30, 12, 34, 56, 123456, tzinfo=UTC)
 
 
@@ -123,7 +123,7 @@ def test_string_datetime_with_timezone():
     ],
 )
 def test_string_datetime_with_timezone_variations(ts, timezone):
-    res = datetimeutil.string_to_datetime(ts)
+    res = libdatetime.string_to_datetime(ts)
     # NOTE(willkg): isodate.tzinfo.FixedOffset doesn't define __eq__, so we compare the
     # reprs of them. :(
     assert repr(res.tzinfo) == repr(timezone)
@@ -134,22 +134,22 @@ def test_date_to_string():
     # Datetime with timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34, tzinfo=UTC)
     res_exp = "2012-01-03T12:23:34+00:00"
-    res = datetimeutil.date_to_string(date)
+    res = libdatetime.date_to_string(date)
     assert res == res_exp
 
     # Datetime without timezone
     date = datetime.datetime(2012, 1, 3, 12, 23, 34)
     res_exp = "2012-01-03T12:23:34"
-    res = datetimeutil.date_to_string(date)
+    res = libdatetime.date_to_string(date)
     assert res == res_exp
 
     # Date (no time, no timezone)
     date = datetime.date(2012, 1, 3)
     res_exp = "2012-01-03"
-    res = datetimeutil.date_to_string(date)
+    res = libdatetime.date_to_string(date)
     assert res == res_exp
 
 
 def test_date_to_string_fail():
     with pytest.raises(TypeError):
-        datetimeutil.date_to_string("2012-01-03")
+        libdatetime.date_to_string("2012-01-03")

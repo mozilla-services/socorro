@@ -11,7 +11,7 @@ from collections.abc import MutableMapping
 import datetime
 import threading
 
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 
 
 #: Default time-to-live for keys in seconds

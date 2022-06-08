@@ -12,7 +12,7 @@ from configman.converters import list_converter
 import elasticsearch
 
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 
 
 # Elasticsearch indices configuration.

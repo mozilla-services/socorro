@@ -12,8 +12,7 @@ from elasticsearch_dsl import A, F, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.super_search_fields import get_search_key
-from socorro.lib import BadArgumentError, MissingArgumentError, datetimeutil
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
 from socorro.lib.search_common import SearchBase
 
 
@@ -33,7 +32,7 @@ def prune_invalid_indices(indices, policy, template):
     :returns: list of valid indices
 
     """
-    now = utc_now()
+    now = libdatetime.utc_now()
     marker = now - policy
 
     # Generate the set of valid indexes between the cutoff and now.
@@ -254,7 +253,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 search_key = get_search_key(field_data)
 
                 if param.data_type in ("date", "datetime"):
-                    param.value = datetimeutil.date_to_string(param.value)
+                    param.value = libdatetime.date_to_string(param.value)
                 elif param.data_type == "enum":
                     param.value = [x.lower() for x in param.value]
                 elif param.data_type == "str" and not param.operator:

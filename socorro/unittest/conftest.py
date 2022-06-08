@@ -23,7 +23,7 @@ import requests_mock
 from socorro.external.es.connection_context import (
     ConnectionContext as ESConnectionContext,
 )
-from socorro.lib.datetimeutil import utc_now
+from socorro.lib.libdatetime import utc_now
 
 
 @pytest.fixture

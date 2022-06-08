@@ -10,7 +10,7 @@ import pytest
 
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
-from socorro.lib import BadArgumentError, datetimeutil, search_common
+from socorro.lib import BadArgumentError, libdatetime, search_common
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -37,7 +37,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         config = self.get_base_config(cls=SuperSearchWithFields)
         self.api = SuperSearchWithFields(config=config)
-        self.now = datetimeutil.utc_now()
+        self.now = libdatetime.utc_now()
 
         # Wait until the cluster is yellow before proceeding.
         self.health_check()
@@ -1458,7 +1458,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
     def test_get_against_nonexistent_index(self):
         # Create start and end dates to look at indices in, but anchor them to monday so
         # it's not moving around over week barriers
-        end = datetimeutil.utc_now()
+        end = libdatetime.utc_now()
         while end.weekday() != 0:
             end = end - datetime.timedelta(days=1)
         start = end - datetime.timedelta(days=10)

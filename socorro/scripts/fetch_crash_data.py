@@ -7,7 +7,7 @@ import json
 import os
 import os.path
 
-from socorro.lib.datetimeutil import JsonDTEncoder
+from socorro.lib.libdatetime import JsonDTEncoder
 from socorro.lib.librequests import session_with_retries
 from socorro.scripts import FallbackToPipeAction, FlagAction, WrappedTextHelpFormatter
 

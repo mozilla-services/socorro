@@ -10,7 +10,7 @@ import pytest
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.query import Query
-from socorro.lib.datetimeutil import utc_now, date_to_string
+from socorro.lib.libdatetime import utc_now, date_to_string
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

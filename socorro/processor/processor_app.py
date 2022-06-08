@@ -17,7 +17,7 @@ import markus
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import sentry_client
-from socorro.lib.datetimeutil import isoformat_to_time
+from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.util import dotdict_to_dict
 
 

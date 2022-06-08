@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from socorro.lib import BadArgumentError, datetimeutil
+from socorro.lib import BadArgumentError, libdatetime
 from socorro.lib.search_common import (
     SearchBase,
     SearchParam,
@@ -159,7 +159,7 @@ class TestSearchBase:
     def test_get_parameters_date_defaults(self):
         search = SearchBaseWithFields()
 
-        now = datetimeutil.utc_now()
+        now = libdatetime.utc_now()
 
         # Test default values when nothing is passed
         params = search.get_parameters()
@@ -167,7 +167,7 @@ class TestSearchBase:
         assert len(params["date"]) == 2
 
         # Pass only the high value
-        args = {"date": "<%s" % datetimeutil.date_to_string(now)}
+        args = {"date": "<%s" % libdatetime.date_to_string(now)}
         params = search.get_parameters(**args)
         assert "date" in params
         assert len(params["date"]) == 2
@@ -178,7 +178,7 @@ class TestSearchBase:
 
         # Pass only the low value
         pasttime = now - datetime.timedelta(days=10)
-        args = {"date": ">=%s" % datetimeutil.date_to_string(pasttime)}
+        args = {"date": ">=%s" % libdatetime.date_to_string(pasttime)}
         params = search.get_parameters(**args)
         assert "date" in params
         assert len(params["date"]) == 2
@@ -191,8 +191,8 @@ class TestSearchBase:
         pasttime = now - datetime.timedelta(days=10)
         args = {
             "date": [
-                "<%s" % datetimeutil.date_to_string(now),
-                ">%s" % datetimeutil.date_to_string(pasttime),
+                "<%s" % libdatetime.date_to_string(now),
+                ">%s" % libdatetime.date_to_string(pasttime),
             ]
         }
         params = search.get_parameters(**args)
