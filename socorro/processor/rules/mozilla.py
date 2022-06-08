@@ -13,7 +13,7 @@ from configman.dotdict import DotDict
 from glom import glom
 import markus
 
-from socorro.lib import javautil
+from socorro.lib import libjava
 from socorro.lib import sentry_client
 from socorro.lib.cache import ExpiringCache
 from socorro.lib.context_tools import temp_file_context
@@ -422,11 +422,11 @@ class JavaProcessRule(Rule):
 
             # The java_stack_trace is a sanitizzed version of java_stack_trace_raw
             try:
-                parsed_java_stack_trace = javautil.parse_java_stack_trace(
+                parsed_java_stack_trace = libjava.parse_java_stack_trace(
                     raw_crash["JavaStackTrace"]
                 )
                 java_stack_trace = parsed_java_stack_trace.to_public_string()
-            except javautil.MalformedJavaStackTrace:
+            except libjava.MalformedJavaStackTrace:
                 processor_meta["processor_notes"].append(
                     "JavaProcessRule: malformed JavaStackTrace"
                 )
@@ -438,18 +438,18 @@ class JavaProcessRule(Rule):
             try:
                 # The java_exception is a structured form of the stack trace
                 java_exception = json.loads(raw_crash["JavaException"])
-                javautil.validate_java_exception(java_exception)
+                libjava.validate_java_exception(java_exception)
 
                 # The java_exception_raw value can have PII and should be treated
                 # as protected data
                 processed_crash["java_exception_raw"] = java_exception
 
                 # The java_exception is a sanitized version
-                processed_crash["java_exception"] = javautil.sanitize_java_exception(
+                processed_crash["java_exception"] = libjava.sanitize_java_exception(
                     java_exception
                 )
 
-            except (javautil.MalformedJavaException, json.JSONDecodeError):
+            except (libjava.MalformedJavaException, json.JSONDecodeError):
                 processor_meta["processor_notes"].append(
                     "JavaProcessRule: malformed JavaException"
                 )
