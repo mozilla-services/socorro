@@ -23,10 +23,14 @@ else
     cd /app
     flake8
 
-    echo ">>> black"
+    echo ">>> black (python)"
     black --check "${BLACKARGS[@]}"
+
+    echo ">>> license check (python)"
+    python bin/license_check.py
 
     echo ">>> eslint (js)"
     cd /app/webapp-django
     /webapp-frontend-deps/node_modules/.bin/eslint .
+
 fi
