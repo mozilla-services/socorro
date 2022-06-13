@@ -27,10 +27,17 @@ else
     black --check "${BLACKARGS[@]}"
 
     echo ">>> license check (python)"
-    python bin/license_check.py
+    if [[ -d ".git" ]]; then
+        # If the .git directory exists, we can let license_check.py do
+        # git ls-files.
+        python bin/license_check.py
+    else
+        # The .git directory doesn't exist, so run it on all the Python
+        # files in the tree.
+        python bin/license_check.py .
+    fi
 
     echo ">>> eslint (js)"
     cd /app/webapp-django
     /webapp-frontend-deps/node_modules/.bin/eslint .
-
 fi
