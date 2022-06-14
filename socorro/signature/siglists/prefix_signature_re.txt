@@ -158,6 +158,7 @@ mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
+mozilla::dom::AutoJSAPI::Init
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::MozPromise<T>::ThenCommand<T>::Track
