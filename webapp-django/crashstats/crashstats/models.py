@@ -17,7 +17,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from django.template.defaultfilters import slugify
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import iri_to_uri
 from django.utils.module_loading import import_string
 
@@ -210,7 +210,10 @@ class MissingProcessedCrash(models.Model):
         return "20" + self.crash_id[-6:]
 
     def report_url(self):
-        return reverse("crashstats:report_index", args=(self.crash_id,))
+        try:
+            return reverse("crashstats:report_index", args=(self.crash_id,))
+        except NoReverseMatch:
+            return f"no reverse match: {self.crash_id}"
 
     class Meta:
         verbose_name = "missing processed crash"

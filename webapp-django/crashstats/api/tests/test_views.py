@@ -27,10 +27,11 @@ from crashstats.api.views import (
 )
 from crashstats.crashstats.models import (
     BugAssociation,
+    MissingProcessedCrash,
     NoOpMiddleware,
     ProcessedCrash,
-    Reprocessing,
     RawCrash,
+    Reprocessing,
     SocorroMiddleware,
     UnredactedCrash,
 )
@@ -759,6 +760,58 @@ class TestCrashVerify:
         }
 
 
+class TestMissingProcessedCrash:
+    def test_empty(self, client, db):
+        url = reverse("api:missing_processed_crash")
+        resp = client.get(url)
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert data == {"count": 0, "next": None, "previous": None, "results": []}
+
+    def test_with_items(self, client, db):
+        crash_ids = [create_new_ooid() for i in range(1005)]
+        for crash_id in crash_ids:
+            MissingProcessedCrash.objects.create(crash_id=crash_id)
+
+        # Fetch and verify first page of results
+        url = reverse("api:missing_processed_crash")
+        resp = client.get(url)
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert data == {
+            "count": 1005,
+            "next": "http://testserver/api/MissingProcessedCrash/?page=2",
+            "previous": None,
+            "results": [
+                {
+                    "crash_id": crash_id,
+                    "created": mock.ANY,
+                    "is_processed": False,
+                }
+                for crash_id in crash_ids[:1000]
+            ],
+        }
+
+        # Fetch and verify second page of results
+        url = reverse("api:missing_processed_crash")
+        resp = client.get(url, {"page": "2"})
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert data == {
+            "count": 1005,
+            "next": None,
+            "previous": "http://testserver/api/MissingProcessedCrash/?page=1",
+            "results": [
+                {
+                    "crash_id": crash_id,
+                    "created": mock.ANY,
+                    "is_processed": False,
+                }
+                for crash_id in crash_ids[1000:]
+            ],
+        }
+
+
 class TestCrashSignature:
     # NOTE(willkg): This doesn't test signature generation--just the API wrapper.
     def test_no_payload(self, client):
@@ -852,6 +905,7 @@ class TestMultipleStringField:
 API_MODEL_NAMES = [
     "Bugs",
     "CrashSignature",
+    "MissingProcessedCrash",
     "NoOp",
     "ProcessedCrash",
     "RawCrash",
