@@ -13,6 +13,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.utils.urls import replace_query_param
 from rest_framework.views import APIView
 from ratelimit.decorators import ratelimit
 from session_csrf import anonymous_csrf_exempt
@@ -22,6 +23,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.sites.requests import RequestSite
+from django.core.paginator import Paginator
 from django.core.validators import ProhibitNullCharactersValidator
 from django.shortcuts import render
 from django.urls import reverse
@@ -573,6 +575,89 @@ class SocorroAPIView(APIView):
         for key, val in self.cors_headers.items():
             response[key] = val
         return response
+
+
+class MissingProcessedCrashAPI(SocorroAPIView):
+    """
+    API for retrieving list of missing processed crash reports.
+    """
+
+    API_NAME = "MissingProcessedCrash"
+
+    IS_PUBLIC = True
+
+    PAGE_SIZE = 1_000
+
+    HELP_TEXT = """
+    Retrieves list of missing processed crash report records. Each record denotes a
+    crash report that the system thought was missing. Some have been processed since
+    then.
+
+    :Method: HTTP GET
+    :Argument: (optional) ``page``: 1-based page to retrieve
+
+    Returns
+
+        {"results": [ RECORD+ ]}, "count": COUNT, "next": LINK, "previous": LINK}
+
+    where COUNT is the total number of records in the table, LINK is either null
+    or the url to a page, and RECORD is a structure like:
+
+        {"crash_id": CRASHID, "is_processed": BOOL, "created": TIMESTAMP}
+
+    """
+
+    @method_decorator(anonymous_csrf_exempt)
+    @method_decorator(csrf_exempt)
+    @method_decorator(
+        ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
+    )
+    def get(self, request):
+        qs = models.MissingProcessedCrash.objects.order_by("id").all()
+        paginator = Paginator(qs, self.PAGE_SIZE)
+
+        try:
+            page_number = int(request.GET.get("page", "1"))
+        except ValueError:
+            return http.JsonResponse(
+                {"error": "invalid page number"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        page_obj = paginator.get_page(page_number)
+
+        if page_obj.has_next():
+            next_link = replace_query_param(
+                request.build_absolute_uri(),
+                "page",
+                page_number + 1,
+            )
+        else:
+            next_link = None
+
+        if page_obj.has_previous():
+            previous_link = replace_query_param(
+                request.build_absolute_uri(),
+                "page",
+                page_number - 1,
+            )
+        else:
+            previous_link = None
+
+        # NOTE(willkg): this matches the structure that DRF returns for pagination
+        results = {
+            "results": [
+                {
+                    "crash_id": item.crash_id,
+                    "is_processed": item.is_processed,
+                    "created": item.created,
+                }
+                for item in page_obj
+            ],
+            "count": paginator.count,
+            "next": next_link,
+            "previous": previous_link,
+        }
+        return Response(results)
 
 
 class CrashVerifyAPI(SocorroAPIView):

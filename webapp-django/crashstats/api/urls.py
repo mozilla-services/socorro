@@ -12,5 +12,10 @@ urlpatterns = [
     path("", views.documentation, name="documentation"),
     path("CrashVerify/", views.CrashVerifyAPI.as_view(), name="crash_verify"),
     path("CrashSignature/", views.CrashSignatureAPI.as_view(), name="crash_signature"),
+    path(
+        "MissingProcessedCrash/",
+        views.MissingProcessedCrashAPI.as_view(),
+        name="missing_processed_crash",
+    ),
     path("<str:model_name>/", views.model_wrapper, name="model_wrapper"),
 ]
