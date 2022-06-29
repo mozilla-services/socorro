@@ -181,11 +181,12 @@ class TestArchiveScraper:
         )
         req_mock.get(HOST + "/pub/firefox/releases/", text=release_page)
 
+        req_mock.get(HOST + "/pub/thunderbird/releases/", text="<html></html>")
+        req_mock.get(HOST + "/pub/thunderbird/candidates/", text="<html></html>")
+
         # Fill out the top-level urls with blank documents
         req_mock.get(HOST + "/pub/devedition/releases/", text="<html></html>")
         req_mock.get(HOST + "/pub/devedition/candidates/", text="<html></html>")
-        req_mock.get(HOST + "/pub/mobile/releases/", text="<html></html>")
-        req_mock.get(HOST + "/pub/mobile/candidates/", text="<html></html>")
 
         expected_data = [
             # 63.0 should have a 63.0rc1/beta, a 63.rc2/beta, and a 63.0/release
