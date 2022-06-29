@@ -17,6 +17,10 @@ Rough directory structure::
     devedition/      DevEdition (aka Firefox aurora)
       candidates/    beta builds for Firefox b1 and b2
 
+    thunderbird/
+      candidates/    beta, rc, release, and esr builds
+      nightly/       nightly builds
+
 
 This job only looks for build information for the en-US locale for the first
 platform in a build directory that has build information. Once it's found some
@@ -254,7 +258,11 @@ class Downloader:
             # directories
             for json_link in json_links:
                 json_file = self.download(json_link)
-                data = json.loads(json_file)
+                try:
+                    data = json.loads(json_file)
+                except json.decoder.JSONDecodeError:
+                    self.worker_write(f"not valid json: {json_link}")
+                    continue
 
                 if "buildhub" in json_link:
                     # We have a buildhub.json file to use, so we use that
@@ -507,6 +515,15 @@ class Command(BaseCommand):
             verbose=verbose,
             product_name="Firefox",
             archive_directory="firefox",
+        )
+
+        # Capture Thunderbird beta and release builds
+        self.scrape_and_insert_build_info(
+            base_url=base_url,
+            num_workers=num_workers,
+            verbose=verbose,
+            product_name="Thunderbird",
+            archive_directory="thunderbird",
         )
 
         # Pick up DevEdition beta builds for which b1 and b2 are "Firefox builds"

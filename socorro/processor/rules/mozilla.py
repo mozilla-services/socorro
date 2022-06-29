@@ -873,18 +873,19 @@ class ModulesInStackRule(Rule):
 
 
 class BetaVersionRule(Rule):
-    #: Hold at most this many items in cache; items are a key and a value
-    #: both of which are short strings, so this doesn't take much memory
+    # Hold at most this many items in cache; items are a key and a value
+    # both of which are short strings, so this doesn't take much memory
     CACHE_MAX_SIZE = 5000
 
-    #: Items in cache expire after 30 minutes by default
+    # Items in cache expire after 30 minutes by default
     SHORT_CACHE_TTL = 60 * 30
 
-    #: If we know it's good, cache it for 24 hours because it won't change
+    # If we know it's good, cache it for 24 hours because it won't change
     LONG_CACHE_TTL = 60 * 60 * 24
 
-    #: List of products to do lookups for
-    SUPPORTED_PRODUCTS = ["firefox"]
+    # List of products to do lookups for--case-sensitive and must match ProductName from
+    # the crash report annotations
+    SUPPORTED_PRODUCTS = ["Firefox", "Thunderbird"]
 
     def __init__(self, version_string_api):
         super().__init__()
@@ -910,13 +911,14 @@ class BetaVersionRule(Rule):
         :returns: ``None`` or the version string that should be used
 
         """
-        # Fix the product so it matches the data in the table
-        if (product, channel) == ("firefox", "aurora") and build_id > "20170601":
+        # NOTE(willkg): "DevEdition" on archive.mozilla.org matches the mystical
+        # eldritch Firefox aurora channel, so we do this check-and-switch to have the
+        # right "product name" for the lookup
+        if (product, channel) == ("Firefox", "aurora") and build_id > "20170601":
             product = "DevEdition"
-        elif product == "firefox":
-            product = "Firefox"
 
         key = "%s:%s:%s" % (product, channel, build_id)
+        print(key)
         if key in self.cache:
             self.metrics.incr("cache", tags=["result:hit"])
             return self.cache[key]
@@ -953,38 +955,32 @@ class BetaVersionRule(Rule):
         # Beta and aurora versions send the wrong version in the crash report for
         # certain products
         product = processed_crash.get("product", "")
-        release_channel = processed_crash.get("release_channel", "")
-        return (
-            product.lower() in self.SUPPORTED_PRODUCTS
-            and release_channel.lower()
-            in (
-                "beta",
-                "aurora",
-            )
+        release_channel = processed_crash.get("release_channel", "").lower()
+        return product in self.SUPPORTED_PRODUCTS and release_channel in (
+            "beta",
+            "aurora",
         )
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta):
-        product = processed_crash.get("product", "").strip().lower()
+        product = processed_crash["product"]
         build_id = processed_crash.get("build", "").strip()
-        release_channel = processed_crash.get("release_channel").strip()
+        release_channel = processed_crash["release_channel"].lower()
 
         # Only run if we've got all the things we need
-        if (
-            product
-            and build_id
-            and release_channel
-            and product in self.SUPPORTED_PRODUCTS
-        ):
+        if product and build_id and release_channel:
             # Convert the build_id to a str for lookups
             build_id = str(build_id)
 
-            real_version = self._get_real_version(product, release_channel, build_id)
+            real_version = self._get_real_version(
+                product=product, channel=release_channel, build_id=build_id
+            )
             if real_version:
                 processed_crash["version"] = real_version
                 return
 
+            self.logger.debug("betaversionrule: using %r", self.version_string_api)
             self.logger.info(
-                "betaversionrule: failed lookup %s %s %s %s",
+                "betaversionrule: failed lookup %r %r %r %r",
                 processed_crash.get("uuid"),
                 product,
                 release_channel,
