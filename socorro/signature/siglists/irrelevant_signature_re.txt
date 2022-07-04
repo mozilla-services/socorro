@@ -27,7 +27,7 @@ __cxa_throw
 _CxxThrowException
 dalvik-jit-code-cache
 dalvik-LinearAlloc
-data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x
+data@app@org\.mozilla\.f.*\.apk@classes\.dex@0x
 __entry_from_strcat_in_strcpy
 <env_logger::Logger as log::Log>::log::{{closure}}
 <env_logger::Logger as log::Log>::log
@@ -36,7 +36,7 @@ __fdelt_chk
 __fdelt_warn
 __fixunsdfsi
 __fortify_fail
-framework\.odex@0x
+.*framework.*\.oat@0x
 __GI_abort
 __GI___fortify_fail
 __GI_memcpy
@@ -77,7 +77,7 @@ __libc_fatal
 __libc_message
 libEGL\.so@
 libgui\.so@0x
-libicudata.so@
+libicudata.so\..*@
 libMali\.so@0x
 libutils\.so@0x
 libz\.so@0x
@@ -89,7 +89,7 @@ mach_msg_trap
 __memcmp
 __memcpy
 __memmove
-mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x
+mnt@asec@org\.mozilla\.f.*\.apk@classes\.dex@0x
 MOZ_Crash
 mozalloc_handle_oom
 mozglue_static::oom_hook::hook
@@ -112,7 +112,7 @@ NtWaitForAlertByThreadId
 nvmap@0x
 objc_msgLookupSuper2
 objc_terminate
-org\.mozilla\.f.*-\d\.apk@0x
+org\.mozilla\.f.*\.apk@0x
 panic_abort::
 _platform_memcmp
 _platform_memset
@@ -162,7 +162,7 @@ __strlen
 __strncmp
 __strncpy
 __strnlen
-system@framework@.*\.jar@classes\.dex@0x
+system@framework@.*\.art@0x
 _Unwind_Resume
 {virtual override thunk}
 
