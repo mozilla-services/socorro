@@ -29,3 +29,4 @@ mozilla::detail::MutexImpl::tryLock
 
 # These mark the top-most interesting frame of a Linux assertion.
 __GI___assert_fail
+__assert_fail
