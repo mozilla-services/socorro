@@ -6,7 +6,6 @@
 # Read the README.rst for instructions and tips on editing this file.
 
 @0x0
-.*CrashAtUnhandlableOOM
 Abort
 .*abort
 __abi_WinRTraiseCOMException
@@ -14,11 +13,8 @@ __abi_WinRTraiseException
 .*alloc_impl
 Allocator<T>::malloc
 AllocInfo::Get<T>
-alloc::oom::default_oom_handler
-alloc::oom::oom
 alloc::raw_vec::capacity_overflow
 _alloca_probe
-__android_log_assert
 arena_
 BaseAllocator
 BaseGetNamedObjectDirectory
@@ -30,9 +26,7 @@ cert_
 CERT_
 CFRelease
 chunk_alloc
-chunk_recycle
 CleanupPerAppKey
-ConditionVariableFallback::wait\(.*\)
 core::ops::function::Fn::call<T>
 core::option::expect_failed
 core::option::expect_none_failed
@@ -41,24 +35,20 @@ core::ptr::real_drop_in_place
 core::result::unwrap_failed
 core::slice::slice_index_order_fail
 core::str::slice_error_fail
-CrashInJS
 CreateFileMappingA
 __cxxabiv1::failed_throw
 CxxThrowException
 __delayLoadHelper2
 dlmalloc
-dlmalloc_trim
 dvm
 EtwEventEnabled
 extent_
 fastcopy_I
 fastzero_I
-_files_getaddrinfo
 FindElementCommon
 .*free
 ___forwarding___
 __forwarding_prep_0___
-free_impl
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
 Gecko_FinalizeCString
@@ -67,40 +57,22 @@ getanswer
 GetTickCount64
 gfxPlatform::Init
 gsignal
-handle_errorf
 handle_response
 HandleInvalidParameter
 hashbrown::raw::Fallibility::alloc_err
 hashbrown::raw::RawTable<T>::new_uninitialized<T>
 HeapFree
 huge_dalloc
-huge_palloc
-ialloc
-imalloc
-init_library
 InvalidArrayIndex_CRASH
 invalid_parameter_noinfo
 _invalid_parameter_noinfo
-isalloc
-jemalloc_crash
 je_
-JNI_CreateJavaVM
 _JNIEnv
-JNI_GetCreatedJavaVM
-js::AutoCompartment::AutoCompartment
 js::AutoEnterOOMUnsafeRegion::crash
-js::detail::HashTable<.*>::
-js::HashSet<.*>::
-js::HashMap<.*>::
 js::LifoAlloc::getOrCreateChunk
-JSAutoCompartment::JSAutoCompartment
-JS_DHashTableEnumerate
-JS_DHashTableOperate
 JS_NewStringCopyZ
-js_strlen
 KiFastSystemCall
 kill
-__libc_android_abort
 __libc_message
 libc\.so(\.\d+)?@0x
 libc-\d+\.\d+(\.\d+)?\.so@0x
@@ -111,7 +83,6 @@ LL_
 lstrcatA
 lstrlenA
 malloc
-mbrtoc32
 _MD_
 memcmp
 memcpy
@@ -121,11 +92,8 @@ MessageLoop::PostTask_Helper
 MessageLoop::PostTask
 mozalloc_abort
 mozalloc_handle_oom
-moz_free
 moz_malloc_size_of
-mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame
 mozilla::CheckCheckedUnsafePtrs<T>::Check
-mozilla::CondVar::
 mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
 mozilla::detail::InvalidArrayIndex_CRASH
@@ -139,44 +107,31 @@ SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
 mozilla::detail::MutexImpl::
-mozilla::detail::nsStringRepr::First
-mozilla::detail::nsStringRepr::Last
 mozilla::detail::SupportCheckedUnsafePtrImpl<T>::~SupportCheckedUnsafePtrImpl
 mozilla::ipc::LogicError
 mozilla::ipc::MessageChannel::AssertWorkerThread
-mozilla::ipc::MessageChannel::Call
 mozilla::ipc::MessageChannel::Clear
-mozilla::ipc::MessageChannel::CxxStackFrame::CxxStackFrame
 mozilla::ipc::MessageChannel::~MessageChannel
 mozilla::ipc::MessageChannel::Send
 mozilla::ipc::RPCChannel::Call
 mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame
-mozilla::ipc::RPCChannel::EnteredCxxStack
-mozilla::ipc::RPCChannel::Send
 mozilla::ipc::SentinelReadError
 mozilla::ipc::Shmem::OpenExisting
 mozilla::ipc::IProtocol::ChannelSend
 mozilla::ipc::IToplevelProtocol::ShmemCreated
 mozilla::layers::CompositorD3D11::Failed
-mozilla::layers::CompositorD3D11::HandleError
 mozilla::SpinEventLoopUntil<T>
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::WrapNotNull<
 mozilla.*FatalError
 moz_xmalloc
 moz_xrealloc
-MOZ_CrashOOL
 MOZ_CrashPrintf
 msvcr120\.dll@0x
 \<name omitted\>
 NP_Shutdown
 (NS_)?(Lossy)?(Copy|Append|Convert).*UTF
 NS_CycleCollectorSuspect3
-nsACString_internal::Assign
-nsAString_internal::Assign
-nsACString_internal::BeginWriting
-nsAString_internal::BeginWriting
-nsACString_internal::SetCapacity
 -\[NSApplication _crashOnException:\]
 nsCRT::strcmp
 -\[NSObject doesNotRecognizeSelector:\]
@@ -190,28 +145,21 @@ NS_ABORT_OOM
 nsDataHashtable<.*>::
 NS_DebugBreak
 nsDebugImpl::Abort
-nsDependentString::nsDependentString
-nsEventQueue::GetEvent
 nsThread::GetEvent
-nsThread::nsChainedEventQueue::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::
 nsINode::Slots
 nsTSubstring<.*>::
-nsJSThingHashtable<.*>::
-nsObjCExceptionLogAbort
 NS_QuickSort
 nsRefPtr
 NSS
 nss
-nsStringBuffer::FromDataCanaryCheckFailed
 nsTArray<
 nsTArray_base<
 nsTArray_Impl<
 nsTHashtable<.*>::
 nsThread::Shutdown
 NtUser
-NXMapRemove
 objc_exception_rethrow
 objc_exception_throw
 objc_addExceptionHandler
@@ -240,7 +188,6 @@ RpcpRaiseException
 RpcRaiseException
 realloc
 recv
-.*ReentrantMonitor::Wait
 RefPtr
 ReleaseData
 _RTC_Terminate
@@ -256,8 +203,6 @@ send
 servo_arc::Arc<T>::drop_slow
 SetEvent
 setjmp
-sigblock
-sigprocmask
 SocketAccept
 SocketAcceptRead
 SocketAvailable
@@ -298,16 +243,9 @@ StringBeginsWith
 StringEndsWith
 strlen
 strncpy
-strzcmp16
 strstr
 syscall
-__swrite
 TlsGetValue
-TouchBadMemory
-# NOTE(willkg): "trunc" is a prefix for a bunch of possible frames
-# so best to keep it in the prefix list where the frame is added to
-# the signature rather than dropped
-trunc
 __ulock_wait
 __unlink
 unlink
@@ -320,10 +258,8 @@ wcsrtombs
 wcscpy_s
 # NOTE(willkg): continue past wayland symbols
 wl_(array|proxy)_.*
-__wrap_realloc
 WSARecv
 WSASend
-_ZdaPvRKSt9nothrow_t"
 zzz_AsmCodeRange_
 .*DebugAbort
 mozilla::ipc::MessageChannel::~MessageChannel
@@ -338,8 +274,6 @@ avx::memset16
 avx::memset32
 neon::memset32
 portable::memset32
-sk_memset32
-sk_memset32_dither
 SK_OPTS_NS::memset32
 sse2::memset32
 sse2::memsetT<T>
