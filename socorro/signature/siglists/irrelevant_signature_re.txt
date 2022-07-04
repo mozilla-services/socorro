@@ -7,13 +7,17 @@
 
 @0x[0-9a-fA-F]{2,}
 @0x[1-9a-fA-F]
-__aeabi_fcmpgt
+__aeabi_
 alloc::alloc::__alloc_error_handler::__rg_oom
 alloc::alloc::handle_alloc_error
 ashmem
+__assert_fail_base
+__assert_fail_base.cold
 __assert_rtn
 app_process@0x
 AppleIntelHD3000GraphicsGLDriver@
+__chk_fail
+_chkstk
 core\.odex@0x
 core::ops::function::FnOnce::call_once<T>
 core::panicking::
@@ -27,14 +31,23 @@ dalvik-jit-code-cache
 dalvik-LinearAlloc
 dalvik-mark-stack
 data@app@org\.mozilla\.f.*-\d\.apk@classes\.dex@0x
+__entry_from_strcat_in_strcpy
 <env_logger::Logger as log::Log>::log::{{closure}}
 <env_logger::Logger as log::Log>::log
 exp2
-.*FNODOBFM
-framework\.odex@0x
+__fdelt_chk
+__fdelt_warn
 __fixunsdfsi
-__GI___assert_fail
+.*FNODOBFM
+__fortify_fail
+framework\.odex@0x
+__GI_abort
+__GI___fortify_fail
+__GI_memcpy
+__GI_raise
 __GI___pthread_mutex_lock
+__GI___strcmp
+__GI___strlen
 g_assertion_message
 g_assertion_message.cold
 g_assertion_message_error
@@ -57,12 +70,15 @@ google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
 google_breakpad::ReceivePort::WaitForMessage
+gpusGenerateCrashLog
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
 KiFastSystemCallRet
 libandroid\.so@0x
 libandroid_runtime\.so@0x
 libbinder\.so@0x
+__libc_fatal
+__libc_message
 libEGL\.so@
 libdvm\.so\s*@\s*0x
 libgui\.so@0x
@@ -76,6 +92,9 @@ mach_msg
 _mach_msg
 mach_msg_trap
 _mach_msg_trap
+__memcmp
+__memcpy
+__memmove
 mnt@asec@org\.mozilla\.f.*-\d@pkg\.apk@classes\.dex@0x
 MOZ_Assert
 MOZ_Crash
@@ -108,7 +127,17 @@ objc_msgLookupSuper2
 objc_terminate
 org\.mozilla\.f.*-\d\.apk@0x
 panic_abort::
+_platform_memcmp
+_platform_memset
+_platform_strchr
+_platform_strlen
+_platform_strncmp
+_platform_strncpy
+_platform_strstr
 PR_WaitCondVar
+__psynch_cvwait
+__pthread_
+_pthread_cond_wait
 RaiseException
 RealMsgWaitFor
 _report_gsfailure
@@ -135,6 +164,7 @@ __security_check_cookie
 SkyLight
 SleepConditionVariableCS
 SleepConditionVariableSRW
+__stack_chk_fail
 std::_Atomic_fetch_add_4
 std::alloc::rust_oom
 std::io::stdio::_eprint
@@ -142,8 +172,16 @@ std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
 std::__terminate
 std::terminate
+__strchr
+__strcmp
+__strcpy_chk
+__strlen
+__strncmp
+__strncpy
+__strnlen
 system@framework@.*\.jar@classes\.dex@0x
 ___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___
+_Unwind_Resume
 {virtual override thunk}
 
 # These frames have platform variants and bucket poorly so we nix them
