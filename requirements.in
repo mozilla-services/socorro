@@ -55,7 +55,7 @@ whitenoise==6.2.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 4.2 (2023).
-Django==3.2.13
+Django==3.2.14
 
 # NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
 # because they work with the cluster we're using
