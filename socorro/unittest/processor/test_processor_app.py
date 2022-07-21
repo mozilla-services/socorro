@@ -2,8 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import sys
+import json
+import os
+from pathlib import Path
 from unittest import mock
+from unittest.mock import ANY
 
 from configman.dotdict import DotDict
 import pytest
@@ -29,42 +32,43 @@ class FakeCrashQueue:
         )()
 
 
+def get_standard_config():
+    config = DotDict()
+
+    config.source = DotDict()
+    mocked_source_crashstorage = mock.Mock()
+    mocked_source_crashstorage.id = "mocked_source_crashstorage"
+    config.source.crashstorage_class = mock.Mock(
+        return_value=mocked_source_crashstorage
+    )
+
+    config.destination = DotDict()
+    mocked_destination_crashstorage = mock.Mock()
+    mocked_destination_crashstorage.id = "mocked_destination_crashstorage"
+    config.destination.crashstorage_class = mock.Mock(
+        return_value=mocked_destination_crashstorage
+    )
+
+    config.processor = DotDict()
+    mocked_processor = mock.Mock()
+    mocked_processor.id = "mocked_processor"
+    config.processor.processor_class = mock.Mock(return_value=mocked_processor)
+
+    config.queue = DotDict()
+    config.queue.crashqueue_class = FakeCrashQueue
+
+    config.companion_process = DotDict()
+    mocked_companion_process = mock.Mock()
+    config.companion_process.companion_class = mock.Mock(
+        return_value=mocked_companion_process
+    )
+
+    return config
+
+
 class TestProcessorApp:
-    def get_standard_config(self):
-        config = DotDict()
-
-        config.source = DotDict()
-        mocked_source_crashstorage = mock.Mock()
-        mocked_source_crashstorage.id = "mocked_source_crashstorage"
-        config.source.crashstorage_class = mock.Mock(
-            return_value=mocked_source_crashstorage
-        )
-
-        config.destination = DotDict()
-        mocked_destination_crashstorage = mock.Mock()
-        mocked_destination_crashstorage.id = "mocked_destination_crashstorage"
-        config.destination.crashstorage_class = mock.Mock(
-            return_value=mocked_destination_crashstorage
-        )
-
-        config.processor = DotDict()
-        mocked_processor = mock.Mock()
-        mocked_processor.id = "mocked_processor"
-        config.processor.processor_class = mock.Mock(return_value=mocked_processor)
-
-        config.queue = DotDict()
-        config.queue.crashqueue_class = FakeCrashQueue
-
-        config.companion_process = DotDict()
-        mocked_companion_process = mock.Mock()
-        config.companion_process.companion_class = mock.Mock(
-            return_value=mocked_companion_process
-        )
-
-        return config
-
     def test_source_iterator(self):
-        config = self.get_standard_config()
+        config = get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         g = pa.source_iterator()
@@ -74,7 +78,7 @@ class TestProcessorApp:
         assert next(g) == ((3,), {})
 
     def test_transform_success(self):
-        config = self.get_standard_config()
+        config = get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
 
@@ -110,7 +114,7 @@ class TestProcessorApp:
         assert finished_func.call_count == 1
 
     def test_transform_crash_id_missing(self):
-        config = self.get_standard_config()
+        config = get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         mocked_get_raw_crash = mock.Mock(side_effect=CrashIDNotFound(17))
@@ -125,7 +129,7 @@ class TestProcessorApp:
         assert finished_func.call_count == 1
 
     def test_transform_unexpected_exception(self):
-        config = self.get_standard_config()
+        config = get_standard_config()
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
         mocked_get_raw_crash = mock.Mock(side_effect=Exception("bummer"))
@@ -139,182 +143,233 @@ class TestProcessorApp:
         )
         assert finished_func.call_count == 1
 
-    def test_transform_polystorage_error_without_sentry_configured(self, caplogpp):
-        caplogpp.set_level("DEBUG")
 
-        config = self.get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-        pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_dumps_as_files.return_value = {}
+TRANSFORM_GET_ERROR = {
+    "breadcrumbs": ANY,
+    "contexts": {
+        "runtime": {
+            "build": ANY,
+            "name": "CPython",
+            "version": ANY,
+        }
+    },
+    "environment": "production",
+    "event_id": ANY,
+    "exception": {
+        "values": [
+            {
+                "mechanism": None,
+                "module": None,
+                "stacktrace": {
+                    "frames": [
+                        {
+                            "abs_path": "/app/socorro/processor/processor_app.py",
+                            "context_line": ANY,
+                            "filename": "socorro/processor/processor_app.py",
+                            "function": "process_crash",
+                            "in_app": True,
+                            "lineno": ANY,
+                            "module": "socorro.processor.processor_app",
+                            "post_context": ANY,
+                            "pre_context": ANY,
+                        },
+                        {
+                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "context_line": ANY,
+                            "filename": "unittest/mock.py",
+                            "function": "__call__",
+                            "in_app": True,
+                            "lineno": ANY,
+                            "module": "unittest.mock",
+                            "post_context": ANY,
+                            "pre_context": ANY,
+                        },
+                        {
+                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "context_line": ANY,
+                            "filename": "unittest/mock.py",
+                            "function": "_mock_call",
+                            "in_app": True,
+                            "lineno": ANY,
+                            "module": "unittest.mock",
+                            "post_context": ANY,
+                            "pre_context": ANY,
+                        },
+                        {
+                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "context_line": ANY,
+                            "filename": "unittest/mock.py",
+                            "function": "_execute_mock_call",
+                            "in_app": True,
+                            "lineno": ANY,
+                            "module": "unittest.mock",
+                            "post_context": ANY,
+                            "pre_context": ANY,
+                        },
+                    ]
+                },
+                "type": "ValueError",
+                "value": "simulated error",
+            }
+        ]
+    },
+    "extra": {"crash_id": "930b08ba-e425-49bf-adbd-7c9172220721"},
+    "level": "error",
+    "modules": ANY,
+    "platform": "python",
+    "release": ANY,
+    "sdk": {
+        "integrations": [
+            "atexit",
+            "boto3",
+            "dedupe",
+            "excepthook",
+            "modules",
+            "stdlib",
+            "threading",
+        ],
+        "name": "sentry.python",
+        "packages": [{"name": "pypi:sentry-sdk", "version": "1.7.2"}],
+        "version": "1.7.2",
+    },
+    "server_name": "testhost",
+    "timestamp": ANY,
+    "transaction_info": {},
+}
 
-        def mocked_save_processed_crash(*args, **kwargs):
-            exception = PolyStorageError()
-            exception.exceptions.append(NameError("waldo"))
-            raise exception
 
-        pa.destination.save_processed_crash.side_effect = mocked_save_processed_crash
+def test_transform_get_error(sentry_helper, caplogpp):
+    caplogpp.set_level("DEBUG")
 
-        # The important thing is that this is the exception that
-        # is raised and not something from the sentry error handling.
-        with pytest.raises(PolyStorageError):
-            pa.transform("mycrashid")
+    # Set up a processor and mock .get_raw_crash() to raise an exception
+    config = get_standard_config()
+    processor = ProcessorApp(config)
+    # NOTE(willkg): This is relative to this file
+    basedir = Path(__file__).resolve().parent.parent.parent
+    host_id = "testhost"
+    sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
+    processor._setup_source_and_destination()
 
+    expected_exception = ValueError("simulated error")
+    processor.source.get_raw_crash.side_effect = expected_exception
+
+    with sentry_helper.reuse() as sentry_client:
+        # The processor catches all exceptions from .get_raw_crash() and
+        # .get_dumps_as_files(), so there's nothing we need to catch here
+        processor.transform("930b08ba-e425-49bf-adbd-7c9172220721")
+
+        (event,) = sentry_client.events
+
+        # If this test fails, this will print out the new event that you can copy
+        # and paste and then edit above
+        print(json.dumps(event, indent=4, sort_keys=True))
+
+        # Assert that there are no frame-local variables
+        assert event == TRANSFORM_GET_ERROR
+
+        # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert (
-            "Sentry has not been configured and an exception happened" in logging_msgs
+            f"Error captured in Sentry! Reference: {event['event_id']}" in logging_msgs
         )
 
-    @mock.patch("socorro.lib.libsentry.get_hub")
-    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
-    def test_transform_polystorage_error_with_sentry_configured_successful(
-        self, is_enabled, mock_get_hub, caplogpp
-    ):
-        caplogpp.set_level("DEBUG")
 
-        # Mock everything
-        mock_hub = mock.MagicMock()
-        mock_hub.capture_exception.return_value = "someidentifier"
-        mock_get_hub.return_value = mock_hub
+def test_transform_polystorage_error(sentry_helper, caplogpp):
+    caplogpp.set_level("DEBUG")
 
-        # Set up a processor and mock out .save_processed_crash() with multiple
-        # errors
-        config = self.get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-        pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_dumps_as_files.return_value = {}
+    # Set up processor and mock .save_processed_crash() to raise an exception
+    config = get_standard_config()
+    processor = ProcessorApp(config)
+    # NOTE(willkg): This is relative to this file
+    basedir = Path(__file__).resolve().parent.parent.parent
+    host_id = "testhost"
+    sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
+    processor._setup_source_and_destination()
+    processor.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
+    processor.source.get_dumps_as_files.return_value = {}
 
-        expected_exception = PolyStorageError()
-        expected_exception.exceptions.append(NameError("waldo"))
-        expected_exception.exceptions.append(AssertionError(False))
-        pa.destination.save_processed_crash.side_effect = expected_exception
+    # FIXME(willkg): the structure of the events suggest this PolyStorageError isn't
+    # really working since it's not capturing any stack information
+    expected_exception = PolyStorageError()
+    expected_exception.exceptions.append(NameError("waldo"))
+    expected_exception.exceptions.append(AssertionError(False))
+    processor.destination.save_processed_crash.side_effect = expected_exception
 
+    crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
+
+    with sentry_helper.reuse() as sentry_client:
         # The important thing is that this is the exception that is raised and
         # not something from the sentry error handling
         with pytest.raises(PolyStorageError):
-            pa.transform("mycrashid")
+            processor.transform(crash_id)
 
-        # Assert that we sent both exceptions to Sentry
-        mock_hub.capture_exception.assert_has_calls(
-            [mock.call(error=exc) for exc in expected_exception.exceptions]
-        )
+        name_error_event, assertion_error_event = sentry_client.events
+
+        assert name_error_event["exception"] == {
+            "values": [
+                {
+                    "mechanism": None,
+                    "module": None,
+                    "type": "NameError",
+                    "value": "waldo",
+                }
+            ]
+        }
+        assert name_error_event["extra"]["crash_id"] == crash_id
+        assert assertion_error_event["exception"] == {
+            "values": [
+                {
+                    "mechanism": None,
+                    "module": None,
+                    "type": "AssertionError",
+                    "value": "False",
+                }
+            ]
+        }
+        assert assertion_error_event["extra"]["crash_id"] == crash_id
 
         # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
-        assert "Error captured in Sentry! Reference: someidentifier" in logging_msgs
+        nameerror_msg = (
+            f"Error captured in Sentry! Reference: {name_error_event['event_id']}"
+        )
+        assert nameerror_msg in logging_msgs
+        assertion_msg = (
+            f"Error captured in Sentry! Reference: {name_error_event['event_id']}"
+        )
+        assert assertion_msg in logging_msgs
 
-    @mock.patch("socorro.lib.libsentry.get_hub")
-    def test_transform_save_error_with_sentry_configured_successful(
-        self, mock_get_hub, caplogpp
-    ):
-        caplogpp.set_level("DEBUG")
 
-        mock_hub = mock.MagicMock()
-        mock_hub.capture_exception.side_effect = RuntimeError("should not be called")
-        mock_get_hub.return_value = mock_hub
+SAVE_ERROR = {}
 
-        # Set up a processor and mock .save_processed_crash() to raise an exception
-        config = self.get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-        pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_dumps_as_files.return_value = {}
 
-        expected_exception = ValueError("simulated error")
-        pa.destination.save_processed_crash.side_effect = expected_exception
+def test_transform_save_error(sentry_helper, caplogpp):
+    caplogpp.set_level("DEBUG")
 
+    # Set up a processor and mock .save_processed_crash() to raise an exception
+    config = get_standard_config()
+    processor = ProcessorApp(config)
+    # NOTE(willkg): This is relative to this file
+    basedir = Path(__file__).resolve().parent.parent.parent
+    host_id = "testhost"
+    sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
+    processor._setup_source_and_destination()
+    processor.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
+    processor.source.get_dumps_as_files.return_value = {}
+
+    expected_exception = ValueError("simulated error")
+    processor.destination.save_processed_crash.side_effect = expected_exception
+
+    crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
+
+    with sentry_helper.reuse() as sentry_client:
         # Run .transform() and make sure it raises the ValueError
         with pytest.raises(ValueError):
-            pa.transform("mycrashid")
+            processor.transform(crash_id)
 
         # Assert that the exception was not sent to Sentry and not logged
-        assert not mock_hub.capture_exception.called
+        assert len(sentry_client.events) == 0
         assert len(caplogpp.records) == 0
-
-    @mock.patch("socorro.lib.libsentry.get_hub")
-    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
-    def test_transform_get_error_with_sentry_configured_successful(
-        self, is_enabled, mock_get_hub, caplogpp
-    ):
-        caplogpp.set_level("DEBUG")
-
-        mock_hub = mock.MagicMock()
-        mock_hub.capture_exception.return_value = "someidentifier"
-        mock_get_hub.return_value = mock_hub
-
-        # Set up a processor and mock .get_raw_crash() to raise an exception
-        config = self.get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-
-        expected_exception = ValueError("simulated error")
-        pa.source.get_raw_crash.side_effect = expected_exception
-
-        # The processor catches all exceptions from .get_raw_crash() and
-        # .get_dumps_as_files(), so there's nothing we need to catch here
-        pa.transform("mycrashid")
-
-        # Assert that the processor sent something to Sentry
-        assert mock_hub.capture_exception.call_args_list == [
-            mock.call(error=(ValueError, expected_exception, mock.ANY))
-        ]
-
-        # Assert that the logger logged the appropriate thing
-        logging_msgs = [rec.message for rec in caplogpp.records]
-        assert "Error captured in Sentry! Reference: someidentifier" in logging_msgs
-
-    @mock.patch("socorro.lib.libsentry.get_hub")
-    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
-    def test_transform_polystorage_error_with_sentry_configured_failing(
-        self, is_enabled, mock_get_hub, caplogpp
-    ):
-        caplogpp.set_level("DEBUG")
-
-        mock_hub = mock.MagicMock()
-
-        # Mock this to throw an error if it's called because it shouldn't get called
-        mock_hub.capture_exception.side_effect = ValueError("sentry error")
-        mock_get_hub.return_value = mock_hub
-
-        # Set up processor and mock .save_processed_crash() to raise an exception
-        config = self.get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-        pa.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
-        pa.source.get_dumps_as_files.return_value = {}
-
-        try:
-            raise NameError("waldo")
-        except NameError:
-            first_exc_info = sys.exc_info()
-        try:
-            raise AssertionError(False)
-        except AssertionError:
-            second_exc_info = sys.exc_info()
-        expected_exception = PolyStorageError()
-        expected_exception.exceptions.append(first_exc_info)
-        expected_exception.exceptions.append(second_exc_info)
-        pa.destination.save_processed_crash.side_effect = expected_exception
-
-        # Make sure the PolyStorageError is raised and not the error from
-        # .captureException()
-        with pytest.raises(PolyStorageError):
-            pa.transform("mycrashid")
-
-        # Assert logs for failing to process crash
-        expected = [
-            # Logs for failed Sentry reporting for first exception
-            ("Unable to report error with Sentry", mock.ANY),
-            ("Sentry has not been configured and an exception happened", None),
-            ("Exception occurred", first_exc_info),
-            # Logs for failed Sentry reporting for second exception
-            ("Unable to report error with Sentry", mock.ANY),
-            ("Sentry has not been configured and an exception happened", None),
-            ("Exception occurred", second_exc_info),
-            # Log for failing to process or save the crash
-            ("error in processing or saving crash mycrashid", None),
-        ]
-        actual = [(rec.message, rec.exc_info) for rec in caplogpp.records]
-
-        assert actual == expected

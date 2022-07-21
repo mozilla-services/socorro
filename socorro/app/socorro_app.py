@@ -35,10 +35,18 @@ from configman.converters import (
     str_to_list,
     str_to_python_object,
 )
+from fillmore.libsentry import set_up_sentry
+from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
+from sentry_sdk.integrations.atexit import AtexitIntegration
+from sentry_sdk.integrations.boto3 import Boto3Integration
+from sentry_sdk.integrations.dedupe import DedupeIntegration
+from sentry_sdk.integrations.excepthook import ExcepthookIntegration
+from sentry_sdk.integrations.modules import ModulesIntegration
+from sentry_sdk.integrations.stdlib import StdlibIntegration
+from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from socorro.lib.libdockerflow import get_version_info, get_release_name
-from socorro.lib.libsentry import set_up_sentry
 
 
 def cls_to_pypath(cls):
@@ -110,7 +118,7 @@ class App(RequiredConfig):
     required_config.namespace("sentry")
     required_config.sentry.add_option(
         "dsn",
-        doc="DEPRECATED: set SENTRY_DSN in environment instead",
+        doc="DEPRECATED--DO NOT USE; set SENTRY_DSN in environment instead",
         default="",
         reference_value_from="secrets.sentry",
         secret=True,
@@ -139,9 +147,31 @@ class App(RequiredConfig):
         )
 
     @classmethod
-    def set_up_sentry(cls, basedir, host_id, sentry_dsn):
+    def configure_sentry(cls, basedir, host_id, sentry_dsn):
         release = get_release_name(basedir)
-        set_up_sentry(release, host_id, sentry_dsn)
+        scrubber = Scrubber(rules=SCRUB_RULES_DEFAULT)
+        set_up_sentry(
+            sentry_dsn=sentry_dsn,
+            release=release,
+            host_id=host_id,
+            # Disable frame-local variables
+            with_locals=False,
+            # Disable request data from being added to Sentry events
+            request_bodies="never",
+            # All integrations should be intentionally enabled
+            default_integrations=False,
+            integrations=[
+                AtexitIntegration(),
+                Boto3Integration(),
+                ExcepthookIntegration(),
+                DedupeIntegration(),
+                StdlibIntegration(),
+                ModulesIntegration(),
+                ThreadingIntegration(),
+            ],
+            # Scrub sensitive data
+            before_send=scrubber,
+        )
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
@@ -217,14 +247,15 @@ class App(RequiredConfig):
 
             # Add version to crash reports
             host_id = config.host_id
-            if config.sentry and config.sentry.dsn:
-                sentry_dsn = config.sentry.dsn
-            else:
-                # NOTE(willkg): We do this so we can use SENTRY_DSN to configure
-                # it rather than the configman variable. We can get rid of this
-                # when we stop using configman
-                sentry_dsn = os.environ.get("SENTRY_DSN", "")
-            cls.set_up_sentry(basedir, host_id, sentry_dsn)
+
+            # NOTE(willkg): We do this so we can use SENTRY_DSN to configure it rather
+            # than the configman variable. We can get rid of this when we stop using
+            # configman
+            sentry_dsn = os.environ.get("SENTRY_DSN", "")
+
+            cls.configure_sentry(
+                basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn
+            )
 
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)

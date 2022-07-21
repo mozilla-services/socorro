@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import logging
 from unittest import mock
 
 from configman import Namespace, command_line, ConfigFileFutureProxy
@@ -19,11 +20,11 @@ class TestApp:
         with pytest.raises(NotImplementedError):
             sa.main()
 
-    @mock.patch("socorro.app.socorro_app.set_up_sentry")
-    @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run(self, setup_logging, set_up_sentry):
+    def test_run(self):
         with mock.patch("socorro.app.socorro_app.ConfigurationManager") as cm:
-            cm.return_value.context.return_value = mock.MagicMock()
+            config_mock = mock.MagicMock()
+            config_mock.logging.level = logging.DEBUG
+            cm.return_value.context.return_value.__enter__.return_value = config_mock
 
             class SomeOtherApp(App):
                 app_name = "SomeOtherApp"
@@ -51,8 +52,7 @@ class TestApp:
             assert kwargs["values_source_list"][-3] is ConfigFileFutureProxy
             assert result == 17
 
-    @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run_with_alternate_config_path(self, setup_logging):
+    def test_run_with_alternate_config_path(self):
         class SomeOtherApp(App):
             @classmethod
             def run(klass, config_path=None, values_source_list=None):
@@ -66,8 +66,7 @@ class TestApp:
         assert x == 17
         assert SomeOtherApp.config_path == "my/other/path"
 
-    @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run_with_alternate_values_source_list(self, setup_logging):
+    def test_run_with_alternate_values_source_list(self):
         class SomeOtherApp(App):
             @classmethod
             def run(klass, config_path=None, values_source_list=None):
@@ -83,11 +82,11 @@ class TestApp:
         assert SomeOtherApp.config_path == "my/other/path"
         assert SomeOtherApp.values_source_list == []
 
-    @mock.patch("socorro.app.socorro_app.set_up_sentry")
-    @mock.patch("socorro.app.socorro_app.setup_logging")
-    def test_run_with_alternate_class_path(self, setup_logging, set_up_sentry):
+    def test_run_with_alternate_class_path(self):
         with mock.patch("socorro.app.socorro_app.ConfigurationManager") as cm:
-            cm.return_value.context.return_value = mock.MagicMock()
+            config_mock = mock.MagicMock()
+            config_mock.logging.level = logging.DEBUG
+            cm.return_value.context.return_value.__enter__.return_value = config_mock
 
             class SomeOtherApp(App):
                 app_name = "SomeOtherApp"

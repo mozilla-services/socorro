@@ -18,6 +18,7 @@ django_csp==3.7
 djangorestframework==3.13.1
 dockerflow==2022.7.0
 enforce-typing==1.0.0.post1
+fillmore==0.1.0
 flake8==4.0.1
 freezegun==1.2.1
 glom==22.1.0
@@ -48,6 +49,7 @@ Sphinx==4.4.0
 sphinx_rtd_theme==1.0.0
 statsd==3.3.0
 urlwait==1.0
+werkzeug==2.1.2
 whitenoise==6.2.0
 
 # NOTE(willkg): Don't need to update this. We don't really use it and we should
