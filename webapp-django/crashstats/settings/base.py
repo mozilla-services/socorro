@@ -15,21 +15,9 @@ import re
 import socket
 
 from decouple import config, Csv
-from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.logging import ignore_logger
 import dj_database_url
-import sentry_sdk
-
 from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
 from socorro.lib.libdockerflow import get_release_name
-from socorro.lib.libsentry import (
-    build_scrub_query_string,
-    scrub,
-    Scrubber,
-    SCRUB_KEYS_DEFAULT,
-    SENTRY_MODULE_NAME,
-    set_up_sentry,
-)
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -534,37 +522,6 @@ OVERVIEW_VERSION_URLS = config("OVERVIEW_VERSION_URLS", "")
 
 # Sentry aggregates reports of uncaught errors and other events
 SENTRY_DSN = config("SENTRY_DSN", "")
-if SENTRY_DSN:
-    scrub_keys_django = [
-        # HTTP request bits
-        (
-            "request.headers",
-            ("Auth-Token", "Cookie", "X-Forwarded-For", "X-Real-Ip"),
-            scrub,
-        ),
-        ("request.data", ("csrfmiddlewaretoken", "client_secret"), scrub),
-        (
-            "request",
-            ("query_string",),
-            build_scrub_query_string(params=["code", "state"]),
-        ),
-        ("request", ("cookies",), scrub),
-        # "request" shows up in exceptions as a repr which in Django includes the
-        # query_string, so best to scrub it
-        ("exception.values.[].stacktrace.frames.[].vars", ("request",), scrub),
-    ]
-
-    release = get_release_name(SOCORRO_ROOT)
-    set_up_sentry(
-        release=release,
-        host_id=HOST_ID,
-        sentry_dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()],
-        before_send=Scrubber(scrub_keys=SCRUB_KEYS_DEFAULT + scrub_keys_django),
-    )
-
-    # Ignore DisallowedHost errors
-    ignore_logger("django.security.DisallowedHost")
 
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)

@@ -1,6 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """
 Holds utility functions for interacting with Socorro revision data which is generated
@@ -12,7 +12,14 @@ from pathlib import Path
 
 
 def get_version_info(basedir):
-    """Returns version.json data from deploys"""
+    """Given a basedir, retrieves version information for this deploy.
+
+    :arg str basedir: the path of the base directory where ``version.json``
+        exists
+
+    :returns: version info as a dict or an empty dict
+
+    """
     path = Path(basedir) / "version.json"
     if not path.exists():
         return {}

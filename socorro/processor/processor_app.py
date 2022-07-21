@@ -19,8 +19,6 @@ from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import libsentry
 
 from socorro.lib.libdatetime import isoformat_to_time
-from socorro.lib.libdockerflow import get_release_name
-from socorro.lib.libsentry import scrub, Scrubber, set_up_sentry, SCRUB_KEYS_DEFAULT
 from socorro.lib.util import dotdict_to_dict
 
 
@@ -97,16 +95,6 @@ CONFIG_DEFAULTS = {
 METRICS = markus.get_metrics("processor")
 
 
-SCRUB_KEYS_PROCESSOR = [
-    # Wipe out raw and processed crash data
-    (
-        "exception.values.[].stacktrace.frames.[].vars",
-        ("raw_crash", "processed_crash"),
-        scrub,
-    ),
-]
-
-
 class ProcessorApp(FetchTransformSaveApp):
     """Configman app that transforms raw crashes into processed crashes."""
 
@@ -137,12 +125,6 @@ class ProcessorApp(FetchTransformSaveApp):
         # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
         from_string_converter=class_converter,
     )
-
-    @classmethod
-    def set_up_sentry(cls, basedir, host_id, sentry_dsn):
-        release = get_release_name(basedir)
-        scrubber = Scrubber(scrub_keys=SCRUB_KEYS_DEFAULT + SCRUB_KEYS_PROCESSOR)
-        set_up_sentry(release, host_id, sentry_dsn, before_send=scrubber)
 
     def _capture_error(self, exc_info, crash_id=None):
         """Capture an error in sentry if able.

@@ -40,5 +40,5 @@ else
         --log-file=- \
         --config=/app/docker/config/gunicorn_config.py \
         --bind 0.0.0.0:"${PORT}" \
-        webapp-django.wsgi.socorro-crashstats:application
+        crashstats.wsgi:application
 fi

@@ -2088,9 +2088,7 @@ class TestSignatureGeneratorRule:
             "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
-    @mock.patch("socorro.lib.libsentry.get_hub")
-    @mock.patch("socorro.lib.libsentry.is_enabled", return_value=True)
-    def test_rule_fail_and_capture_error(self, client_enabled, mock_get_hub):
+    def test_rule_fail_and_capture_error(self, sentry_helper):
         exc_value = Exception("Cough")
 
         class BadRule:
@@ -2099,28 +2097,31 @@ class TestSignatureGeneratorRule:
 
         rule = SignatureGeneratorRule()
 
-        # Override the regular SigntureGenerator with one with a BadRule
-        # in the pipeline
-        rule.generator = SignatureGenerator(
-            pipeline=[BadRule()], error_handler=rule._error_handler
-        )
+        # NOTE(willkg): this just verifies we captured an exception with Sentry--it
+        # doesn't configure Sentry the way the processor does so we shouldn't test
+        # whether things are scrubbed correctly
+        with sentry_helper.init() as sentry_client:
+            # Override the regular SigntureGenerator with one with a BadRule
+            # in the pipeline
+            rule.generator = SignatureGenerator(
+                pipeline=[BadRule()], error_handler=rule._error_handler
+            )
 
-        raw_crash = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+            raw_crash = {}
+            processed_crash = {}
+            processor_meta = get_basic_processor_meta_data()
 
-        rule.action(raw_crash, {}, processed_crash, processor_meta)
+            rule.action(raw_crash, {}, processed_crash, processor_meta)
 
-        # NOTE(willkg): The signature is an empty string because there are no
-        # working rules that add anything to it.
-        assert processed_crash["signature"] == ""
-        assert "proto_signature" not in processed_crash
-        assert processor_meta["processor_notes"] == ["BadRule: Rule failed: Cough"]
+            # NOTE(willkg): The signature is an empty string because there are no
+            # working rules that add anything to it.
+            assert processed_crash["signature"] == ""
+            assert "proto_signature" not in processed_crash
+            assert processor_meta["processor_notes"] == ["BadRule: Rule failed: Cough"]
 
-        # Make sure captureExeption was called with the right args.
-        assert mock_get_hub.return_value.capture_exception.call_args_list == [
-            mock.call(error=(Exception, exc_value, mock.ANY))
-        ]
+            (event,) = sentry_client.events
+            assert event["extra"]["rule"] == "BadRule"
+            assert event["exception"]["values"][0]["type"] == "Exception"
 
 
 class TestPHCRule:
