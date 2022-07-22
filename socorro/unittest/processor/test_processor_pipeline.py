@@ -102,7 +102,11 @@ RULE_ERROR_EVENT = {
             }
         ]
     },
-    "extra": {"crash_id": "7c67ad15-518b-4ccb-9be0-6f4c82220721"},
+    "extra": {
+        "crash_id": "7c67ad15-518b-4ccb-9be0-6f4c82220721",
+        "rule": "socorro.unittest.processor.test_processor_pipeline.BadRule",
+        "ruleset": "default",
+    },
     "level": "error",
     "modules": ANY,
     "platform": "python",
@@ -152,7 +156,11 @@ class TestProcessorPipeline:
 
             # Notes were added again
             notes = processed_crash["processor_notes"].split("\n")
-            assert notes[1] == "rule BadRule failed: KeyError"
+            assert notes[1] == (
+                "ruleset 'default' "
+                + "rule 'socorro.unittest.processor.test_processor_pipeline.BadRule' "
+                + "failed: KeyError"
+            )
 
             (event,) = sentry_client.events
 
