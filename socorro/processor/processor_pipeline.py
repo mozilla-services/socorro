@@ -279,13 +279,18 @@ class ProcessorPipeline(RequiredConfig):
                 # If a rule throws an error, capture it and toss it in the
                 # processor notes
                 libsentry.capture_error(
-                    use_logger=self.logger, extra={"crash_id": crash_id}
+                    use_logger=self.logger,
+                    extra={
+                        "crash_id": crash_id,
+                        "ruleset": ruleset_name,
+                        "rule": rule.name,
+                    },
                 )
                 # NOTE(willkg): notes are public, so we can't put exception
                 # messages in them
                 processor_meta_data.processor_notes.append(
-                    "rule %s failed: %s"
-                    % (rule.__class__.__name__, exc.__class__.__name__)
+                    f"ruleset {ruleset_name!r} rule {rule.name!r} failed: "
+                    f"{exc.__class__.__name__}"
                 )
 
         # The crash made it through the processor rules with no exceptions

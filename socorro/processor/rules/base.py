@@ -19,7 +19,11 @@ class Rule:
     """
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
+        self.logger = logging.getLogger(self.name)
+
+    @property
+    def name(self):
+        return self.__class__.__module__ + "." + self.__class__.__name__
 
     def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         """Determines whether to run the action for this crash
@@ -57,8 +61,8 @@ class Rule:
             processing as we process
 
         """
-        rule_name = self.__class__.__name__
-        with metrics.timer("act.timing", tags=["rule:%s" % rule_name]):
+        class_name = self.__class__.__name__
+        with metrics.timer("act.timing", tags=["rule:%s" % class_name]):
             ret = self.predicate(
                 raw_crash=raw_crash,
                 dumps=dumps,
@@ -77,10 +81,11 @@ class Rule:
         pass
 
     def generate_repr(self, keys=None):
+        class_name = self.__class__.__name__
         keys = keys or []
         return (
             "<"
-            + self.__class__.__name__
+            + class_name
             + "".join([" %s=%r" % (key, getattr(self, key, None)) for key in keys])
             + ">"
         )
