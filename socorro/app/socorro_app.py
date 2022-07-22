@@ -35,18 +35,9 @@ from configman.converters import (
     str_to_list,
     str_to_python_object,
 )
-from fillmore.libsentry import set_up_sentry
-from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
-from sentry_sdk.integrations.atexit import AtexitIntegration
-from sentry_sdk.integrations.boto3 import Boto3Integration
-from sentry_sdk.integrations.dedupe import DedupeIntegration
-from sentry_sdk.integrations.excepthook import ExcepthookIntegration
-from sentry_sdk.integrations.modules import ModulesIntegration
-from sentry_sdk.integrations.stdlib import StdlibIntegration
-from sentry_sdk.integrations.threading import ThreadingIntegration
 
-from socorro.lib.libdockerflow import get_version_info, get_release_name
+from socorro.lib.libdockerflow import get_version_info
 
 
 def cls_to_pypath(cls):
@@ -148,30 +139,7 @@ class App(RequiredConfig):
 
     @classmethod
     def configure_sentry(cls, basedir, host_id, sentry_dsn):
-        release = get_release_name(basedir)
-        scrubber = Scrubber(rules=SCRUB_RULES_DEFAULT)
-        set_up_sentry(
-            sentry_dsn=sentry_dsn,
-            release=release,
-            host_id=host_id,
-            # Disable frame-local variables
-            with_locals=False,
-            # Disable request data from being added to Sentry events
-            request_bodies="never",
-            # All integrations should be intentionally enabled
-            default_integrations=False,
-            integrations=[
-                AtexitIntegration(),
-                Boto3Integration(),
-                ExcepthookIntegration(),
-                DedupeIntegration(),
-                StdlibIntegration(),
-                ModulesIntegration(),
-                ThreadingIntegration(),
-            ],
-            # Scrub sensitive data
-            before_send=scrubber,
-        )
+        raise NotImplementedError("configure_sentry must be implemented by Apps")
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):

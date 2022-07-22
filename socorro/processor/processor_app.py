@@ -12,13 +12,22 @@ import time
 from configman import Namespace
 from configman.converters import class_converter
 from configman.dotdict import DotDict
+from fillmore.libsentry import set_up_sentry
+from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
+from sentry_sdk.integrations.atexit import AtexitIntegration
+from sentry_sdk.integrations.boto3 import Boto3Integration
+from sentry_sdk.integrations.dedupe import DedupeIntegration
+from sentry_sdk.integrations.excepthook import ExcepthookIntegration
+from sentry_sdk.integrations.modules import ModulesIntegration
+from sentry_sdk.integrations.stdlib import StdlibIntegration
+from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib import libsentry
-
 from socorro.lib.libdatetime import isoformat_to_time
+from socorro.lib.libdockerflow import get_release_name
 from socorro.lib.util import dotdict_to_dict
 
 
@@ -125,6 +134,33 @@ class ProcessorApp(FetchTransformSaveApp):
         # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
         from_string_converter=class_converter,
     )
+
+    @classmethod
+    def configure_sentry(cls, basedir, host_id, sentry_dsn):
+        release = get_release_name(basedir)
+        scrubber = Scrubber(rules=SCRUB_RULES_DEFAULT)
+        set_up_sentry(
+            sentry_dsn=sentry_dsn,
+            release=release,
+            host_id=host_id,
+            # Disable frame-local variables
+            with_locals=False,
+            # Disable request data from being added to Sentry events
+            request_bodies="never",
+            # All integrations should be intentionally enabled
+            default_integrations=False,
+            integrations=[
+                AtexitIntegration(),
+                Boto3Integration(),
+                ExcepthookIntegration(),
+                DedupeIntegration(),
+                StdlibIntegration(),
+                ModulesIntegration(),
+                ThreadingIntegration(),
+            ],
+            # Scrub sensitive data
+            before_send=scrubber,
+        )
 
     def _capture_error(self, exc_info, crash_id=None):
         """Capture an error in sentry if able.
