@@ -143,7 +143,7 @@ class App(RequiredConfig):
 
     @classmethod
     def run(cls, config_path=None, values_source_list=None):
-        basedir = Path(__file__).resolve().parent.parent
+        basedir = Path(__file__).resolve().parent.parent.parent
 
         # NOTE(willkg): This is a classmethod, so we need a different logger.
         mylogger = logging.getLogger(__name__ + "." + cls.__name__)
@@ -213,13 +213,12 @@ class App(RequiredConfig):
 
             config_manager.log_config(mylogger)
 
-            # Add version to crash reports
-            host_id = config.host_id
-
             # NOTE(willkg): We do this so we can use SENTRY_DSN to configure it rather
             # than the configman variable. We can get rid of this when we stop using
             # configman
             sentry_dsn = os.environ.get("SENTRY_DSN", "")
+
+            host_id = config.host_id or socket.gethostname()
 
             cls.configure_sentry(
                 basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn
@@ -228,7 +227,6 @@ class App(RequiredConfig):
             # we finally know what app to actually run, instantiate it
             app_to_run = cls(config)
             app_to_run.config_manager = config_manager
-            # whew, finally run the app that we wanted
 
             return_code = fix_exit_code(app_to_run.main())
             return return_code
