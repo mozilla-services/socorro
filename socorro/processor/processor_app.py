@@ -104,6 +104,10 @@ CONFIG_DEFAULTS = {
 METRICS = markus.get_metrics("processor")
 
 
+def count_sentry_scrub_error(msg):
+    METRICS.incr("sentry_scrub_error", 1)
+
+
 class ProcessorApp(FetchTransformSaveApp):
     """Configman app that transforms raw crashes into processed crashes."""
 
@@ -138,7 +142,10 @@ class ProcessorApp(FetchTransformSaveApp):
     @classmethod
     def configure_sentry(cls, basedir, host_id, sentry_dsn):
         release = get_release_name(basedir)
-        scrubber = Scrubber(rules=SCRUB_RULES_DEFAULT)
+        scrubber = Scrubber(
+            rules=SCRUB_RULES_DEFAULT,
+            error_handler=count_sentry_scrub_error,
+        )
         set_up_sentry(
             sentry_dsn=sentry_dsn,
             release=release,
