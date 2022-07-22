@@ -20,7 +20,7 @@ class MemoryReportExtraction(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, proc_meta):
+    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
             # Verify that...
             return (
