@@ -53,7 +53,10 @@ def count_sentry_scrub_error(msg):
 
 def configure_sentry():
     release = get_release_name(settings.SOCORRO_ROOT)
-    scrubber = Scrubber(rules=SCRUB_RULES_DEFAULT + SCRUB_RULES_WEBAPP)
+    scrubber = Scrubber(
+        rules=SCRUB_RULES_DEFAULT + SCRUB_RULES_WEBAPP,
+        error_handler=count_sentry_scrub_error,
+    )
 
     set_up_sentry(
         release=release,
