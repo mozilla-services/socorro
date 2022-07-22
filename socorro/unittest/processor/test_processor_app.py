@@ -9,10 +9,11 @@ from unittest import mock
 from unittest.mock import ANY
 
 from configman.dotdict import DotDict
+from markus.testing import MetricsMock
 import pytest
 
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
-from socorro.processor.processor_app import ProcessorApp
+from socorro.processor.processor_app import ProcessorApp, count_sentry_scrub_error
 
 
 def sequencer(*args):
@@ -275,6 +276,13 @@ def test_transform_get_error(sentry_helper, caplogpp):
         )
 
 
+def test_count_sentry_scrub_error():
+    with MetricsMock() as metricsmock:
+        metricsmock.clear_records()
+        count_sentry_scrub_error("foo")
+        metricsmock.assert_incr("processor.sentry_scrub_error", value=1)
+
+
 def test_transform_polystorage_error(sentry_helper, caplogpp):
     caplogpp.set_level("DEBUG")
 
@@ -342,9 +350,6 @@ def test_transform_polystorage_error(sentry_helper, caplogpp):
         assert assertion_msg in logging_msgs
 
 
-SAVE_ERROR = {}
-
-
 def test_transform_save_error(sentry_helper, caplogpp):
     caplogpp.set_level("DEBUG")
 
@@ -370,6 +375,7 @@ def test_transform_save_error(sentry_helper, caplogpp):
         with pytest.raises(ValueError):
             processor.transform(crash_id)
 
-        # Assert that the exception was not sent to Sentry and not logged
+        # Assert that the exception was not sent to Sentry and not logged at this
+        # point--it gets caught and logged  by the processor
         assert len(sentry_client.events) == 0
         assert len(caplogpp.records) == 0
