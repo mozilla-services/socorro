@@ -12,10 +12,16 @@ import pytest
 from socorro.app.socorro_app import App
 
 
+class MyApp(App):
+    @classmethod
+    def configure_sentry(cls, basedir, host_id, sentry_dsn):
+        pass
+
+
 class TestApp:
     def test_instantiation(self):
         config = DotDict()
-        sa = App(config)
+        sa = MyApp(config)
 
         with pytest.raises(NotImplementedError):
             sa.main()
@@ -26,7 +32,7 @@ class TestApp:
             config_mock.logging.level = logging.DEBUG
             cm.return_value.context.return_value.__enter__.return_value = config_mock
 
-            class SomeOtherApp(App):
+            class SomeOtherApp(MyApp):
                 app_name = "SomeOtherApp"
                 app_verision = "1.2.3"
                 app_description = "a silly app"
@@ -53,7 +59,7 @@ class TestApp:
             assert result == 17
 
     def test_run_with_alternate_config_path(self):
-        class SomeOtherApp(App):
+        class SomeOtherApp(MyApp):
             @classmethod
             def run(klass, config_path=None, values_source_list=None):
                 klass.values_source_list = values_source_list
@@ -67,7 +73,7 @@ class TestApp:
         assert SomeOtherApp.config_path == "my/other/path"
 
     def test_run_with_alternate_values_source_list(self):
-        class SomeOtherApp(App):
+        class SomeOtherApp(MyApp):
             @classmethod
             def run(klass, config_path=None, values_source_list=None):
                 klass.values_source_list = values_source_list
@@ -88,7 +94,7 @@ class TestApp:
             config_mock.logging.level = logging.DEBUG
             cm.return_value.context.return_value.__enter__.return_value = config_mock
 
-            class SomeOtherApp(App):
+            class SomeOtherApp(MyApp):
                 app_name = "SomeOtherApp"
                 app_verision = "1.2.3"
                 app_description = "a silly app"
