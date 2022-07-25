@@ -14,9 +14,9 @@ import tempfile
 from configman import Namespace, RequiredConfig
 from configman.converters import str_to_list
 from configman.dotdict import DotDict
+import sentry_sdk
 
 from socorro.lib.libdatetime import utc_now
-from socorro.lib import libsentry
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
@@ -272,26 +272,28 @@ class ProcessorPipeline(RequiredConfig):
 
         # Apply rules; if a rule fails, capture the error and continue onward
         for rule in ruleset:
-            try:
-                rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
+            with sentry_sdk.push_scope() as scope:
+                scope.set_extra("rule", rule.name)
 
-            except Exception as exc:
-                # If a rule throws an error, capture it and toss it in the
-                # processor notes
-                libsentry.capture_error(
-                    use_logger=self.logger,
-                    extra={
-                        "crash_id": crash_id,
-                        "ruleset": ruleset_name,
-                        "rule": rule.name,
-                    },
-                )
-                # NOTE(willkg): notes are public, so we can't put exception
-                # messages in them
-                processor_meta_data.processor_notes.append(
-                    f"ruleset {ruleset_name!r} rule {rule.name!r} failed: "
-                    f"{exc.__class__.__name__}"
-                )
+                try:
+                    rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
+
+                except Exception as exc:
+                    sentry_sdk.capture_exception(exc)
+
+                    self.logger.exception(
+                        "error: crash id %s: rule %s: %r",
+                        crash_id,
+                        rule.name,
+                        exc,
+                    )
+
+                    # NOTE(willkg): notes are public, so we can't put exception
+                    # messages in them
+                    processor_meta_data.processor_notes.append(
+                        f"ruleset {ruleset_name!r} rule {rule.name!r} failed: "
+                        f"{exc.__class__.__name__}"
+                    )
 
         # The crash made it through the processor rules with no exceptions
         # raised, call it a success

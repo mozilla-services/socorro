@@ -103,9 +103,7 @@ RULE_ERROR_EVENT = {
         ]
     },
     "extra": {
-        "crash_id": "7c67ad15-518b-4ccb-9be0-6f4c82220721",
         "rule": "socorro.unittest.processor.test_processor_pipeline.BadRule",
-        "ruleset": "default",
     },
     "level": "error",
     "modules": ANY,

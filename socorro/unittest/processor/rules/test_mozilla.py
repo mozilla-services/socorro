@@ -2120,7 +2120,10 @@ class TestSignatureGeneratorRule:
             assert processor_meta["processor_notes"] == ["BadRule: Rule failed: Cough"]
 
             (event,) = sentry_client.events
-            assert event["extra"]["rule"] == "BadRule"
+            # NOTE(willkg): Some of the extra bits come from the processor app and since
+            # we're testing SignatureGenerator in isolation, those don't get added to
+            # the sentry scope
+            assert event["extra"] == {"signature_rule": "BadRule", "sys.argv": mock.ANY}
             assert event["exception"]["values"][0]["type"] == "Exception"
 
 

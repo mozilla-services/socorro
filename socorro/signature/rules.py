@@ -31,8 +31,11 @@ def join_ignore_empty(delimiter, list_of_strings):
 class Rule:
     """Base class for Signature generation rules"""
 
-    def __init__(self):
-        self.name = self.__class__.__name__
+    @property
+    def name(self):
+        # NOTE(willkg): In order for this to work in siggen and in Socorro, we can't
+        # include the Python module path
+        return self.__class__.__name__
 
     def predicate(self, crash_data, result):
         """Whether or not to run this rule

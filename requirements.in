@@ -18,7 +18,7 @@ django_csp==3.7
 djangorestframework==3.13.1
 dockerflow==2022.7.0
 enforce-typing==1.0.0.post1
-fillmore==0.1.0
+fillmore==0.1.1
 flake8==4.0.1
 freezegun==1.2.1
 glom==22.1.0

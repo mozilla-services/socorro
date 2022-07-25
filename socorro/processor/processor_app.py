@@ -15,6 +15,7 @@ from configman.dotdict import DotDict
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
+import sentry_sdk
 from sentry_sdk.integrations.atexit import AtexitIntegration
 from sentry_sdk.integrations.boto3 import Boto3Integration
 from sentry_sdk.integrations.dedupe import DedupeIntegration
@@ -25,7 +26,6 @@ from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
-from socorro.lib import libsentry
 from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.libdockerflow import get_release_name
 from socorro.lib.util import dotdict_to_dict
@@ -169,30 +169,16 @@ class ProcessorApp(FetchTransformSaveApp):
             before_send=scrubber,
         )
 
-    def _capture_error(self, exc_info, crash_id=None):
-        """Capture an error in sentry if able.
-
-        :arg exc_info: the exc info as it comes from sys.exc_info()
-        :arg crash_id: a crash id
-
-        """
-        extra = {}
-        if crash_id:
-            extra["crash_id"] = crash_id
-
-        libsentry.capture_error(use_logger=self.logger, exc_info=exc_info, extra=extra)
-
     def _basic_iterator(self):
         """Yields an infinite list of processing tasks."""
         try:
             yield from super()._basic_iterator()
-        except Exception:
-            self._capture_error(sys.exc_info())
-            self.logger.warning("error in crashid iterator", exc_info=True)
-
+        except Exception as exc:
             # NOTE(willkg): Queue code should not be throwing unhandled exceptions. If
-            # we hit one, we should make sure it gets to sentry and then let the caller
-            # deal with it
+            # it does, we should send it to sentry, log it, and then re-raise it so the
+            # caller can deal with it and/or crash
+            sentry_sdk.capture_exception(exc)
+            self.logger.exception("error in crash id iterator")
             raise
 
     def _transform(self, task):
@@ -219,74 +205,78 @@ class ProcessorApp(FetchTransformSaveApp):
         ``destination``.
 
         """
-        # Fetch the raw crash data
-        try:
-            raw_crash = self.source.get_raw_crash(crash_id)
-            dumps = self.source.get_dumps_as_files(crash_id)
-        except CrashIDNotFound:
-            # If the crash isn't found, we just reject it--no need to capture
-            # errors here
-            self.processor.reject_raw_crash(
-                crash_id, "crash cannot be found in raw crash storage"
-            )
-            return
-        except Exception as x:
-            # We don't know what this error is, so we should capture it
-            self._capture_error(sys.exc_info(), crash_id)
-            self.logger.warning("error loading crash %s", crash_id, exc_info=True)
-            self.processor.reject_raw_crash(crash_id, "error in loading: %s" % x)
-            return
+        with sentry_sdk.push_scope() as scope:
+            scope.set_extra("crash_id", crash_id)
+            scope.set_extra("ruleset", ruleset_name)
 
-        # Fetch processed crash data--there won't be any if this crash hasn't
-        # been processed, yet
-        try:
-            processed_crash = self.source.get_unredacted_processed(crash_id)
-            new_crash = False
-        except CrashIDNotFound:
-            new_crash = True
-            processed_crash = DotDict()
+            # Fetch the raw crash data
+            try:
+                raw_crash = self.source.get_raw_crash(crash_id)
+                dumps = self.source.get_dumps_as_files(crash_id)
+            except CrashIDNotFound:
+                # If the crash isn't found, we just reject it--no need to capture
+                # errors here
+                self.processor.reject_raw_crash(
+                    crash_id, "crash cannot be found in raw crash storage"
+                )
+                return
+            except Exception as exc:
+                sentry_sdk.capture_exception(exc)
+                self.logger.exception("error: crash id %s: %r", crash_id, exc)
+                self.processor.reject_raw_crash(crash_id, f"error in loading: {exc}")
+                return
 
-        # Process the crash and remove any temporary artifacts from disk
-        try:
-            # Process the crash to generate a processed crash
-            processed_crash = self.processor.process_crash(
-                ruleset_name, raw_crash, dumps, processed_crash
-            )
+            # Fetch processed crash data--there won't be any if this crash hasn't
+            # been processed, yet
+            try:
+                processed_crash = self.source.get_unredacted_processed(crash_id)
+                new_crash = False
+            except CrashIDNotFound:
+                new_crash = True
+                processed_crash = DotDict()
 
-            # Convert the raw and processed crashes from DotDict into Python standard
-            # data structures
-            raw_crash = dotdict_to_dict(raw_crash)
-            processed_crash = dotdict_to_dict(processed_crash)
+            # Process the crash and remove any temporary artifacts from disk
+            try:
+                # Process the crash to generate a processed crash
+                processed_crash = self.processor.process_crash(
+                    ruleset_name, raw_crash, dumps, processed_crash
+                )
 
-            self.destination.save_processed_crash(raw_crash, processed_crash)
-            self.logger.info("saved - %s", crash_id)
-        except PolyStorageError as poly_storage_error:
-            # Capture and log the exceptions raised by storage backends
-            for storage_error in poly_storage_error:
-                self._capture_error(storage_error, crash_id)
-            self.logger.warning("error in processing or saving crash %s", crash_id)
+                # Convert the raw and processed crashes from DotDict into Python
+                # standard data structures
+                raw_crash = dotdict_to_dict(raw_crash)
+                processed_crash = dotdict_to_dict(processed_crash)
 
-            # Re-raise the original exception with the correct traceback
-            raise
+                self.destination.save_processed_crash(raw_crash, processed_crash)
+                self.logger.info("saved - %s", crash_id)
+            except PolyStorageError as poly_storage_error:
+                # Capture and log the exceptions raised by storage backends
+                for storage_error in poly_storage_error:
+                    sentry_sdk.capture_exception(storage_error)
+                    self.logger.error("error: crash id %s: %r", crash_id, storage_error)
+                self.logger.warning("error in processing or saving crash %s", crash_id)
 
-        finally:
-            # Clean up any dump files saved to the file system
-            for a_dump_pathname in dumps.values():
-                if "TEMPORARY" in a_dump_pathname:
-                    try:
-                        os.unlink(a_dump_pathname)
-                    except OSError as x:
-                        self.logger.info("deletion of dump failed: %s", x)
+                # Re-raise the original exception with the correct traceback
+                raise
 
-        if ruleset_name == "default" and new_crash:
-            # Capture the total time for ingestion covering when the crash report was
-            # collected (submitted_timestamp) to the end of processing (now). We only
-            # want to do this for crash reports being processed for the first time.
-            collected = raw_crash.get("submitted_timestamp", None)
-            if collected:
-                delta = time.time() - isoformat_to_time(collected)
-                delta = delta * 1000
-                METRICS.timing("ingestion_timing", value=delta)
+            finally:
+                # Clean up any dump files saved to the file system
+                for a_dump_pathname in dumps.values():
+                    if "TEMPORARY" in a_dump_pathname:
+                        try:
+                            os.unlink(a_dump_pathname)
+                        except OSError as x:
+                            self.logger.info("deletion of dump failed: %s", x)
+
+            if ruleset_name == "default" and new_crash:
+                # Capture the total time for ingestion covering when the crash report was
+                # collected (submitted_timestamp) to the end of processing (now). We only
+                # want to do this for crash reports being processed for the first time.
+                collected = raw_crash.get("submitted_timestamp", None)
+                if collected:
+                    delta = time.time() - isoformat_to_time(collected)
+                    delta = delta * 1000
+                    METRICS.timing("ingestion_timing", value=delta)
 
     def _setup_source_and_destination(self):
         """Instantiate classes necessary for processing."""
