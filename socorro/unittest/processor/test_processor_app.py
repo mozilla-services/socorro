@@ -214,7 +214,7 @@ TRANSFORM_GET_ERROR = {
             }
         ]
     },
-    "extra": {"crash_id": "930b08ba-e425-49bf-adbd-7c9172220721"},
+    "extra": {"crash_id": "930b08ba-e425-49bf-adbd-7c9172220721", "ruleset": "default"},
     "level": "error",
     "modules": ANY,
     "platform": "python",
@@ -255,10 +255,12 @@ def test_transform_get_error(sentry_helper, caplogpp):
     expected_exception = ValueError("simulated error")
     processor.source.get_raw_crash.side_effect = expected_exception
 
+    crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
+
     with sentry_helper.reuse() as sentry_client:
         # The processor catches all exceptions from .get_raw_crash() and
         # .get_dumps_as_files(), so there's nothing we need to catch here
-        processor.transform("930b08ba-e425-49bf-adbd-7c9172220721")
+        processor.transform(crash_id)
 
         (event,) = sentry_client.events
 
@@ -272,7 +274,7 @@ def test_transform_get_error(sentry_helper, caplogpp):
         # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
         assert (
-            f"Error captured in Sentry! Reference: {event['event_id']}" in logging_msgs
+            f"error: crash id {crash_id}: ValueError('simulated error')" in logging_msgs
         )
 
 
@@ -315,6 +317,8 @@ def test_transform_polystorage_error(sentry_helper, caplogpp):
 
         name_error_event, assertion_error_event = sentry_client.events
 
+        print(json.dumps(name_error_event, indent=4, sort_keys=True))
+        assert name_error_event["extra"] == {"crash_id": crash_id, "ruleset": "default"}
         assert name_error_event["exception"] == {
             "values": [
                 {
@@ -326,6 +330,12 @@ def test_transform_polystorage_error(sentry_helper, caplogpp):
             ]
         }
         assert name_error_event["extra"]["crash_id"] == crash_id
+
+        print(json.dumps(assertion_error_event, indent=4, sort_keys=True))
+        assert assertion_error_event["extra"] == {
+            "crash_id": crash_id,
+            "ruleset": "default",
+        }
         assert assertion_error_event["exception"] == {
             "values": [
                 {
@@ -340,14 +350,8 @@ def test_transform_polystorage_error(sentry_helper, caplogpp):
 
         # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
-        nameerror_msg = (
-            f"Error captured in Sentry! Reference: {name_error_event['event_id']}"
-        )
-        assert nameerror_msg in logging_msgs
-        assertion_msg = (
-            f"Error captured in Sentry! Reference: {name_error_event['event_id']}"
-        )
-        assert assertion_msg in logging_msgs
+        assert f"error: crash id {crash_id}: NameError('waldo')" in logging_msgs
+        assert f"error: crash id {crash_id}: AssertionError(False)" in logging_msgs
 
 
 def test_transform_save_error(sentry_helper, caplogpp):

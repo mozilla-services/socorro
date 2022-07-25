@@ -275,9 +275,9 @@ face==20.1.1 \
     --hash=sha256:3790311a7329e4b0d90baee346eecad54b337629576edf3a246683a5f0d24446 \
     --hash=sha256:7d59ca5ba341316e58cf72c6aff85cca2541cf5056c4af45cb63af9a814bed3e
     # via glom
-fillmore==0.1.0 \
-    --hash=sha256:41b529a2e3f4cca31f8f5b5b5b1453769267b0c95daa2aaae4d1952ad3d4fc01 \
-    --hash=sha256:f6f703cdff7942a9b3fbba4d0e3812b0e688bf555327ef2f437df35bc68ad130
+fillmore==0.1.1 \
+    --hash=sha256:0326e4a5e020f9945834e549cf2de5b04261b64398f1f67ea92dc38c04d3a743 \
+    --hash=sha256:334ab67b971782550c93b73de8cdb195cb42950a30343c4cf35de1ab70d9bb1e
     # via -r requirements.in
 flake8==4.0.1 \
     --hash=sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d \
