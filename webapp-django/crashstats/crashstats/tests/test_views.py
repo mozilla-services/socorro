@@ -60,6 +60,7 @@ _SAMPLE_UNREDACTED = {
     "completed_datetime": "2012-06-11T06:08:57",
     "success": True,
     "user_comments": "this is a comment",
+    "crashing_thread": None,
     "json_dump": {
         "status": "OK",
         "sensitive": {"exploitability": "high"},
@@ -868,6 +869,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 crash["signature"] = "shutdownhang | foo::bar()"
                 return crash
@@ -1003,6 +1005,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 crash["signature"] = "shutdownhang | foo::bar()"
                 return crash
@@ -1166,6 +1169,7 @@ class TestViews(BaseTestViews):
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
                 # Create a minimal json_dump with the last_error_value
                 crash["json_dump"] = json_dump
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 return crash
 
         models.UnredactedCrash.implementation().get.side_effect = (
@@ -1212,6 +1216,7 @@ class TestViews(BaseTestViews):
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
                 crash["json_dump"] = json_dump
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["signature"] = "shutdownhang | foo::bar()"
                 return crash
 
@@ -1729,6 +1734,7 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "unredacted":
                 crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 return crash
 
