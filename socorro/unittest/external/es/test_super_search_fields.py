@@ -4,6 +4,7 @@
 
 import copy
 from datetime import timedelta
+import json
 
 import pytest
 
@@ -110,17 +111,15 @@ class Test_build_mapping(ElasticsearchTestCase):
         assert doctype in mapping
         properties = mapping[doctype]["properties"]
 
+        print(json.dumps(properties, indent=4, sort_keys=True))
+        assert "raw_crash" not in properties
         assert "processed_crash" in properties
-        assert "raw_crash" in properties
 
         processed_crash = properties["processed_crash"]["properties"]
 
         # Check in_database_name is used.
         assert "os_name" in processed_crash
         assert "platform" not in processed_crash
-
-        # Those fields have no `storage_mapping`.
-        assert "fake_field" not in properties["raw_crash"]["properties"]
 
         # Those fields have a `storage_mapping`.
         assert processed_crash["release_channel"] == {
