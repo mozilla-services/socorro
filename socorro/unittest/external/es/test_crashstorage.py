@@ -155,12 +155,12 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Check super_search_fields.py for valid keys to update this
         raw_crash = {
             "InvalidKey": "alpha",
-            "DOMFissionEnabled": "1",
         }
         processed_crash = {
             "AnotherInvalidKey": "alpha",
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "dom_fission_enabled": "1",
         }
 
         es_storage = ESCrashStorage(config=self.config)
@@ -179,10 +179,14 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
         # Verify keys that aren't in super_search_fields aren't in the raw or processed
         # crash parts
         raw_crash = doc["_source"]["raw_crash"]
-        assert list(sorted(raw_crash.keys())) == ["DOMFissionEnabled"]
+        assert list(sorted(raw_crash.keys())) == []
 
         processed_crash = doc["_source"]["processed_crash"]
-        assert list(sorted(processed_crash.keys())) == ["date_processed", "uuid"]
+        assert list(sorted(processed_crash.keys())) == [
+            "date_processed",
+            "dom_fission_enabled",
+            "uuid",
+        ]
 
     def test_index_crash_mapping_keys(self):
         """Test indexing a crash that has keys not in the mapping
@@ -293,12 +297,12 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "BuildID": "20200605000",
             "ProductName": "Firefox",
             "ReleaseChannel": "nightly",
-            "DOMFissionEnabled": "1",
         }
         processed_crash = {
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {},
             "date_processed": date_to_string(utc_now()),
+            "dom_fission_enabled": "1",
         }
 
         sub_mock = mock.MagicMock()
@@ -324,12 +328,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "raw_crash": {
-                "DOMFissionEnabled": "1",
-            },
+            "raw_crash": {},
             "processed_crash": {
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
+                "dom_fission_enabled": "1",
             },
         }
 
@@ -367,6 +370,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         processed_crash = {
             "build": "20120309050057",
             "date_processed": date_to_string(utc_now()),
+            "dom_fission_enabled": "1",
             "product": "Firefox",
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "json_dump": {
@@ -402,12 +406,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "raw_crash": {
-                "DOMFissionEnabled": "1",
-            },
+            "raw_crash": {},
             "processed_crash": {
                 "build": 20120309050057,
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
+                "dom_fission_enabled": "1",
                 "product": "Firefox",
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "json_dump": {
@@ -452,6 +455,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         processed_crash = {
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "dom_fission_enabled": "1",
         }
         crash_id = processed_crash["uuid"]
 
@@ -472,12 +476,11 @@ class TestESCrashStorage(ElasticsearchTestCase):
         # The actual call to index the document (crash).
         document = {
             "crash_id": crash_id,
-            "raw_crash": {
-                "DOMFissionEnabled": "1",
-            },
+            "raw_crash": {},
             "processed_crash": {
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+                "dom_fission_enabled": "1",
             },
         }
 
@@ -654,6 +657,7 @@ class TestESCrashStorage(ElasticsearchTestCase):
         }
         processed_crash = {
             "date_processed": date_to_string(utc_now()),
+            "dom_fission_enabled": "1",
             # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
             # rejected by our mock_index call--this is wildly contrived.
             "version": {"key": {"nested_key": "val"}},
@@ -690,10 +694,9 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "processed_crash": {
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
                 "uuid": crash_id,
+                "dom_fission_enabled": "1",
             },
-            "raw_crash": {
-                "DOMFissionEnabled": "1",
-            },
+            "raw_crash": {},
         }
         es_class_mock().index.assert_called_with(
             index=self.es_context.get_index_for_date(utc_now()),

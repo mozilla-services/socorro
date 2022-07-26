@@ -35,12 +35,12 @@ class TestIntegrationAnalyzers(ElasticsearchTestCase):
         value1 = "/path/to/dll;;foo;C:\\bar\\boo"
         self.index_crash(
             processed_crash={"app_init_dlls": value1, "date_processed": self.now},
-            raw_crash={"AppInitDLLs": value1},
+            raw_crash={},
         )
         value2 = "/path/to/dll;D:\\bar\\boo"
         self.index_crash(
             processed_crash={"app_init_dlls": value2, "date_processed": self.now},
-            raw_crash={"AppInitDLLs": value2},
+            raw_crash={},
         )
         self.es_context.refresh()
 
