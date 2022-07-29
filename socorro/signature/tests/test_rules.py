@@ -639,6 +639,7 @@ FRAMES_FROM_JSON_DUMP = {
         },
     ],
     "threads_index": 0,
+    "thread_name": "MainThread",
     "frame_count": 32,
 }
 
@@ -758,6 +759,7 @@ FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES = {
         },
     ],
     "threads_index": 0,
+    "thread_name": "MainThread",
 }
 
 FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
@@ -876,6 +878,7 @@ FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
         },
     ],
     "threads_index": 0,
+    "thread_name": "MainThread",
 }
 
 
@@ -946,6 +949,8 @@ class TestSignatureGenerationRule:
         assert result.signature == expected
         assert "proto_signature" not in result.extra
         assert "normalized_frames" not in result.extra
+        assert "crashing_thread_id" not in result.extra
+        assert "crashing_thread_name" not in result.extra
         assert result.notes == [
             "SignatureGenerationRule: JavaSignatureTool: dropped Java exception description due to length"  # noqa
         ]
@@ -980,6 +985,8 @@ class TestSignatureGenerationRule:
 
         assert result.extra["proto_signature"] == expected_proto_signature
         assert result.extra["normalized_frames"] == expected_normalized_frames
+        assert result.extra["crashing_thread_id"] == 0
+        assert result.extra["crashing_thread_name"] == "MainThread"
         assert result.notes == []
 
     def test_action_2_with_templates(self):
@@ -1011,6 +1018,8 @@ class TestSignatureGenerationRule:
         expected_proto_signature = " | ".join(expected_normalized_frames)
         assert result.extra["proto_signature"] == expected_proto_signature
         assert result.extra["normalized_frames"] == expected_normalized_frames
+        assert result.extra["crashing_thread_id"] == 0
+        assert result.extra["crashing_thread_name"] == "MainThread"
         assert result.notes == []
 
     def test_action_2_with_templates_and_special_case(self):
@@ -1045,6 +1054,8 @@ class TestSignatureGenerationRule:
         expected_proto_signature = " | ".join(expected_normalized_frames)
         assert result.extra["proto_signature"] == expected_proto_signature
         assert result.extra["normalized_frames"] == expected_normalized_frames
+        assert result.extra["crashing_thread_id"] == 0
+        assert result.extra["crashing_thread_name"] == "MainThread"
         assert result.notes == []
 
     def test_action_3(self):
@@ -1059,6 +1070,8 @@ class TestSignatureGenerationRule:
         assert result.signature == "EMPTY: no crashing thread identified"
         assert "proto_signature" not in result.extra
         assert "normalized_frames" not in result.extra
+        assert result.extra["crashing_thread_id"] == 0
+        assert "crashing_thread_name" not in result.extra
         assert result.notes == [
             "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
@@ -1099,6 +1112,8 @@ class TestSignatureGenerationRule:
         expected_proto_signature = " | ".join(expected_normalized_frames)
         assert result.extra["proto_signature"] == expected_proto_signature
         assert result.extra["normalized_frames"] == expected_normalized_frames
+        assert result.extra["crashing_thread_id"] == 0
+        assert "crashing_thread_name" not in result.extra
         assert result.notes == []
 
 
