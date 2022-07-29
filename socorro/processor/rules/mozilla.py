@@ -1152,6 +1152,12 @@ class SignatureGeneratorRule(Rule):
         processor_meta_data["processor_notes"].extend(result.notes)
         if "proto_signature" in result.extra:
             processed_crash["proto_signature"] = result.extra["proto_signature"]
+        if "crashing_thread_id" in result.extra:
+            processed_crash["crashing_thread_id"] = result.extra["crashing_thread_id"]
+        if "crashing_thread_name" in result.extra:
+            processed_crash["crashing_thread_name"] = result.extra[
+                "crashing_thread_name"
+            ]
         processed_crash["signature_debug"] = "\n".join(result.debug_log)
 
 

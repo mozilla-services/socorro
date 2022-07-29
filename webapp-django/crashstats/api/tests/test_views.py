@@ -851,7 +851,8 @@ class TestCrashSignature:
                                     "module_offset": "0x39a55",
                                     "offset": "0x7fc641044a55",
                                 },
-                            ]
+                            ],
+                            "thread_name": "SomeThread",
                         }
                     ],
                 }
@@ -864,6 +865,8 @@ class TestCrashSignature:
             "results": [
                 {
                     "extra": {
+                        "crashing_thread_id": 0,
+                        "crashing_thread_name": "SomeThread",
                         "normalized_frames": ["SomeFunc", "SomeOtherFunc"],
                         "proto_signature": "SomeFunc | SomeOtherFunc",
                     },

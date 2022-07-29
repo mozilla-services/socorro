@@ -525,9 +525,12 @@ class SignatureGenerationRule(Rule):
             # If we have a thread to look at, pull the frames for that.
             # Otherwise we don't have frames to use.
             if crashing_thread is not None:
+                crashing_thread_mapping = glom(
+                    crash_data, "threads.%d" % crashing_thread, default={}
+                )
+                crashing_thread_name = crashing_thread_mapping.get("thread_name", None)
                 signature_list = self._create_frame_list(
-                    glom(crash_data, "threads.%d" % crashing_thread, default={}),
-                    crash_data.get("os") == "Windows NT",
+                    crashing_thread_mapping, crash_data.get("os") == "Windows NT"
                 )
 
             else:
@@ -554,6 +557,10 @@ class SignatureGenerationRule(Rule):
             result.debug(self.name, note)
         if signature:
             result.set_signature(self.name, signature)
+        if crashing_thread is not None:
+            result.extra["crashing_thread_id"] = crashing_thread
+        if crashing_thread_name:
+            result.extra["crashing_thread_name"] = crashing_thread_name
 
         return True
 
