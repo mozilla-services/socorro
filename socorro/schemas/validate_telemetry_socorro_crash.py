@@ -119,6 +119,7 @@ def validate_and_test(ctx, crashes_per_url, url):
 
     all_schema_types = {}
 
+    # FIXME(willkg): This doesn't traverse refs
     def log_all_schema_keys(schema, prefix=""):
         for key, value in schema["properties"].items():
             if isinstance(value, dict) and "properties" in value:

@@ -1755,9 +1755,8 @@ FIELDS = {
     "ipc_shutdown_state": {
         "data_validation_type": "enum",
         "description": (
-            "Shows that a shutdown hang was after we have received RecvShutdown but never "
-            "each SendFinishShutdown or the hang happened before or after RecvShutdown. "
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1301339"
+            "IPC shutdown state, can be set to either 'RecvShutdown' or "
+            "'SendFinishShutdown' by a content process while it's shutting down."
         ),
         "form_field_choices": [],
         "has_full_version": False,
@@ -2990,7 +2989,7 @@ FIELDS = {
     },
     "vendor": {
         "data_validation_type": "enum",
-        "description": "",
+        "description": "Application vendor (e.g. Mozilla).",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "vendor",

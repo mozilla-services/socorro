@@ -276,7 +276,12 @@ class ProcessorPipeline(RequiredConfig):
                 scope.set_extra("rule", rule.name)
 
                 try:
-                    rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
+                    rule.act(
+                        raw_crash=raw_crash,
+                        dumps=dumps,
+                        processed_crash=processed_crash,
+                        processor_meta_data=processor_meta_data,
+                    )
 
                 except Exception as exc:
                     sentry_sdk.capture_exception(exc)

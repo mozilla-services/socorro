@@ -32,7 +32,7 @@ BASIC_TYPES = {
     type(None): "null",
     bool: "boolean",
     str: "string",
-    int: ("integer", "number"),
+    int: "integer",
     float: "number",
 }
 BASIC_TYPES_KEYS = tuple(BASIC_TYPES.keys())
@@ -54,7 +54,7 @@ def lookup_definition(schema, ref):
     """
     ref_parts = ref.split("/")
     if not ref_parts or ref_parts[0] != "#":
-        raise InvalidSchemaError("invalid: $ref must be in this document {ref!r}")
+        raise InvalidSchemaError(f"invalid: $ref must be in this document {ref!r}")
 
     # Ignore first item which should be "#"
     for part in ref_parts[1:]:
@@ -78,7 +78,7 @@ def expand_references(schema, schema_item):
     return schema_item
 
 
-def everything_predicate(schema_item):
+def everything_predicate(path, general_path, schema_item):
     """include_predicate that includes everything in the document"""
     return True
 
@@ -121,6 +121,11 @@ def compile_pattern_re(pattern):
 
 class Reducer:
     def __init__(self, schema, include_predicate=everything_predicate):
+        """
+        :arg schema: the schema document to reduce with
+        :arg include_predicate: the predicate function that determines whether to
+            include the traversed item or not
+        """
         self.schema = schema
         self.include_predicate = include_predicate
 
@@ -147,7 +152,7 @@ class Reducer:
 
         return None
 
-    def traverse(self, schema_part, document_part, path=""):
+    def traverse(self, schema_part, document_part, path="", general_path=""):
         """Following the schema, traverses the document
 
         This validates types and some type-related restrictions while reducing the
@@ -180,10 +185,9 @@ class Reducer:
         # If the document_part is a basic type (string, number, etc) and it matches
         # what's in the schema, then return it so it's included in the reduced document
         if isinstance(document_part, BASIC_TYPES_KEYS):
-            valid_schema_part_types = listify(BASIC_TYPES[type(document_part)])
-            for type_ in valid_schema_part_types:
-                if type_ in schema_part_types:
-                    return document_part
+            valid_schema_part_type = BASIC_TYPES[type(document_part)]
+            if valid_schema_part_type in schema_part_types:
+                return document_part
 
             raise InvalidDocumentError(
                 f"invalid: {path}: type not in {schema_part_types}"
@@ -212,6 +216,7 @@ class Reducer:
                         schema_part=schema_items[i],
                         document_part=document_part[i],
                         path=f"{path}.{i}",
+                        general_path=f"{general_path}.[]",
                     )
                     new_doc.append(new_part)
                 return new_doc
@@ -226,6 +231,7 @@ class Reducer:
                     schema_part=schema_item,
                     document_part=document_part[i],
                     path=f"{path}.{i}",
+                    general_path=f"{general_path}.[]",
                 )
                 new_doc.append(new_part)
             return new_doc
@@ -245,25 +251,34 @@ class Reducer:
                 if schema_property is None:
                     continue
 
+                path_name = f"{path}.{name}"
+                general_path_name = f"{general_path}.{name}"
+
                 # Expand references in the schema property
                 schema_property = expand_references(self.schema, schema_property)
 
                 # If the predicate doesn't pass, we don't add this part of the document
                 # to the new document
-                if not self.include_predicate(schema_property):
+                if not self.include_predicate(
+                    path=path_name,
+                    general_path=general_path_name,
+                    schema_item=schema_property,
+                ):
                     continue
 
                 new_doc[name] = self.traverse(
                     schema_part=schema_property,
                     document_part=document_part[name],
-                    path=f"{path}.{name}",
+                    path=path_name,
+                    general_path=general_path_name,
                 )
 
             # Verify all required properties exist in the document
             for required_property in schema_part.get("required", []):
                 if required_property not in new_doc:
+                    required_property_path = ".".join([path, required_property])
                     raise InvalidDocumentError(
-                        f"invalid: {path}.{required_property}: required, but missing"
+                        f"invalid: {required_property_path}: required, but missing"
                     )
 
             return new_doc

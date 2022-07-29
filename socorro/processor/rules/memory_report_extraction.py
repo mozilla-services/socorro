@@ -60,11 +60,11 @@ class MemoryReportExtraction(Rule):
         pid_found = False
         pid_str = f"(pid {pid})"
 
-        # These ones are in the memory report.
-        # Note: theses keys use dashes instead of underscores because that's
-        # how they appear in the paths of the memory report. For the sake of
-        # consistent naming in our documents, we will rewrite them before
-        # adding them to the processed_crash.
+        # These measures are in the memory report.
+        #
+        # NOTE(willkg): we use dashes here for convenience and then convert dashes to
+        # underscores before adding them to the processed crash to match the processed
+        # crash key scheme.
         metrics_measured = {
             "gfx-textures": 0,
             "ghost-windows": 0,
@@ -74,11 +74,15 @@ class MemoryReportExtraction(Rule):
             "resident": 0,
             "resident-unique": 0,
             "system-heap-allocated": 0,
-            "vsize-max-contiguous": 0,
             "vsize": 0,
+            "vsize-max-contiguous": 0,
         }
 
-        # These ones are derived from the memory report.
+        # These keys are derived from the memory report.
+        #
+        # NOTE(willkg): we use dashes here for convenience and then convert dashes to
+        # underscores before adding them to the processed crash to match the processed
+        # crash key scheme.
         metrics_derived = {
             "explicit": 0,
             "heap-overhead": 0,

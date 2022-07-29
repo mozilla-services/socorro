@@ -1,0 +1,1266 @@
+---
+$id: https://mozilla.org/schemas/socorro/processed_crash/1
+$schema: http://json-schema.org/draft-04/schema#
+definitions:
+  breadcrumbs:
+    description: >
+      Information about events and log messages that happened prior to a crash.
+    items:
+      description: A single breadcrumb.
+      properties:
+        category:
+          description: >
+            Category of the crash breadcrumb.
+          type: string
+        data:
+          description: >
+            Data related to the crash breadcrumb.
+          patternProperties:
+            ^.+$:
+              description: Data item related to the crash breadcrumb.
+              type: string
+          type: object
+        level:
+          description:
+            Level of the crash breadcrumb.
+          examples: ["Debug", "Info", "Warning", "Error", "Critical"]
+          type: string
+        message:
+          description:
+            Message of the crash breadcrumb.
+          type: string
+        timestamp:
+          description: >
+            Date of of the crash breadcrumb.
+          type: string
+        type:
+          description: >
+            Type of the crash breadcrumb.
+          examples: ["Default", "Http", "Navigation", "User"]
+          type: string
+      type: object
+    type: array
+    # END: breadcrumbs
+
+  java_exception:
+    description: Structured information of the Java exception.
+    properties:
+      exception:
+        properties:
+          values:
+            # FIXME(willkg): in what order is this array? top to bottom? bottom
+            # to top?
+            description: Array of cascading exceptions.
+            items:
+              properties:
+                stacktrace:
+                  description: A single stacktrace.
+                  properties:
+                    frames:
+                      description: Array of frames in the stack.
+                      items:
+                        properties:
+                          filename:
+                            description: The file name.
+                            type: ["string", "null"]
+                          function:
+                            description: The name of the function.
+                            type: ["string", "null"]
+                          in_app:
+                            description: >
+                              Whether this function is in the product's app
+                              code.
+                            type: ["boolean", "null"]
+                          lineno:
+                            description: >
+                              The line number in the file where the crash
+                              happened.
+                            type: ["integer", "null"]
+                          module:
+                            description: The class.
+                            type: ["string", "null"]
+                        type: object
+                      type: array
+                    module:
+                      description: Module for the exception class.
+                      type: string
+                    type:
+                      description: The exception class.
+                      type: string
+                    value:
+                      description: The exception value. This can be sensitive.
+                      type: string
+                  type: object
+              type: object
+            type: array
+        type: object
+    type: object
+    # END: java_exception
+
+  json_dump:
+    description: >
+      The output of rust-minidump stackwalker.
+    properties:
+      crash_info:
+        # FIXME(willkg): add unloaded_modules
+        description: >
+          Top-level information about what caused the crash.
+        properties:
+          address:
+            description: Address of the crash in hex.
+            type: ["string", "null"]
+          assertion:
+            description: >
+              A message describing a tripped assertion (which presumably caused
+              the crash).
+            type: ["string", "null"]
+          crashing_thread:
+            description: >
+              The thread id of the thread that caused the crash or requested
+              the minidump.
+            type: ["integer", "null"]
+          type:
+            description: Platform-specific error type that caused the crash.
+            type: ["string", "null"]
+        type: ["object", "null"]
+      crashing_thread:
+        description: >
+          The thread that crashed. This is copied from "threads" with some
+          additional details.
+        properties:
+          frame_count:
+            description: How many stack frames therea re.
+            type: ["integer", "null"]
+          frames:
+            description: >
+              Stack frames of the thread from top (the code that was currently
+              executing) to bottom (start of the thread's execution).
+            items:
+              $ref: "#/definitions/json_dump_frame"
+            type: ["array", "null"]
+          last_error_value:
+            description: The windows GetLastError() value for this thread.
+            type: ["string", "null"]
+          thread_name:
+            description: The name of the thread.
+            type: ["string", "null"]
+          threads_index:
+            description: Index into the 'threads' array.
+            type: ["integer", "null"]
+        type: ["object", "null"]
+      lsb_release:
+        description: Linnux Standard Base information.
+        properties:
+          codename:
+            description: DISTRIB_CODENAME or VERSION_CODENAME
+            type: ["string", "null"]
+          description:
+            description: DISTRIB_DESCRIPTION or PRETTY_NAME
+            type: ["string", "null"]
+          id:
+            description: DISTRIB_ID or ID
+            type: ["string", "null"]
+          release:
+            description: DISTRIB_RELEASE or VERSION_ID
+            type: ["string", "null"]
+        type: ["object", "null"]
+      mac_crash_info:
+        description: MacOS-specific extended crash_info.
+        properties:
+          num_records:
+            description: The number of entries in 'records'.
+            type: ["integer", "null"]
+          records:
+            description: The mac_crash_info records.
+            items:
+              description: An individual mac_crash_info record.
+              properties:
+                abort_cause:
+                  type: ["string", "null"]
+                backtrace:
+                  type: ["string", "null"]
+                dialog_mode:
+                  type: ["string", "null"]
+                message:
+                  type: ["string", "null"]
+                message2:
+                  type: ["string", "null"]
+                module:
+                  type: ["string", "null"]
+                signature_string:
+                  type: ["string", "null"]
+                thread:
+                  type: ["string", "null"]
+              type: ["object", "null"]
+            type: ["array", "null"]
+        type: ["object", "null"]
+      main_module:
+        description: The index of the 'main' module.
+        type: ["integer", "null"]
+      modules:
+        description: >
+          All the known modules that are currently mapped into the process.
+        items:
+          description: A single module.
+          properties:
+            base_addr:
+              description: >
+                The first address that maps to this module (inclusive).
+              type: ["string", "null"]
+            cert_subject:
+              description: >
+                "If non-null, indicates that this module is known to
+                be signed by the given party. Useful for detecting unofficial
+                DLL injection."
+              type: ["string", "null"]
+            code_id:
+              description: The code id for this module.
+              type: ["string", "null"]
+            corrupt_symbols:
+              description: If the symbol file was too corrupt to use.
+              type: ["boolean", "null"]
+            debug_file:
+              description: >
+                The name of the file containing debuginfo for this module.
+              type: ["string", "null"]
+            debug_id:
+              description: A string uniquely identifying the build.
+              type: ["string", "null"]
+            end_addr:
+              description: >
+                The last address that maps to this module (exclusive).
+              type: ["string", "null"]
+            filename:
+              description: The 'name' of the module.
+              type: ["string", "null"]
+            loaded_symbols:
+              description: >
+                If the stackwalker managed to load a symbol file for this
+                module.
+              type: ["boolean", "null"]
+            missing_symbols:
+              description: >
+                If the stackwalker looked for a symbol file for this module and
+                couldn't find one.
+              type: ["boolean", "null"]
+            symbol_url:
+              description: The URL we downloaded the symbol file from.
+              type: ["string", "null"]
+            version:
+              description: The official version of the module.
+              type: ["string", "null"]
+          type: object
+        type: ["array", "null"]
+      modules_contains_cert_info:
+        description: >
+          UNSTABLE. Whether any modules have code signing information.
+        type: ["boolean", "null"]
+      pid:
+        description: Process ID of the crashing process.
+        type: ["integer", "null"]
+      stackwalk_version:
+        description: Version of the stackwalker that walked this stack.
+        type: ["string", "null"]
+      status:
+        description: >
+          Status of the output of the stackwalker. Currently, this is always
+          'OK'.
+        type: ["string", "null"]
+      system_info:
+        description: >
+          Information about the hardware and operating system the crash
+          occurred on.
+        properties:
+          cpu_arch:
+            description: The flavor of CPU.
+            examples:
+              - x86
+              - amd64
+              - pcc
+              - ppc64
+              - sparc
+              - arm
+              - arm64
+              - unknown
+            type: ["string", "null"]
+          cpu_count:
+            description: The number of CPUs / cores.
+            type: ["integer", "null"]
+          cpu_info:
+            description: A string describing the CPU's vendor and model.
+            type: ["string", "null"]
+          cpu_microcode_version:
+            description: >
+              The version number of the microcode running on the CPU.
+            type: ["integer", "null"]
+          os:
+            description: The flavor of operating system.
+            examples:
+              - Windows NT
+              - Mac OS X
+              - iOS
+              - Linux
+              - Solaris
+              - Android
+              - PS3
+              - NaCL
+              - <hexstring>
+            type: ["string", "null"]
+          os_ver:
+            description: >
+              Version of the operating system. Generally in the form of
+              '<major>.<minor>.<build_number>'.
+            type: ["string", "null"]
+        type: ["object", "null"]
+      thread_count:
+        description: How many threads there are.
+        type: ["integer", "null"]
+      threads:
+        items:
+          description: Information on a thread.
+          properties:
+            frame_count:
+              description: How many stack frames therea re.
+              type: ["integer", "null"]
+            frames:
+              description: Stack frames of the thread from top (the code that
+                was currently executing) to bottom (start of the thread's
+                execution).
+              items:
+                $ref: "#/definitions/json_dump_frame"
+              type: ["array", "null"]
+            last_error_value:
+              description: The windows GetLastError() value for this thread.
+              type: ["string", "null"]
+            thread_name:
+              description: The name of the thread.
+              type: ["string", "null"]
+          type: object
+        type: ["array", "null"]
+    type: ["object", "null"]
+    # END: json_dump
+
+  json_dump_frame:
+    # FIXME(willkg): add unloaded_modules
+    description: Information for a single frame.
+    properties:
+      file:
+        description: The name of the source file the function is defined in.
+        type: ["string", "null"]
+      frame:
+        description: The index of the frame in this array.
+        type: ["integer", "null"]
+      function:
+        description: Name of the function being executed.
+        type: ["string", "null"]
+      function_offset:
+        description: >
+          Address offset, but translated to be relative to the function's first
+          instruction in the library/binary.
+        type: ["string", "null"]
+      line:
+        description: The line in the source file that is roughly executing.
+        type: ["integer", "null"]
+      missing_symbols:
+        description: Whether we had symbols for this frame.
+        type: ["boolean", "null"]
+      module:
+        description: >
+          The name of the module (library/binary) the offset maps to.
+        type: ["string", "null"]
+      module_offset:
+        description: >
+          Memory address offset relative to the module's start address.
+        type: ["string", "null"]
+      offset:
+        description: The address (instruction) this frame is executing.
+        type: ["string", "null"]
+      registers:
+        additionalProperties: false
+        description: The values the general purpose registers contained.
+        patternProperties:
+          ^.+$:
+            description: Register contents as a hexstring.
+            type: ["string", "null"]
+        type: ["object", "null"]
+      trust:
+        description: The technique used to recover this stack frame.
+        examples:
+          - context
+          - cfi
+          - frame_pointer
+          - scan
+        type: ["string", "null"]
+    type: ["object", "null"]
+    # END: json_dump_frames
+
+  memory_measures:
+    description: The memory report contents.
+    properties:
+      explicit:
+        description: >
+          Covers explicit memory allocations by the application.
+        type: integer
+      gfx_textures:
+        description: >
+          Memory used for storing GL textures.
+        type: integer
+      ghost_windows:
+        description: >
+          The number of ghost windows present (the number of nodes underneath
+          explicit/window-objects/top(none)/ghost, modulo race conditions). A
+          ghost window is not shown in any tab, is not in a browsing context
+          group with any non-detached windows, and has met these criteria for
+          at least memory.ghost_window_timeout_seconds, or has survived a round
+          of about:memory's minimize memory usage button. Ghost windows can
+          happen legitimately, but they are often indicative of leaks in the
+          browser or add-ons.
+        type: integer
+      heap_allocated:
+        description: >
+          Memory mapped by the heap allocator that is currently allocated to
+          the application. This may exceed the amount of memory requested by
+          the application because the allocator regularly rounds up request
+          sizes.
+        type: integer
+      heap_overhead:
+        description: >
+          The heap-overhead measurement from the memory report.
+        type: integer
+      heap_unclassified:
+        description: >
+          The heap-unclassified measurement from the memory report.
+        type: integer
+      host_object_urls:
+        description: >
+          The host-object-urls measurement from the memory report.
+        type: integer
+      images:
+        description: >
+          The images measurement from the memory report.
+        type: integer
+      js_main_runtime:
+        description: >
+          The js-main-runtime measurement from the memory report.
+        type: integer
+      private:
+        description: >
+          The private measurement from the memory report.
+        type: integer
+      resident:
+        description: >
+          Memory mapped by the process that is present in physical memory, also
+          known as the resident set size (RSS). This is the best single figure
+          to use when considering the memory resources used by the process, but
+          it depends both on other processes being run and details of the
+          operating system kernel and so is best used for comparing the memory
+          usage of a single process at different points in time.
+        type: integer
+      resident_unique:
+        description: >
+          Memory mapped by the process that is present in physical memory and
+          not shared with any other processes. This is also known as the
+          process' unique set size (USS). This is the amount of RAM we'd expect
+          to be freed if we closed this process.
+        type: integer
+      system_heap_allocated:
+        description: >
+          Memory used by the system allocator that is currently allocated to
+          the application. This is distinct from the jemalloc heap that Firefox
+          uses for most or all of its heap allocations. Ideally this number is
+          zero, but on some platforms we cannot force every heap allocation
+          through jemalloc.
+        type: integer
+      top_none_detached:
+        description: >
+          The top(none)/detached measurement from the memory report.
+        type: integer
+      vsize:
+        description: >
+          Memory mapped by the process, including code and data segments, the
+          heap, thread stacks, memory explicitly mapped by the process via mmap
+          and similar operations, and memory shared with other processes. This
+          is the vsize figure as reported by 'top' and 'ps'. This figure is of
+          limited use on Mac OS X where processes share huge amounts of memory
+          with one another. But even on other operating systems 'resident' is a
+          much better measure of the memory resources used by the process.
+        type: integer
+      vsize_max_contiguous:
+        description: >
+          The vsize-max-contiguous measurement from the memory report. See
+          about:memory for a fuller description.
+        type: integer
+    type: ["object", "null"]
+    # END: memory_measures
+
+  memory_report:
+    description: >
+      Contents of the memory_report file.
+    properties:
+      hasMozMallocUsableSize:
+        description: ''
+        type: boolean
+      reports:
+        description: ''
+        items:
+          properties:
+            amount:
+              description: ''
+              type: integer
+            description:
+              description: ''
+              type: string
+            kind:
+              description: ''
+              type: integer
+            path:
+              description: ''
+              type: string
+            process:
+              description: ''
+              type: string
+            units:
+              description: ''
+              type: integer
+          type: object
+        type: array
+      version:
+        description: ''
+        type: integer
+    type: object
+    # END: memory_report
+
+description: Schema for the output of the Socorro crash ingestion pipeline.
+properties:
+  ReleaseChannel:
+    # FIXME(willkg): DEPRECATED. This has been here since 2014 and we should
+    # remove it.
+    description: DEPRECATED. Use release_channel.
+    type: string
+  adapter_device_id:
+    description: The graphics adapter device identifier.
+    type: string
+  adapter_driver_version:
+    description: The graphics adapter driver version.
+    type: string
+  adapter_subsys_id:
+    description: The graphics adapter subsystem identifier.
+    type: string
+  adapter_vendor_id:
+    description: >
+      The graphics adapter vendor. Sometimes a name, but often a hexidecimal
+      identifier.
+    type: string
+  abort_message:
+    description: >
+      Message passed to NS_DebugBreak().
+    type: string
+  accessibility:
+    description: >
+      Set to 'Active' by the accessibility service when it is active.
+    type: boolean
+  accessibility_client:
+    description: >
+      Out-of-process accessibility client program name and version information.
+    type: string
+  accessibility_in_proc_client:
+    description: >
+      In-process accessibility client detection information.
+    type: string
+  additional_minidumps:
+    description: >
+      List of additional minidump files attached to crash report other than
+      'upload_file_minidump'.
+    items:
+      type: string
+    type: array
+  addons:
+    description: >
+      A list of the addons currently enabled at the time of the crash. This
+      takes the form of a list of 'addonid:version'. This value could be empty
+      if the crash happens during startup before the addon manager is enabled
+      and on products/platforms for which we do not support addons.
+    items:
+      type: string
+    type: array
+  addons_checked:
+    description: >
+      Set to True if add-on compatibility checking is enabled. False or null
+      otherwise.
+    type: ["boolean", "null"]
+  address:
+    description: >
+      The address where the crashing thread crashed. This value is only
+      meaningful for crashes involving bad memory addresses.
+    type: ["string", "null"]
+  android_board:
+    description: The board used by the Android device.
+    type: string
+  android_brand:
+    description: The Android device brand.
+    type: string
+  android_cpu_abi:
+    description: The Android primary CPU ABI being used.
+    type: string
+  android_cpu_abi2:
+    description: The Android secondary CPU ABI being used.
+    type: string
+  android_device:
+    description: The Android device name.
+    type: string
+  android_display:
+    description: The Android display.
+    type: string
+  android_fingerprint:
+    description: ''
+    type: string
+  android_hardware:
+    description: The Android device hardware.
+    type: string
+  android_manufacturer:
+    description: The Android device manufacturer.
+    type: string
+  android_model:
+    description: The Android device model name.
+    type: string
+  android_version:
+    description: The Android version.
+    type: string
+  app_init_dlls:
+    description: DLLs injected through the AppInit_DLLs registry key.
+    type: string
+  app_notes:
+    description: >
+      Notes from the application that crashed. Mostly contains graphics-related
+      annotations.
+    type: string
+  application_build_id:
+    description: >
+      Application build id when the build_id field contains the GeckoView
+      library build id.
+    type: string
+  async_shutdown_timeout:
+    description: >
+      This annotation is present if a shutdown blocker was not released in time
+      and the browser was crashed instead of waiting for shutdown to finish.
+      The condition that caused the hang is contained in the annotation.
+    type: string
+  available_page_file:
+    description: >
+      The maximum amount of memory the current process can commit. This value
+      is equal to or smaller than the system-wide available commit value.
+    type: integer
+  available_physical_memory:
+    description: >
+      The amount of physical memory currently avaialble. This is the amount of
+      physical memory that can be immediately reused without having to write
+      its contents to disk first.
+    type: integer
+  available_virtual_memory:
+    description: >
+      The amount of unreserved and uncommitted (in other words, available)
+      memory in the process' address space. Note that this memory may be
+      fragmented into many separate segments, so an allocation attempt may fail
+      even when this value is substantially greater than zero.
+    type: integer
+  bios_manufacturer:
+    description: The BIOS manufacturer.
+    type: string
+  breadcrumbs:
+    description: >
+      Information about events and log messages that happened prior to a crash.
+    $ref: "#/definitions/breadcrumbs"
+  build:
+    description: >
+      The unique build identifier of this version which is typically a
+      timestamp of the form YYYYMMDDHHMMSS.
+    type: string
+  client_crash_date:
+    description: ''
+    type: string
+  collector_notes:
+    description: >
+      Notes from when the crash report was collected. If the collector redacted
+      any fields, it records as such here.
+    items:
+      type: string
+    type: array
+  completed_datetime:
+    description: >
+      Datestamp indicating the end of processing for the most recent processing
+      for this crash report. Additional processing will overwrite this value.
+    type: string
+  co_marshal_interface_failure:
+    description: >
+      Annotation describing the error returned by trying to marshal an object
+      via CoMarshalInterface during the creation of an IPC proxy stream.
+    type: string
+  co_unmarshal_interface_result:
+    description: >
+      Contains the hexadecimal value of the return code from Windows
+      CoMarshalInterfaceFailure API when invoked by IPDL serialization and
+      deserialization code.
+    type: string
+  contains_memory_report:
+    description: >
+      Has content for processed_crash.memory_report or not.
+    type: boolean
+  content_sandbox_capabilities:
+    description: >
+      List of capabilities of the content process sandbox.
+    type: integer
+  content_sandbox_capable:
+    description: >
+      Set to 1 if the client is capable of content sandboxing.
+    type: boolean
+  content_sandbox_enabled:
+    description: >
+      Set to 1 when content process sandboxing is enabled.
+    type: boolean
+  content_sandbox_level:
+    description: >
+      Content sandbox level.
+    type: integer
+  cpu_arch:
+    description:
+      The build architecture. Usually one of 'x86', 'amd64' (also known as
+      x86-64), 'arm', or 'arm64'.
+    examples: ["x86", "amd64", "arm", "arm64"]
+    type: string
+  cpu_count:
+    description: >
+      Number of processor units in the CPU.
+    type: integer
+  cpu_info:
+    description: >
+      Detailed processor information. Usually contains information such as the
+      family, model, and stepping number.
+    type: ["string", "null"]
+  cpu_microcode_version:
+    description: Microcode version of the CPU.
+    type: string
+  crash_id:
+    description: Unique identifier of this crash report.
+    type: string
+  crash_report_keys:
+    description: >
+      List of crash annotations and files in the submitted crash report.
+    items:
+      type: string
+    type: array
+  crash_time:
+    description: |
+      Crash time in seconds since the Epoch.
+
+      Set to the submitted_timestamp if CrashTime annotation is missing.
+    type: integer
+  crashing_thread:
+    description: >
+      Index of the crashing thread.
+    type: ["integer", "null"]
+  date_processed:
+    description: |
+      Date when the crash report was submitted to Socorro.
+
+      This is the submitted_timestamp from the collector.
+    type: string
+  distribution_id:
+    description: |
+      Product application's distribution ID.
+
+      This is either the DistributionID annotation or the
+      'TelemetryEnvironment.partner.distributionId' value. If there isn't a
+      value in either place, this defaults to 'mozilla'.
+    type: string
+  dumper_error:
+    description: >
+      Error message of the minidump writer in case there was an error during
+      dumping.
+    type: string
+  em_check_compatibility:
+    description: >
+      Set to 1 if add-on compatibility checking is enabled.
+    type: boolean
+  exploitability:
+    # FIXME(willkg): DEPRECATED because it's no longer part of the stackwalker
+    # output
+    description: ''
+    type: string
+  flash_version:
+    description: >
+      Version of the Flash Player plugin.
+    type: string
+  gmp_library_path:
+    description: Holds the path to the GMP plugin library.
+    type: string
+  graphics_critical_error:
+    description: Log of graphics-related errors.
+    type: string
+  has_device_touch_screen:
+    description:
+      Set to 1 if the device had a touch-screen, this only applies to Firefox
+      desktop. On mobile devices we assume a touch-screen is always present.
+    type: boolean
+  install_age:
+    description: >
+      Length of time since the current version of the product was installed.
+    type: integer
+  install_time:
+    description: >
+      Epoch time of when the current version of the product was installed.
+      Commonly used as a unique identifier for software installations since it
+      is unlikely that two instances of the product were installed at the very
+      same second.
+    type: integer
+  ipc_channel_error:
+    description: The IPC channel error.
+    type: string
+  ipc_fatal_error_msg:
+    description: >
+      Describes a fatal error that occurred during IPC operation.
+    type: string
+  ipc_fatal_error_protocol:
+    description: >
+      Name of the protocol used by IPC when a fatal error occurred.
+    type: string
+  ipc_message_name:
+    description: The name of the IPC message.
+    type: string
+  ipc_message_size:
+    description: >
+      Size of the IPC message that caused a crash because it was too large.
+    type: integer
+  ipc_shutdown_state:
+    description: >
+      IPC shutdown state, can be set to either 'RecvShutdown' or
+      'SendFinishShutdown' by a content process while it's shutting down.
+    type: string
+  ipc_system_error:
+    # FIXME(willkg): CrashAnnotations.yaml lists this as a string, but the
+    # values are all integers and we've been indexing it as an integer for
+    # years so we'll keep doing that.
+    description: >
+      Description of the last system error that occurred during IPC operation.
+    type: integer
+  is_garbage_collecting:
+    description: >
+      If true then the JavaScript garbage collector was running when the crash
+      occurred.
+    type: boolean
+  java_exception:
+    $ref: "#/definitions/java_exception"
+    description: >
+      Structured Java exception information with potentially sensitive fields
+      redacted.
+  java_exception_raw:
+    # FIXME(willkg): we can probably get rid of this once we use the schema for
+    # reducing the public set
+    $ref: "#/definitions/java_exception"
+    description: >
+      Complete structured Java exception information which may contain
+      sensitive information.
+  java_stack_trace:
+    description: >
+      The unstructured JavaStackTrace crash annotation without the exception
+      value which can be sensitive.
+    type: string
+  java_stack_trace_raw:
+    description: >
+      The unstructured JavaStackTrace crash annotation with exception value
+      which can be sensitive.
+    type: string
+  json_dump:
+    $ref: "#/definitions/json_dump"
+    description: Output of rust-minidump stackwalker.
+  last_crash:
+    description: >
+      Length of time between the previous crash submission and this one. Low
+      values indicate repeated crashes.
+    type: ["integer", "null"]
+  mac_available_memory_sysctl:
+    description: >
+      The value of the available memory sysctl 'kern.memorystatus_level'.
+      Expected to be a percentage integer value.
+    type: integer
+  mac_crash_info:
+    description: >
+      JSON-encoded Mac OS X __crash_info data.
+    type: string
+  mac_memory_pressure:
+    description: >
+      The current memory pressure state as provided by the macOS memory
+      pressure dispatch source. The annotation value is one of 'Normal' for no
+      memory pressure, 'Unset' indicating a memory pressure event has not been
+      received, 'Warning' or 'Critical' mapping to the system memory pressure
+      levels, or 'Unexpected' for an unexpected level. This is a Mac OS
+      X-specific annotation.
+    type: string
+  mac_memory_pressure_critical_time:
+    description: >
+      The time when the memory pressure state last transitioned to 'Critical'
+      expressed as seconds since the Epoch.
+    type: string
+  mac_memory_pressure_normal_time:
+    description: >
+      The time when the memory pressure state last transitioned to 'Normal'
+      expressed as seconds since the Epoch.
+    type: string
+  mac_memory_pressure_sysctl:
+    description: >
+      The value of the memory pressure sysctl
+      'kern.memorystatus_vm_pressure_level'. Indicates which memory pressure
+      level the system is in at the time of the crash. The expected values are
+      one of 4 (Critical), 2 (Warning), or 0 (Normal).
+    type: integer
+  mac_memory_pressure_warning_time:
+    description: >
+      The time when the memory pressure state last transitioned to 'Warning'
+      expressed as seconds since the Epoch.
+    type: string
+  major_version:
+    description: >
+      The major part of the version string as an integer. If there is no
+      major_version, this is 0.
+    type: integer
+  mdsw_return_code:
+    description: >
+      Exit code of the stackwalker process when processing
+      'upload_file_minidump'. Non-0 indicates there was an error.
+    type: integer
+  mdsw_status_string:
+    description: >
+      Status of the output of the stackwalker when processing
+      'upload_file_minidump'. Currently, this is always 'OK'.
+    type: string
+  mdsw_stderr:
+    description: >
+      stderr output from the stackwalker when processing 'upload_file_minidump'.
+    type: string
+  memory_error_correction:
+    description: >
+      Windows-only. Type of error correction used by system memory. See
+      documentation for MemoryErrorCorrection property of
+      Win32_PhysicalMemoryArray WMI class.
+    examples:
+      - Reserved
+      - Other
+      - Unknown
+      - None
+      - Parity
+      - Single-bit ECC
+      - Multi-bit ECC
+      - CRC
+      - Unexpected value
+    type: string
+  memory_measures:
+    description: ''
+    $ref: "#/definitions/memory_measures"
+  memory_report:
+    description: ''
+    $ref: "#/definitions/memory_report"
+  memory_report_error:
+    description: >
+      Error message from processing the memory report if there was a problem.
+    type: string
+  minidump_sha256_hash:
+    description: >
+      SHA256 hash generated by the collector of the 'upload_file_minidump' file
+      if there was one.
+    type: ["string", "null"]
+  modules_in_stack:
+    description: >
+      Set of 'module/debugid' strings delimited by ';' of modules that are in
+      the stack of the crashing thread.
+    type: string
+  moz_crash_reason:
+    description: |
+      For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
+      this is the accompanying description.
+
+      This is the redacted value from the crash report annotation.
+    type: string
+  moz_crash_reason_raw:
+    description: |
+      For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
+      this is the accompanying description.
+
+      This is the raw value from the crash report annotation which can contain
+      sensitive data.
+    type: string
+  oom_allocation_size:
+    description: >
+      A measure or estimate of the allocation request size that triggered an
+      out-of-memory crash. Note that allocators usually work with large (for
+      example, 1 MiB) chunks of memory and a small request may have triggered a
+      large chunk request in which case the latter actually caused the
+      out-of-memory crash.
+    type: integer
+  os_name:
+    description: >
+      The basic name of the operating system. Can be 'Windows NT', 'Mac OS X',
+      or 'Linux'. Use platform_pretty_version for a more precise operating
+      system name including the version.
+    examples: ["Windows NT", "Mac OS X", "Linux"]
+    type: string
+  os_pretty_version:
+    description: >
+      A better platform name including version for Windows and Mac OS X.
+    type: string
+  os_version:
+    description: Version of the operating system.
+    type: string
+  phc_alloc_stack:
+    description: >
+      The allocation's allocation stack trace, if the crash involved a bad
+      access of a special PHC allocation. Encoded as a comma-separated list of
+      decimal addresses.
+    type: string
+  phc_base_address:
+    description: >
+      The allocation's base address, if the crash involved a bad access of a
+      special PHC allocation. Encoded as a decimal address.
+    type: string
+  phc_free_stack:
+    description: >
+      The allocation's free stack trace, if the crash involved a bad access
+      of a special PHC allocation. Encoded as a comma-separated list of decimal
+      addresses.
+    type: string
+  phc_kind:
+    description: >
+      The allocation kind, if the crash involved a bad access of a special PHC
+      allocation.
+    type: string
+  phc_usable_size:
+    description: >
+      The allocation's usable size, if the crash involved a bad access of a
+      special PHC allocation.
+    type: integer
+  plugin_filename:
+    description: >
+      When a plugin process crashes, this is the name of the file of the plugin
+      loaded into that process.
+    type: string
+  plugin_name:
+    description: >
+      When a plugin process crashes, this is the name of the plugin loaded into
+      that process.
+    type: string
+  plugin_version:
+    description: >
+      When a plugin process crashes, this is the version of the plugin loaded
+      into that process.
+    type: string
+  process_type:
+    description: >
+      Type of the process that crashed. This will be 'parent' if the crash
+      report has no ProcessType annotation.
+    examples: ["any", "parent", "plugin", "content", "gpu"]
+    type: string
+  processor_notes:
+    description: |
+      Notes from all processing this crash report.
+
+      Reprocessing crash reports will append processing notes to the previous
+      rounds.
+    type: string
+  product:
+    description: Name of the product.
+    type: string
+  productid:
+    description: Identifier of the product.
+    type: string
+  proto_signature:
+    description: >
+      Generated by signature generation in the processor, this is a '|'
+      delimited string of the normalized symbols of the frames of the crashing
+      thread.
+    type: string
+  reason:
+    description: >
+      The crash exception kind for the crashing thread crash. Different
+      operating systems have different exception kinds. Example values
+      'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'.
+    type: string
+  release_channel:
+    description: >
+      The update channel that the product is on. Typically 'nightly', 'aurora',
+      'beta', 'release', or 'esr'. This may also be other values like
+      'release-cck-partner'.
+    type: string
+  remote_type:
+    description: >
+      This is 'extension' if a WebExtension, 'web', or missing otherwise. This
+      is only set for content crashes.
+    type: string
+  safe_mode:
+    description:
+      Whether the browser was running in Safe mode.
+    type: boolean
+  shutdown_progress:
+    description: |
+      Shutdown step at which the browser crashed, can be set to
+      'quit-application', 'profile-change-teardown', 'profile-before-change',
+      'xpcom-will-shutdown' or 'xpcom-shutdown'.
+    type: string
+  signature:
+    description: >
+      Crash signature for this crash report containing tags and the first few
+      interesting frames of the stack.
+    type: string
+  signature_debug:
+    description: >
+      Generated by signature generation in the processor, this is a log of
+      generating the signature for this crash report. Useful for debugging
+      signature generation algorithm problems.
+    type: string
+  started_datetime:
+    description: >
+      Datestamp indicating the start of processing for the most recent
+      processing for this crash report. Additional processing will overwrite
+      this value.
+    type: string
+  startup_crash:
+    description: >
+      Whether the crash happened before the startup phase was finished or not.
+    type: boolean
+  startup_time:
+    description: >
+      The time when Firefox was launched expressed in seconds since the Epoch.
+    type: integer
+  success:
+    description: >
+      Indicates whether the crash report was successfully processed.
+    type: boolean
+  submitted_from:
+    description: >
+      Indicates how the crash was submitted by the user.
+    examples: ["Auto", "Infobar", "AboutCrashes", "CrashedTab", "Client"]
+    type: string
+  submitted_from_infobar:
+    description: >
+      DEPRECATED. True if submitted_from is 'Infobar' and False otherwise.
+    type: boolean
+  submitted_timestamp:
+    description: >
+      The submitted_timestamp from the collector.
+    type: string
+  system_memory_use_percentage:
+    description:
+      The approximate percentage of physical memory that is in use.
+    type: integer
+  throttleable:
+    description: >
+      Whether Socorro can selectively discard this crash report or not. If set
+      to "0" the crash report will always be processed by Socorro.
+    type: boolean
+  topmost_filenames:
+    # FIXME(willkg): Can we remove this?
+    description: |
+      Path of the file at the top of the stack.
+
+      This sounds like it should be multiple files, but it's a single file.
+    type: ["string", "null"]
+  total_page_file:
+    description: |
+      Maximum amount of memory that can be committed without extending the
+      swap/page file.
+
+      * Under Windows, populated with the contents of the
+        PERFORMANCE_INFORMATION's structure CommitLimit field.
+      * Under Linux, populated with /proc/meminfo MemTotal + SwapTotal. The
+        swap file typically cannot be extended, so that's a hard limit.
+      * Not available on other systems.
+    type: integer
+  total_physical_memory:
+    description: The total amount of physical memory.
+    type: integer
+  total_virtual_memory:
+    description: >
+      The size of the user-mode portion of the virtual address space of the
+      calling process. This value depends on the type of process, the type of
+      processor, and the configuration of the operating system. 32-bit
+      processes usually have values in the 2 to 4 GiB range. 64-bit processes
+      usually have much larger values.
+    type: integer
+  upload_file_minidump_browser:
+    description: A minidump from the browser process.
+    properties:
+      json_dump:
+        $ref: "#/definitions/json_dump"
+        description: >
+          Output of rust-minidump stackwalker on upload_file_minidump_browser
+          minidump.
+      mdsw_return_code:
+        description: >
+          Exit code of the stackwalker process when processing this minidump.
+          Non-0 indicates there was an error.
+        type: integer
+      mdsw_status_string:
+        description: >
+          Status of the output of the stackwalker when processing this
+          minidump. Currently, this is always 'OK'.
+        type: string
+      mdsw_stderr:
+        description: >
+          stderr output from the stackwalker when processing this minidump.
+        type: string
+      success:
+        description: >
+          Whether or not the status field in the stackwalker output was 'OK'.
+        type: boolean
+    type: ["object", "null"]
+  uptime:
+    description: >
+      Length of time the process was running before it crashed. Small values
+      (from 0 to 5 or so) usually indicate startup crashes. Calculated by the
+      processor using the CrashTime and StartupTime annotations.
+    type: integer
+  uptime_ts:
+    description: Uptime in seconds as a float.
+    type: number
+  url:
+    description: >
+      The url the user was visiting when the crash happened.
+    type: ["string", "null"]
+  user_comments:
+    description: >
+      Comments provided by the user at the time of the crash.
+    type: ["string", "null"]
+  useragent_locale:
+    description: The locale of the software installation.
+    type: string
+  utility_process_sandboxing_kind:
+    description: >
+      The SandboxingKind passed for this Utility process instance.
+    type: integer
+  uuid:
+    description: Unique identifier of this crash report.
+    type: string
+  vendor:
+    description: Application vendor (e.g. Mozilla).
+    type: string
+  version:
+    description: >
+      The product version number. For Firefox versions, a value lacking letters
+      indicates a normal release; a value with 'b' indicates a beta release; a
+      value with 'a' indicates aurora release; and a value with 'esr' indicates
+      an Extended Service Release.
+    type: string
+  windows_error_reporting:
+    description: >
+      Set to 1 if this crash was intercepted via the Windows Error Reporting
+      runtime exception module.
+    type: boolean
+  xpcom_spin_event_loop_stack:
+    description: |
+      If Firefox crashes while some code is spinning manually the event loop on
+      the main thread, this will be the stack of nested annotations.
+
+      If the crashing process was killed (e.g. due to an IPC error), this
+      annotation may refer to the parent process that killed it, look out for
+      the prefix ('default' means parent) and see bug 1741131 for details.
+    type: string
+
+title: processed crash schema
+type: object
