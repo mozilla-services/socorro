@@ -188,7 +188,7 @@ saved to several places:
      https://chromium.googlesource.com/breakpad/breakpad/+/master/docs/stack_walking.md
 
    **rust-minidump**
-     https://github.com/luser/rust-minidump
+     https://github.com/rust-minidump/rust-minidump
 
    **Breakpad symbols files format**
      https://chromium.googlesource.com/breakpad/breakpad/+/master/docs/symbol_files.md
