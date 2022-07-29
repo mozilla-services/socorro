@@ -29,7 +29,8 @@ class Test_schema_reduce:
         document = {}
         assert schema_reduce(schema, document) == document
 
-    def test_integer(self):
+    @pytest.mark.parametrize("number", [-10, 10])
+    def test_integer(self, number):
         schema = {
             "$schema": "http://json-schema.org/draft-04/schema#",
             "$target_version": 2,
@@ -40,10 +41,10 @@ class Test_schema_reduce:
         }
         jsonschema.Draft4Validator.check_schema(schema)
 
-        document = {"years": 10}
+        document = {"years": number}
         assert schema_reduce(schema, document) == document
 
-    def test_bad_integer(self):
+    def test_invalid_integer(self):
         schema = {
             "$schema": "http://json-schema.org/draft-04/schema#",
             "$target_version": 2,
@@ -59,7 +60,7 @@ class Test_schema_reduce:
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
-    @pytest.mark.parametrize("number", [-10, 10, 10.5])
+    @pytest.mark.parametrize("number", [-10.5, 10.5])
     def test_number(self, number):
         schema = {
             "$schema": "http://json-schema.org/draft-04/schema#",
@@ -73,6 +74,22 @@ class Test_schema_reduce:
 
         document = {"length": number}
         assert schema_reduce(schema, document) == document
+
+    def test_invalid_number(self):
+        schema = {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$target_version": 2,
+            "type": "object",
+            "properties": {
+                "years": {"type": "number"},
+            },
+        }
+        jsonschema.Draft4Validator.check_schema(schema)
+
+        document = {"years": "10"}
+        msg_pattern = r"invalid: .years: type not in \['number'\]"
+        with pytest.raises(InvalidDocumentError, match=msg_pattern):
+            assert schema_reduce(schema, document) == document
 
     def test_string(self):
         schema = {
@@ -496,7 +513,7 @@ class Test_schema_reduce:
             },
         }
 
-        def only_public(schema_item):
+        def only_public(path, general_path, schema_item):
             return "public" in schema_item.get("socorro_permissions", [])
 
         reduced_document = schema_reduce(

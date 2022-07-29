@@ -235,11 +235,11 @@ class ProductRule(Rule):
         processed_crash["version"] = raw_crash.get("Version", "")
         processed_crash["productid"] = raw_crash.get("ProductID", "")
         processed_crash["release_channel"] = raw_crash.get("ReleaseChannel", "")
-        # redundant, but I want to exactly match old processors.
+        # FIXME(willkg): We should remove this
         processed_crash["ReleaseChannel"] = raw_crash.get("ReleaseChannel", "")
         processed_crash["build"] = raw_crash.get("BuildID", "")
 
-        # NOTE(willkg): ApplicationBuildID is for Fenix which sends the gecko view build
+        # NOTE(willkg): ApplicationBuildID is for Fenix which sends the GeckoView build
         # id in BuildID.
         processed_crash["application_build_id"] = raw_crash.get(
             "ApplicationBuildID", ""
@@ -689,6 +689,8 @@ class PluginUserComment(Rule):
 
 class ExploitablityRule(Rule):
     """Copies exploitability bits in json_dump to processed_crash"""
+
+    # FIXME(willkg): We no longer have this field, so we can nix this
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         try:
