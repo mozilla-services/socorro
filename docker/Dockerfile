@@ -1,5 +1,5 @@
 # =========================================================================
-# Dokcer image with https://github.com/luser/rust-minidump
+# Dokcer image with https://github.com/rust-minidump/rust-minidump
 # =========================================================================
 
 # https://hub.docker.com/_/rust/
@@ -17,7 +17,7 @@ RUN update-ca-certificates && \
 
 USER app
 
-# From: https://github.com/luser/rust-minidump
+# From: https://github.com/rust-minidump/rust-minidump
 ARG MINIDUMPREV=d553a2cb6ddfc002c9d2056582269e083376dd1b
 ARG MINIDUMPREVDATE=2022-05-02
 
