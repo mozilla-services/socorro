@@ -227,6 +227,7 @@ if LOCAL_DEV_ENV:
         "django": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "django.server": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "django.request": {"handlers": ["console"], "level": LOGGING_LEVEL},
+        "fillmore": {"handlers": ["console"], "level": logging.ERROR},
         "py.warnings": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "markus": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "crashstats": {"handlers": ["console"], "level": LOGGING_LEVEL},
@@ -237,6 +238,8 @@ else:
         "django": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
         "django.server": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
         "crashstats": {"handlers": ["mozlog"], "level": LOGGING_LEVEL},
+        "fillmore": {"handlers": ["mozlog"], "level": logging.ERROR},
+        "markus": {"handlers": ["mozlog"], "level": logging.ERROR},
     }
 
 
