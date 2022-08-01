@@ -272,15 +272,18 @@ def setup_logging(config):
         # format at all, but we do want to see markus things and py.warnings.
         # So set the logging up that way.
         logging_config["loggers"] = {
-            "py.warnings": {"handlers": ["console"]},
+            "fillmore": {"handlers": ["mozlog"], "level": logging.ERROR},
             "markus": {"handlers": ["console"], "level": logging.INFO},
             "socorro": {"handlers": ["console"], "level": logging_level},
+            "py.warnings": {"handlers": ["console"]},
         }
 
     else:
         # In a server environment, we want to use mozlog format.
         logging_config["loggers"] = {
-            "socorro": {"handlers": ["mozlog"], "level": logging_level}
+            "fillmore": {"handlers": ["mozlog"], "level": logging.ERROR},
+            "markus": {"handlers": ["console"], "level": logging.ERROR},
+            "socorro": {"handlers": ["mozlog"], "level": logging_level},
         }
 
     logging.config.dictConfig(logging_config)
