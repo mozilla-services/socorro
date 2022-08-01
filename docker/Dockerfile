@@ -3,7 +3,7 @@
 # =========================================================================
 
 # https://hub.docker.com/_/rust/
-FROM rust:1.62.0-buster@sha256:cd0ba0615c910eb249c8bffa18f71ed2ffe77152a2704797ecd64a93cfc79841 as rustminidump
+FROM rust:1.62.1-buster@sha256:61bb8ce452e081658ec9eb7d96becff75e8b49b67b99a74886db14ebfa73f410 as rustminidump
 
 ARG groupid=10001
 ARG userid=10001
