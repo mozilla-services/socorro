@@ -6,6 +6,8 @@
 Utilities for working with JSON schemas and JSON.
 """
 
+import re
+
 
 class InvalidDocumentError(Exception):
     """Raised when the document is invalid"""
@@ -98,10 +100,52 @@ def convert_to(document_part, target_format):
     raise UnknownConvertFormat(f"{target_format!r} is an unknown format")
 
 
+# Cache of pattern -> re object
+PATTERN_CACHE = {}
+
+
+def compile_pattern_re(pattern):
+    """Compile a patternProperties regex pattern
+
+    Note that uses a module-level cache to reduce repeated pattern compiling.
+
+    :arg string pattern: a patternProperties regex pattern
+
+    :returns: re.Pattern
+
+    """
+    if pattern not in PATTERN_CACHE:
+        PATTERN_CACHE[pattern] = re.compile(pattern)
+    return PATTERN_CACHE[pattern]
+
+
 class Reducer:
     def __init__(self, schema, include_predicate=everything_predicate):
         self.schema = schema
         self.include_predicate = include_predicate
+
+        self._pattern_cache = {}
+
+    def get_schema_property(self, schema_part, name):
+        """Returns the matching property or patternProperties value
+
+        :arg dict schema_part: the part of the schema we're looking at now
+        :arg string name: the name we're looking for
+
+        :returns: property schema or None
+
+        """
+        properties = schema_part.get("properties", {})
+        if name in properties:
+            return schema_part["properties"][name]
+
+        pattern_properties = schema_part.get("patternProperties", {})
+        for pattern, property_schema in pattern_properties.items():
+            pattern_re = compile_pattern_re(pattern)
+            if pattern_re.match(name):
+                return property_schema
+
+        return None
 
     def traverse(self, schema_part, document_part, path=""):
         """Following the schema, traverses the document
@@ -124,13 +168,17 @@ class Reducer:
 
         schema_part_types = listify(schema_part.get("type", "string"))
 
-        # FIXME(willkg): implement:
+        # FIXME(willkg): maybe implement:
         #
         # * string: minLength, maxLength, pattern
-        # * integer/number: minimum, maximum, exclusiveMaximum, exclusiveMinimum, multipleOf
+        # * integer/number: minimum, maximum, exclusiveMaximum, exclusiveMinimum,
+        #   multipleOf
         # * array: maxItems, minItems, uniqueItems
         # * object: additionalProperties, minProperties, maxProperties, dependencies,
-        #   patternProperties, regexp
+        #   regexp
+
+        # If the document_part is a basic type (string, number, etc) and it matches
+        # what's in the schema, then return it so it's included in the reduced document
         if isinstance(document_part, BASIC_TYPES_KEYS):
             valid_schema_part_types = listify(BASIC_TYPES[type(document_part)])
             for type_ in valid_schema_part_types:
@@ -188,25 +236,34 @@ class Reducer:
                     f"invalid: {path}: type not in {schema_part_types}"
                 )
 
-            properties = schema_part.get("properties", {})
             new_doc = {}
-            for name, schema_property in properties.items():
-                required_properties = schema_part.get("required", [])
+            for name, document_property in document_part.items():
+                schema_property = self.get_schema_property(schema_part, name)
 
+                # If the item is in the document, but not in the schema, we don't add
+                # this part of the document to the new document
+                if schema_property is None:
+                    continue
+
+                # Expand references in the schema property
+                schema_property = expand_references(self.schema, schema_property)
+
+                # If the predicate doesn't pass, we don't add this part of the document
+                # to the new document
                 if not self.include_predicate(schema_property):
                     continue
 
-                schema_property = expand_references(self.schema, schema_property)
+                new_doc[name] = self.traverse(
+                    schema_part=schema_property,
+                    document_part=document_part[name],
+                    path=f"{path}.{name}",
+                )
 
-                if name in document_part:
-                    new_doc[name] = self.traverse(
-                        schema_part=schema_property,
-                        document_part=document_part[name],
-                        path=f"{path}.{name}",
-                    )
-                elif name in required_properties:
+            # Verify all required properties exist in the document
+            for required_property in schema_part.get("required", []):
+                if required_property not in new_doc:
                     raise InvalidDocumentError(
-                        f"invalid: {path}.{name}: required, but missing"
+                        f"invalid: {path}.{required_property}: required, but missing"
                     )
 
             return new_doc

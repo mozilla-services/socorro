@@ -88,7 +88,7 @@ class Test_schema_reduce:
         document = {"name": "Joe"}
         assert schema_reduce(schema, document) == document
 
-    def test_object(self):
+    def test_object_properties(self):
         schema = {
             "$schema": "http://json-schema.org/draft-04/schema#",
             "$target_version": 2,
@@ -129,6 +129,109 @@ class Test_schema_reduce:
                     "ice_cream": "chocolate",
                 },
             }
+        }
+        assert schema_reduce(schema, document) == expected_document
+
+    def test_object_properties_required(self):
+        schema = {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$target_version": 2,
+            "type": "object",
+            "properties": {
+                "person": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "age": {"type": "number"},
+                    },
+                    "required": ["name", "age"],
+                },
+            },
+        }
+        jsonschema.Draft4Validator.check_schema(schema)
+
+        document = {
+            "person": {
+                "name": "Dennis",
+            },
+        }
+        with pytest.raises(
+            InvalidDocumentError, match=r"invalid: .person.age: required.*"
+        ):
+            schema_reduce(schema, document)
+
+    def test_object_pattern_properties(self):
+        schema = {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$target_version": 2,
+            "type": "object",
+            "properties": {
+                "registers": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^r.*$": {"type": "string"},
+                    },
+                },
+            },
+        }
+        jsonschema.Draft4Validator.check_schema(schema)
+
+        document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+            },
+        }
+        expected_document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+            },
+        }
+        assert schema_reduce(schema, document) == expected_document
+
+    def test_object_properties_and_pattern_properties(self):
+        schema = {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$target_version": 2,
+            "type": "object",
+            "properties": {
+                "registers": {
+                    "type": "object",
+                    "properties": {
+                        "pc": {"type": "string"},
+                    },
+                    "patternProperties": {
+                        "^r.*$": {"type": "string"},
+                    },
+                },
+            },
+        }
+        jsonschema.Draft4Validator.check_schema(schema)
+
+        document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+                "fc": "0x000000b95ebfdaf0",
+            },
+        }
+        expected_document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+            },
         }
         assert schema_reduce(schema, document) == expected_document
 
