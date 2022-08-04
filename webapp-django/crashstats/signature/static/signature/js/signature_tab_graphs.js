@@ -73,12 +73,10 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
   // of counts.
   var termCounts = data.term_counts;
 
-  // Splice out terms with the highest counts (up to the 4th highest) and:
-  // 1) add an empty array for each one to lineDataObject
-  // 2) add each one to the legend array
+  // Splice out terms with the highest counts (up to the 4th highest) and
+  // add an empty array for each one to lineDataObject
   $.each(termCounts.splice(0, 4), function (i, element) {
     lineDataObject[element.term] = [];
-    legend.push(element.term);
   });
 
   // Each object in data.aggregates contains data for one date.
@@ -101,9 +99,11 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
     });
   });
 
-  // Make the data object into an array of arrays for Metrics Graphics.
+  // Make the data object into an array of arrays for Metrics Graphics
+  // and add the associated legend in the same order.
   $.each(lineDataObject, function (key, lineData) {
     lineDataArray.push(lineData);
+    legend.push(key);
   });
 
   // Return the line data, the legend and also any remaining terms after the
