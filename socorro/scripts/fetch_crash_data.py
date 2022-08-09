@@ -60,7 +60,7 @@ def fetch_crash(
     else:
         headers = {}
 
-    session = session_with_retries()
+    session = session_with_retries(default_timeout=10.0)
 
     if fetchraw:
         # Fetch raw crash metadata
