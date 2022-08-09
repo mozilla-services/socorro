@@ -131,23 +131,6 @@ class OSInfoRule(Rule):
         processed_crash["os_version"] = os_ver
 
 
-class CollectorInfoRule(Rule):
-    """Copy keys from the raw crash related to the collector
-
-    Note: These are not validated or normalized. It's assumed the collector is
-    generating this data correctly.
-
-    """
-
-    KEYS = [
-        "collector_notes",
-    ]
-
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        for key in self.KEYS:
-            processed_crash[key] = raw_crash.get(key, None)
-
-
 class CrashReportKeysRule(Rule):
     """Extracts a list of all keys and dump names and saves it as crash_report_keys"""
 
