@@ -675,6 +675,8 @@ properties:
       Notes from the application that crashed. Mostly contains graphics-related
       annotations.
     type: string
+    socorro:
+      sourceAnnotation: Notes
   application_build_id:
     description: >
       Application build id when the build_id field contains the GeckoView
