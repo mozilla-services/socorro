@@ -86,7 +86,6 @@ class CopyFromRawCrashRule(Rule):
         # rather than converting it to a decimal integer because I think it's going to
         # be more helpful.
         ("string", "CoUnmarshalInterfaceResult", "co_unmarshal_interface_result"),
-        ("boolean", "ContainsMemoryReport", "contains_memory_report"),
         ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
         ("boolean", "ContentSandboxCapable", "content_sandbox_capable"),
         ("boolean", "ContentSandboxEnabled", "content_sandbox_enabled"),
