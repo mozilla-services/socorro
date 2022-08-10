@@ -2,13 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import json
 import sys
 
 from configman import Namespace
 from configman.converters import class_converter
 
 from socorro.app.socorro_app import App
-from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING
+from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 class UploadTelemetrySchema(App):
@@ -54,7 +55,8 @@ class UploadTelemetrySchema(App):
     def main(self):
         path = self.config.telemetry.json_filename
         conn = self.config.telemetry.resource_class(self.config.telemetry)
-        conn.save_file(path, TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING)
+        data = json.dumps(TELEMETRY_SOCORRO_CRASH_SCHEMA, indent=2, sort_keys=True)
+        conn.save_file(path=path, data=data.encode("utf-8"))
         self.logger.info("Success: Schema uploaded!")
         return 0
 
