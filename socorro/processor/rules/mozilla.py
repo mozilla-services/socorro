@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from dataclasses import dataclass
 import datetime
 import gzip
 import json
@@ -18,6 +19,7 @@ from socorro.lib import libjava
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
+from socorro.lib.libjson import InvalidSchemaError
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
@@ -31,134 +33,94 @@ from socorro.signature.utils import convert_to_crash_data
 MAXINT = 9223372036854775807
 
 
+@dataclass
+class CopyItem:
+    # Type to validate and normalize the annotation value to
+    type_: str
+
+    # The source annotation in the raw crash
+    annotation: str
+
+    # The destination key in the processed crash
+    key: str
+
+
 class CopyFromRawCrashRule(Rule):
-    """Copy data from raw crash to processed crash with correct name
+    """Copy data from raw crash to processed crash with correct name.
 
     This copies and normalizes crash annotations from the raw crash.
 
     """
 
-    FIELDS = [
-        # type, crash annotation name, processed crash key
-        # windows error reporting flag
-        ("boolean", "WindowsErrorReporting", "windows_error_reporting"),
-        # Mac memory pressure annotations
-        ("int", "MacMemoryPressureSysctl", "mac_memory_pressure_sysctl"),
-        ("int", "MacAvailableMemorySysctl", "mac_available_memory_sysctl"),
-        ("string", "MacMemoryPressure", "mac_memory_pressure"),
-        ("string", "MacMemoryPressureNormalTime", "mac_memory_pressure_normal_time"),
-        ("string", "MacMemoryPressureWarningTime", "mac_memory_pressure_warning_time"),
-        (
-            "string",
-            "MacMemoryPressureCriticalTime",
-            "mac_memory_pressure_critical_time",
-        ),
-        # Other things
-        ("string", "DumperError", "dumper_error"),
-        ("string", "XPCOMSpinEventLoopStack", "xpcom_spin_event_loop_stack"),
-        ("string", "AbortMessage", "abort_message"),
-        ("boolean", "Accessibility", "accessibility"),
-        ("string", "AccessibilityClient", "accessibility_client"),
-        ("string", "AccessibilityInProcClient", "accessibility_in_proc_client"),
-        ("string", "AdapterDeviceID", "adapter_device_id"),
-        ("string", "AdapterDriverVersion", "adapter_driver_version"),
-        ("string", "AdapterSubsysID", "adapter_subsys_id"),
-        ("string", "AdapterVendorID", "adapter_vendor_id"),
-        ("string", "Android_Board", "android_board"),
-        ("string", "Android_Brand", "android_brand"),
-        ("string", "Android_CPU_ABI", "android_cpu_abi"),
-        ("string", "Android_CPU_ABI2", "android_cpu_abi2"),
-        ("string", "Android_Device", "android_device"),
-        ("string", "Android_Display", "android_display"),
-        ("string", "Android_Fingerprint", "android_fingerprint"),
-        ("string", "Android_Hardware", "android_hardware"),
-        ("string", "Android_Manufacturer", "android_manufacturer"),
-        ("string", "Android_Model", "android_model"),
-        ("string", "Android_Version", "android_version"),
-        ("string", "AppInitDLLs", "app_init_dlls"),
-        ("string", "AsyncShutdownTimeout", "async_shutdown_timeout"),
-        ("int", "AvailablePageFile", "available_page_file"),
-        ("int", "AvailablePhysicalMemory", "available_physical_memory"),
-        ("int", "AvailableVirtualMemory", "available_virtual_memory"),
-        ("string", "BIOS_Manufacturer", "bios_manufacturer"),
-        ("string", "CoMarshalInterfaceFailure", "co_marshal_interface_failure"),
-        # NOTE(willkg): This is an integer, but it's in hex. I'm treating it as a string
-        # rather than converting it to a decimal integer because I think it's going to
-        # be more helpful.
-        ("string", "CoUnmarshalInterfaceResult", "co_unmarshal_interface_result"),
-        ("int", "ContentSandboxCapabilities", "content_sandbox_capabilities"),
-        ("boolean", "ContentSandboxCapable", "content_sandbox_capable"),
-        ("boolean", "ContentSandboxEnabled", "content_sandbox_enabled"),
-        ("int", "ContentSandboxLevel", "content_sandbox_level"),
-        ("string", "CPUMicrocodeVersion", "cpu_microcode_version"),
-        ("boolean", "EMCheckCompatibility", "em_check_compatibility"),
-        ("string", "GMPLibraryPath", "gmp_library_path"),
-        ("string", "GraphicsCriticalError", "graphics_critical_error"),
-        ("boolean", "HasDeviceTouchScreen", "has_device_touch_screen"),
-        ("int", "InstallTime", "install_time"),
-        ("string", "ipc_channel_error", "ipc_channel_error"),
-        ("string", "IPCFatalErrorMsg", "ipc_fatal_error_msg"),
-        ("string", "IPCFatalErrorProtocol", "ipc_fatal_error_protocol"),
-        ("string", "IPCMessageName", "ipc_message_name"),
-        ("int", "IPCMessageSize", "ipc_message_size"),
-        ("string", "IPCShutdownState", "ipc_shutdown_state"),
-        ("int", "IPCSystemError", "ipc_system_error"),
-        ("boolean", "IsGarbageCollecting", "is_garbage_collecting"),
-        ("string", "MemoryErrorCorrection", "memory_error_correction"),
-        ("int", "OOMAllocationSize", "oom_allocation_size"),
-        ("string", "RemoteType", "remote_type"),
-        ("boolean", "SafeMode", "safe_mode"),
-        ("string", "ShutdownProgress", "shutdown_progress"),
-        ("boolean", "StartupCrash", "startup_crash"),
-        ("int", "StartupTime", "startup_time"),
-        ("int", "SystemMemoryUsePercentage", "system_memory_use_percentage"),
-        ("boolean", "Throttleable", "throttleable"),
-        ("int", "TotalPageFile", "total_page_file"),
-        ("int", "TotalPhysicalMemory", "total_physical_memory"),
-        ("int", "TotalVirtualMemory", "total_virtual_memory"),
-        ("float", "UptimeTS", "uptime_ts"),
-        ("string", "useragent_locale", "useragent_locale"),
-        ("int", "UtilityProcessSandboxingKind", "utility_process_sandboxing_kind"),
-        ("string", "Vendor", "vendor"),
-    ]
+    def __init__(self, schema):
+        super().__init__()
+        self.schema = schema
+        self.fields = self.build_fields(schema)
+
+    def build_fields(self, schema):
+        fields = []
+
+        if schema.get("type", "string") != "object":
+            raise InvalidSchemaError("schema type is not object")
+
+        properties = schema.get("properties", {})
+        for key, schema_property in properties.items():
+            copy_source = schema_property.get("socorro", {}).get("sourceAnnotation", "")
+            if copy_source:
+                # Use the first non-null type
+                valid_types = schema_property["type"]
+                if isinstance(valid_types, list):
+                    type_ = [t for t in valid_types if t != "null"][0]
+                else:
+                    type_ = valid_types
+
+                fields.append(
+                    CopyItem(
+                        type_=type_,
+                        annotation=copy_source,
+                        key=key,
+                    )
+                )
+        return fields
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        # FIXME(willkg): This is currently hard-coded. We should change it to work from
-        # a schema.
-
-        for value_type, raw_key, processed_key in self.FIELDS:
-            if raw_key not in raw_crash:
+        for copy_item in self.fields:
+            annotation = copy_item.annotation
+            if annotation not in raw_crash:
                 continue
 
-            if value_type == "boolean":
-                value = str(raw_crash[raw_key]).lower()
+            value = raw_crash[annotation]
+
+            if copy_item.type_ == "boolean":
+                value = str(value).lower()
                 if value in ("1", "true"):
-                    processed_crash[processed_key] = True
+                    processed_crash[copy_item.key] = True
                 elif value in ("0", "false"):
-                    processed_crash[processed_key] = False
+                    processed_crash[copy_item.key] = False
                 else:
                     processor_meta_data["processor_notes"].append(
-                        f"{raw_key} has non-boolean value {raw_crash[raw_key]}"
+                        f"{annotation} has non-boolean value {value}"
                     )
 
-            elif value_type == "int":
+            elif copy_item.type_ == "integer":
                 try:
-                    processed_crash[processed_key] = int(raw_crash[raw_key])
+                    processed_crash[copy_item.key] = int(value)
                 except ValueError:
                     processor_meta_data["processor_notes"].append(
-                        f"{raw_key} has a non-int value"
+                        f"{annotation} has a non-int value"
                     )
 
-            elif value_type == "float":
+            elif copy_item.type_ == "number":
+                # NOTE(willkg): in jsonschema, "number" is a float
                 try:
-                    processed_crash[processed_key] = float(raw_crash[raw_key])
+                    processed_crash[copy_item.key] = float(value)
                 except ValueError:
                     processor_meta_data["processor_notes"].append(
-                        f"{raw_key} has a non-float value"
+                        f"{annotation} has a non-float value"
                     )
 
-            elif value_type == "string":
-                processed_crash[processed_key] = raw_crash[raw_key]
+            elif copy_item.type_ == "string":
+                processed_crash[copy_item.key] = value
 
 
 class ConvertModuleSignatureInfoRule(Rule):

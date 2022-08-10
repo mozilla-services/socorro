@@ -47,6 +47,7 @@ from socorro.processor.rules.mozilla import (
     UserDataRule,
     validate_breadcrumbs,
 )
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest.processor import get_basic_processor_meta_data
 
@@ -141,90 +142,107 @@ canonical_processed_crash = {
 }
 
 
+COPY_RULE = CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA)
+
+
 class TestCopyFromRawCrashRule:
     def test_empty(self):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule = CopyFromRawCrashRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {}
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == []
 
     @pytest.mark.parametrize(
-        "field_data",
-        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "boolean"],
+        "copy_item",
+        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "boolean"],
     )
-    def test_boolean(self, field_data):
-        value_type, raw_key, processed_key = field_data
-
-        rule = CopyFromRawCrashRule()
-
-        raw_crash = {raw_key: "1"}
+    def test_boolean(self, copy_item):
+        raw_crash = {copy_item.annotation: "1"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {raw_key: "1"}
-        assert processed_crash == {processed_key: True}
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "1"}
+        assert processed_crash == {copy_item.key: True}
         assert processor_meta["processor_notes"] == []
 
-        raw_crash = {raw_key: "foo"}
+        raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {raw_key: "foo"}
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "foo"}
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == [
-            f"{raw_key} has non-boolean value foo"
+            f"{copy_item.annotation} has non-boolean value foo"
         ]
 
     @pytest.mark.parametrize(
-        "field_data",
-        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "int"],
+        "copy_item",
+        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "integer"],
     )
-    def test_int(self, field_data):
-        value_type, raw_key, processed_key = field_data
-
-        rule = CopyFromRawCrashRule()
-
-        raw_crash = {raw_key: "1"}
+    def test_integer(self, copy_item):
+        raw_crash = {copy_item.annotation: "1"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {raw_key: "1"}
-        assert processed_crash == {processed_key: 1}
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "1"}
+        assert processed_crash == {copy_item.key: 1}
         assert processor_meta["processor_notes"] == []
 
-        raw_crash = {raw_key: "foo"}
+        raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {raw_key: "foo"}
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "foo"}
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [f"{raw_key} has a non-int value"]
+        assert processor_meta["processor_notes"] == [
+            f"{copy_item.annotation} has a non-int value"
+        ]
 
     @pytest.mark.parametrize(
-        "field_data",
-        [field for field in CopyFromRawCrashRule.FIELDS if field[0] == "string"],
+        "copy_item",
+        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "number"],
     )
-    def test_string(self, field_data):
-        value_type, raw_key, processed_key = field_data
-
-        rule = CopyFromRawCrashRule()
-
-        raw_crash = {raw_key: "123"}
+    def test_number(self, copy_item):
+        raw_crash = {copy_item.annotation: "10.0"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {raw_key: "123"}
-        assert processed_crash == {processed_key: "123"}
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "10.0"}
+        assert processed_crash == {copy_item.key: 10.0}
+        assert processor_meta["processor_notes"] == []
+
+        raw_crash = {copy_item.annotation: "foo"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "foo"}
+        assert processed_crash == {}
+        assert processor_meta["processor_notes"] == [
+            f"{copy_item.annotation} has a non-float value"
+        ]
+
+    @pytest.mark.parametrize(
+        "copy_item",
+        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "string"],
+    )
+    def test_string(self, copy_item):
+        raw_crash = {copy_item.annotation: "123"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        assert raw_crash == {copy_item.annotation: "123"}
+        assert processed_crash == {copy_item.key: "123"}
         assert processor_meta["processor_notes"] == []
 
 
