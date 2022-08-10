@@ -122,9 +122,9 @@ def compile_pattern_re(pattern):
 class Reducer:
     def __init__(self, schema, include_predicate=everything_predicate):
         """
-        :arg schema: the schema document to reduce with
-        :arg include_predicate: the predicate function that determines whether to
-            include the traversed item or not
+        :arg schema: the schema document specifying the structure to traverse
+        :arg include_predicate: a predicate function that determines whether to
+            include the traversed item or not in the final document
         """
         self.schema = schema
         self.include_predicate = include_predicate
@@ -152,7 +152,22 @@ class Reducer:
 
         return None
 
-    def traverse(self, schema_part, document_part, path="", general_path=""):
+    def traverse(self, document):
+        """Following the schema, traverses the document
+
+        This validates types and some type-related restrictions while traversing the
+        document using the structure specified in the schema and calling the
+        include_predicate.
+
+        :arg dict document: the document to traverse using the structure specified
+            in the schema
+
+        :returns: new document
+
+        """
+        return self._traverse(schema_part=self.schema, document_part=document)
+
+    def _traverse(self, schema_part, document_part, path="", general_path=""):
         """Following the schema, traverses the document
 
         This validates types and some type-related restrictions while reducing the
@@ -160,7 +175,9 @@ class Reducer:
 
         :arg dict schema_part: the part of the schema we're looking at now
         :arg dict document_part: the part of the document we're looking at now
-        :arg string path: the path in the structure for error reporting
+        :arg string path: the path in the structure
+        :arg string general_path: the generalized path in the structure where array
+            indexes are replaced with `[]`
 
         :returns: new document
 
@@ -212,7 +229,7 @@ class Reducer:
                     raise InvalidDocumentError(f"invalid: {path}: too many items")
 
                 for i in range(0, len(document_part)):
-                    new_part = self.traverse(
+                    new_part = self._traverse(
                         schema_part=schema_items[i],
                         document_part=document_part[i],
                         path=f"{path}.{i}",
@@ -227,7 +244,7 @@ class Reducer:
 
             new_doc = []
             for i in range(0, len(document_part)):
-                new_part = self.traverse(
+                new_part = self._traverse(
                     schema_part=schema_item,
                     document_part=document_part[i],
                     path=f"{path}.{i}",
@@ -266,7 +283,7 @@ class Reducer:
                 ):
                     continue
 
-                new_doc[name] = self.traverse(
+                new_doc[name] = self._traverse(
                     schema_part=schema_property,
                     document_part=document_part[name],
                     path=path_name,
@@ -309,5 +326,5 @@ def schema_reduce(schema, document, include_predicate=everything_predicate):
     :raises InvalidSchemaError: raised for issues with the schema
 
     """
-    reducer = Reducer(schema, include_predicate)
-    return reducer.traverse(schema_part=schema, document_part=document)
+    reducer = Reducer(schema=schema, include_predicate=include_predicate)
+    return reducer.traverse(document=document)
