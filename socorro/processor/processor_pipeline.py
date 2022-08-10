@@ -61,7 +61,6 @@ from socorro.processor.rules.mozilla import (
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
-    UserDataRule,
 )
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
@@ -194,7 +193,6 @@ class ProcessorPipeline(RequiredConfig):
                 CrashingThreadInfoRule(),
                 ProductRule(),
                 MajorVersionRule(),
-                UserDataRule(),
                 PluginRule(),
                 AddonsRule(),
                 DatesAndTimesRule(),

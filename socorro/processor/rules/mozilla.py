@@ -223,12 +223,6 @@ class MajorVersionRule(Rule):
         processed_crash["major_version"] = major_version
 
 
-class UserDataRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        processed_crash["url"] = raw_crash.get("URL", None)
-        processed_crash["user_comments"] = raw_crash.get("Comments", None)
-
-
 class ProcessTypeRule(Rule):
     """Set process_type to ProcessType value or "parent"."""
 

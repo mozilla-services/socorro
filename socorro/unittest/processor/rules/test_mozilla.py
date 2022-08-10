@@ -43,7 +43,6 @@ from socorro.processor.rules.mozilla import (
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
-    UserDataRule,
     validate_breadcrumbs,
 )
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
@@ -371,35 +370,6 @@ class TestProductRule:
         assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
         assert processed_crash["release_channel"] == ""
         assert processed_crash["build"] == "20120420145725"
-
-
-class TestUserDataRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = UserDataRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["url"] == "http://www.mozilla.com"
-        assert processed_crash["user_comments"] == "why did my browser crash?  #fail"
-
-    def test_stuff_missing(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash["URL"]
-        del raw_crash["Comments"]
-
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = UserDataRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["url"] is None
-        assert processed_crash["user_comments"] is None
 
 
 class TestProcessTypeRule:
