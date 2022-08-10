@@ -1301,20 +1301,6 @@ FIELDS = {
             "type": "string",
         },
     },
-    "contains_memory_report": {
-        "data_validation_type": "bool",
-        "description": "Has content for processed_crash.memory_report or not.",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "contains_memory_report",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "contains_memory_report",
-        "namespace": "processed_crash",
-        "permissions_needed": [],
-        "query_type": "bool",
-        "storage_mapping": {"type": "boolean"},
-    },
     # FIXME(willkg): We have this indexed as an integer, but the annotation is listed as
     # a string. The actual value is an int converted to a string so in indexing we
     # convert that to an integer and that's why this works at all. However, I think this
