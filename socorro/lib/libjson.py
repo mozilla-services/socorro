@@ -168,8 +168,8 @@ class Reducer:
         # Telemetry ingestion is marred by historical fun-ness, so we first look at the
         # schema and if it defines a converter, we run the document part through that
         # first.
-        if "socorro_convert_to" in schema_part:
-            document_part = convert_to(document_part, schema_part["socorro_convert_to"])
+        if "socorroConvertTo" in schema_part:
+            document_part = convert_to(document_part, schema_part["socorroConvertTo"])
 
         schema_part_types = listify(schema_part.get("type", "string"))
 

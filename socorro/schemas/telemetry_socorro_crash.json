@@ -214,7 +214,7 @@
         "null"
       ],
       "description": "The amount of unreserved and uncommited (i.e. available) memory in the process's address space. Note that this memory may be fragmented into many separate segments, so an allocation attempt may fail even when this value is substantially greater than zero.\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "available_physical_memory": {
       "type": [
@@ -222,7 +222,7 @@
         "null"
       ],
       "description": "The amount of physical memory currently available. This is the amount of physical memory that can be immediately reused without having to write its contents to disk first.\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "bios_manufacturer": {
       "type": [
@@ -321,7 +321,7 @@
         "null"
       ],
       "description": "Has content for processed_crash.memory_report or not.\n\nNote: this is converted from a boolean to '0' or '1' for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "cpu_arch": {
       "type": [
@@ -455,7 +455,7 @@
         "null"
       ],
       "description": "A replacement of `system_error`. https://bugzilla.mozilla.org/show_bug.cgi?id=1267222\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "is_garbage_collecting": {
       "type": [
@@ -463,7 +463,7 @@
         "null"
       ],
       "description": "Whether there was a garbage collection in progress.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "java_stack_trace": {
       "type": [
@@ -899,7 +899,7 @@
         "null"
       ],
       "description": "The size of the allocation that caused the OOM crash.\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "platform": {
       "type": [
@@ -998,7 +998,7 @@
         "null"
       ],
       "description": "Whether Firefox was running in Safe Mode.\n\nNote: this is converted from a boolean to '0' or '1' for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "signature": {
       "type": [
@@ -1020,7 +1020,7 @@
         "null"
       ],
       "description": "Annotation that tells whether the crash happened before the startup phase was finished or not.\n\nNote: this is converted from a boolean to '0' or '1' for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "submitted_from_infobar": {
       "type": [
@@ -1028,7 +1028,7 @@
         "null"
       ],
       "description": "Whether the crash report was submitted through the infobar.\n\nNote: this is converted from a boolean to '0' or '1' for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "theme": {
       "type": [
@@ -1050,7 +1050,7 @@
         "null"
       ],
       "description": "The total amount of physical memory.\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "total_virtual_memory": {
       "type": [
@@ -1058,7 +1058,7 @@
         "null"
       ],
       "description": "The size of the user-mode portion of the virtual address space of the calling process. This value depends on the type of process, the type of processor, and the configuration of the operating system. 32-bit processes usually have values in the range 2--4 GiB. 64-bit processes usually have *much* larger values.\n\nNote: this is converted from an integer to a string for historical reasons.",
-      "socorro_convert_to": "string"
+      "socorroConvertTo": "string"
     },
     "uptime": {
       "type": [
