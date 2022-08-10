@@ -1354,11 +1354,15 @@ properties:
   url:
     description: >
       The url the user was visiting when the crash happened.
-    type: ["string", "null"]
+    type: string
+    socorro:
+      sourceAnnotation: URL
   user_comments:
     description: >
       Comments provided by the user at the time of the crash.
-    type: ["string", "null"]
+    type: string
+    socorro:
+      sourceAnnotation: Comments
   useragent_locale:
     description: The locale of the software installation.
     type: string
