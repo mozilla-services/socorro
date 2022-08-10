@@ -536,6 +536,7 @@ properties:
     # FIXME(willkg): DEPRECATED. This has been here since 2014 and we should
     # remove it.
     description: DEPRECATED. Use release_channel.
+    deprecated: true
     type: string
   adapter_device_id:
     description: The graphics adapter device identifier.
@@ -785,6 +786,7 @@ properties:
     # FIXME(willkg): DEPRECATED because it's no longer part of the stackwalker
     # output
     description: ''
+    deprecated: true
     type: string
   flash_version:
     description: >
@@ -1140,6 +1142,7 @@ properties:
   submitted_from_infobar:
     description: >
       DEPRECATED. True if submitted_from is 'Infobar' and False otherwise.
+    deprecated: true
     type: boolean
   submitted_timestamp:
     description: >
