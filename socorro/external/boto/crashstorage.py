@@ -15,7 +15,7 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.lib.libjson import schema_reduce
+from socorro.lib.libjson import Reducer
 from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
@@ -286,6 +286,12 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Create a reducer that traverses documents and reduces them down to the
+        # structure of the specified schema
+        self.reducer = Reducer(schema=TELEMETRY_SOCORRO_CRASH_SCHEMA)
+
     # List of source -> target keys which have different names for historical reasons
     HISTORICAL_MANUAL_KEYS = [
         # processed crash source key, crash report target key
@@ -306,10 +312,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
         """
         # Validate crash_report
-        crash_report = schema_reduce(
-            schema=TELEMETRY_SOCORRO_CRASH_SCHEMA,
-            document=processed_crash,
-        )
+        crash_report = self.reducer.traverse(document=processed_crash)
 
         # Add additional fields that have different names for historical reasons
         for source_key, target_key in self.HISTORICAL_MANUAL_KEYS:
