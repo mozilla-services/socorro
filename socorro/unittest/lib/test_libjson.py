@@ -521,13 +521,13 @@ class Test_schema_reduce:
         )
         assert reduced_document == expected_document
 
-    def test_convert_to(self):
+    def test_socorroConvertTo(self):
         schema = {
             "$schema": "http://json-schema.org/draft-04/schema#",
             "$target_version": 2,
             "type": "object",
             "properties": {
-                "years": {"type": ["string", "null"], "socorro_convert_to": "string"},
+                "years": {"type": ["string", "null"], "socorroConvertTo": "string"},
             },
         }
         jsonschema.Draft4Validator.check_schema(schema)
