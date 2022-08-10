@@ -7,17 +7,12 @@ import json
 from pkg_resources import resource_stream
 
 
-def _get_file_content(filename, parsed=True):
-    with resource_stream(__name__, filename) as f:
-        if parsed:
-            return json.load(f)
-        else:
-            return f.read()
+def _get_file_content(filename):
+    if filename.endswith(".json"):
+        with resource_stream(__name__, filename) as fp:
+            return json.load(fp)
 
 
 TELEMETRY_SOCORRO_CRASH_SCHEMA = _get_file_content("telemetry_socorro_crash.json")
-TELEMETRY_SOCORRO_CRASH_SCHEMA_AS_STRING = _get_file_content(
-    "telemetry_socorro_crash.json", parsed=False
-)
 
 JAVA_EXCEPTION_SCHEMA = _get_file_content("java_exception.json")
