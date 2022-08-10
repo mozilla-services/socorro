@@ -229,11 +229,6 @@ class UserDataRule(Rule):
         processed_crash["user_comments"] = raw_crash.get("Comments", None)
 
 
-class EnvironmentRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        processed_crash["app_notes"] = raw_crash.get("Notes", "")
-
-
 class ProcessTypeRule(Rule):
     """Set process_type to ProcessType value or "parent"."""
 

@@ -21,7 +21,6 @@ from socorro.processor.rules.mozilla import (
     DatesAndTimesRule,
     DistributionIdRule,
     ESRVersionRewrite,
-    EnvironmentRule,
     ExploitablityRule,
     FenixVersionRewriteRule,
     FlashVersionRule,
@@ -401,32 +400,6 @@ class TestUserDataRule:
 
         assert processed_crash["url"] is None
         assert processed_crash["user_comments"] is None
-
-
-class TestEnvironmentRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = EnvironmentRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["app_notes"] == raw_crash["Notes"]
-
-    def test_stuff_missing(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash["Notes"]
-
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = EnvironmentRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["app_notes"] == ""
 
 
 class TestProcessTypeRule:
