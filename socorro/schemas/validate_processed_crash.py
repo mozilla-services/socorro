@@ -12,13 +12,12 @@ import pathlib
 
 import click
 import jsonschema
-import yaml
 
 from socorro.lib.libjson import schema_reduce
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
 HERE = os.path.dirname(__file__)
-SCHEMA = "processed_crash.1.schema.yaml"
 
 
 class InvalidSchemaError(Exception):
@@ -29,12 +28,10 @@ class InvalidSchemaError(Exception):
 @click.argument("crashdir")
 @click.pass_context
 def validate_and_test(ctx, crashdir):
-    # Load the schema validator and validate the schema
-    file_path = os.path.join(HERE, SCHEMA)
-    with open(file_path) as fp:
-        schema = yaml.load(fp, Loader=yaml.Loader)
-    jsonschema.Draft4Validator.check_schema(schema)
-    click.echo("%s is a valid JSON schema." % file_path)
+    schema_name = PROCESSED_CRASH_SCHEMA["$id"]
+
+    jsonschema.Draft4Validator.check_schema(PROCESSED_CRASH_SCHEMA)
+    click.echo(f"{schema_name} is a valid JSON schema.")
 
     # Fetch crash report data from a Super Search URL
     datapath = pathlib.Path(crashdir).resolve()
@@ -92,11 +89,13 @@ def validate_and_test(ctx, crashdir):
 
         # Capture keys that the schema recognizes
         schema_reduce(
-            schema=schema, document=processed_crash, include_predicate=logging_predicate
+            schema=PROCESSED_CRASH_SCHEMA,
+            document=processed_crash,
+            include_predicate=logging_predicate,
         )
 
         # Validate the processed crash
-        jsonschema.validate(processed_crash, schema)
+        jsonschema.validate(processed_crash, PROCESSED_CRASH_SCHEMA)
 
     click.echo("Done testing, all crash reports passed.")
 
@@ -117,8 +116,7 @@ def validate_and_test(ctx, crashdir):
     if keys_not_in_schema:
         click.echo("")
         click.echo(
-            f"{len(keys_not_in_schema)} keys in crash reports but not in "
-            + f"{SCHEMA} schema:"
+            f"{len(keys_not_in_schema)} keys in crash reports but not in {schema_name}:"
         )
         click.echo("  %s%s" % ("KEY".ljust(70), "TYPE(S)"))
         for key in sorted(keys_not_in_schema):

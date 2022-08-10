@@ -541,33 +541,49 @@ properties:
   adapter_device_id:
     description: The graphics adapter device identifier.
     type: string
+    socorro:
+      sourceAnnotation: AdapterDeviceID
   adapter_driver_version:
     description: The graphics adapter driver version.
     type: string
+    socorro:
+      sourceAnnotation: AdapterDriverVersion
   adapter_subsys_id:
     description: The graphics adapter subsystem identifier.
     type: string
+    socorro:
+      sourceAnnotation: AdapterSubsysID
   adapter_vendor_id:
     description: >
       The graphics adapter vendor. Sometimes a name, but often a hexidecimal
       identifier.
     type: string
+    socorro:
+      sourceAnnotation: AdapterVendorID
   abort_message:
     description: >
       Message passed to NS_DebugBreak().
     type: string
+    socorro:
+      sourceAnnotation: AbortMessage
   accessibility:
     description: >
       Set to 'Active' by the accessibility service when it is active.
     type: boolean
+    socorro:
+      sourceAnnotation: Accessibility
   accessibility_client:
     description: >
       Out-of-process accessibility client program name and version information.
     type: string
+    socorro:
+      sourceAnnotation: AccessibilityClient
   accessibility_in_proc_client:
     description: >
       In-process accessibility client detection information.
     type: string
+    socorro:
+      sourceAnnotation: AccessibilityInProcClient
   additional_minidumps:
     description: >
       List of additional minidump files attached to crash report other than
@@ -597,39 +613,63 @@ properties:
   android_board:
     description: The board used by the Android device.
     type: string
+    socorro:
+      sourceAnnotation: Android_Board
   android_brand:
     description: The Android device brand.
     type: string
+    socorro:
+      sourceAnnotation: Android_Brand
   android_cpu_abi:
     description: The Android primary CPU ABI being used.
     type: string
+    socorro:
+      sourceAnnotation: Android_CPU_ABI
   android_cpu_abi2:
     description: The Android secondary CPU ABI being used.
     type: string
+    socorro:
+      sourceAnnotation: Android_CPU_ABI2
   android_device:
     description: The Android device name.
     type: string
+    socorro:
+      sourceAnnotation: Android_Device
   android_display:
     description: The Android display.
     type: string
+    socorro:
+      sourceAnnotation: Android_Display
   android_fingerprint:
     description: ''
     type: string
+    socorro:
+      sourceAnnotation: Android_Fingerprint
   android_hardware:
     description: The Android device hardware.
     type: string
+    socorro:
+      sourceAnnotation: Android_Hardware
   android_manufacturer:
     description: The Android device manufacturer.
     type: string
+    socorro:
+      sourceAnnotation: Android_Manufacturer
   android_model:
     description: The Android device model name.
     type: string
+    socorro:
+      sourceAnnotation: Android_Model
   android_version:
     description: The Android version.
     type: string
+    socorro:
+      sourceAnnotation: Android_Version
   app_init_dlls:
     description: DLLs injected through the AppInit_DLLs registry key.
     type: string
+    socorro:
+      sourceAnnotation: AppInitDLLs
   app_notes:
     description: >
       Notes from the application that crashed. Mostly contains graphics-related
@@ -646,17 +686,23 @@ properties:
       and the browser was crashed instead of waiting for shutdown to finish.
       The condition that caused the hang is contained in the annotation.
     type: string
+    socorro:
+      sourceAnnotation: AsyncShutdownTimeout
   available_page_file:
     description: >
       The maximum amount of memory the current process can commit. This value
       is equal to or smaller than the system-wide available commit value.
     type: integer
+    socorro:
+      sourceAnnotation: AvailablePageFile
   available_physical_memory:
     description: >
       The amount of physical memory currently avaialble. This is the amount of
       physical memory that can be immediately reused without having to write
       its contents to disk first.
     type: integer
+    socorro:
+      sourceAnnotation: AvailablePhysicalMemory
   available_virtual_memory:
     description: >
       The amount of unreserved and uncommitted (in other words, available)
@@ -664,9 +710,13 @@ properties:
       fragmented into many separate segments, so an allocation attempt may fail
       even when this value is substantially greater than zero.
     type: integer
+    socorro:
+      sourceAnnotation: AvailableVirtualMemory
   bios_manufacturer:
     description: The BIOS manufacturer.
     type: string
+    socorro:
+      sourceAnnotation: BIOS_Manufacturer
   breadcrumbs:
     description: >
       Information about events and log messages that happened prior to a crash.
@@ -696,32 +746,40 @@ properties:
       Annotation describing the error returned by trying to marshal an object
       via CoMarshalInterface during the creation of an IPC proxy stream.
     type: string
+    socorro:
+      sourceAnnotation: CoMarshalInterfaceFailure
   co_unmarshal_interface_result:
     description: >
       Contains the hexadecimal value of the return code from Windows
       CoMarshalInterfaceFailure API when invoked by IPDL serialization and
       deserialization code.
     type: string
-  contains_memory_report:
-    description: >
-      Has content for processed_crash.memory_report or not.
-    type: boolean
+    socorro:
+      sourceAnnotation: CoUnmarshalInterfaceResult
   content_sandbox_capabilities:
     description: >
       List of capabilities of the content process sandbox.
     type: integer
+    socorro:
+      sourceAnnotation: ContentSandboxCapabilities
   content_sandbox_capable:
     description: >
       Set to 1 if the client is capable of content sandboxing.
     type: boolean
+    socorro:
+      sourceAnnotation: ContentSandboxCapable
   content_sandbox_enabled:
     description: >
       Set to 1 when content process sandboxing is enabled.
     type: boolean
+    socorro:
+      sourceAnnotation: ContentSandboxEnabled
   content_sandbox_level:
     description: >
       Content sandbox level.
     type: integer
+    socorro:
+      sourceAnnotation: ContentSandboxLevel
   cpu_arch:
     description:
       The build architecture. Usually one of 'x86', 'amd64' (also known as
@@ -740,6 +798,8 @@ properties:
   cpu_microcode_version:
     description: Microcode version of the CPU.
     type: string
+    socorro:
+      sourceAnnotation: CPUMicrocodeVersion
   crash_id:
     description: Unique identifier of this crash report.
     type: string
@@ -778,10 +838,14 @@ properties:
       Error message of the minidump writer in case there was an error during
       dumping.
     type: string
+    socorro:
+      sourceAnnotation: DumperError
   em_check_compatibility:
     description: >
       Set to 1 if add-on compatibility checking is enabled.
     type: boolean
+    socorro:
+      sourceAnnotation: EMCheckCompatibility
   exploitability:
     # FIXME(willkg): DEPRECATED because it's no longer part of the stackwalker
     # output
@@ -795,14 +859,20 @@ properties:
   gmp_library_path:
     description: Holds the path to the GMP plugin library.
     type: string
+    socorro:
+      sourceAnnotation: GMPLibraryPath
   graphics_critical_error:
     description: Log of graphics-related errors.
     type: string
+    socorro:
+      sourceAnnotation: GraphicsCriticalError
   has_device_touch_screen:
     description:
       Set to 1 if the device had a touch-screen, this only applies to Firefox
       desktop. On mobile devices we assume a touch-screen is always present.
     type: boolean
+    socorro:
+      sourceAnnotation: HasDeviceTouchScreen
   install_age:
     description: >
       Length of time since the current version of the product was installed.
@@ -814,41 +884,60 @@ properties:
       is unlikely that two instances of the product were installed at the very
       same second.
     type: integer
+    socorro:
+      sourceAnnotation: InstallTime
   ipc_channel_error:
     description: The IPC channel error.
     type: string
+    socorro:
+      # NOTE(willkg): This isn't a typo--that's the crash annotation
+      sourceAnnotation: ipc_channel_error
   ipc_fatal_error_msg:
     description: >
       Describes a fatal error that occurred during IPC operation.
     type: string
+    socorro:
+      sourceAnnotation: IPCFatalErrorMsg
   ipc_fatal_error_protocol:
     description: >
       Name of the protocol used by IPC when a fatal error occurred.
     type: string
+    socorro:
+      sourceAnnotation: IPCFatalErrorProtocol
   ipc_message_name:
     description: The name of the IPC message.
     type: string
+    socorro:
+      sourceAnnotation: IPCMessageName
   ipc_message_size:
     description: >
       Size of the IPC message that caused a crash because it was too large.
     type: integer
+    socorro:
+      sourceAnnotation: IPCMessageSize
   ipc_shutdown_state:
     description: >
       IPC shutdown state, can be set to either 'RecvShutdown' or
       'SendFinishShutdown' by a content process while it's shutting down.
     type: string
+    socorro:
+      sourceAnnotation: IPCShutdownState
   ipc_system_error:
-    # FIXME(willkg): CrashAnnotations.yaml lists this as a string, but the
+    # NOTE(willkg): CrashAnnotations.yaml lists this as a string, but the
     # values are all integers and we've been indexing it as an integer for
     # years so we'll keep doing that.
     description: >
       Description of the last system error that occurred during IPC operation.
     type: integer
+    socorro:
+      sourceAnnotation: IPCSystemError
   is_garbage_collecting:
     description: >
       If true then the JavaScript garbage collector was running when the crash
       occurred.
     type: boolean
+    socorro:
+      sourceAnnotation: IsGarbageCollecting
   java_exception:
     $ref: "#/definitions/java_exception"
     description: >
@@ -884,6 +973,8 @@ properties:
       The value of the available memory sysctl 'kern.memorystatus_level'.
       Expected to be a percentage integer value.
     type: integer
+    socorro:
+      sourceAnnotation: MacAvailableMemorySysctl
   mac_crash_info:
     description: >
       JSON-encoded Mac OS X __crash_info data.
@@ -897,16 +988,22 @@ properties:
       levels, or 'Unexpected' for an unexpected level. This is a Mac OS
       X-specific annotation.
     type: string
+    socorro:
+      sourceAnnotation: MacMemoryPressure
   mac_memory_pressure_critical_time:
     description: >
       The time when the memory pressure state last transitioned to 'Critical'
       expressed as seconds since the Epoch.
     type: string
+    socorro:
+      sourceAnnotation: MacMemoryPressureCriticalTime
   mac_memory_pressure_normal_time:
     description: >
       The time when the memory pressure state last transitioned to 'Normal'
       expressed as seconds since the Epoch.
     type: string
+    socorro:
+      sourceAnnotation: MacMemoryPressureNormalTime
   mac_memory_pressure_sysctl:
     description: >
       The value of the memory pressure sysctl
@@ -914,11 +1011,15 @@ properties:
       level the system is in at the time of the crash. The expected values are
       one of 4 (Critical), 2 (Warning), or 0 (Normal).
     type: integer
+    socorro:
+      sourceAnnotation: MacMemoryPressureSysctl
   mac_memory_pressure_warning_time:
     description: >
       The time when the memory pressure state last transitioned to 'Warning'
       expressed as seconds since the Epoch.
     type: string
+    socorro:
+      sourceAnnotation: MacMemoryPressureWarningTime
   major_version:
     description: >
       The major part of the version string as an integer. If there is no
@@ -954,6 +1055,8 @@ properties:
       - CRC
       - Unexpected value
     type: string
+    socorro:
+      sourceAnnotation: MemoryErrorCorrection
   memory_measures:
     description: ''
     $ref: "#/definitions/memory_measures"
@@ -997,6 +1100,8 @@ properties:
       large chunk request in which case the latter actually caused the
       out-of-memory crash.
     type: integer
+    socorro:
+      sourceAnnotation: OOMAllocationSize
   os_name:
     description: >
       The basic name of the operating system. Can be 'Windows NT', 'Mac OS X',
@@ -1095,16 +1200,22 @@ properties:
       This is 'extension' if a WebExtension, 'web', or missing otherwise. This
       is only set for content crashes.
     type: string
+    socorro:
+      sourceAnnotation: RemoteType
   safe_mode:
     description:
       Whether the browser was running in Safe mode.
     type: boolean
+    socorro:
+      sourceAnnotation: SafeMode
   shutdown_progress:
     description: |
       Shutdown step at which the browser crashed, can be set to
       'quit-application', 'profile-change-teardown', 'profile-before-change',
       'xpcom-will-shutdown' or 'xpcom-shutdown'.
     type: string
+    socorro:
+      sourceAnnotation: ShutdownProgress
   signature:
     description: >
       Crash signature for this crash report containing tags and the first few
@@ -1126,10 +1237,14 @@ properties:
     description: >
       Whether the crash happened before the startup phase was finished or not.
     type: boolean
+    socorro:
+      sourceAnnotation: StartupCrash
   startup_time:
     description: >
       The time when Firefox was launched expressed in seconds since the Epoch.
     type: integer
+    socorro:
+      sourceAnnotation: StartupTime
   success:
     description: >
       Indicates whether the crash report was successfully processed.
@@ -1152,11 +1267,15 @@ properties:
     description:
       The approximate percentage of physical memory that is in use.
     type: integer
+    socorro:
+      sourceAnnotation: SystemMemoryUsePercentage
   throttleable:
     description: >
       Whether Socorro can selectively discard this crash report or not. If set
       to "0" the crash report will always be processed by Socorro.
     type: boolean
+    socorro:
+      sourceAnnotation: Throttleable
   topmost_filenames:
     # FIXME(willkg): Can we remove this?
     description: |
@@ -1175,9 +1294,13 @@ properties:
         swap file typically cannot be extended, so that's a hard limit.
       * Not available on other systems.
     type: integer
+    socorro:
+      sourceAnnotation: TotalPageFile
   total_physical_memory:
     description: The total amount of physical memory.
     type: integer
+    socorro:
+      sourceAnnotation: TotalPhysicalMemory
   total_virtual_memory:
     description: >
       The size of the user-mode portion of the virtual address space of the
@@ -1186,6 +1309,8 @@ properties:
       processes usually have values in the 2 to 4 GiB range. 64-bit processes
       usually have much larger values.
     type: integer
+    socorro:
+      sourceAnnotation: TotalVirtualMemory
   upload_file_minidump_browser:
     description: A minidump from the browser process.
     properties:
@@ -1222,6 +1347,8 @@ properties:
   uptime_ts:
     description: Uptime in seconds as a float.
     type: number
+    socorro:
+      sourceAnnotation: UptimeTS
   url:
     description: >
       The url the user was visiting when the crash happened.
@@ -1233,16 +1360,23 @@ properties:
   useragent_locale:
     description: The locale of the software installation.
     type: string
+    socorro:
+      # NOTE(willkg): This isn't a typo--that's the crash annotation
+      sourceAnnotation: useragent_locale
   utility_process_sandboxing_kind:
     description: >
       The SandboxingKind passed for this Utility process instance.
     type: integer
+    socorro:
+      sourceAnnotation: UtilityProcessSandboxingKind
   uuid:
     description: Unique identifier of this crash report.
     type: string
   vendor:
     description: Application vendor (e.g. Mozilla).
     type: string
+    socorro:
+      sourceAnnotation: Vendor
   version:
     description: >
       The product version number. For Firefox versions, a value lacking letters
@@ -1255,6 +1389,8 @@ properties:
       Set to 1 if this crash was intercepted via the Windows Error Reporting
       runtime exception module.
     type: boolean
+    socorro:
+      sourceAnnotation: WindowsErrorReporting
   xpcom_spin_event_loop_stack:
     description: |
       If Firefox crashes while some code is spinning manually the event loop on
@@ -1264,6 +1400,8 @@ properties:
       annotation may refer to the parent process that killed it, look out for
       the prefix ('default' means parent) and see bug 1741131 for details.
     type: string
+    socorro:
+      sourceAnnotation: XPCOMSpinEventLoopStack
 
 title: processed crash schema
 type: object

@@ -64,6 +64,7 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
     UserDataRule,
 )
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
 class ProcessorPipeline(RequiredConfig):
@@ -175,7 +176,7 @@ class ProcessorPipeline(RequiredConfig):
                 PluginContentURL(),
                 PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
-                CopyFromRawCrashRule(),
+                CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA),
                 SubmittedFromRule(),
                 ProcessTypeRule(),
                 IdentifierRule(),
