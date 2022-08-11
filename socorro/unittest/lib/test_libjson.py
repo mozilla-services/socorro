@@ -5,7 +5,12 @@
 import jsonschema
 import pytest
 
-from socorro.lib.libjson import schema_reduce, InvalidDocumentError, InvalidSchemaError
+from socorro.lib.libjson import (
+    InvalidDocumentError,
+    InvalidSchemaError,
+    schema_reduce,
+    traverse_schema,
+)
 
 
 class Test_schema_reduce:
@@ -535,3 +540,102 @@ class Test_schema_reduce:
         assert schema_reduce(schema, {"years": "10"}) == {"years": "10"}
         assert schema_reduce(schema, {"years": 10}) == {"years": "10"}
         assert schema_reduce(schema, {"years": None}) == {"years": None}
+
+
+@pytest.mark.parametrize(
+    "schema, nodes",
+    [
+        # Object traversal with properties
+        (
+            {
+                "type": "object",
+                "properties": {
+                    "key1": {
+                        "type": "string",
+                    },
+                    "key2": {
+                        "type": "integer",
+                    },
+                },
+            },
+            ["", ".key1", ".key2"],
+        ),
+        # Object traversal with patternProperties
+        (
+            {
+                "type": "object",
+                "patternProperties": {
+                    "^r.+$": {
+                        "type": "string",
+                    },
+                    "^c.+$": {
+                        "type": "string",
+                    },
+                },
+            },
+            ["", ".(re:^r.+$)", ".(re:^c.+$)"],
+        ),
+        # Array traversal with items as non-list
+        (
+            {
+                "type": "object",
+                "properties": {
+                    "colors": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                },
+            },
+            ["", ".colors", ".colors.[]"],
+        ),
+        # Array traversal with items as list indicating records
+        (
+            {
+                "type": "object",
+                "properties": {
+                    "person": {
+                        "type": "array",
+                        "items": [
+                            {"type": "string"},
+                            {"type": "integer"},
+                        ],
+                    },
+                },
+            },
+            ["", ".person", ".person.[0]", ".person.[1]"],
+        ),
+        # Expands references
+        (
+            {
+                "definitions": {
+                    "color": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "hex": {"type": "string"},
+                        },
+                    },
+                },
+                "type": "object",
+                "properties": {
+                    "colors": {
+                        "type": "array",
+                        "items": {"$ref": "#/definitions/color"},
+                    },
+                },
+            },
+            ["", ".colors", ".colors.[]", ".colors.[].name", ".colors.[].hex"],
+        ),
+    ],
+)
+def test_traverse_schema(schema, nodes):
+    class Visitor:
+        def __init__(self):
+            self.nodes = []
+
+        def visit(self, path, general_path, schema):
+            self.nodes.append(path)
+
+    visitor = Visitor()
+    traverse_schema(schema=schema, visitor_function=visitor.visit)
+    assert visitor.nodes == nodes

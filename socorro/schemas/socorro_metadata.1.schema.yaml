@@ -1,0 +1,14 @@
+---
+$id: https://mozilla.org/schemas/socorro/socorro_metadata/1
+$schema: http://json-schema.org/draft-04/schema#
+description: >
+  Schema for the 'socorro' metadata section for fields in the processed crash
+  schema.
+additionalProperties: false
+type: object
+
+properties:
+  sourceAnnotation:
+    description: >
+      The annotation in the crash report to copy over into the processed crash.
+    type: string
