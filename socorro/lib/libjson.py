@@ -328,3 +328,71 @@ def schema_reduce(schema, document, include_predicate=everything_predicate):
     """
     reducer = Reducer(schema=schema, include_predicate=include_predicate)
     return reducer.traverse(document=document)
+
+
+def print_function(path, general_path, schema_item):
+    print(f"{path}: {schema_item}")
+
+
+def traverse_schema(schema, visitor_function=print_function):
+    def _traverse(root_schema, schema, visitor_function, path="", general_path=""):
+        schema = expand_references(root_schema, schema)
+        if "type" not in schema:
+            raise InvalidSchemaError(f"{path} has no type")
+
+        visitor_function(path, general_path, schema)
+
+        type_ = schema["type"]
+        if type_ == "object":
+            for name, subschema in schema.get("properties", {}).items():
+                subschema = expand_references(root_schema, subschema)
+
+                _traverse(
+                    root_schema=root_schema,
+                    schema=subschema,
+                    visitor_function=visitor_function,
+                    path=f"{path}.{name}",
+                    general_path=f"{general_path}.{name}",
+                )
+
+            for pattern, subschema in schema.get("patternProperties", {}).items():
+                subschema = expand_references(root_schema, subschema)
+
+                _traverse(
+                    root_schema=root_schema,
+                    schema=subschema,
+                    visitor_function=visitor_function,
+                    path=f"{path}.(re:{pattern})",
+                    general_path=f"{general_path}.(re:{pattern})",
+                )
+
+        elif type_ == "array":
+            items = schema.get("items", {"type": "string"})
+
+            if isinstance(items, list):
+                for i, item in enumerate(items):
+                    subschema = expand_references(root_schema, item)
+
+                    _traverse(
+                        root_schema=root_schema,
+                        schema=subschema,
+                        visitor_function=visitor_function,
+                        path=f"{path}.[{i}]",
+                        general_path=f"{general_path}.[]",
+                    )
+            else:
+                subschema = expand_references(root_schema, items)
+
+                _traverse(
+                    root_schema=root_schema,
+                    schema=subschema,
+                    visitor_function=visitor_function,
+                    path=f"{path}.[]",
+                    general_path=f"{general_path}.[]",
+                )
+
+    return _traverse(
+        root_schema=schema,
+        schema=schema,
+        visitor_function=visitor_function,
+    )
