@@ -38,14 +38,12 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     PluginUserComment,
     ProductRule,
-    ProcessTypeRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     validate_breadcrumbs,
 )
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.signature.generator import SignatureGenerator
 from socorro.unittest.processor import get_basic_processor_meta_data
 
@@ -140,107 +138,204 @@ canonical_processed_crash = {
 }
 
 
-COPY_RULE = CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA)
+SCHEMA_WITH_ALL_TYPES = {
+    "type": "object",
+    "properties": {
+        "accessibility": {
+            "description": "Set to 'Active' by accessibility service",
+            "type": "boolean",
+            "socorro": {
+                "sourceAnnotation": "Accessibility",
+            },
+        },
+        "available_page_file": {
+            "description": "Maximum amount of memory process can commit.",
+            "type": "integer",
+            "socorro": {
+                "sourceAnnotation": "AvailablePageFile",
+            },
+        },
+        "uptime_ts": {
+            "description": "Uptime in seconds as a float.",
+            "type": "number",
+            "socorro": {
+                "sourceAnnotation": "UptimeTS",
+            },
+        },
+        "url": {
+            "description": "URL the user was visiting when the crash happened.",
+            "type": ["string", "null"],
+            "socorro": {
+                "sourceAnnotation": "URL",
+            },
+        },
+    },
+}
+
+
+SCHEMA_WITH_DEFAULT = {
+    "type": "object",
+    "properties": {
+        "process_type": {
+            "description": "Type of the process that crashed.",
+            "default": "parent",
+            "examples": ["any", "parent", "plugin", "content", "gpu"],
+            "type": "string",
+            "socorro": {
+                "sourceAnnotation": "ProcessType",
+            },
+        },
+    },
+}
 
 
 class TestCopyFromRawCrashRule:
+    def get_copy_item(self, rule, annotation):
+        for copy_item in rule.fields:
+            if copy_item.annotation == annotation:
+                return copy_item
+
     def test_empty(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
         assert raw_crash == {}
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == []
 
-    @pytest.mark.parametrize(
-        "copy_item",
-        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "boolean"],
-    )
-    def test_boolean(self, copy_item):
-        raw_crash = {copy_item.annotation: "1"}
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "1"}
-        assert processed_crash == {copy_item.key: True}
-        assert processor_meta["processor_notes"] == []
+    def test_boolean(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "Accessibility")
+
+        for value in ("1", "true", "TRUE"):
+            raw_crash = {copy_item.annotation: value}
+            dumps = {}
+            processed_crash = {}
+            processor_meta = get_basic_processor_meta_data()
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+            assert processed_crash == {copy_item.key: True}
+            assert processor_meta["processor_notes"] == []
+
+        for value in ("0", "false", "FALSE"):
+            raw_crash = {copy_item.annotation: value}
+            dumps = {}
+            processed_crash = {}
+            processor_meta = get_basic_processor_meta_data()
+            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+            assert processed_crash == {copy_item.key: False}
+            assert processor_meta["processor_notes"] == []
+
+    def test_invalid_boolean(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "Accessibility")
 
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "foo"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == [
             f"{copy_item.annotation} has non-boolean value foo"
         ]
 
-    @pytest.mark.parametrize(
-        "copy_item",
-        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "integer"],
-    )
-    def test_integer(self, copy_item):
+    def test_integer(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "AvailablePageFile")
+
         raw_crash = {copy_item.annotation: "1"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "1"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
         assert processed_crash == {copy_item.key: 1}
         assert processor_meta["processor_notes"] == []
+
+    def test_invalid_integer(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "AvailablePageFile")
 
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "foo"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == [
             f"{copy_item.annotation} has a non-int value"
         ]
 
-    @pytest.mark.parametrize(
-        "copy_item",
-        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "number"],
-    )
-    def test_number(self, copy_item):
+    def test_number(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "UptimeTS")
+
         raw_crash = {copy_item.annotation: "10.0"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "10.0"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
         assert processed_crash == {copy_item.key: 10.0}
         assert processor_meta["processor_notes"] == []
+
+    def test_invalid_number(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "UptimeTS")
 
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "foo"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == [
             f"{copy_item.annotation} has a non-float value"
         ]
 
-    @pytest.mark.parametrize(
-        "copy_item",
-        [copy_item for copy_item in COPY_RULE.fields if copy_item.type_ == "string"],
-    )
-    def test_string(self, copy_item):
-        raw_crash = {copy_item.annotation: "123"}
+    def test_string(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "URL")
+
+        raw_crash = {copy_item.annotation: "some string"}
         dumps = {}
         processed_crash = {}
         processor_meta = get_basic_processor_meta_data()
-        COPY_RULE.act(raw_crash, dumps, processed_crash, processor_meta)
-        assert raw_crash == {copy_item.annotation: "123"}
-        assert processed_crash == {copy_item.key: "123"}
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {copy_item.key: "some string"}
+        assert processor_meta["processor_notes"] == []
+
+    def test_default(self):
+        # Verify that the default is used if the annotation is missing
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_DEFAULT)
+        copy_item = self.get_copy_item(rule, "ProcessType")
+
+        raw_crash = {copy_item.annotation: "gpu"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {copy_item.key: "gpu"}
+        assert processor_meta["processor_notes"] == []
+
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {copy_item.key: copy_item.default}
         assert processor_meta["processor_notes"] == []
 
 
@@ -370,31 +465,6 @@ class TestProductRule:
         assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
         assert processed_crash["release_channel"] == ""
         assert processed_crash["build"] == "20120420145725"
-
-
-class TestProcessTypeRule:
-    def test_process_type(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["ProcessType"] = "gpu"
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = ProcessTypeRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["process_type"] == "gpu"
-
-    def test_no_process_type_is_parent(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = ProcessTypeRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["process_type"] == "parent"
 
 
 class TestPluginRule:
