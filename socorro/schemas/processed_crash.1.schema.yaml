@@ -1164,8 +1164,11 @@ properties:
     description: >
       Type of the process that crashed. This will be 'parent' if the crash
       report has no ProcessType annotation.
+    default: "parent"
     examples: ["any", "parent", "plugin", "content", "gpu"]
     type: string
+    socorro:
+      sourceAnnotation: ProcessType
   processor_notes:
     description: |
       Notes from all processing this crash report.

@@ -52,7 +52,6 @@ from socorro.processor.rules.mozilla import (
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PHCRule,
-    ProcessTypeRule,
     PluginContentURL,
     PluginRule,
     PluginUserComment,
@@ -176,7 +175,6 @@ class ProcessorPipeline(RequiredConfig):
                 # rules to transform a raw crash into a processed crash
                 CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA),
                 SubmittedFromRule(),
-                ProcessTypeRule(),
                 IdentifierRule(),
                 MinidumpSha256Rule(),
                 MinidumpStackwalkRule(

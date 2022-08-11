@@ -7,6 +7,7 @@ import datetime
 import gzip
 import json
 import re
+from typing import Any
 from urllib.parse import unquote_plus, urlparse, urlunparse
 from zlib import error as ZlibError
 
@@ -44,6 +45,17 @@ class CopyItem:
     # The destination key in the processed crash
     key: str
 
+    # The default value to use if the annotation doesn't exist
+    default: Any
+
+
+class NoDefault:
+    def __repr__(self):
+        return "no-default"
+
+
+NO_DEFAULT = NoDefault()
+
 
 class CopyFromRawCrashRule(Rule):
     """Copy data from raw crash to processed crash with correct name.
@@ -67,6 +79,8 @@ class CopyFromRawCrashRule(Rule):
         for key, schema_property in properties.items():
             copy_source = schema_property.get("socorro", {}).get("sourceAnnotation", "")
             if copy_source:
+                default = schema_property.get("default", NO_DEFAULT)
+
                 # Use the first non-null type
                 valid_types = schema_property["type"]
                 if isinstance(valid_types, list):
@@ -79,6 +93,7 @@ class CopyFromRawCrashRule(Rule):
                         type_=type_,
                         annotation=copy_source,
                         key=key,
+                        default=default,
                     )
                 )
         return fields
@@ -87,6 +102,10 @@ class CopyFromRawCrashRule(Rule):
         for copy_item in self.fields:
             annotation = copy_item.annotation
             if annotation not in raw_crash:
+                # If the annotation is not the raw crash, but there is a default value
+                # specified, add that
+                if copy_item.default is not NO_DEFAULT:
+                    processed_crash[copy_item.key] = copy_item.default
                 continue
 
             value = raw_crash[annotation]
@@ -221,13 +240,6 @@ class MajorVersionRule(Rule):
 
         major_version = major_version if major_version is not None else 0
         processed_crash["major_version"] = major_version
-
-
-class ProcessTypeRule(Rule):
-    """Set process_type to ProcessType value or "parent"."""
-
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        processed_crash["process_type"] = raw_crash.get("ProcessType", "parent")
 
 
 class PluginRule(Rule):
