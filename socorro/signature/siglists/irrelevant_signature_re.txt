@@ -18,6 +18,8 @@ app_process@0x
 AppleIntelHD3000GraphicsGLDriver@
 __chk_fail
 _chkstk
+# Covers memcpy, memset, __udiv and others
+compiler_builtins::
 core::ops::function::FnOnce::call_once<T>
 core::panicking::
 CrashReporter::TerminateHandler
