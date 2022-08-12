@@ -34,37 +34,38 @@ _SAMPLE_META = {
 
 
 _SAMPLE_PROCESSED = {
-    "client_crash_date": "2012-06-11T06:08:45",
-    "signature": "FakeSignature1",
-    "uptime": 14693,
-    "release_channel": "nightly",
-    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-    "flash_version": "[blank]",
-    "hangid": None,
-    "process_type": None,
-    "id": 383569625,
-    "os_version": "10.6.8 10K549",
-    "version": "5.0a1",
-    "build": "20120609030536",
-    "ReleaseChannel": "nightly",
     "addons_checked": None,
-    "product": "WaterWolf",
-    "os_name": "Mac OS X",
-    "os_pretty_version": "OS X 10.11",
-    "last_crash": 371342,
-    "date_processed": "2012-06-11T06:08:44",
+    "address": "0x8",
+    "build": "20120609030536",
+    "client_crash_date": "2022-06-11T06:08:40",
+    "completed_datetime": "2022-06-11T06:08:50",
     "cpu_arch": "amd64",
     "cpu_info": "AuthenticAMD family 20 model 2 stepping 0 | 2 ",
-    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-    "address": "0x8",
-    "completed_datetime": "2012-06-11T06:08:57",
-    "success": True,
-    "user_comments": "this is a comment",
     "crashing_thread": None,
+    "date_processed": "2022-06-11T06:08:44",
+    "flash_version": "[blank]",
+    "hangid": None,
+    "id": 383569625,
     "json_dump": {
         "status": "OK",
         "threads": [],
     },
+    "last_crash": 371342,
+    "os_name": "Mac OS X",
+    "os_pretty_version": "OS X 10.11",
+    "os_version": "10.6.8 10K549",
+    "process_type": "parent",
+    "product": "WaterWolf",
+    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+    "release_channel": "nightly",
+    "ReleaseChannel": "nightly",
+    "signature": "FakeSignature1",
+    "success": True,
+    "uptime": 14693,
+    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+    "version": "5.0a1",
+    # protected data
+    "user_comments": "this is a comment",
 }
 
 
@@ -1023,14 +1024,14 @@ class TestViews(BaseTestViews):
                             ],
                             "type": "BadException",
                             "module": "org.foo.Bar",
-                            "value": "REDACTED",
+                            "value": "[REDACTED]",
                         }
                     }
                 ]
             }
         }
         java_exception_raw = copy.deepcopy(java_exception)
-        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "PII"
+        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "[PII]"
 
         def mocked_raw_crash_get(**params):
             assert "datatype" in params
@@ -1041,11 +1042,10 @@ class TestViews(BaseTestViews):
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["java_exception_raw"] = java_exception_raw
-                crash["java_exception"] = java_exception
-                return crash
+            crash = copy.deepcopy(_SAMPLE_PROCESSED)
+            crash["java_exception_raw"] = java_exception_raw
+            crash["java_exception"] = java_exception
+            return crash
 
         models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
@@ -1060,8 +1060,7 @@ class TestViews(BaseTestViews):
         assert "BadException" in smart_str(response.content)
 
         # Make sure "PII" is not in the crash report
-        assert "PII" not in smart_str(response.content)
-        assert "REDACTED" in smart_str(response.content)
+        assert "[PII]" not in smart_str(response.content)
 
     def test_java_exception_table_logged_in(self):
         java_exception = {
@@ -1080,14 +1079,14 @@ class TestViews(BaseTestViews):
                             ],
                             "type": "BadException",
                             "module": "org.foo.Bar",
-                            "value": "REDACTED",
+                            "value": "[REDACTED]",
                         }
                     }
                 ]
             }
         }
         java_exception_raw = copy.deepcopy(java_exception)
-        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "PII"
+        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "[PII]"
 
         def mocked_raw_crash_get(**params):
             assert "datatype" in params
@@ -1098,11 +1097,10 @@ class TestViews(BaseTestViews):
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["java_exception_raw"] = java_exception_raw
-                crash["java_exception"] = java_exception
-                return crash
+            crash = copy.deepcopy(_SAMPLE_PROCESSED)
+            crash["java_exception_raw"] = java_exception_raw
+            crash["java_exception"] = java_exception
+            return crash
 
         models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
@@ -1121,8 +1119,8 @@ class TestViews(BaseTestViews):
         assert "BadException" in smart_str(response.content)
 
         # Make sure "PII" is in the crash report
-        assert "PII" in smart_str(response.content)
-        assert "REDACTED" not in smart_str(response.content)
+        assert "[PII]" in smart_str(response.content)
+        assert "[REDACTED]" not in smart_str(response.content)
 
     def test_last_error_value(self):
         def mocked_raw_crash_get(**params):
@@ -1401,40 +1399,6 @@ class TestViews(BaseTestViews):
             if pyquery.PyQuery(row).find("th").text() == "Install Time":
                 assert pyquery.PyQuery(row).find("td").text() == ""
 
-    def test_report_index_empty_os_name(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["os_name"] = None
-                return crash
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
-        # Despite the `os_name` being null, it should work to render
-        # this page.
-        assert response.status_code == 200
-        doc = pyquery.PyQuery(response.content)
-        for node in doc("#mainbody"):
-            assert node.attrib["data-platform"] == ""
-
     def test_report_index_with_invalid_parsed_dump(self):
         json_dump = {
             "crash_info": {
@@ -1545,7 +1509,6 @@ class TestViews(BaseTestViews):
         crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
 
         def mocked_raw_crash_get(**params):
-            assert "datatype" in params
             if params["datatype"] == "meta":
                 return copy.deepcopy(_SAMPLE_META)
 
@@ -1554,7 +1517,6 @@ class TestViews(BaseTestViews):
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
-            assert "datatype" in params
             if params["datatype"] == "processed":
                 raise CrashIDNotFound(params["uuid"])
 
@@ -1577,38 +1539,6 @@ class TestViews(BaseTestViews):
         content = smart_str(response.content)
         assert "Please wait..." in content
         assert "Processing this crash report only takes a few seconds" in content
-
-    def test_report_index_with_invalid_date_processed(self):
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
-
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                # NOTE! A wanna-be valid date that is not valid
-                crash["date_processed"] = "2015-10-10 15:32:07.620535"
-                return crash
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse("crashstats:report_index", args=[crash_id])
-
-        response = self.client.get(url)
-        # The date could not be converted in the jinja helper
-        # to a more human format.
-        assert "2015-10-10 15:32:07.620535" in smart_str(response.content)
 
     def test_report_index_redirect_by_prefix(self):
         def mocked_raw_crash_get(**params):

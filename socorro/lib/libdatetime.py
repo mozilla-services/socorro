@@ -148,20 +148,6 @@ class JsonDTEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class JsonDTISOEncoder(json.JSONEncoder):
-    """JSON encoder that handles datetimes by encoding to isoformat
-
-    >>> json.dumps(some_data, cls=JsonDTISOEncoder)
-    ...
-
-    """
-
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
-
-
 def timesince(d, now):
     """
     Taken from django.utils.timesince and modified to simpler requirements.

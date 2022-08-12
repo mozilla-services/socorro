@@ -17,7 +17,7 @@ from socorro.external.crashstorage_base import (
     FileDumpsMapping,
     MemoryDumpsMapping,
 )
-from socorro.lib.libdatetime import utc_now, JsonDTISOEncoder
+from socorro.lib.libdatetime import utc_now, JsonDTEncoder
 from socorro.lib.libooid import date_from_ooid, depth_from_ooid
 
 
@@ -190,7 +190,7 @@ class FSPermanentStorage(CrashStorageBase):
         processed_crash = processed_crash.copy()
         f = BytesIO()
         with closing(gzip.GzipFile(mode="wb", fileobj=f)) as fz:
-            data = json.dumps(processed_crash, cls=JsonDTISOEncoder)
+            data = json.dumps(processed_crash, cls=JsonDTEncoder)
             fz.write(data.encode("utf-8"))
         self._save_files(
             crash_id, {crash_id + self.config.jsonz_file_suffix: f.getvalue()}

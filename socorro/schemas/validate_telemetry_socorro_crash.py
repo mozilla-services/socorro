@@ -15,8 +15,7 @@ import jsonschema
 import requests
 
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
-from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
-from socorro.lib.libjson import Reducer, traverse_schema
+from socorro.lib.libjson import lookup_definition
 
 
 API_BASE = "https://crash-stats.mozilla.org/api/{}/"
@@ -42,10 +41,42 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         click.echo("resp.url %s" % resp.url)
         self._all_fields = resp.json()
         self.conn = MockConn()
-        self.reducer = Reducer(schema=TELEMETRY_SOCORRO_CRASH_SCHEMA)
+        self.build_reducers()
 
     def get_last_data(self):
         return self.conn.last_data
+
+
+def log_schema_keys(schema):
+    root_schema = schema
+
+    def _log_schema_keys(schema, path=""):
+        keys_to_types = {}
+
+        if "$ref" in schema:
+            schema = lookup_definition(root_schema, schema["$ref"])
+
+        type_ = schema["type"]
+        if not isinstance(type_, list):
+            type_ = [type_]
+
+        if path:
+            keys_to_types[path] = type_
+
+        if "object" in type_:
+            for key, val in schema.get("properties", {}).items():
+                keys_to_types.update(_log_schema_keys(val, path=f"{path}.{key}"))
+
+            for key, val in schema.get("patternProperties", {}).items():
+                keys_to_types.update(_log_schema_keys(val, path=f"{path}.(re:{key})"))
+
+        elif "array" in type_:
+            items = schema.get("items", {"type": "string"})
+            keys_to_types.update(_log_schema_keys(items, path=f"{path}.[]"))
+
+        return keys_to_types
+
+    return _log_schema_keys(schema, path="")
 
 
 @click.command()
@@ -113,13 +144,7 @@ def validate_and_test(ctx, crashes_per_url, url):
 
     # Figure out the schema keys to types mapping
     # schema path -> schema type
-    schema_keys_to_types = {}
-
-    def log_schema_keys(path, general_path, schema_item):
-        if path:
-            schema_keys_to_types[path] = schema_item["type"]
-
-    traverse_schema(schema, log_schema_keys)
+    schema_keys_to_types = log_schema_keys(schema)
 
     document_keys = set()
 

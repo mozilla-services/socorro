@@ -377,12 +377,12 @@ class TestMiddlewareModels(DjangoTestCase):
                 "build": "20120501201020",
                 "ReleaseChannel": "beta",
                 "os_name": "Windows NT",
-                "date_processed": "2012-05-25 11:35:57",
+                "date_processed": "2022-05-15T11:35:57",
                 "success": True,
                 "signature": "CLocalEndpointEnumerator::OnMediaNotific",
                 "addons": [
-                    ["testpilot@labs.mozilla.com", "1.2.1"],
-                    ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "13.0"],
+                    "testpilot@labs.mozilla.com:1.2.1",
+                    "{972ce4c6-7e08-4474-a285-3208198ce6fd}:13.0",
                 ],
             }
 
