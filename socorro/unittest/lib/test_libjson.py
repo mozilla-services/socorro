@@ -626,6 +626,31 @@ class Test_schema_reduce:
             },
             ["", ".colors", ".colors.[]", ".colors.[].name", ".colors.[].hex"],
         ),
+        # Expands references with complex types
+        (
+            {
+                "definitions": {
+                    "color": {
+                        "type": ["object", "null"],
+                        "properties": {
+                            "name": {"type": ["string", "null"]},
+                            "hex": {"type": "string"},
+                        },
+                    },
+                },
+                "type": "object",
+                "properties": {
+                    "colors": {
+                        "type": ["array", "null"],
+                        "items": {
+                            "$ref": "#/definitions/color",
+                            "type": ["object", "null"],
+                        },
+                    },
+                },
+            },
+            ["", ".colors", ".colors.[]", ".colors.[].name", ".colors.[].hex"],
+        ),
     ],
 )
 def test_traverse_schema(schema, nodes):
