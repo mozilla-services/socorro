@@ -13,7 +13,7 @@ import pathlib
 import click
 import jsonschema
 
-from socorro.lib.libjson import schema_reduce
+from socorro.lib.libjson import traverse_schema
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
@@ -42,39 +42,34 @@ def validate_and_test(ctx, crashdir):
 
     uuids = list(datapath.glob("*"))
 
-    all_keys = {}
+    # Figure out the schema keys to types mapping
+    schema_keys_to_types = {}
 
-    def log_all_keys(processed_crash, prefix=None):
-        prefix = prefix or []
+    def log_schema_keys(path, general_path, schema_item):
+        if path and not path.endswith(".[]"):
+            schema_keys_to_types[path] = schema_item["type"]
 
-        if isinstance(processed_crash, dict):
-            for key, value in processed_crash.items():
-                log_all_keys(value, prefix=prefix + [key])
+    traverse_schema(PROCESSED_CRASH_SCHEMA, log_schema_keys)
 
-        elif isinstance(processed_crash, list):
-            for item in processed_crash:
-                log_all_keys(item, prefix=prefix + ["[]"])
+    document_keys_to_types = {}
+
+    def log_document_keys(crash, path=""):
+        if isinstance(crash, dict):
+            for key, value in crash.items():
+                log_document_keys(value, path=f"{path}.{key}")
+
+        elif isinstance(crash, list):
+            for item in crash:
+                log_document_keys(item, path=f"{path}.[]")
 
         # Add non-arrays to the keys set
-        path = ".".join(prefix)
-        if path and not path.endswith("[]"):
+        if path and not path.endswith(".[]"):
             # This is silly, but we want to end up with a sorted list of types that have
             # no duplicates; typically this should be [something] or
             # [something, NoneType]
-            types = set(all_keys.get(path, []))
-            types.add(type(processed_crash).__name__)
-            all_keys[path] = list(sorted(types))
-
-    schema_types = {}
-
-    def logging_predicate(path, general_path, schema_item):
-        if general_path == ".":
-            return True
-
-        # Add non-arrays to the schema types
-        if not general_path.endswith("[]"):
-            schema_types[general_path.lstrip(".")] = schema_item["type"]
-        return True
+            types = set(document_keys_to_types.get(path, []))
+            types.add(type(crash).__name__)
+            document_keys_to_types[path] = list(sorted(types))
 
     total_uuids = len(uuids)
     click.echo("")
@@ -83,36 +78,26 @@ def validate_and_test(ctx, crashdir):
         click.echo(f"Working on {uuid} ({i}/{total_uuids})...")
 
         processed_crash = json.loads((datapath / uuid).read_text())
-
-        # Capture all the keys
-        log_all_keys(processed_crash)
-
-        # Capture keys that the schema recognizes
-        schema_reduce(
-            schema=PROCESSED_CRASH_SCHEMA,
-            document=processed_crash,
-            include_predicate=logging_predicate,
-        )
-
-        # Validate the processed crash
+        log_document_keys(processed_crash)
         jsonschema.validate(processed_crash, PROCESSED_CRASH_SCHEMA)
 
     click.echo("Done testing, all crash reports passed.")
 
-    # FIXME(willkg): compute the keys in the schema that aren't in the document
+    keys_not_in_crashes = set(schema_keys_to_types.keys()) - set(
+        document_keys_to_types.keys()
+    )
+    if keys_not_in_crashes:
+        click.echo(
+            f"{len(keys_not_in_crashes)} (out of {len(schema_keys_to_types)}) keys "
+            + "in JSON Schema, but never in any of the tested crashes:"
+        )
+        click.echo("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
+        for k in sorted(keys_not_in_crashes):
+            click.echo("  %s%s" % (k.ljust(60), schema_keys_to_types[k]))
 
-    # keys_not_in_crashes = set(schema_types.keys()) - all_keys
-    # if keys_not_in_crashes:
-    #     click.echo("")
-    #     click.echo(
-    #         f"{len(keys_not_in_crashes)} keys in processed_crash.json Schema, "
-    #         + "but not in crash reports:"
-    #     )
-    #     click.echo("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
-    #     for key in sorted(keys_not_in_crashes):
-    #         click.echo("  %s%s" % (key.ljust(60), all_schema_types[key]))
-
-    keys_not_in_schema = set(all_keys.keys()) - set(schema_types.keys())
+    keys_not_in_schema = set(document_keys_to_types.keys()) - set(
+        schema_keys_to_types.keys()
+    )
     if keys_not_in_schema:
         click.echo("")
         click.echo(
@@ -120,7 +105,7 @@ def validate_and_test(ctx, crashdir):
         )
         click.echo("  %s%s" % ("KEY".ljust(70), "TYPE(S)"))
         for key in sorted(keys_not_in_schema):
-            click.echo("  %s%s" % (key.ljust(70), all_keys[key]))
+            click.echo("  %s%s" % (key.ljust(70), document_keys_to_types[key]))
 
 
 if __name__ == "__main__":
