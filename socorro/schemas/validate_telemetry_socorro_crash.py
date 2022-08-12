@@ -15,6 +15,8 @@ import jsonschema
 import requests
 
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
+from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
+from socorro.lib.libjson import Reducer, traverse_schema
 
 
 API_BASE = "https://crash-stats.mozilla.org/api/{}/"
@@ -40,6 +42,7 @@ class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
         click.echo("resp.url %s" % resp.url)
         self._all_fields = resp.json()
         self.conn = MockConn()
+        self.reducer = Reducer(schema=TELEMETRY_SOCORRO_CRASH_SCHEMA)
 
     def get_last_data(self):
         return self.conn.last_data
@@ -108,26 +111,24 @@ def validate_and_test(ctx, crashes_per_url, url):
 
     crashstorage = MockedTelemetryBotoS3CrashStorage()
 
-    all_keys = set()
+    # Figure out the schema keys to types mapping
+    # schema path -> schema type
+    schema_keys_to_types = {}
 
-    def log_all_keys(crash, prefix=""):
+    def log_schema_keys(path, general_path, schema_item):
+        if path:
+            schema_keys_to_types[path] = schema_item["type"]
+
+    traverse_schema(schema, log_schema_keys)
+
+    document_keys = set()
+
+    def log_document_keys(crash, path=""):
         for key, value in crash.items():
             if isinstance(value, dict):
-                log_all_keys(value, prefix=f"{prefix}{key}.")
+                log_document_keys(value, path=f"{path}.{key}")
             else:
-                all_keys.add(prefix + key)
-
-    all_schema_types = {}
-
-    # FIXME(willkg): This doesn't traverse refs
-    def log_all_schema_keys(schema, prefix=""):
-        for key, value in schema["properties"].items():
-            if isinstance(value, dict) and "properties" in value:
-                log_all_schema_keys(value, prefix=f"{prefix}{key}.")
-            else:
-                all_schema_types[prefix + key] = value["type"]
-
-    log_all_schema_keys(schema)
+                document_keys.add(f"{path}.{key}")
 
     click.echo("Testing %s random recent crash reports." % len(uuids))
     for uuid in uuids:
@@ -140,20 +141,20 @@ def validate_and_test(ctx, crashes_per_url, url):
 
         crashstorage.save_processed_crash(raw_crash, processed_crash)
         crash_report = crashstorage.get_last_data()
-        log_all_keys(crash_report)
+        log_document_keys(crash_report)
         jsonschema.validate(crash_report, schema)
 
     click.echo("Done testing, all crash reports passed.")
 
-    keys_not_in_crashes = set(all_schema_types.keys()) - all_keys
+    keys_not_in_crashes = set(schema_keys_to_types.keys()) - document_keys
     if keys_not_in_crashes:
         click.echo(
-            "%s keys in JSON Schema, but never in any of the tested crashes:"
-            % len(keys_not_in_crashes)
+            f"{len(keys_not_in_crashes)} (out of {len(schema_keys_to_types)}) keys "
+            + "in JSON Schema, but never in any of the tested crashes:"
         )
         click.echo("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
         for k in sorted(keys_not_in_crashes):
-            click.echo("  %s%s" % (k.ljust(60), all_schema_types[k]))
+            click.echo("  %s%s" % (k.ljust(60), schema_keys_to_types[k]))
 
 
 if __name__ == "__main__":
