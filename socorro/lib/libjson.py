@@ -78,6 +78,27 @@ def expand_references(schema, schema_item):
     return schema_item
 
 
+def permissions_predicate(permissions_have):
+    """Creates a permissions predicate that returns True iff user has all required
+    permissions for specified field
+
+    :arg permissions_have: the list of permissions the user has
+
+    :returns: True if the user has all required permissions
+
+    """
+    permissions_have = frozenset(permissions_have)
+
+    def _permissions_predicate(path, general_path, schema_item):
+        permissions_required = schema_item.get("socorro", {}).get("permissions")
+        permissions_required = permissions_required or []
+        permissions_required = frozenset(permissions_required)
+
+        return not len(permissions_required - permissions_have) > 0
+
+    return _permissions_predicate
+
+
 def everything_predicate(path, general_path, schema_item):
     """include_predicate that includes everything in the document"""
     return True
@@ -229,28 +250,52 @@ class Reducer:
                     raise InvalidDocumentError(f"invalid: {path}: too many items")
 
                 for i in range(0, len(document_part)):
-                    new_part = self._traverse(
-                        schema_part=schema_items[i],
-                        document_part=document_part[i],
-                        path=f"{path}.{i}",
-                        general_path=f"{general_path}.[]",
-                    )
+                    schema_item_path = f"{path}.[{i}]"
+                    # Since this is a record and position matters, we keep the
+                    # index number
+                    schema_item_general_path = f"{general_path}.[{i}]"
+
+                    # If the predicate doesn't pass, we don't add this part of the document
+                    # to the new document
+                    if not self.include_predicate(
+                        path=schema_item_path,
+                        general_path=schema_item_general_path,
+                        schema_item=schema_items[i],
+                    ):
+                        # NOTE(willkg): This is a wonky case where one item in the
+                        # record is being redacted. Since it's a record and position
+                        # matters, we swap it to be a None
+                        new_part = None
+                    else:
+                        new_part = self._traverse(
+                            schema_part=schema_items[i],
+                            document_part=document_part[i],
+                            path=schema_item_path,
+                            general_path=schema_item_general_path,
+                        )
                     new_doc.append(new_part)
                 return new_doc
 
             # If schema_items is not a list, then each document_part must match this
-            # schema
+            # schema and match the predicate
+            new_doc = []
             schema_item = expand_references(self.schema, schema_items)
 
-            new_doc = []
             for i in range(0, len(document_part)):
-                new_part = self._traverse(
-                    schema_part=schema_item,
-                    document_part=document_part[i],
-                    path=f"{path}.{i}",
-                    general_path=f"{general_path}.[]",
-                )
-                new_doc.append(new_part)
+                schema_item_path = f"{path}.[{i}]"
+                schema_item_general_path = f"{path}.[]"
+                if self.include_predicate(
+                    path=schema_item_path,
+                    general_path=schema_item_general_path,
+                    schema_item=schema_item,
+                ):
+                    new_part = self._traverse(
+                        schema_part=schema_item,
+                        document_part=document_part[i],
+                        path=schema_item_path,
+                        general_path=schema_item_general_path,
+                    )
+                    new_doc.append(new_part)
             return new_doc
 
         if isinstance(document_part, dict):

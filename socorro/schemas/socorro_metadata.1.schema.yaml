@@ -12,3 +12,34 @@ properties:
     description: >
       The annotation in the crash report to copy over into the processed crash.
     type: string
+
+  permissions:
+    description: |
+      The permissions required to view this field.
+
+      This field if it does not exist or has no value defaults to 'all
+      permissions are required'.
+    items:
+      enum: ["public", "protected", "exploitability"]
+      type: string
+    type: array
+
+  bugs:
+    description: >
+      Non-exhaustive list of bug urls for work related to this field.
+    items:
+      type: string
+    type: array
+
+  dataReview:
+    description: >
+      List of bug urls for data review bugs.
+    items:
+      type: string
+    type: array
+
+  notes:
+    description: >
+      Any notes about this field including data problems over time,
+      gotchas/tips for analysis, and caveats.
+    type: string

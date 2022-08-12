@@ -8,6 +8,8 @@ import pytest
 from socorro.lib.libjson import (
     InvalidDocumentError,
     InvalidSchemaError,
+    Reducer,
+    permissions_predicate,
     schema_reduce,
     traverse_schema,
 )
@@ -289,7 +291,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"numbers": [5, "Janice", 10]}
-        msg_pattern = r"invalid: .numbers.1: type not in \['integer'\]"
+        msg_pattern = r"invalid: .numbers.\[1\]: type not in \['integer'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
@@ -396,7 +398,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"record": [5, "Janice"]}
-        msg_pattern = r"invalid: .record.0: type not in \['string'\]"
+        msg_pattern = r"invalid: .record.\[0\]: type not in \['string'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
@@ -664,3 +666,82 @@ def test_traverse_schema(schema, nodes):
     visitor = Visitor()
     traverse_schema(schema=schema, visitor_function=visitor.visit)
     assert visitor.nodes == nodes
+
+
+@pytest.mark.parametrize(
+    "permissions_have, expected",
+    [
+        (
+            ["public"],
+            {"key1": "abc"},
+        ),
+        (
+            ["public", "protected"],
+            {
+                "key1": "abc",
+                "key2": "def",
+                "key3": {"key3sub1": "ghi"},
+                "key4": ["jkl"],
+            },
+        ),
+    ],
+)
+def test_permissions_predicate(permissions_have, expected):
+    schema = {
+        "$id": "https://mozilla.org/schemas/libjson_test/1",
+        "type": "object",
+        "properties": {
+            "key1": {
+                "type": "string",
+                "socorro": {
+                    "permissions": ["public"],
+                },
+            },
+            "key2": {
+                "type": "string",
+                "socorro": {
+                    "permissions": ["protected"],
+                },
+            },
+            "key3": {
+                "type": "object",
+                "properties": {
+                    "key3sub1": {
+                        "type": "string",
+                        "socorro": {
+                            "permissions": ["protected"],
+                        },
+                    },
+                },
+                "socorro": {
+                    "permissions": ["protected"],
+                },
+            },
+            "key4": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "socorro": {
+                        "permissions": ["protected"],
+                    },
+                },
+                "socorro": {
+                    "permissions": ["protected"],
+                },
+            },
+        },
+    }
+
+    document = {
+        "key1": "abc",
+        "key2": "def",
+        "key3": {
+            "key3sub1": "ghi",
+        },
+        "key4": ["jkl"],
+    }
+
+    predicate = permissions_predicate(permissions_have=permissions_have)
+    reducer = Reducer(schema=schema, include_predicate=predicate)
+    redacted_document = reducer.traverse(document=document)
+    assert redacted_document == expected

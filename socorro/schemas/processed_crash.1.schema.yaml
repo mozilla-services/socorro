@@ -63,39 +63,69 @@ definitions:
                           filename:
                             description: The file name.
                             type: ["string", "null"]
+                            socorro:
+                              permissions: ["public"]
                           function:
                             description: The name of the function.
                             type: ["string", "null"]
+                            socorro:
+                              permissions: ["public"]
                           in_app:
                             description: >
                               Whether this function is in the product's app
                               code.
                             type: ["boolean", "null"]
+                            socorro:
+                              permissions: ["public"]
                           lineno:
                             description: >
                               The line number in the file where the crash
                               happened.
                             type: ["integer", "null"]
+                            socorro:
+                              permissions: ["public"]
                           module:
                             description: The class.
                             type: ["string", "null"]
+                            socorro:
+                              permissions: ["public"]
                         type: object
+                        socorro:
+                          permissions: ["public"]
                       type: array
+                      socorro:
+                        permissions: ["public"]
                     module:
                       description: Module for the exception class.
                       type: string
+                      socorro:
+                        permissions: ["public"]
                     type:
                       description: The exception class.
                       type: string
+                      socorro:
+                        permissions: ["public"]
                     value:
                       description: The exception value. This can be sensitive.
                       type: string
+                      socorro:
+                        permissions: ["protected"]
                   type: object
+                  socorro:
+                    permissions: ["public"]
               type: object
+              socorro:
+                permissions: ["public"]
             type: array
+            socorro:
+              permissions: ["public"]
         type: object
+        socorro:
+          permissions: ["public"]
     type: object
-    # END: java_exception
+    socorro:
+      permissions: ["public"]
+      # END: java_exception
 
   json_dump:
     description: >
@@ -109,20 +139,30 @@ definitions:
           address:
             description: Address of the crash in hex.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           assertion:
             description: >
               A message describing a tripped assertion (which presumably caused
               the crash).
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           crashing_thread:
             description: >
               The thread id of the thread that caused the crash or requested
               the minidump.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
           type:
             description: Platform-specific error type that caused the crash.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       crashing_thread:
         description: >
           The thread that crashed. This is copied from "threads" with some
@@ -131,6 +171,8 @@ definitions:
           frame_count:
             description: How many stack frames therea re.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
           frames:
             description: >
               Stack frames of the thread from top (the code that was currently
@@ -138,38 +180,60 @@ definitions:
             items:
               $ref: "#/definitions/json_dump_frame"
             type: ["array", "null"]
+            socorro:
+              permissions: ["public"]
           last_error_value:
             description: The windows GetLastError() value for this thread.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           thread_name:
             description: The name of the thread.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           threads_index:
             description: Index into the 'threads' array.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       lsb_release:
         description: Linnux Standard Base information.
         properties:
           codename:
             description: DISTRIB_CODENAME or VERSION_CODENAME
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           description:
             description: DISTRIB_DESCRIPTION or PRETTY_NAME
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           id:
             description: DISTRIB_ID or ID
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           release:
             description: DISTRIB_RELEASE or VERSION_ID
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       mac_crash_info:
         description: MacOS-specific extended crash_info.
         properties:
           num_records:
             description: The number of entries in 'records'.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
           records:
             description: The mac_crash_info records.
             items:
@@ -177,23 +241,45 @@ definitions:
               properties:
                 abort_cause:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 backtrace:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 dialog_mode:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 message:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 message2:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 module:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 signature_string:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
                 thread:
                   type: ["string", "null"]
+                  socorro:
+                    permissions: ["public"]
               type: ["object", "null"]
+              socorro:
+                permissions: ["public"]
             type: ["array", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       main_module:
         description: The index of the 'main' module.
         type: ["integer", "null"]
@@ -207,65 +293,101 @@ definitions:
               description: >
                 The first address that maps to this module (inclusive).
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             cert_subject:
               description: >
-                "If non-null, indicates that this module is known to
-                be signed by the given party. Useful for detecting unofficial
-                DLL injection."
+                If not null, indicates that this module is known to be signed
+                by the given party. Useful for detecting unofficial DLL
+                injection.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             code_id:
               description: The code id for this module.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             corrupt_symbols:
               description: If the symbol file was too corrupt to use.
               type: ["boolean", "null"]
+              socorro:
+                permissions: ["public"]
             debug_file:
               description: >
                 The name of the file containing debuginfo for this module.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             debug_id:
               description: A string uniquely identifying the build.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             end_addr:
               description: >
                 The last address that maps to this module (exclusive).
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             filename:
               description: The 'name' of the module.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             loaded_symbols:
               description: >
                 If the stackwalker managed to load a symbol file for this
                 module.
               type: ["boolean", "null"]
+              socorro:
+                permissions: ["public"]
             missing_symbols:
               description: >
                 If the stackwalker looked for a symbol file for this module and
                 couldn't find one.
               type: ["boolean", "null"]
+              socorro:
+                permissions: ["public"]
             symbol_url:
               description: The URL we downloaded the symbol file from.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             version:
               description: The official version of the module.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
           type: object
+          socorro:
+            permissions: ["public"]
         type: ["array", "null"]
+        socorro:
+          permissions: ["public"]
       modules_contains_cert_info:
         description: >
           UNSTABLE. Whether any modules have code signing information.
         type: ["boolean", "null"]
+        socorro:
+          permissions: ["public"]
       pid:
         description: Process ID of the crashing process.
         type: ["integer", "null"]
+        socorro:
+          permissions: ["public"]
       stackwalk_version:
         description: Version of the stackwalker that walked this stack.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       status:
         description: >
           Status of the output of the stackwalker. Currently, this is always
           'OK'.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       system_info:
         description: >
           Information about the hardware and operating system the crash
@@ -283,16 +405,24 @@ definitions:
               - arm64
               - unknown
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           cpu_count:
             description: The number of CPUs / cores.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
           cpu_info:
             description: A string describing the CPU's vendor and model.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           cpu_microcode_version:
             description: >
               The version number of the microcode running on the CPU.
             type: ["integer", "null"]
+            socorro:
+              permissions: ["public"]
           os:
             description: The flavor of operating system.
             examples:
@@ -306,15 +436,23 @@ definitions:
               - NaCL
               - <hexstring>
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
           os_ver:
             description: >
               Version of the operating system. Generally in the form of
               '<major>.<minor>.<build_number>'.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       thread_count:
         description: How many threads there are.
         type: ["integer", "null"]
+        socorro:
+          permissions: ["public"]
       threads:
         items:
           description: Information on a thread.
@@ -322,6 +460,8 @@ definitions:
             frame_count:
               description: How many stack frames therea re.
               type: ["integer", "null"]
+              socorro:
+                permissions: ["public"]
             frames:
               description: Stack frames of the thread from top (the code that
                 was currently executing) to bottom (start of the thread's
@@ -329,16 +469,28 @@ definitions:
               items:
                 $ref: "#/definitions/json_dump_frame"
               type: ["array", "null"]
+              socorro:
+                permissions: ["public"]
             last_error_value:
               description: The windows GetLastError() value for this thread.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
             thread_name:
               description: The name of the thread.
               type: ["string", "null"]
+              socorro:
+                permissions: ["public"]
           type: object
+          socorro:
+            permissions: ["public"]
         type: ["array", "null"]
+        socorro:
+          permissions: ["public"]
     type: ["object", "null"]
-    # END: json_dump
+    socorro:
+      permissions: ["public"]
+      # END: json_dump
 
   json_dump_frame:
     # FIXME(willkg): add unloaded_modules
@@ -347,34 +499,52 @@ definitions:
       file:
         description: The name of the source file the function is defined in.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       frame:
         description: The index of the frame in this array.
         type: ["integer", "null"]
+        socorro:
+          permissions: ["public"]
       function:
         description: Name of the function being executed.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       function_offset:
         description: >
           Address offset, but translated to be relative to the function's first
           instruction in the library/binary.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       line:
         description: The line in the source file that is roughly executing.
         type: ["integer", "null"]
+        socorro:
+          permissions: ["public"]
       missing_symbols:
         description: Whether we had symbols for this frame.
         type: ["boolean", "null"]
+        socorro:
+          permissions: ["public"]
       module:
         description: >
           The name of the module (library/binary) the offset maps to.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       module_offset:
         description: >
           Memory address offset relative to the module's start address.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       offset:
         description: The address (instruction) this frame is executing.
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       registers:
         additionalProperties: false
         description: The values the general purpose registers contained.
@@ -382,7 +552,11 @@ definitions:
           ^.+$:
             description: Register contents as a hexstring.
             type: ["string", "null"]
+            socorro:
+              permissions: ["public"]
         type: ["object", "null"]
+        socorro:
+          permissions: ["public"]
       trust:
         description: The technique used to recover this stack frame.
         examples:
@@ -391,8 +565,12 @@ definitions:
           - frame_pointer
           - scan
         type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
     type: ["object", "null"]
-    # END: json_dump_frames
+    socorro:
+      permissions: ["public"]
+      # END: json_dump_frames
 
   memory_measures:
     description: The memory report contents.
@@ -401,10 +579,14 @@ definitions:
         description: >
           Covers explicit memory allocations by the application.
         type: integer
+        socorro:
+          permissions: ["public"]
       gfx_textures:
         description: >
           Memory used for storing GL textures.
         type: integer
+        socorro:
+          permissions: ["public"]
       ghost_windows:
         description: >
           The number of ghost windows present (the number of nodes underneath
@@ -416,6 +598,8 @@ definitions:
           happen legitimately, but they are often indicative of leaks in the
           browser or add-ons.
         type: integer
+        socorro:
+          permissions: ["public"]
       heap_allocated:
         description: >
           Memory mapped by the heap allocator that is currently allocated to
@@ -423,30 +607,44 @@ definitions:
           the application because the allocator regularly rounds up request
           sizes.
         type: integer
+        socorro:
+          permissions: ["public"]
       heap_overhead:
         description: >
           The heap-overhead measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       heap_unclassified:
         description: >
           The heap-unclassified measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       host_object_urls:
         description: >
           The host-object-urls measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       images:
         description: >
           The images measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       js_main_runtime:
         description: >
           The js-main-runtime measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       private:
         description: >
           The private measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       resident:
         description: >
           Memory mapped by the process that is present in physical memory, also
@@ -456,6 +654,8 @@ definitions:
           operating system kernel and so is best used for comparing the memory
           usage of a single process at different points in time.
         type: integer
+        socorro:
+          permissions: ["public"]
       resident_unique:
         description: >
           Memory mapped by the process that is present in physical memory and
@@ -463,6 +663,8 @@ definitions:
           process' unique set size (USS). This is the amount of RAM we'd expect
           to be freed if we closed this process.
         type: integer
+        socorro:
+          permissions: ["public"]
       system_heap_allocated:
         description: >
           Memory used by the system allocator that is currently allocated to
@@ -471,10 +673,14 @@ definitions:
           zero, but on some platforms we cannot force every heap allocation
           through jemalloc.
         type: integer
+        socorro:
+          permissions: ["public"]
       top_none_detached:
         description: >
           The top(none)/detached measurement from the memory report.
         type: integer
+        socorro:
+          permissions: ["public"]
       vsize:
         description: >
           Memory mapped by the process, including code and data segments, the
@@ -485,13 +691,19 @@ definitions:
           with one another. But even on other operating systems 'resident' is a
           much better measure of the memory resources used by the process.
         type: integer
+        socorro:
+          permissions: ["public"]
       vsize_max_contiguous:
         description: >
           The vsize-max-contiguous measurement from the memory report. See
           about:memory for a fuller description.
         type: integer
+        socorro:
+          permissions: ["public"]
     type: ["object", "null"]
-    # END: memory_measures
+    socorro:
+      permissions: ["public"]
+      # END: memory_measures
 
   memory_report:
     description: >
@@ -542,16 +754,19 @@ properties:
     description: The graphics adapter device identifier.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AdapterDeviceID
   adapter_driver_version:
     description: The graphics adapter driver version.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AdapterDriverVersion
   adapter_subsys_id:
     description: The graphics adapter subsystem identifier.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AdapterSubsysID
   adapter_vendor_id:
     description: >
@@ -559,30 +774,35 @@ properties:
       identifier.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AdapterVendorID
   abort_message:
     description: >
       Message passed to NS_DebugBreak().
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AbortMessage
   accessibility:
     description: >
       Set to 'Active' by the accessibility service when it is active.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Accessibility
   accessibility_client:
     description: >
       Out-of-process accessibility client program name and version information.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AccessibilityClient
   accessibility_in_proc_client:
     description: >
       In-process accessibility client detection information.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AccessibilityInProcClient
   additional_minidumps:
     description: >
@@ -591,6 +811,8 @@ properties:
     items:
       type: string
     type: array
+    socorro:
+      permissions: ["public"]
   addons:
     description: >
       A list of the addons currently enabled at the time of the crash. This
@@ -600,75 +822,93 @@ properties:
     items:
       type: string
     type: array
+    socorro:
+      permissions: ["public"]
   addons_checked:
     description: >
       Set to True if add-on compatibility checking is enabled. False or null
       otherwise.
     type: ["boolean", "null"]
+    socorro:
+      permissions: ["public"]
   address:
     description: >
       The address where the crashing thread crashed. This value is only
       meaningful for crashes involving bad memory addresses.
     type: ["string", "null"]
+    socorro:
+      permissions: ["public"]
   android_board:
     description: The board used by the Android device.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Board
   android_brand:
     description: The Android device brand.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Brand
   android_cpu_abi:
     description: The Android primary CPU ABI being used.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_CPU_ABI
   android_cpu_abi2:
     description: The Android secondary CPU ABI being used.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_CPU_ABI2
   android_device:
     description: The Android device name.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Device
   android_display:
     description: The Android display.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Display
   android_fingerprint:
     description: ''
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Fingerprint
   android_hardware:
     description: The Android device hardware.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Hardware
   android_manufacturer:
     description: The Android device manufacturer.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Manufacturer
   android_model:
     description: The Android device model name.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Model
   android_version:
     description: The Android version.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Android_Version
   app_init_dlls:
     description: DLLs injected through the AppInit_DLLs registry key.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AppInitDLLs
   app_notes:
     description: >
@@ -676,12 +916,15 @@ properties:
       annotations.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Notes
   application_build_id:
     description: >
       Application build id when the build_id field contains the GeckoView
       library build id.
     type: string
+    socorro:
+      permissions: ["public"]
   async_shutdown_timeout:
     description: >
       This annotation is present if a shutdown blocker was not released in time
@@ -689,6 +932,7 @@ properties:
       The condition that caused the hang is contained in the annotation.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AsyncShutdownTimeout
   available_page_file:
     description: >
@@ -696,6 +940,7 @@ properties:
       is equal to or smaller than the system-wide available commit value.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AvailablePageFile
   available_physical_memory:
     description: >
@@ -704,6 +949,7 @@ properties:
       its contents to disk first.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AvailablePhysicalMemory
   available_virtual_memory:
     description: >
@@ -713,11 +959,13 @@ properties:
       even when this value is substantially greater than zero.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: AvailableVirtualMemory
   bios_manufacturer:
     description: The BIOS manufacturer.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: BIOS_Manufacturer
   breadcrumbs:
     description: >
@@ -728,9 +976,13 @@ properties:
       The unique build identifier of this version which is typically a
       timestamp of the form YYYYMMDDHHMMSS.
     type: string
+    socorro:
+      permissions: ["public"]
   client_crash_date:
     description: ''
     type: string
+    socorro:
+      permissions: ["public"]
   collector_notes:
     description: >
       Notes from when the crash report was collected. If the collector redacted
@@ -743,12 +995,15 @@ properties:
       Datestamp indicating the end of processing for the most recent processing
       for this crash report. Additional processing will overwrite this value.
     type: string
+    socorro:
+      permissions: ["public"]
   co_marshal_interface_failure:
     description: >
       Annotation describing the error returned by trying to marshal an object
       via CoMarshalInterface during the creation of an IPC proxy stream.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: CoMarshalInterfaceFailure
   co_unmarshal_interface_result:
     description: >
@@ -757,30 +1012,35 @@ properties:
       deserialization code.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: CoUnmarshalInterfaceResult
   content_sandbox_capabilities:
     description: >
       List of capabilities of the content process sandbox.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ContentSandboxCapabilities
   content_sandbox_capable:
     description: >
       Set to 1 if the client is capable of content sandboxing.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ContentSandboxCapable
   content_sandbox_enabled:
     description: >
       Set to 1 when content process sandboxing is enabled.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ContentSandboxEnabled
   content_sandbox_level:
     description: >
       Content sandbox level.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ContentSandboxLevel
   cpu_arch:
     description:
@@ -788,6 +1048,8 @@ properties:
       x86-64), 'arm', or 'arm64'.
     examples: ["x86", "amd64", "arm", "arm64"]
     type: string
+    socorro:
+      permissions: ["public"]
   cpu_count:
     description: >
       Number of processor units in the CPU.
@@ -797,36 +1059,49 @@ properties:
       Detailed processor information. Usually contains information such as the
       family, model, and stepping number.
     type: ["string", "null"]
+    socorro:
+      permissions: ["public"]
   cpu_microcode_version:
     description: Microcode version of the CPU.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: CPUMicrocodeVersion
   crash_id:
     description: Unique identifier of this crash report.
     type: string
+    socorro:
+      permissions: ["public"]
   crash_report_keys:
     description: >
       List of crash annotations and files in the submitted crash report.
     items:
       type: string
     type: array
+    socorro:
+      permissions: ["public"]
   crash_time:
     description: |
       Crash time in seconds since the Epoch.
 
       Set to the submitted_timestamp if CrashTime annotation is missing.
     type: integer
+    socorro:
+      permissions: ["public"]
   crashing_thread:
     description: >
       Index of the crashing thread.
     type: ["integer", "null"]
+    socorro:
+      permissions: ["public"]
   date_processed:
     description: |
       Date when the crash report was submitted to Socorro.
 
       This is the submitted_timestamp from the collector.
     type: string
+    socorro:
+      permissions: ["public"]
   distribution_id:
     description: |
       Product application's distribution ID.
@@ -835,44 +1110,85 @@ properties:
       'TelemetryEnvironment.partner.distributionId' value. If there isn't a
       value in either place, this defaults to 'mozilla'.
     type: string
+    socorro:
+      permissions: ["public"]
+  dom_fission_enabled:
+    description: >
+      Set to 1 when DOM fission is enabled and subframes are potentially loaded
+      in a separate process.
+    type: boolean
+    socorro:
+      permissions: ["public"]
+      sourceAnnotation: DOMFissionEnabled
+  dom_ipc_enabled:
+    description: >
+      Set to 1 when a tab is running in a content process.
+    type: boolean
+    socorro:
+      permissions: ["public"]
+      sourceAnnotation: DOMIPCEnabled
   dumper_error:
     description: >
       Error message of the minidump writer in case there was an error during
       dumping.
     type: string
     socorro:
+      permissions: ["protected"]
       sourceAnnotation: DumperError
   em_check_compatibility:
     description: >
       Set to 1 if add-on compatibility checking is enabled.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: EMCheckCompatibility
   flash_version:
     description: >
       Version of the Flash Player plugin.
     type: string
+    socorro:
+      permissions: ["public"]
   gmp_library_path:
     description: Holds the path to the GMP plugin library.
     type: string
     socorro:
+      # This contains file paths on the user's computer.
+      permissions: ["protected"]
       sourceAnnotation: GMPLibraryPath
+  gmp_plugin:
+    description: >
+      Whether it is a GMP plugin crash.
+    type: boolean
+    socorro:
+      permissions: ["public"]
+      sourceAnnotation: GMPPlugin
   graphics_critical_error:
     description: Log of graphics-related errors.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: GraphicsCriticalError
+  graphics_startup_test:
+    description: >
+      Whether the crash occurred in the DriverCrashGuard.
+    type: boolean
+    socorro:
+      permissions: ["public"]
+      sourceAnnotation: GraphicsStartupTest
   has_device_touch_screen:
     description:
       Set to 1 if the device had a touch-screen, this only applies to Firefox
       desktop. On mobile devices we assume a touch-screen is always present.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: HasDeviceTouchScreen
   install_age:
     description: >
       Length of time since the current version of the product was installed.
     type: integer
+    socorro:
+      permissions: ["public"]
   install_time:
     description: >
       Epoch time of when the current version of the product was installed.
@@ -881,11 +1197,13 @@ properties:
       same second.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: InstallTime
   ipc_channel_error:
     description: The IPC channel error.
     type: string
     socorro:
+      permissions: ["public"]
       # NOTE(willkg): This isn't a typo--that's the crash annotation
       sourceAnnotation: ipc_channel_error
   ipc_fatal_error_msg:
@@ -893,23 +1211,27 @@ properties:
       Describes a fatal error that occurred during IPC operation.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCFatalErrorMsg
   ipc_fatal_error_protocol:
     description: >
       Name of the protocol used by IPC when a fatal error occurred.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCFatalErrorProtocol
   ipc_message_name:
     description: The name of the IPC message.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCMessageName
   ipc_message_size:
     description: >
       Size of the IPC message that caused a crash because it was too large.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCMessageSize
   ipc_shutdown_state:
     description: >
@@ -917,6 +1239,7 @@ properties:
       'SendFinishShutdown' by a content process while it's shutting down.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCShutdownState
   ipc_system_error:
     # NOTE(willkg): CrashAnnotations.yaml lists this as a string, but the
@@ -926,6 +1249,7 @@ properties:
       Description of the last system error that occurred during IPC operation.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IPCSystemError
   is_garbage_collecting:
     description: >
@@ -933,12 +1257,15 @@ properties:
       occurred.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: IsGarbageCollecting
   java_exception:
     $ref: "#/definitions/java_exception"
     description: >
       Structured Java exception information with potentially sensitive fields
       redacted.
+    socorro:
+      permissions: ["public"]
   java_exception_raw:
     # FIXME(willkg): we can probably get rid of this once we use the schema for
     # reducing the public set
@@ -946,35 +1273,48 @@ properties:
     description: >
       Complete structured Java exception information which may contain
       sensitive information.
+    socorro:
+      permissions: ["protected"]
   java_stack_trace:
     description: >
       The unstructured JavaStackTrace crash annotation without the exception
       value which can be sensitive.
     type: string
+    socorro:
+      permissions: ["public"]
   java_stack_trace_raw:
     description: >
       The unstructured JavaStackTrace crash annotation with exception value
       which can be sensitive.
     type: string
+    socorro:
+      permissions: ["protected"]
   json_dump:
     $ref: "#/definitions/json_dump"
     description: Output of rust-minidump stackwalker.
+    socorro:
+      permissions: ["public"]
   last_crash:
     description: >
       Length of time between the previous crash submission and this one. Low
       values indicate repeated crashes.
     type: ["integer", "null"]
+    socorro:
+      permissions: ["public"]
   mac_available_memory_sysctl:
     description: >
       The value of the available memory sysctl 'kern.memorystatus_level'.
       Expected to be a percentage integer value.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacAvailableMemorySysctl
   mac_crash_info:
     description: >
       JSON-encoded Mac OS X __crash_info data.
     type: string
+    socorro:
+      permissions: ["public"]
   mac_memory_pressure:
     description: >
       The current memory pressure state as provided by the macOS memory
@@ -985,6 +1325,7 @@ properties:
       X-specific annotation.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacMemoryPressure
   mac_memory_pressure_critical_time:
     description: >
@@ -992,6 +1333,7 @@ properties:
       expressed as seconds since the Epoch.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacMemoryPressureCriticalTime
   mac_memory_pressure_normal_time:
     description: >
@@ -999,6 +1341,7 @@ properties:
       expressed as seconds since the Epoch.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacMemoryPressureNormalTime
   mac_memory_pressure_sysctl:
     description: >
@@ -1008,6 +1351,7 @@ properties:
       one of 4 (Critical), 2 (Warning), or 0 (Normal).
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacMemoryPressureSysctl
   mac_memory_pressure_warning_time:
     description: >
@@ -1015,22 +1359,29 @@ properties:
       expressed as seconds since the Epoch.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MacMemoryPressureWarningTime
   major_version:
     description: >
       The major part of the version string as an integer. If there is no
       major_version, this is 0.
     type: integer
+    socorro:
+      permissions: ["public"]
   mdsw_return_code:
     description: >
       Exit code of the stackwalker process when processing
       'upload_file_minidump'. Non-0 indicates there was an error.
     type: integer
+    socorro:
+      permissions: ["public"]
   mdsw_status_string:
     description: >
       Status of the output of the stackwalker when processing
       'upload_file_minidump'. Currently, this is always 'OK'.
     type: string
+    socorro:
+      permissions: ["public"]
   mdsw_stderr:
     description: >
       stderr output from the stackwalker when processing 'upload_file_minidump'.
@@ -1052,6 +1403,7 @@ properties:
       - Unexpected value
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: MemoryErrorCorrection
   memory_measures:
     description: ''
@@ -1068,11 +1420,15 @@ properties:
       SHA256 hash generated by the collector of the 'upload_file_minidump' file
       if there was one.
     type: ["string", "null"]
+    socorro:
+      permissions: ["public"]
   modules_in_stack:
     description: >
       Set of 'module/debugid' strings delimited by ';' of modules that are in
       the stack of the crashing thread.
     type: string
+    socorro:
+      permissions: ["public"]
   moz_crash_reason:
     description: |
       For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
@@ -1080,6 +1436,8 @@ properties:
 
       This is the redacted value from the crash report annotation.
     type: string
+    socorro:
+      permissions: ["public"]
   moz_crash_reason_raw:
     description: |
       For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
@@ -1088,6 +1446,8 @@ properties:
       This is the raw value from the crash report annotation which can contain
       sensitive data.
     type: string
+    socorro:
+      permissions: ["protected"]
   oom_allocation_size:
     description: >
       A measure or estimate of the allocation request size that triggered an
@@ -1097,6 +1457,7 @@ properties:
       out-of-memory crash.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: OOMAllocationSize
   os_name:
     description: >
@@ -1105,55 +1466,77 @@ properties:
       system name including the version.
     examples: ["Windows NT", "Mac OS X", "Linux"]
     type: string
+    socorro:
+      permissions: ["public"]
   os_pretty_version:
     description: >
       A better platform name including version for Windows and Mac OS X.
     type: string
+    socorro:
+      permissions: ["public"]
   os_version:
     description: Version of the operating system.
     type: string
+    socorro:
+      permissions: ["public"]
   phc_alloc_stack:
     description: >
       The allocation's allocation stack trace, if the crash involved a bad
       access of a special PHC allocation. Encoded as a comma-separated list of
       decimal addresses.
     type: string
+    socorro:
+      permissions: ["protected"]
   phc_base_address:
     description: >
       The allocation's base address, if the crash involved a bad access of a
       special PHC allocation. Encoded as a decimal address.
     type: string
+    socorro:
+      permissions: ["protected"]
   phc_free_stack:
     description: >
       The allocation's free stack trace, if the crash involved a bad access
       of a special PHC allocation. Encoded as a comma-separated list of decimal
       addresses.
     type: string
+    socorro:
+      permissions: ["protected"]
   phc_kind:
     description: >
       The allocation kind, if the crash involved a bad access of a special PHC
       allocation.
     type: string
+    socorro:
+      permissions: ["protected"]
   phc_usable_size:
     description: >
       The allocation's usable size, if the crash involved a bad access of a
       special PHC allocation.
     type: integer
+    socorro:
+      permissions: ["protected"]
   plugin_filename:
     description: >
       When a plugin process crashes, this is the name of the file of the plugin
       loaded into that process.
     type: string
+    socorro:
+      permissions: ["public"]
   plugin_name:
     description: >
       When a plugin process crashes, this is the name of the plugin loaded into
       that process.
     type: string
+    socorro:
+      permissions: ["public"]
   plugin_version:
     description: >
       When a plugin process crashes, this is the version of the plugin loaded
       into that process.
     type: string
+    socorro:
+      permissions: ["public"]
   process_type:
     description: >
       Type of the process that crashed. This will be 'parent' if the crash
@@ -1162,6 +1545,7 @@ properties:
     examples: ["any", "parent", "plugin", "content", "gpu"]
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ProcessType
   processor_notes:
     description: |
@@ -1170,42 +1554,56 @@ properties:
       Reprocessing crash reports will append processing notes to the previous
       rounds.
     type: string
+    socorro:
+      permissions: ["public"]
   product:
     description: Name of the product.
     type: string
+    socorro:
+      permissions: ["public"]
   productid:
     description: Identifier of the product.
     type: string
+    socorro:
+      permissions: ["public"]
   proto_signature:
     description: >
       Generated by signature generation in the processor, this is a '|'
       delimited string of the normalized symbols of the frames of the crashing
       thread.
     type: string
+    socorro:
+      permissions: ["public"]
   reason:
     description: >
       The crash exception kind for the crashing thread crash. Different
       operating systems have different exception kinds. Example values
       'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'.
     type: string
+    socorro:
+      permissions: ["public"]
   release_channel:
     description: >
       The update channel that the product is on. Typically 'nightly', 'aurora',
       'beta', 'release', or 'esr'. This may also be other values like
       'release-cck-partner'.
     type: string
+    socorro:
+      permissions: ["public"]
   remote_type:
     description: >
       This is 'extension' if a WebExtension, 'web', or missing otherwise. This
       is only set for content crashes.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: RemoteType
   safe_mode:
     description:
       Whether the browser was running in Safe mode.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: SafeMode
   shutdown_progress:
     description: |
@@ -1214,35 +1612,44 @@ properties:
       'xpcom-will-shutdown' or 'xpcom-shutdown'.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: ShutdownProgress
   signature:
     description: >
       Crash signature for this crash report containing tags and the first few
       interesting frames of the stack.
     type: string
+    socorro:
+      permissions: ["public"]
   signature_debug:
     description: >
       Generated by signature generation in the processor, this is a log of
       generating the signature for this crash report. Useful for debugging
       signature generation algorithm problems.
     type: string
+    socorro:
+      permissions: ["public"]
   started_datetime:
     description: >
       Datestamp indicating the start of processing for the most recent
       processing for this crash report. Additional processing will overwrite
       this value.
     type: string
+    socorro:
+      permissions: ["public"]
   startup_crash:
     description: >
       Whether the crash happened before the startup phase was finished or not.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: StartupCrash
   startup_time:
     description: >
       The time when Firefox was launched expressed in seconds since the Epoch.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: StartupTime
   success:
     description: >
@@ -1253,6 +1660,8 @@ properties:
       Indicates how the crash was submitted by the user.
     examples: ["Auto", "Infobar", "AboutCrashes", "CrashedTab", "Client"]
     type: string
+    socorro:
+      permissions: ["public"]
   submitted_from_infobar:
     description: >
       DEPRECATED. True if submitted_from is 'Infobar' and False otherwise.
@@ -1267,6 +1676,7 @@ properties:
       The approximate percentage of physical memory that is in use.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: SystemMemoryUsePercentage
   throttleable:
     description: >
@@ -1274,6 +1684,7 @@ properties:
       to "0" the crash report will always be processed by Socorro.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Throttleable
   topmost_filenames:
     # FIXME(willkg): Can we remove this?
@@ -1282,6 +1693,8 @@ properties:
 
       This sounds like it should be multiple files, but it's a single file.
     type: ["string", "null"]
+    socorro:
+      permissions: ["public"]
   total_page_file:
     description: |
       Maximum amount of memory that can be committed without extending the
@@ -1294,11 +1707,13 @@ properties:
       * Not available on other systems.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: TotalPageFile
   total_physical_memory:
     description: The total amount of physical memory.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: TotalPhysicalMemory
   total_virtual_memory:
     description: >
@@ -1309,6 +1724,7 @@ properties:
       usually have much larger values.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: TotalVirtualMemory
   upload_file_minidump_browser:
     description: A minidump from the browser process.
@@ -1318,16 +1734,22 @@ properties:
         description: >
           Output of rust-minidump stackwalker on upload_file_minidump_browser
           minidump.
+        socorro:
+          permissions: ["public"]
       mdsw_return_code:
         description: >
           Exit code of the stackwalker process when processing this minidump.
           Non-0 indicates there was an error.
         type: integer
+        socorro:
+          permissions: ["public"]
       mdsw_status_string:
         description: >
           Status of the output of the stackwalker when processing this
           minidump. Currently, this is always 'OK'.
         type: string
+        socorro:
+          permissions: ["public"]
       mdsw_stderr:
         description: >
           stderr output from the stackwalker when processing this minidump.
@@ -1336,34 +1758,44 @@ properties:
         description: >
           Whether or not the status field in the stackwalker output was 'OK'.
         type: boolean
+        socorro:
+          permissions: ["public"]
     type: ["object", "null"]
+    socorro:
+      permissions: ["public"]
   uptime:
     description: >
       Length of time the process was running before it crashed. Small values
       (from 0 to 5 or so) usually indicate startup crashes. Calculated by the
       processor using the CrashTime and StartupTime annotations.
     type: integer
+    socorro:
+      permissions: ["public"]
   uptime_ts:
     description: Uptime in seconds as a float.
     type: number
     socorro:
+      permissions: ["public"]
       sourceAnnotation: UptimeTS
   url:
     description: >
       The url the user was visiting when the crash happened.
     type: string
     socorro:
+      permissions: ["protected"]
       sourceAnnotation: URL
   user_comments:
     description: >
       Comments provided by the user at the time of the crash.
     type: string
     socorro:
+      permissions: ["protected"]
       sourceAnnotation: Comments
   useragent_locale:
     description: The locale of the software installation.
     type: string
     socorro:
+      permissions: ["public"]
       # NOTE(willkg): This isn't a typo--that's the crash annotation
       sourceAnnotation: useragent_locale
   utility_process_sandboxing_kind:
@@ -1371,14 +1803,18 @@ properties:
       The SandboxingKind passed for this Utility process instance.
     type: integer
     socorro:
+      permissions: ["public"]
       sourceAnnotation: UtilityProcessSandboxingKind
   uuid:
     description: Unique identifier of this crash report.
     type: string
+    socorro:
+      permissions: ["public"]
   vendor:
     description: Application vendor (e.g. Mozilla).
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: Vendor
   version:
     description: >
@@ -1387,12 +1823,15 @@ properties:
       value with 'a' indicates aurora release; and a value with 'esr' indicates
       an Extended Service Release.
     type: string
+    socorro:
+      permissions: ["public"]
   windows_error_reporting:
     description: >
       Set to 1 if this crash was intercepted via the Windows Error Reporting
       runtime exception module.
     type: boolean
     socorro:
+      permissions: ["public"]
       sourceAnnotation: WindowsErrorReporting
   xpcom_spin_event_loop_stack:
     description: |
@@ -1404,6 +1843,7 @@ properties:
       the prefix ('default' means parent) and see bug 1741131 for details.
     type: string
     socorro:
+      permissions: ["public"]
       sourceAnnotation: XPCOMSpinEventLoopStack
 
 title: processed crash schema
