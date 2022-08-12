@@ -343,10 +343,11 @@ def traverse_schema(schema, visitor_function=print_function):
         visitor_function(path, general_path, schema)
 
         type_ = schema["type"]
+        if isinstance(type_, list):
+            type_ = [t for t in type_ if t != "null"][0]
+
         if type_ == "object":
             for name, subschema in schema.get("properties", {}).items():
-                subschema = expand_references(root_schema, subschema)
-
                 _traverse(
                     root_schema=root_schema,
                     schema=subschema,
@@ -356,8 +357,6 @@ def traverse_schema(schema, visitor_function=print_function):
                 )
 
             for pattern, subschema in schema.get("patternProperties", {}).items():
-                subschema = expand_references(root_schema, subschema)
-
                 _traverse(
                     root_schema=root_schema,
                     schema=subschema,
@@ -371,21 +370,17 @@ def traverse_schema(schema, visitor_function=print_function):
 
             if isinstance(items, list):
                 for i, item in enumerate(items):
-                    subschema = expand_references(root_schema, item)
-
                     _traverse(
                         root_schema=root_schema,
-                        schema=subschema,
+                        schema=item,
                         visitor_function=visitor_function,
                         path=f"{path}.[{i}]",
                         general_path=f"{general_path}.[]",
                     )
             else:
-                subschema = expand_references(root_schema, items)
-
                 _traverse(
                     root_schema=root_schema,
-                    schema=subschema,
+                    schema=items,
                     visitor_function=visitor_function,
                     path=f"{path}.[]",
                     general_path=f"{general_path}.[]",
