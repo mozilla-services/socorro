@@ -2087,6 +2087,7 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    # FIXME(willkg): what is this for? can we remove it?
     "memory_measures": {
         "data_validation_type": "enum",
         "description": "",
@@ -2650,6 +2651,7 @@ FIELDS = {
             "type": "multi_field",
         },
     },
+    # FIXME(willkg): where does this come from?
     "skunk_classification": {
         "data_validation_type": "enum",
         "description": (
@@ -2714,6 +2716,7 @@ FIELDS = {
         ),
         is_protected=False,
     ),
+    # FIXME(willkg): where does this come from?
     "support_classification": {
         "data_validation_type": "enum",
         "description": (
@@ -2819,6 +2822,7 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    # FIXME(willkg): what's this here for?
     "upload_file_minidump_browser": {
         "data_validation_type": "enum",
         "description": "",
@@ -2833,6 +2837,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": None,
     },
+    # FIXME(willkg): what's this here for?
     "upload_file_minidump_flash1": {
         "data_validation_type": "enum",
         "description": "",
@@ -2847,6 +2852,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": None,
     },
+    # FIXME(willkg): what's this here for?
     "upload_file_minidump_flash2": {
         "data_validation_type": "enum",
         "description": "",
