@@ -11,7 +11,7 @@ from configman import ConfigurationManager
 from configman.dotdict import DotDict
 import freezegun
 
-from socorro.lib.libdatetime import utc_now
+from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.processor_app import ProcessorApp
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
@@ -191,9 +191,9 @@ class TestProcessorPipeline:
                 processed_crash=processed_crash,
             )
 
-        assert processed_crash.success
-        assert processed_crash.started_datetime == now
-        assert processed_crash.completed_datetime == now
+        assert processed_crash["success"] is True
+        assert processed_crash["started_datetime"] == date_to_string(now)
+        assert processed_crash["completed_datetime"] == date_to_string(now)
         notes = processed_crash["processor_notes"].split("\n")
         assert ">>> Start processing" in notes[0]
         assert "previousnotes" in notes

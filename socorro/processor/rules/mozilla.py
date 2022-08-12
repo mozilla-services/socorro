@@ -18,9 +18,10 @@ import sentry_sdk
 
 from socorro.lib import libjava
 from socorro.lib.context_tools import temp_file_context
+from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
-from socorro.lib.libjson import InvalidSchemaError
+from socorro.lib.libjson import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
@@ -66,6 +67,7 @@ class CopyFromRawCrashRule(Rule):
 
     def __init__(self, schema):
         super().__init__()
+        schema = resolve_references(schema)
         self.schema = schema
         self.fields = self.build_fields(schema)
 
@@ -75,15 +77,18 @@ class CopyFromRawCrashRule(Rule):
         if schema.get("type", "string") != "object":
             raise InvalidSchemaError("schema type is not object")
 
+        # NOTE(willkg): all items copied from the raw crash will get put at the top
+        # level of the processed crash and are not "$ref"
         properties = schema.get("properties", {})
         for key, schema_property in properties.items():
-            copy_source = schema_property.get("socorro", {}).get("sourceAnnotation", "")
+            copy_source = schema_property.get("source_annotation", "")
             if copy_source:
                 default = schema_property.get("default", NO_DEFAULT)
 
                 # Use the first non-null type
                 valid_types = schema_property["type"]
                 if isinstance(valid_types, list):
+                    # Take the first non-null type
                     type_ = [t for t in valid_types if t != "null"][0]
                 else:
                     type_ = valid_types
@@ -308,18 +313,15 @@ class DatesAndTimesRule(Rule):
         # NOTE(willkg): The submitted_timestamp comes from the collector when the crash
         # report is accepted. It should always be there and should always be
         # an isoformat string.
-        processed_crash["submitted_timestamp"] = datetime.datetime.fromisoformat(
-            raw_crash["submitted_timestamp"]
-        )
+        submitted_timestamp_str = raw_crash["submitted_timestamp"]
+        processed_crash["submitted_timestamp"] = submitted_timestamp_str
 
         # NOTE(willkg): This means that the date_processed is the same as
         # submitted_timestamp which is the datetime when the crash report was collected
-        processed_crash["date_processed"] = processed_crash["submitted_timestamp"]
+        processed_crash["date_processed"] = submitted_timestamp_str
 
         # We want the seconds since epoch as an int--not a float
-        submitted_timestamp_epoch = int(
-            processed_crash["submitted_timestamp"].timestamp()
-        )
+        submitted_timestamp_epoch = int(isoformat_to_time(submitted_timestamp_str))
         try:
             crash_time = int(
                 self._get_truncate_or_warn(
@@ -348,9 +350,9 @@ class DatesAndTimesRule(Rule):
             install_time = 0
             processor_notes.append('non-integer value of "InstallTime"')
 
-        processed_crash["client_crash_date"] = datetime.datetime.fromtimestamp(
-            crash_time, UTC
-        )
+        client_crash_date = datetime.datetime.fromtimestamp(crash_time, UTC)
+        processed_crash["client_crash_date"] = date_to_string(client_crash_date)
+
         processed_crash["install_age"] = crash_time - install_time
         processed_crash["uptime"] = max(0, crash_time - startup_time)
         try:

@@ -11,7 +11,6 @@ from unittest import mock
 import requests_mock
 import pytest
 
-from socorro.lib.libdatetime import datetime_from_isodate_string, UTC
 from socorro.processor.rules.mozilla import (
     AddonsRule,
     BetaVersionRule,
@@ -142,30 +141,22 @@ SCHEMA_WITH_ALL_TYPES = {
         "accessibility": {
             "description": "Set to 'Active' by accessibility service",
             "type": "boolean",
-            "socorro": {
-                "sourceAnnotation": "Accessibility",
-            },
+            "source_annotation": "Accessibility",
         },
         "available_page_file": {
             "description": "Maximum amount of memory process can commit.",
             "type": "integer",
-            "socorro": {
-                "sourceAnnotation": "AvailablePageFile",
-            },
+            "source_annotation": "AvailablePageFile",
         },
         "uptime_ts": {
             "description": "Uptime in seconds as a float.",
             "type": "number",
-            "socorro": {
-                "sourceAnnotation": "UptimeTS",
-            },
+            "source_annotation": "UptimeTS",
         },
         "url": {
             "description": "URL the user was visiting when the crash happened.",
             "type": ["string", "null"],
-            "socorro": {
-                "sourceAnnotation": "URL",
-            },
+            "source_annotation": "URL",
         },
     },
 }
@@ -179,9 +170,7 @@ SCHEMA_WITH_DEFAULT = {
             "default": "parent",
             "examples": ["any", "parent", "plugin", "content", "gpu"],
             "type": "string",
-            "socorro": {
-                "sourceAnnotation": "ProcessType",
-            },
+            "source_annotation": "ProcessType",
         },
     },
 }
@@ -616,14 +605,14 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:25:54+00:00"
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] == 86985
@@ -642,14 +631,14 @@ class TestDatesAndTimesRule:
 
         expected = datetime.datetime.fromisoformat(raw_crash["submitted_timestamp"])
         expected_timestamp = int(expected.timestamp())
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == expected_timestamp
-        assert processed_crash["client_crash_date"] == (
-            datetime.datetime.fromtimestamp(expected_timestamp, UTC)
-        )
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:26:33+00:00"
         assert processed_crash["install_age"] == 1079701
         assert processed_crash["uptime"] == 20155
         assert processed_crash["last_crash"] == 86985
@@ -670,14 +659,14 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:25:54+00:00"
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 0
         assert processed_crash["last_crash"] == 86985
@@ -695,14 +684,14 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:25:54+00:00"
         assert processed_crash["install_age"] == 1336519554
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] == 86985
@@ -720,14 +709,14 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:25:54+00:00"
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] is None
@@ -745,14 +734,14 @@ class TestDatesAndTimesRule:
         rule = DatesAndTimesRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        expected = datetime_from_isodate_string(raw_crash["submitted_timestamp"])
-        assert processed_crash["submitted_timestamp"] == expected
+        assert (
+            processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
+        )
         assert (
             processed_crash["date_processed"] == processed_crash["submitted_timestamp"]
         )
         assert processed_crash["crash_time"] == 1336519554
-        expected = datetime_from_isodate_string("2012-05-08 23:25:54+00:00")
-        assert processed_crash["client_crash_date"] == expected
+        assert processed_crash["client_crash_date"] == "2012-05-08T23:25:54+00:00"
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] is None

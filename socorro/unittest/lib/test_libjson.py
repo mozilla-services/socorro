@@ -6,17 +6,167 @@ import jsonschema
 import pytest
 
 from socorro.lib.libjson import (
+    FlattenSchemaKeys,
     InvalidDocumentError,
     InvalidSchemaError,
-    schema_reduce,
-    traverse_schema,
+    JsonSchemaReducer,
+    permissions_transform_function,
+    resolve_references,
+    SocorroDataReducer,
+    transform_socorro_data_schema,
 )
+from socorro.schemas import get_file_content
 
 
-class Test_schema_reduce:
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        ({}, {}),
+        # Schemas with no references are returned as is
+        (
+            {"properties": {"color": {"type": "string"}}, "type": "object"},
+            {"properties": {"color": {"type": "string"}}, "type": "object"},
+        ),
+        (
+            {
+                "properties": {
+                    "color": {
+                        "properties": {
+                            "name": {"type": "string"},
+                            "hex": {"type": "string"},
+                        },
+                        "type": "object",
+                    },
+                },
+                "type": "object",
+            },
+            {
+                "properties": {
+                    "color": {
+                        "properties": {
+                            "name": {"type": "string"},
+                            "hex": {"type": "string"},
+                        },
+                        "type": "object",
+                    },
+                },
+                "type": "object",
+            },
+        ),
+        (
+            {"items": {"type": "string"}, "type": "array"},
+            {"items": {"type": "string"}, "type": "array"},
+        ),
+        # Expand references in objects
+        (
+            {
+                "definitions": {
+                    "color_name": {
+                        "type": "string",
+                        "description": "color name",
+                    },
+                    "color": {
+                        # Note: This gets stomped on
+                        "description": "ignored",
+                        "properties": {
+                            "name": {
+                                "$ref": "#/definitions/color_name",
+                                "permissions": ["public"],
+                            },
+                            "cost": {
+                                "permissions": ["protected"],
+                                "type": "integer",
+                            },
+                        },
+                        "permissions": ["ignored"],
+                        "type": "object",
+                    },
+                },
+                "properties": {
+                    "color": {
+                        "description": "the color used here",
+                        "$ref": "#/definitions/color",
+                        "permissions": ["protected"],
+                    },
+                },
+                "type": "object",
+            },
+            {
+                "properties": {
+                    "color": {
+                        "description": "the color used here",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "color name",
+                                "permissions": ["public"],
+                            },
+                            "cost": {
+                                "type": "integer",
+                                "permissions": ["protected"],
+                            },
+                        },
+                        "permissions": ["protected"],
+                        "type": "object",
+                    },
+                },
+                "type": "object",
+            },
+        ),
+        # Expand references in arrays
+        (
+            {
+                "definitions": {
+                    "color": {
+                        "description": "ignored",
+                        "type": "string",
+                        "permissions": ["ignored"],
+                    },
+                },
+                "properties": {
+                    "colors": {
+                        "description": "list of colors",
+                        "items": {
+                            "description": "a single color",
+                            "$ref": "#/definitions/color",
+                            "permissions": ["public"],
+                        },
+                        "permissions": ["public"],
+                        "type": "array",
+                    },
+                },
+                "type": "object",
+            },
+            {
+                "properties": {
+                    "colors": {
+                        "description": "list of colors",
+                        "items": {
+                            "description": "a single color",
+                            "permissions": ["public"],
+                            "type": "string",
+                        },
+                        "permissions": ["public"],
+                        "type": "array",
+                    },
+                },
+                "type": "object",
+            },
+        ),
+    ],
+)
+def test_resolve_references(schema, expected):
+    assert resolve_references(schema) == expected
+
+
+class TestJsonSchemaReducer:
+    def schema_reduce(self, schema, document):
+        reducer = JsonSchemaReducer(schema=schema)
+        return reducer.traverse(document=document)
+
     def test_multiple_types_and_null(self):
         schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "$target_version": 2,
             "type": "object",
             "properties": {
@@ -26,13 +176,13 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": 10}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
         document = {"years": None}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
         document = {}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     @pytest.mark.parametrize("number", [-10, 10])
     def test_integer(self, number):
@@ -47,7 +197,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": number}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     def test_invalid_integer(self):
         schema = {
@@ -61,9 +211,9 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type not in \['integer'\]"
+        msg_pattern = r"invalid: .years: type string not in \['integer'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert schema_reduce(schema, document) == document
+            assert self.schema_reduce(schema, document) == document
 
     @pytest.mark.parametrize("number", [-10.5, 10.5])
     def test_number(self, number):
@@ -78,7 +228,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"length": number}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     def test_invalid_number(self):
         schema = {
@@ -92,9 +242,9 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type not in \['number'\]"
+        msg_pattern = r"invalid: .years: type string not in \['number'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert schema_reduce(schema, document) == document
+            assert self.schema_reduce(schema, document) == document
 
     def test_string(self):
         schema = {
@@ -108,7 +258,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"name": "Joe"}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     def test_object_properties(self):
         schema = {
@@ -152,7 +302,7 @@ class Test_schema_reduce:
                 },
             }
         }
-        assert schema_reduce(schema, document) == expected_document
+        assert self.schema_reduce(schema, document) == expected_document
 
     def test_object_properties_required(self):
         schema = {
@@ -180,7 +330,7 @@ class Test_schema_reduce:
         with pytest.raises(
             InvalidDocumentError, match=r"invalid: .person.age: required.*"
         ):
-            schema_reduce(schema, document)
+            self.schema_reduce(schema, document)
 
     def test_object_pattern_properties(self):
         schema = {
@@ -215,7 +365,7 @@ class Test_schema_reduce:
                 "rsp": "0x000000b95ebfdaf0",
             },
         }
-        assert schema_reduce(schema, document) == expected_document
+        assert self.schema_reduce(schema, document) == expected_document
 
     def test_object_properties_and_pattern_properties(self):
         schema = {
@@ -255,7 +405,7 @@ class Test_schema_reduce:
                 "pc": "0x000000b95ebfdaf0",
             },
         }
-        assert schema_reduce(schema, document) == expected_document
+        assert self.schema_reduce(schema, document) == expected_document
 
     def test_array(self):
         schema = {
@@ -272,7 +422,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"numbers": [1, 5, 10]}
-        assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     def test_array_invalid(self):
         schema = {
@@ -289,9 +439,9 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"numbers": [5, "Janice", 10]}
-        msg_pattern = r"invalid: .numbers.1: type not in \['integer'\]"
+        msg_pattern = r"invalid: .numbers.\[1\]: type string not in \['integer'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert schema_reduce(schema, document) == document
+            assert self.schema_reduce(schema, document) == document
 
     def test_array_reference(self):
         schema = {
@@ -311,94 +461,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"numbers": [1, 5, 10]}
-        assert schema_reduce(schema, document) == document
-
-    def test_array_position_restriction(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "record": {
-                    "type": "array",
-                    "items": [
-                        {"type": "string"},
-                        {"type": "integer"},
-                    ],
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"record": ["Janice", 5]}
-        assert schema_reduce(schema, document) == document
-
-    def test_array_position_restriction_with_reference(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "definitions": {
-                "some_number": {"type": "integer"},
-            },
-            "properties": {
-                "record": {
-                    "type": "array",
-                    "items": [
-                        {"type": "string"},
-                        {"$ref": "#/definitions/some_number"},
-                    ],
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"record": ["Janice", 5]}
-        assert schema_reduce(schema, document) == document
-
-    def test_array_position_restriction_too_many_items(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "record": {
-                    "type": "array",
-                    "items": [
-                        {"type": "string"},
-                        {"type": "integer"},
-                    ],
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"record": ["Janice", 5, 5]}
-        msg_pattern = r"invalid: .record: too many items"
-        with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert schema_reduce(schema, document) == document
-
-    def test_array_position_restriction_invalid(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "record": {
-                    "type": "array",
-                    "items": [
-                        {"type": "string"},
-                        {"type": "integer"},
-                    ],
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"record": [5, "Janice"]}
-        msg_pattern = r"invalid: .record.0: type not in \['string'\]"
-        with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert schema_reduce(schema, document) == document
+        assert self.schema_reduce(schema, document) == document
 
     def test_references(self):
         """Verify references are traversed."""
@@ -446,7 +509,7 @@ class Test_schema_reduce:
                 ],
             }
         }
-        assert schema_reduce(schema, document) == expected_document
+        assert self.schema_reduce(schema, document) == expected_document
 
     def test_invalid_ref(self):
         """Reducer only support json pointers to things in the schema"""
@@ -465,66 +528,7 @@ class Test_schema_reduce:
 
         document = {"numbers": [1, 5, 10]}
         with pytest.raises(InvalidSchemaError):
-            assert schema_reduce(schema, document) == document
-
-    def test_include_predicate(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "person": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                            "socorro_permissions": ["public"],
-                        },
-                        "favorites": {
-                            "type": "object",
-                            "properties": {
-                                "color": {
-                                    "type": "string",
-                                    "socorro_permissions": ["public"],
-                                },
-                                # ice_cream is not marked public
-                                "ice_cream": {"type": "string"},
-                            },
-                            "socorro_permissions": ["public"],
-                        },
-                    },
-                    "socorro_permissions": ["public"],
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "person": {
-                "name": "Jha",
-                "favorites": {
-                    "color": "blue",
-                    # ice_cream is not marked public, so it will be removed
-                    "ice_cream": "vanilla",
-                },
-            }
-        }
-        expected_document = {
-            "person": {
-                "name": "Jha",
-                "favorites": {
-                    "color": "blue",
-                },
-            },
-        }
-
-        def only_public(path, general_path, schema_item):
-            return "public" in schema_item.get("socorro_permissions", [])
-
-        reduced_document = schema_reduce(
-            schema, document, include_predicate=only_public
-        )
-        assert reduced_document == expected_document
+            assert self.schema_reduce(schema, document) == document
 
     def test_socorroConvertTo(self):
         schema = {
@@ -537,13 +541,354 @@ class Test_schema_reduce:
         }
         jsonschema.Draft4Validator.check_schema(schema)
 
-        assert schema_reduce(schema, {"years": "10"}) == {"years": "10"}
-        assert schema_reduce(schema, {"years": 10}) == {"years": "10"}
-        assert schema_reduce(schema, {"years": None}) == {"years": None}
+        assert self.schema_reduce(schema, {"years": "10"}) == {"years": "10"}
+        assert self.schema_reduce(schema, {"years": 10}) == {"years": "10"}
+        assert self.schema_reduce(schema, {"years": None}) == {"years": None}
+
+
+class TestSocorroDataReducer:
+    def validate_schema(self, schema):
+        socorro_data_schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+        return jsonschema.validate(instance=schema, schema=socorro_data_schema)
+
+    def schema_reduce(self, schema, document):
+        reducer = SocorroDataReducer(schema=schema)
+        return reducer.traverse(document=document)
+
+    def test_multiple_types_and_null(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "years": {"type": ["integer", "null"]},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"years": 10}
+        assert self.schema_reduce(schema, document) == document
+
+        document = {"years": None}
+        assert self.schema_reduce(schema, document) == document
+
+        document = {}
+        assert self.schema_reduce(schema, document) == document
+
+    @pytest.mark.parametrize("number", [-10, 10])
+    def test_integer(self, number):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "years": {"type": "integer"},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"years": number}
+        assert self.schema_reduce(schema, document) == document
+
+    def test_invalid_integer(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "years": {"type": "integer"},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"years": "10"}
+        msg_pattern = r"invalid: .years: type string not in \['integer'\]"
+        with pytest.raises(InvalidDocumentError, match=msg_pattern):
+            assert self.schema_reduce(schema, document) == document
+
+    @pytest.mark.parametrize("number", [-10.5, 10.5])
+    def test_number(self, number):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "length": {"type": "number"},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"length": number}
+        assert self.schema_reduce(schema, document) == document
+
+    def test_invalid_number(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "years": {"type": "number"},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"years": "10"}
+        msg_pattern = r"invalid: .years: type string not in \['number'\]"
+        with pytest.raises(InvalidDocumentError, match=msg_pattern):
+            assert self.schema_reduce(schema, document) == document
+
+    def test_string(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"name": "Joe"}
+        assert self.schema_reduce(schema, document) == document
+
+    def test_object_properties(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "person": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "favorites": {
+                            "type": "object",
+                            "properties": {
+                                "color": {"type": "string"},
+                                "ice_cream": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {
+            "person": {
+                "name": "Janet",
+                "favorites": {
+                    "color": "blue",
+                    "ice_cream": "chocolate",
+                    "hobby": "napping",
+                },
+            }
+        }
+        expected_document = {
+            "person": {
+                "name": "Janet",
+                "favorites": {
+                    "color": "blue",
+                    "ice_cream": "chocolate",
+                },
+            }
+        }
+        assert self.schema_reduce(schema, document) == expected_document
+
+    def test_object_pattern_properties(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "registers": {
+                    "type": "object",
+                    "pattern_properties": {
+                        "^r.*$": {"type": "string"},
+                    },
+                },
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+            },
+        }
+        expected_document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+            },
+        }
+        assert self.schema_reduce(schema, document) == expected_document
+
+    def test_object_properties_and_pattern_properties(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "registers": {
+                    "type": "object",
+                    "properties": {
+                        "pc": {"type": "string"},
+                    },
+                    "pattern_properties": {
+                        "^r.*$": {"type": "string"},
+                    },
+                },
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+                "fc": "0x000000b95ebfdaf0",
+            },
+        }
+        expected_document = {
+            "registers": {
+                "r10": "0x00007ffbd6a20000",
+                "r8": "0x000000b95ebfdd54",
+                "rsi": "0x000000000000002d",
+                "rsp": "0x000000b95ebfdaf0",
+                "pc": "0x000000b95ebfdaf0",
+            },
+        }
+        assert self.schema_reduce(schema, document) == expected_document
+
+    def test_array(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "numbers": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                }
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"numbers": [1, 5, 10]}
+        assert self.schema_reduce(schema, document) == document
+
+    def test_array_invalid(self):
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "properties": {
+                "numbers": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                }
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"numbers": [5, "Janice", 10]}
+        msg_pattern = r"invalid: .numbers.\[1\]: type string not in \['integer'\]"
+        with pytest.raises(InvalidDocumentError, match=msg_pattern):
+            assert self.schema_reduce(schema, document) == document
+
+    def test_array_reference(self):
+        # NOTE(willkg): the SocorroDataReducer resolves references before reducing, so
+        # this tests resolve_references, too
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "definitions": {
+                "some_number": {"type": "integer"},
+            },
+            "properties": {
+                "numbers": {
+                    "type": "array",
+                    "items": {"$ref": "#/definitions/some_number"},
+                }
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"numbers": [1, 5, 10]}
+        assert self.schema_reduce(schema, document) == document
+
+    def test_references(self):
+        """Verify references are traversed."""
+        # NOTE(willkg): the SocorroDataReducer resolves references before reducing, so
+        # this tests resolve_references, too
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "definitions": {
+                "person": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": ["string", "null"],
+                        }
+                    },
+                }
+            },
+            "properties": {
+                "company": {
+                    "type": "object",
+                    "properties": {
+                        "employees": {
+                            "type": "array",
+                            "items": {"$ref": "#/definitions/person"},
+                        },
+                    },
+                },
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {
+            "company": {
+                "employees": [
+                    {"name": "Fred", "desk": "front"},
+                    {"name": "Jim", "favorite_color": "red"},
+                ],
+            }
+        }
+        expected_document = {
+            "company": {
+                "employees": [
+                    {"name": "Fred"},
+                    {"name": "Jim"},
+                ],
+            }
+        }
+        assert self.schema_reduce(schema, document) == expected_document
+
+    def test_invalid_ref(self):
+        """Reducer only support json pointers to things in the schema"""
+        # NOTE(willkg): the SocorroDataReducer resolves references before reducing, so
+        # this tests resolve_references, too
+        schema = {
+            "$schema": "moz://mozilla.org/schemas/socorro/socorro-data/1-0-0",
+            "type": "object",
+            "definitions": {},
+            "properties": {
+                "numbers": {
+                    "type": "array",
+                    "items": {"$ref": "http://example.com/schema"},
+                }
+            },
+        }
+        self.validate_schema(schema)
+
+        document = {"numbers": [1, 5, 10]}
+        with pytest.raises(InvalidSchemaError):
+            assert self.schema_reduce(schema, document) == document
 
 
 @pytest.mark.parametrize(
-    "schema, nodes",
+    "schema, keys",
     [
         # Object traversal with properties
         (
@@ -558,13 +903,13 @@ class Test_schema_reduce:
                     },
                 },
             },
-            ["", ".key1", ".key2"],
+            ["key1", "key2"],
         ),
-        # Object traversal with patternProperties
+        # Object traversal with pattern_properties
         (
             {
                 "type": "object",
-                "patternProperties": {
+                "pattern_properties": {
                     "^r.+$": {
                         "type": "string",
                     },
@@ -573,7 +918,7 @@ class Test_schema_reduce:
                     },
                 },
             },
-            ["", ".(re:^r.+$)", ".(re:^c.+$)"],
+            ["(re:^r.+$)", "(re:^c.+$)"],
         ),
         # Array traversal with items as non-list
         (
@@ -586,7 +931,7 @@ class Test_schema_reduce:
                     },
                 },
             },
-            ["", ".colors", ".colors.[]"],
+            ["colors.[]"],
         ),
         # Array traversal with items as list indicating records
         (
@@ -595,14 +940,13 @@ class Test_schema_reduce:
                 "properties": {
                     "person": {
                         "type": "array",
-                        "items": [
-                            {"type": "string"},
-                            {"type": "integer"},
-                        ],
+                        "items": {
+                            "type": "string",
+                        },
                     },
                 },
             },
-            ["", ".person", ".person.[0]", ".person.[1]"],
+            ["person.[]"],
         ),
         # Expands references
         (
@@ -624,7 +968,7 @@ class Test_schema_reduce:
                     },
                 },
             },
-            ["", ".colors", ".colors.[]", ".colors.[].name", ".colors.[].hex"],
+            ["colors.[]", "colors.[].name", "colors.[].hex"],
         ),
         # Expands references with complex types
         (
@@ -649,18 +993,142 @@ class Test_schema_reduce:
                     },
                 },
             },
-            ["", ".colors", ".colors.[]", ".colors.[].name", ".colors.[].hex"],
+            ["colors.[]", "colors.[].name", "colors.[].hex"],
         ),
     ],
 )
-def test_traverse_schema(schema, nodes):
-    class Visitor:
-        def __init__(self):
-            self.nodes = []
+def test_transform_socorro_data_schema(schema, keys):
+    flattener = FlattenSchemaKeys()
+    transform_socorro_data_schema(schema=schema, transform_function=flattener.flatten)
+    assert flattener.keys == keys
 
-        def visit(self, path, general_path, schema):
-            self.nodes.append(path)
 
-    visitor = Visitor()
-    traverse_schema(schema=schema, visitor_function=visitor.visit)
-    assert visitor.nodes == nodes
+def test_permissions_transform_function():
+    schema = {
+        "definitions": {
+            "color": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "color name",
+                        "type": ["string", "null"],
+                        "permissions": ["public"],
+                    },
+                    "hex": {
+                        "description": "RGB hex of color",
+                        "type": "string",
+                        "permissions": ["public"],
+                    },
+                    "cost": {
+                        "description": "cost of the paint color",
+                        "type": ["number", "null"],
+                        "permissions": ["protected"],
+                    },
+                },
+                # These are overridden by the referer
+                "permissions": ["protected"],
+                "description": "overridden",
+            },
+        },
+        "type": "object",
+        "properties": {
+            "colors": {
+                "description": "list of colors",
+                "type": ["array", "null"],
+                "items": {
+                    "description": "a color",
+                    "$ref": "#/definitions/color",
+                    "type": "object",
+                    "permissions": ["public"],
+                },
+                "permissions": ["public"],
+            },
+        },
+    }
+
+    # Verify our schema is valid socorro-data schema
+    socorro_data_schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+    jsonschema.validate(instance=schema, schema=socorro_data_schema)
+
+    # Create a public-only transform
+    public_only = permissions_transform_function(permissions_have=["public"])
+
+    # Transform the schema using the public-only transform
+    public_schema = transform_socorro_data_schema(
+        schema=schema,
+        transform_function=public_only,
+    )
+
+    # Assert the new schema is correct and has no protected bits in it
+    assert public_schema == {
+        "properties": {
+            "colors": {
+                "description": "list of colors",
+                "items": {
+                    "description": "a color",
+                    "properties": {
+                        "hex": {
+                            "description": "RGB hex of color",
+                            "permissions": ["public"],
+                            "type": "string",
+                        },
+                        "name": {
+                            "description": "color name",
+                            "permissions": ["public"],
+                            "type": ["string", "null"],
+                        },
+                    },
+                    "type": "object",
+                    "permissions": ["public"],
+                },
+                "permissions": ["public"],
+                "type": ["array", "null"],
+            },
+        },
+        "type": "object",
+    }
+
+    # Create a public/protected transform
+    all_permissions = permissions_transform_function(
+        permissions_have=["public", "protected"]
+    )
+
+    # Transform the schema using the public-only transform
+    all_schema = transform_socorro_data_schema(
+        schema=schema,
+        transform_function=all_permissions,
+    )
+
+    # Assert the new schema is correct and has no protected bits in it
+    assert all_schema == {
+        "properties": {
+            "colors": {
+                "description": "list of colors",
+                "items": {
+                    "description": "a color",
+                    "properties": {
+                        "hex": {
+                            "description": "RGB hex of color",
+                            "permissions": ["public"],
+                            "type": "string",
+                        },
+                        "name": {
+                            "description": "color name",
+                            "permissions": ["public"],
+                            "type": ["string", "null"],
+                        },
+                        "cost": {
+                            "description": "cost of the paint color",
+                            "type": ["number", "null"],
+                            "permissions": ["protected"],
+                        },
+                    },
+                    "type": "object",
+                    "permissions": ["public"],
+                },
+                "permissions": ["public"],
+                "type": ["array", "null"],
+            },
+        },
+        "type": "object",
+    }

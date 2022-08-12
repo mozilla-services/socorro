@@ -41,6 +41,7 @@ from crashstats.supersearch.models import (
     ESSocorroMiddleware,
 )
 from crashstats.tokens.models import Token
+from crashstats.crashstats.utils import DateTimeEncoder
 from socorro.lib.libooid import create_new_ooid
 
 
@@ -208,14 +209,14 @@ class TestViews(BaseTestViews):
             "addons_checked": None,
             "address": "0x8",
             "build": "20120609030536",
-            "client_crash_date": "2012-06-11T06:08:45",
-            "completed_datetime": "2012-06-11T06:08:57",
+            "client_crash_date": "2022-06-11T06:08:45",
+            "completed_datetime": "2022-06-11T06:08:57",
             "cpu_arch": "amd64",
-            "date_processed": "2012-06-11T06:08:44",
+            "date_processed": "2022-06-11T06:08:45",
             "last_crash": 371342,
             "os_name": "Mac OS X",
             "os_version": "10.6.8 10K549",
-            "process_type": None,
+            "process_type": "parent",
             "product": "WaterWolf",
             "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
             "release_channel": "nightly",
@@ -229,7 +230,7 @@ class TestViews(BaseTestViews):
 
         protected_data = {
             "url": "https://example.com",
-            "user_comments": None,
+            "user_comments": "no comment",
         }
 
         def mocked_get(**params):
@@ -258,7 +259,6 @@ class TestViews(BaseTestViews):
             assert key not in data
 
         # If you have permissions, you see all the data
-        # If you do have permissions, then you get it all
         user = User.objects.create(username="test")
         self._add_permission(user, "view_pii")
         view_pii_perm = Permission.objects.get(codename="view_pii")
@@ -659,14 +659,14 @@ class TestCrashVerify:
         crash_data = {
             "signature": "[@signature]",
             "uuid": uuid,
-            "completed_datetime": "2018-03-14 10:56:50.902884",
+            "completed_datetime": "2022-03-14 10:56:50.902884",
         }
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/processed_crash/%s" % uuid,
-            data=json.dumps(crash_data).encode("utf-8"),
+            data=json.dumps(crash_data, cls=DateTimeEncoder).encode("utf-8"),
         )
 
         with self.supersearch_returns_crashes([]):

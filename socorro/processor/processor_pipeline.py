@@ -16,7 +16,7 @@ from configman.converters import str_to_list
 from configman.dotdict import DotDict
 import sentry_sdk
 
-from socorro.lib.libdatetime import utc_now
+from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
@@ -241,15 +241,15 @@ class ProcessorPipeline(RequiredConfig):
         processor_meta_data.config = self.config
         processor_meta_data.processor_notes = []
 
-        processed_crash.success = False
+        processed_crash["success"] = False
         start_time = utc_now()
-        processed_crash.started_datetime = start_time
+        processed_crash["started_datetime"] = date_to_string(start_time)
 
         processor_meta_data.processor_notes.append(
-            f">>> Start processing: {start_time:%Y-%m-%d %H:%M:%S} ({self.host_id})"
+            f">>> Start processing: {start_time} ({self.host_id})"
         )
 
-        processed_crash.signature = "EMPTY: crash failed to process"
+        processed_crash["signature"] = "EMPTY: crash failed to process"
 
         crash_id = raw_crash["uuid"]
 
@@ -295,7 +295,7 @@ class ProcessorPipeline(RequiredConfig):
 
         # The crash made it through the processor rules with no exceptions
         # raised, call it a success
-        processed_crash.success = True
+        processed_crash["success"] = True
 
         # Join notes into a single string
         if processed_crash.get("processor_notes"):
@@ -307,7 +307,7 @@ class ProcessorPipeline(RequiredConfig):
             processor_meta_data.processor_notes
         )
         completed_datetime = utc_now()
-        processed_crash["completed_datetime"] = completed_datetime
+        processed_crash["completed_datetime"] = date_to_string(completed_datetime)
 
         self.logger.info(
             "finishing %s transform for crash: %s",
