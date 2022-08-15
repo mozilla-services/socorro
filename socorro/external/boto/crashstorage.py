@@ -260,7 +260,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             self.config.dump_file_suffix,
         )
 
-    def get_unredacted_processed(self, crash_id):
+    def get_processed(self, crash_id):
         """Get the processed crash.
 
         :returns: DotDict
@@ -324,7 +324,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         path = build_keys("crash_report", crash_id)[0]
         self.conn.save_file(path, data)
 
-    def get_unredacted_processed(self, crash_id):
+    def get_processed(self, crash_id):
         """Get a crash report from the S3 bucket.
 
         :returns: DotDict

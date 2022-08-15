@@ -33,7 +33,7 @@ _SAMPLE_META = {
 }
 
 
-_SAMPLE_UNREDACTED = {
+_SAMPLE_PROCESSED = {
     "client_crash_date": "2012-06-11T06:08:45",
     "signature": "FakeSignature1",
     "uptime": 14693,
@@ -405,14 +405,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -438,7 +438,7 @@ class TestViews(BaseTestViews):
         # Verify the "AMD CPU bug" marker is there.
         assert "Possible AMD CPU bug related crash report" in content
 
-        assert _SAMPLE_UNREDACTED["user_comments"] not in content
+        assert _SAMPLE_PROCESSED["user_comments"] not in content
         assert _SAMPLE_META["URL"] not in content
         assert (
             "You need to be logged in and have access to protected data to see "
@@ -459,7 +459,7 @@ class TestViews(BaseTestViews):
 
         response = self.client.get(url)
         content = smart_str(response.content)
-        assert _SAMPLE_UNREDACTED["user_comments"] in content
+        assert _SAMPLE_PROCESSED["user_comments"] in content
         assert _SAMPLE_META["URL"] in content
         assert "&#34;sensitive&#34;" in content
         assert "&#34;exploitability&#34;" in content
@@ -488,7 +488,7 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         assert response.status_code == 200
         content = smart_str(response.content)
-        assert _SAMPLE_UNREDACTED["user_comments"] not in content
+        assert _SAMPLE_PROCESSED["user_comments"] not in content
         assert _SAMPLE_META["URL"] not in content
 
     def test_report_index_with_raw_crash_unicode_key(self):
@@ -504,12 +504,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -546,12 +546,12 @@ class TestViews(BaseTestViews):
         def mocked_processed_crash_get(**params):
             processed_crash_calls.append(params)
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -588,14 +588,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                processed = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                processed = copy.deepcopy(_SAMPLE_PROCESSED)
                 processed["process_type"] = "content"
                 return processed
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -630,14 +630,14 @@ class TestViews(BaseTestViews):
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
 
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -755,14 +755,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -820,14 +820,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -867,8 +867,8 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 crash["signature"] = "shutdownhang | foo::bar()"
@@ -876,7 +876,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -912,15 +912,15 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 crash["signature"] = "foo::bar()"
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1003,8 +1003,8 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 crash["signature"] = "shutdownhang | foo::bar()"
@@ -1012,7 +1012,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1060,13 +1060,13 @@ class TestViews(BaseTestViews):
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["java_exception_raw"] = java_exception_raw
                 crash["java_exception"] = java_exception
                 return crash
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1117,13 +1117,13 @@ class TestViews(BaseTestViews):
         models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         def mocked_processed_crash_get(**params):
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["java_exception_raw"] = java_exception_raw
                 crash["java_exception"] = java_exception
                 return crash
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1165,14 +1165,14 @@ class TestViews(BaseTestViews):
         }
 
         def mocked_processed_crash_get(**params):
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 # Create a minimal json_dump with the last_error_value
                 crash["json_dump"] = json_dump
                 crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 return crash
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1213,8 +1213,8 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["signature"] = "shutdownhang | foo::bar()"
@@ -1222,7 +1222,7 @@ class TestViews(BaseTestViews):
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1253,12 +1253,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1288,15 +1288,15 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["product"] = "WaterWolf"
                 crash["version"] = "99.9"
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1328,14 +1328,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 del crash["json_dump"]
                 return crash
 
             raise NotImplementedError(url)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1368,12 +1368,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1399,12 +1399,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1432,14 +1432,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["os_name"] = None
                 return crash
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1495,14 +1495,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1526,14 +1526,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1557,14 +1557,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["exploitability"] = "Unknown Exploitability"
                 return crash
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1614,12 +1614,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
+            if params["datatype"] == "processed":
                 raise CrashIDNotFound(params["uuid"])
 
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1651,14 +1651,14 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 # NOTE! A wanna-be valid date that is not valid
                 crash["date_processed"] = "2015-10-10 15:32:07.620535"
                 return crash
             raise NotImplementedError
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1681,12 +1681,12 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                return copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                return copy.deepcopy(_SAMPLE_PROCESSED)
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 
@@ -1732,15 +1732,15 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             assert "datatype" in params
-            if params["datatype"] == "unredacted":
-                crash = copy.deepcopy(_SAMPLE_UNREDACTED)
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
                 crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
                 crash["json_dump"] = json_dump
                 return crash
 
             raise NotImplementedError(params)
 
-        models.UnredactedCrash.implementation().get.side_effect = (
+        models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
         )
 

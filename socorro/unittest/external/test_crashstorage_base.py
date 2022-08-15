@@ -5,14 +5,12 @@
 from unittest import mock
 
 from configman import Namespace, ConfigurationManager
-from configman.dotdict import DotDict
 import pytest
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     PolyStorageError,
     PolyCrashStorage,
-    Redactor,
     BenchmarkingCrashStorage,
     MemoryDumpsMapping,
     MetricsCounter,
@@ -70,7 +68,7 @@ class TestCrashStorageBase:
                 crashstorage.get_raw_dump("ooid")
 
             with pytest.raises(NotImplementedError):
-                crashstorage.get_unredacted_processed("ooid")
+                crashstorage.get_processed("ooid")
 
             with pytest.raises(NotImplementedError):
                 crashstorage.remove("ooid")
@@ -205,47 +203,6 @@ class TestCrashStorageBase:
                 v.close.assert_called_with()
 
 
-class TestRedactor:
-    def test_redact(self):
-        d = DotDict()
-        # these keys survive redaction
-        d["a.b.c"] = 11
-        d["sensitive.x"] = 2
-        d["not_url"] = "not a url"
-
-        # these keys do not survive redaction
-        d["url"] = "http://very.embarassing.com"
-        d["exploitability"] = "yep"
-        d["json_dump.sensitive"] = 22
-        d["upload_file_minidump_flash1.json_dump.sensitive"] = 33
-        d["upload_file_minidump_flash2.json_dump.sensitive"] = 44
-        d["upload_file_minidump_browser.json_dump.sensitive.exploitable"] = 55
-        d["upload_file_minidump_browser.json_dump.sensitive.secret"] = 66
-        d["memory_info"] = {"incriminating_memory": "call the FBI"}
-
-        assert "json_dump" in d
-
-        config = DotDict()
-        config.forbidden_keys = Redactor.required_config.forbidden_keys.default
-
-        expected_surviving_keys = [
-            "a",
-            "sensitive",
-            "not_url",
-            "json_dump",
-            "upload_file_minidump_flash1",
-            "upload_file_minidump_flash2",
-            "upload_file_minidump_browser",
-        ]
-        expected_surviving_keys.sort()
-
-        redactor = Redactor(config)
-        redactor(d)
-        actual_surviving_keys = [x for x in d.keys()]
-        actual_surviving_keys.sort()
-        assert actual_surviving_keys == expected_surviving_keys
-
-
 class TestBench:
     def test_benchmarking_crashstore(self, caplogpp):
         caplogpp.set_level("DEBUG")
@@ -311,13 +268,9 @@ class TestBench:
             ]
             caplogpp.clear()
 
-            crashstorage.get_unredacted_processed("uuid")
-            crashstorage.wrapped_crashstore.get_unredacted_processed.assert_called_with(
-                "uuid"
-            )
-            assert "test get_unredacted_processed 1" in [
-                rec.message for rec in caplogpp.records
-            ]
+            crashstorage.get_processed("uuid")
+            crashstorage.wrapped_crashstore.get_processed.assert_called_with("uuid")
+            assert "test get_processed 1" in [rec.message for rec in caplogpp.records]
 
 
 class TestDumpsMappings:

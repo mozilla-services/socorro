@@ -104,7 +104,7 @@ def report_index(request, crash_id, default_context=None):
         )
     utils.enhance_raw(context["raw"])
 
-    api = models.UnredactedCrash()
+    api = models.ProcessedCrash()
     try:
         context["report"] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
     except CrashIDNotFound:
@@ -210,7 +210,7 @@ def report_index(request, crash_id, default_context=None):
                 "%s?crash_id=%s"
                 % (
                     reverse(
-                        "api:model_wrapper", kwargs={"model_name": "UnredactedCrash"}
+                        "api:model_wrapper", kwargs={"model_name": "ProcessedCrash"}
                     ),
                     crash_id,
                 ),

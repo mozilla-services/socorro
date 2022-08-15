@@ -97,50 +97,6 @@ class FileDumpsMapping(dict):
         return in_memory_dumps
 
 
-class Redactor(RequiredConfig):
-    """This class is the implementation of a functor for in situ redacting
-    of sensitive keys from a mapping.  Keys that are to be redacted are placed
-    in the configuration under the name 'forbidden_keys'.  They may take the
-    form of dotted keys with subkeys.  For example, "a.b.c" means that the key,
-    "c" is to be redacted."""
-
-    required_config = Namespace()
-    required_config.add_option(
-        name="forbidden_keys",
-        doc="a list of keys not allowed in a redacted processed crash",
-        default=(
-            "url, exploitability,"
-            "json_dump.sensitive,"
-            "upload_file_minidump_flash1.json_dump.sensitive,"
-            "upload_file_minidump_flash2.json_dump.sensitive,"
-            "upload_file_minidump_browser.json_dump.sensitive,"
-            "memory_info"
-        ),
-        reference_value_from="resource.redactor",
-    )
-
-    def __init__(self, config):
-        self.config = config
-        self.forbidden_keys = [x.strip() for x in self.config.forbidden_keys.split(",")]
-
-    def redact(self, a_mapping):
-        """this is the function that does the redaction."""
-        for a_key in self.forbidden_keys:
-            sub_mapping = a_mapping
-            sub_keys = a_key.split(".")
-            try:
-                for a_sub_key in sub_keys[:-1]:  # step through the subkeys
-                    sub_mapping = sub_mapping[a_sub_key.strip()]
-                del sub_mapping[sub_keys[-1]]
-            except (AttributeError, KeyError):
-                # this is okay, our key was already deleted by
-                # another pattern that matched at a higher level
-                pass
-
-    def __call__(self, a_mapping):
-        self.redact(a_mapping)
-
-
 class CrashIDNotFound(Exception):
     pass
 
@@ -149,12 +105,6 @@ class CrashStorageBase(RequiredConfig):
     """Base class for all crash storage classes."""
 
     required_config = Namespace()
-    required_config.add_option(
-        name="redactor_class",
-        doc="the name of the class that implements a 'redact' method",
-        default=Redactor,
-        reference_value_from="resource.redactor",
-    )
 
     def __init__(self, config, namespace=""):
         """Initializer
@@ -171,7 +121,6 @@ class CrashStorageBase(RequiredConfig):
         # implementation. This may be fetched by a client of the crashstorge so that it
         # can determine if it can try a failed storage operation again.
         self.exceptions_eligible_for_retry = ()
-        self.redactor = config.redactor_class(config)
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def close(self):
@@ -250,19 +199,7 @@ class CrashStorageBase(RequiredConfig):
         :returns: DotDict
 
         """
-        processed_crash = self.get_unredacted_processed(crash_id)
-        self.redactor(processed_crash)
-        return processed_crash
-
-    def get_unredacted_processed(self, crash_id):
-        """Fetch processed crash with no redaction
-
-        :param crash_id: crash report id
-
-        :returns: DotDict
-
-        """
-        raise NotImplementedError("get_unredacted_processed is not implemented")
+        raise NotImplementedError("get_processed is not implemented")
 
     def remove(self, crash_id):
         """Delete crash report data from storage
@@ -555,13 +492,11 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         self.logger.debug("%s get_dumps_as_files %s", self.tag, end_time - start_time)
         return result
 
-    def get_unredacted_processed(self, crash_id):
+    def get_processed(self, crash_id):
         start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_unredacted_processed(crash_id)
+        result = self.wrapped_crashstore.get_processed(crash_id)
         end_time = self.end_timer()
-        self.logger.debug(
-            "%s get_unredacted_processed %s", self.tag, end_time - start_time
-        )
+        self.logger.debug("%s get_processed %s", self.tag, end_time - start_time)
         return result
 
     def remove(self, crash_id):

@@ -33,7 +33,6 @@ from crashstats.crashstats.models import (
     RawCrash,
     Reprocessing,
     SocorroMiddleware,
-    UnredactedCrash,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
 from crashstats.supersearch.models import (
@@ -205,6 +204,42 @@ class TestViews(BaseTestViews):
             assert response.status_code == 429
 
     def test_ProcessedCrash(self):
+        public_data = {
+            "addons_checked": None,
+            "address": "0x8",
+            "build": "20120609030536",
+            "client_crash_date": "2012-06-11T06:08:45",
+            "completed_datetime": "2012-06-11T06:08:57",
+            "cpu_arch": "amd64",
+            "date_processed": "2012-06-11T06:08:44",
+            "last_crash": 371342,
+            "os_name": "Mac OS X",
+            "os_version": "10.6.8 10K549",
+            "process_type": None,
+            "product": "WaterWolf",
+            "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+            "release_channel": "nightly",
+            "release_channel": "nightly",
+            "signature": "FakeSignature1",
+            "success": True,
+            "uptime": 14693,
+            "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
+            "version": "5.0a1",
+        }
+
+        protected_data = {
+            "url": "https://example.com",
+            "user_comments": None,
+        }
+
+        def mocked_get(**params):
+            if "datatype" in params and params["datatype"] == "processed":
+                return dict(**public_data, **protected_data)
+            raise NotImplementedError
+
+        ProcessedCrash.implementation().get.side_effect = mocked_get
+
+        # If you don't specify a crash id, you get an HTTP 400
         url = reverse("api:model_wrapper", args=("ProcessedCrash",))
         response = self.client.get(url)
         assert response.status_code == 400
@@ -212,155 +247,67 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         assert dump["errors"]["crash_id"]
 
-        def mocked_get(**params):
-            if "datatype" in params and params["datatype"] == "processed":
-                return {
-                    "client_crash_date": "2012-06-11T06:08:45",
-                    "dump": dump,
-                    "signature": "FakeSignature1",
-                    "user_comments": None,
-                    "uptime": 14693,
-                    "release_channel": "nightly",
-                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                    "flash_version": "[blank]",
-                    "hangid": None,
-                    "process_type": None,
-                    "id": 383569625,
-                    "os_version": "10.6.8 10K549",
-                    "version": "5.0a1",
-                    "build": "20120609030536",
-                    "ReleaseChannel": "nightly",
-                    "addons_checked": None,
-                    "product": "WaterWolf",
-                    "os_name": "Mac OS X",
-                    "last_crash": 371342,
-                    "date_processed": "2012-06-11T06:08:44",
-                    "cpu_arch": "amd64",
-                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                    "address": "0x8",
-                    "completed_datetime": "2012-06-11T06:08:57",
-                    "success": True,
-                    "upload_file_minidump_browser": "a crash",
-                    "upload_file_minidump_flash1": "a crash",
-                    "upload_file_minidump_flash2": "a crash",
-                    "upload_file_minidump_plugin": "a crash",
-                }
-            raise NotImplementedError
-
-        ProcessedCrash.implementation().get.side_effect = mocked_get
-
+        # If you don't have permissions, you only see public data
         response = self.client.get(url, {"crash_id": "123"})
         assert response.status_code == 200
-        dump = json.loads(response.content)
-        assert dump["uuid"] == "11cb72f5-eb28-41e1-a8e4-849982120611"
-        assert "upload_file_minidump_flash2" in dump
-        assert "url" not in dump
+        data = json.loads(response.content)
+        for key in public_data.keys():
+            assert key in data
 
-    def test_UnredactedCrash(self):
-        url = reverse("api:model_wrapper", args=("UnredactedCrash",))
-        response = self.client.get(url)
-        # because we don't have the sufficient permissions yet to use it
-        assert response.status_code == 403
+        for key in protected_data.keys():
+            assert key not in data
 
+        # If you have permissions, you see all the data
+        # If you do have permissions, then you get it all
         user = User.objects.create(username="test")
         self._add_permission(user, "view_pii")
-        self._add_permission(user, "view_exploitability")
         view_pii_perm = Permission.objects.get(codename="view_pii")
-        token = Token.objects.create(user=user, notes="Only PII token")
-        view_exploitability_perm = Permission.objects.get(
-            codename="view_exploitability"
-        )
+        token = Token.objects.create(user=user, notes="test token")
         token.permissions.add(view_pii_perm)
-        token.permissions.add(view_exploitability_perm)
-
-        response = self.client.get(url, HTTP_AUTH_TOKEN=token.key)
-        assert response.status_code == 400
-        assert response["Content-Type"] == "application/json"
-        dump = json.loads(response.content)
-        assert dump["errors"]["crash_id"]
-
-        def mocked_get(**params):
-            if "datatype" in params and params["datatype"] == "unredacted":
-                return {
-                    "client_crash_date": "2012-06-11T06:08:45",
-                    "dump": dump,
-                    "signature": "FakeSignature1",
-                    "user_comments": None,
-                    "uptime": 14693,
-                    "release_channel": "nightly",
-                    "uuid": "11cb72f5-eb28-41e1-a8e4-849982120611",
-                    "flash_version": "[blank]",
-                    "hangid": None,
-                    "process_type": None,
-                    "id": 383569625,
-                    "os_version": "10.6.8 10K549",
-                    "version": "5.0a1",
-                    "build": "20120609030536",
-                    "ReleaseChannel": "nightly",
-                    "addons_checked": None,
-                    "product": "WaterWolf",
-                    "os_name": "Mac OS X",
-                    "last_crash": 371342,
-                    "date_processed": "2012-06-11T06:08:44",
-                    "cpu_arch": "amd64",
-                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                    "address": "0x8",
-                    "completed_datetime": "2012-06-11T06:08:57",
-                    "success": True,
-                    "upload_file_minidump_browser": "a crash",
-                    "upload_file_minidump_flash1": "a crash",
-                    "upload_file_minidump_flash2": "a crash",
-                    "upload_file_minidump_plugin": "a crash",
-                    "exploitability": "Unknown Exploitability",
-                }
-            raise NotImplementedError
-
-        UnredactedCrash.implementation().get.side_effect = mocked_get
 
         response = self.client.get(url, {"crash_id": "123"}, HTTP_AUTH_TOKEN=token.key)
         assert response.status_code == 200
         dump = json.loads(response.content)
-        assert dump["uuid"] == "11cb72f5-eb28-41e1-a8e4-849982120611"
-        assert "upload_file_minidump_flash2" in dump
-        assert "exploitability" in dump
+        for key in public_data.keys():
+            assert key in dump
+
+        for key in protected_data.keys():
+            assert key in dump
 
     def test_RawCrash(self):
+        public_data = {
+            "AdapterDeviceID": "0x  46",
+            "AdapterVendorID": "0x8086",
+            "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
+            "AsyncShutdownTimeout": 12345,
+            "BIOS_Manufacturer": "abc123",
+            "BuildID": "20130422105838",
+            "CrashTime": "1366703112",
+            "EMCheckCompatibility": "true",
+            "InstallTime": "1366691881",
+            "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
+            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+            "ProductName": "WaterWolf",
+            "ReleaseChannel": "nightly",
+            "SecondsSinceLastCrash": "23484",
+            "StartupTime": "1366702830",
+            "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
+            "Vendor": "Mozilla",
+            "Version": "23.0a1",
+        }
+        protected_data = {
+            "Comments": "I visited http://example.com and mail@example.com",
+            "URL": "http://system.gaiamobile.org:8080/",
+        }
+
         def mocked_get(**params):
             if "uuid" in params and params["uuid"] == "abc123":
-                return {
-                    "InstallTime": "1366691881",
-                    "AdapterVendorID": "0x8086",
-                    "Theme": "classic/1.0",
-                    "Version": "23.0a1",
-                    "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-                    "Vendor": "Mozilla",
-                    "EMCheckCompatibility": "true",
-                    "URL": "http://system.gaiamobile.org:8080/",
-                    "version": "23.0a1",
-                    "AdapterDeviceID": "0x  46",
-                    "ReleaseChannel": "nightly",
-                    "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
-                    "buildid": "20130422105838",
-                    "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
-                    "CrashTime": "1366703112",
-                    "StartupTime": "1366702830",
-                    "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
-                    "BuildID": "20130422105838",
-                    "SecondsSinceLastCrash": "23484",
-                    "ProductName": "WaterWolf",
-                    "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
-                    "AsyncShutdownTimeout": 12345,
-                    "BIOS_Manufacturer": "abc123",
-                    "Comments": "I visited http://example.com and mail@example.com",
-                    "upload_file_minidump_browser": "a crash",
-                    "upload_file_minidump_flash1": "a crash",
-                    "upload_file_minidump_flash2": "a crash",
-                    "upload_file_minidump_plugin": "a crash",
-                }
+                return dict(**public_data, **protected_data)
             raise NotImplementedError
 
         RawCrash.implementation().get.side_effect = mocked_get
 
+        # No crash id yields HTTP 400
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(url)
         assert response.status_code == 400
@@ -368,17 +315,34 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         assert dump["errors"]["crash_id"]
 
+        # If you don't have permissions (not authenticated), then you get only public
+        # data
         response = self.client.get(url, {"crash_id": "abc123"})
         assert response.status_code == 200
         dump = json.loads(response.content)
-        assert "id" in dump
-        assert "URL" not in dump
-        assert "AsyncShutdownTimeout" in dump
-        assert "BIOS_Manufacturer" in dump
-        assert "upload_file_minidump_browser" in dump
-        assert "upload_file_minidump_flash1" in dump
-        assert "upload_file_minidump_flash2" in dump
-        assert "upload_file_minidump_plugin" in dump
+        for key in public_data.keys():
+            assert key in dump
+
+        for key in protected_data.keys():
+            assert key not in dump
+
+        # If you do have permissions, then you get it all
+        user = User.objects.create(username="test")
+        self._add_permission(user, "view_pii")
+        view_pii_perm = Permission.objects.get(codename="view_pii")
+        token = Token.objects.create(user=user, notes="test token")
+        token.permissions.add(view_pii_perm)
+
+        response = self.client.get(
+            url, {"crash_id": "abc123"}, HTTP_AUTH_TOKEN=token.key
+        )
+        assert response.status_code == 200
+        dump = json.loads(response.content)
+        for key in public_data.keys():
+            assert key in dump
+
+        for key in protected_data.keys():
+            assert key in dump
 
     def test_RawCrash_binary_blob(self):
         def mocked_get(**params):
@@ -915,7 +879,6 @@ API_MODEL_NAMES = [
     "SuperSearch",
     "SuperSearchFields",
     "SuperSearchUnredacted",
-    "UnredactedCrash",
     "VersionString",
 ]
 

@@ -390,37 +390,6 @@ class TestMiddlewareModels(DjangoTestCase):
         r = api.get(crash_id="7c44ade2-fdeb-4d6c-830a-07d302120525")
         assert r["product"]
 
-    def test_unredacted_crash(self):
-        model = models.UnredactedCrash
-        api = model()
-
-        def mocked_get(**params):
-            assert "datatype" in params
-            assert params["datatype"] == "unredacted"
-
-            return {
-                "product": "WaterWolf",
-                "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
-                "version": "13.0",
-                "build": "20120501201020",
-                "ReleaseChannel": "beta",
-                "os_name": "Windows NT",
-                "date_processed": "2012-05-25 11:35:57",
-                "success": True,
-                "signature": "CLocalEndpointEnumerator::OnMediaNotific",
-                "exploitability": "Sensitive stuff",
-                "addons": [
-                    ["testpilot@labs.mozilla.com", "1.2.1"],
-                    ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "13.0"],
-                ],
-            }
-
-        model.implementation().get.side_effect = mocked_get
-
-        r = api.get(crash_id="7c44ade2-fdeb-4d6c-830a-07d302120525")
-        assert r["product"]
-        assert r["exploitability"]
-
     def test_raw_crash(self):
         model = models.RawCrash
         api = model()

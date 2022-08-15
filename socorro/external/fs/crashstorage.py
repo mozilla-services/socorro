@@ -236,8 +236,8 @@ class FSPermanentStorage(CrashStorageBase):
         # ensure that we return a name/blob mapping
         return file_dump_mapping.as_memory_dumps_mapping()
 
-    def get_unredacted_processed(self, crash_id):
-        """this method returns an unredacted processed crash"""
+    def get_processed(self, crash_id):
+        """this method returns an processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
         pathname = os.sep.join([parent_dir, crash_id + self.config.jsonz_file_suffix])
         if not os.path.exists(pathname):

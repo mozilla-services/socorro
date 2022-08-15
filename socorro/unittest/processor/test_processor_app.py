@@ -92,8 +92,8 @@ class TestProcessorApp:
         pa.source.get_dumps_as_files = mocked_get_dumps_as_files
 
         fake_processed_crash = DotDict({"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"})
-        mocked_get_unredacted_processed = mock.Mock(return_value=fake_processed_crash)
-        pa.source.get_unredacted_processed = mocked_get_unredacted_processed
+        mocked_get_processed = mock.Mock(return_value=fake_processed_crash)
+        pa.source.get_processed = mocked_get_processed
 
         mocked_process_crash = mock.Mock(return_value=DotDict({"processed": "1"}))
         pa.processor.process_crash = mocked_process_crash
