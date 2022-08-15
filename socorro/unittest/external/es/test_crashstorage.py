@@ -6,28 +6,23 @@ from copy import deepcopy
 from datetime import timedelta
 from unittest import mock
 
-from configman.dotdict import DotDict
 import elasticsearch
 from markus.testing import MetricsMock
 import pytest
 
-from socorro.external.crashstorage_base import Redactor
 from socorro.external.es.crashstorage import (
     ESCrashStorage,
-    ESCrashStorageRedactedJsonDump,
-    ESCrashStorageRedactedSave,
     fix_boolean,
     fix_integer,
     fix_keyword,
     fix_long,
     fix_string,
     is_valid_key,
-    RawCrashRedactor,
 )
 from socorro.lib.libdatetime import date_to_string, utc_now, string_to_datetime
 from socorro.lib.libooid import create_new_ooid
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.unittest.external.es.base import ElasticsearchTestCase, TestCaseWithConfig
+from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
@@ -93,23 +88,6 @@ SAMPLE_PROCESSED_CRASH = {
 }
 
 SAMPLE_RAW_CRASH = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
-
-
-class TestRawCrashRedactor(TestCaseWithConfig):
-    """Test the custom RawCrashRedactor class does indeed redact crashes"""
-
-    def test_redact_raw_crash(self):
-        redactor = RawCrashRedactor(self.get_tuned_config(RawCrashRedactor))
-        crash = {
-            "Key1": "value",
-            "Key2": [12, 23, 34],
-            "StackTraces": "foo:bar",
-            "Key3": {"a": 1},
-        }
-        expected_crash = {"Key1": "value", "Key2": [12, 23, 34], "Key3": {"a": 1}}
-
-        redactor.redact(crash)
-        assert crash == expected_crash
 
 
 class TestIsValidKey:
@@ -332,154 +310,6 @@ class TestESCrashStorage(ElasticsearchTestCase):
             "processed_crash": {
                 "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "dom_fission_enabled": "1",
-            },
-        }
-
-        additional = {
-            "doc_type": "crash_reports",
-            "id": crash_id,
-            "index": self.es_context.get_index_for_date(utc_now()),
-        }
-
-        sub_mock.index.assert_called_with(body=document, **additional)
-
-    @mock.patch("socorro.external.es.connection_context.elasticsearch")
-    def test_success_with_limited_json_dump_class(self, espy_mock):
-        """Test a successful index of a crash report"""
-        modified_config = self.get_tuned_config(ESCrashStorage)
-        modified_config.json_dump_allowlist_keys = [
-            "system_info",
-        ]
-        modified_config.es_redactor = DotDict()
-        modified_config.es_redactor.redactor_class = Redactor
-        modified_config.es_redactor.forbidden_keys = (
-            "memory_report, "
-            "upload_file_minidump_flash1.json_dump, "
-            "upload_file_minidump_flash2.json_dump, "
-            "upload_file_minidump_browser.json_dump"
-        )
-        modified_config.raw_crash_es_redactor = DotDict()
-        modified_config.raw_crash_es_redactor.redactor_class = RawCrashRedactor
-        modified_config.raw_crash_es_redactor.forbidden_keys = "unsused"
-
-        raw_crash = {
-            "ProductName": "Firefox",
-            "DOMFissionEnabled": "1",
-        }
-        processed_crash = {
-            "build": "20120309050057",
-            "date_processed": date_to_string(utc_now()),
-            "dom_fission_enabled": "1",
-            "product": "Firefox",
-            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "json_dump": {
-                # json dump allowed keys
-                "system_info": {"cpu_count": 42, "os": "Linux"},
-                # not allowed keys:
-                "badkey1": "foo",
-                "badkey2": {"badsubkey": "foo"},
-            },
-        }
-
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        es_storage = ESCrashStorageRedactedJsonDump(config=modified_config)
-
-        crash_id = processed_crash["uuid"]
-
-        # Submit a crash like normal, except that the back-end ES object is
-        # mocked (see the decorator above).
-        es_storage.save_processed_crash(
-            raw_crash=raw_crash,
-            processed_crash=processed_crash,
-        )
-
-        # Ensure that the ES objects were instantiated by ConnectionContext.
-        assert espy_mock.Elasticsearch.called
-
-        # Ensure that the IndicesClient was also instantiated (this happens in
-        # IndexCreator but is part of the crashstorage workflow).
-        assert espy_mock.client.IndicesClient.called
-
-        # The actual call to index the document (crash).
-        document = {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "build": 20120309050057,
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "dom_fission_enabled": "1",
-                "product": "Firefox",
-                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-                "json_dump": {
-                    # json dump allowed keys
-                    "system_info": {"cpu_count": 42},
-                },
-            },
-        }
-
-        additional = {
-            "doc_type": "crash_reports",
-            "id": crash_id,
-            "index": self.es_context.get_index_for_date(utc_now()),
-        }
-
-        sub_mock.index.assert_called_with(body=document, **additional)
-
-    @mock.patch("socorro.external.es.connection_context.elasticsearch")
-    def test_success_with_redacted_raw_crash(self, espy_mock):
-        """Test a successful index of a crash report"""
-        modified_config = deepcopy(self.config)
-        modified_config.es_redactor = DotDict()
-        modified_config.es_redactor.redactor_class = Redactor
-        modified_config.es_redactor.forbidden_keys = "unsused"
-        modified_config.raw_crash_es_redactor = DotDict()
-        modified_config.raw_crash_es_redactor.redactor_class = RawCrashRedactor
-        modified_config.raw_crash_es_redactor.forbidden_keys = "unsused"
-
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        es_storage = ESCrashStorageRedactedSave(config=modified_config)
-
-        raw_crash = {
-            "BuildID": "20200605000",
-            "ProductName": "Firefox",
-            "ReleaseChannel": "nightly",
-            "DOMFissionEnabled": "1",
-            # Add a 'StackTraces' field to be redacted.
-            "StackTraces": "something",
-        }
-        processed_crash = {
-            "date_processed": date_to_string(utc_now()),
-            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "dom_fission_enabled": "1",
-        }
-        crash_id = processed_crash["uuid"]
-
-        # Submit a crash like normal, except that the back-end ES object is
-        # mocked (see the decorator above).
-        es_storage.save_processed_crash(
-            raw_crash=raw_crash,
-            processed_crash=processed_crash,
-        )
-
-        # Ensure that the ES objects were instantiated by ConnectionContext.
-        assert espy_mock.Elasticsearch.called
-
-        # Ensure that the IndicesClient was also instantiated (this happens in
-        # IndexCreator but is part of the crashstorage workflow).
-        assert espy_mock.client.IndicesClient.called
-
-        # The actual call to index the document (crash).
-        document = {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
                 "dom_fission_enabled": "1",
             },
         }

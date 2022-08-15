@@ -10,13 +10,13 @@ import re
 import time
 
 from configman import Namespace
-from configman.converters import class_converter, list_converter
+from configman.converters import class_converter
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError
 import glom
 import markus
 
-from socorro.external.crashstorage_base import CrashStorageBase, Redactor
+from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.super_search_fields import (
     FIELDS,
     get_destination_keys,
@@ -32,24 +32,6 @@ MAX_KEYWORD_FIELD_VALUE_SIZE = 10_000
 
 # Maximum size in utf-8 encoded characters for a string field value
 MAX_STRING_FIELD_VALUE_SIZE = 32_766
-
-
-class RawCrashRedactor(Redactor):
-    """Remove some specific keys from a dict. The dict is modified.
-
-    This is a special Redactor used on raw crashes before we send them
-    to our Elasticsearch database. It is used to remove fields that we don't
-    need to store, in order mostly to save some disk space and memory.
-
-    Not that this overwrites the list of forbidden_keys that would be defined
-    through configuration. That list is hard-coded in the __init__ function.
-    """
-
-    def __init__(self, config):
-        super().__init__(config)
-
-        # Overwrite the list of fields to redact away.
-        self.forbidden_keys = ["StackTraces"]
 
 
 # Valid Elasticsearch keys contain one or more ascii alphanumeric characters, underscore, and hyphen
@@ -522,92 +504,3 @@ class ESCrashStorage(CrashStorageBase):
                     exc_info=True,
                 )
                 raise
-
-
-class ESCrashStorageRedactedSave(ESCrashStorage):
-    required_config = Namespace()
-    required_config.namespace("es_redactor")
-    required_config.es_redactor.add_option(
-        name="redactor_class",
-        doc="the name of the class that implements a 'redact' method",
-        default="socorro.external.crashstorage_base.Redactor",
-        from_string_converter=class_converter,
-    )
-    required_config.es_redactor.add_option(
-        name="forbidden_keys",
-        doc="a list of keys not allowed in a redacted processed crash",
-        default=(
-            "json_dump, "
-            "upload_file_minidump_flash1.json_dump, "
-            "upload_file_minidump_flash2.json_dump, "
-            "upload_file_minidump_browser.json_dump"
-        ),
-        reference_value_from="resource.redactor",
-    )
-
-    required_config.namespace("raw_crash_es_redactor")
-    required_config.raw_crash_es_redactor.add_option(
-        name="redactor_class",
-        doc="the redactor class to use on the raw_crash",
-        default="socorro.external.es.crashstorage.RawCrashRedactor",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config, *args, **kwargs):
-        super().__init__(config, *args, **kwargs)
-        self.redactor = config.es_redactor.redactor_class(config.es_redactor)
-        self.raw_crash_redactor = config.raw_crash_es_redactor.redactor_class(
-            config.raw_crash_es_redactor
-        )
-
-    def prepare_crash_data(self, raw_crash, processed_crash):
-        self.raw_crash_redactor.redact(raw_crash)
-        self.redactor.redact(processed_crash)
-
-        super().prepare_crash_data(raw_crash, processed_crash)
-
-
-class ESCrashStorageRedactedJsonDump(ESCrashStorageRedactedSave):
-    """This class stores redacted crash reports into Elasticsearch, but instead
-    of removing the entire `json_dump`, it keeps only a subset of its keys.
-    """
-
-    required_config = Namespace()
-    required_config.add_option(
-        name="json_dump_allowlist_keys",
-        doc="keys of the json_dump field to keep in the processed crash",
-        default=[
-            "stackwalk_version",
-            "system_info",
-        ],
-        from_string_converter=list_converter,
-    )
-
-    required_config.namespace("es_redactor")
-    required_config.es_redactor.add_option(
-        name="redactor_class",
-        doc="the name of the class that implements a 'redact' method",
-        default="socorro.external.crashstorage_base.Redactor",
-        from_string_converter=class_converter,
-    )
-    required_config.es_redactor.add_option(
-        name="forbidden_keys",
-        doc="a list of keys not allowed in a redacted processed crash",
-        default=(
-            "memory_report, "
-            "upload_file_minidump_flash1.json_dump, "
-            "upload_file_minidump_flash2.json_dump, "
-            "upload_file_minidump_browser.json_dump"
-        ),
-        reference_value_from="resource.redactor",
-    )
-
-    def prepare_crash_data(self, raw_crash, processed_crash):
-        # Replace the `json_dump` with an allowed subset.
-        json_dump = processed_crash.get("json_dump", {})
-        redacted_json_dump = {
-            k: json_dump.get(k) for k in self.config.json_dump_allowlist_keys
-        }
-        processed_crash["json_dump"] = redacted_json_dump
-
-        super().prepare_crash_data(raw_crash, processed_crash)
