@@ -75,19 +75,11 @@ class TestFSPermanentStorage:
         with pytest.raises(CrashIDNotFound):
             self.fsrts.get_raw_crash(self.CRASH_ID_2)
 
-    def test_get_unredacted_processed_crash(self):
-        self._make_processed_test_crash()
-        assert self.fsrts.get_unredacted_processed(self.CRASH_ID_2)["test"] == "TEST"
-        assert "url" in self.fsrts.get_unredacted_processed(self.CRASH_ID_2)
-        with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
-
     def test_get_processed_crash(self):
         self._make_processed_test_crash()
         assert self.fsrts.get_processed(self.CRASH_ID_2)["test"] == "TEST"
-        assert "url" not in self.fsrts.get_processed(self.CRASH_ID_2)
         with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_unredacted_processed(self.CRASH_ID_1)
+            self.fsrts.get_processed(self.CRASH_ID_1)
 
     def test_get_raw_dump(self):
         self._make_test_crash()

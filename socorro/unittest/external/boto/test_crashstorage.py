@@ -300,7 +300,7 @@ class TestBotoS3CrashStorage:
         }
         assert result == expected
 
-    def test_get_unredacted_processed(self, boto_helper):
+    def test_get_processed(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
@@ -323,20 +323,16 @@ class TestBotoS3CrashStorage:
             data=dict_to_str(processed_crash).encode("utf-8"),
         )
 
-        result = boto_s3_store.get_unredacted_processed(
-            "936ce666-ff3b-4c7a-9674-367fe2120408"
-        )
+        result = boto_s3_store.get_processed("936ce666-ff3b-4c7a-9674-367fe2120408")
         assert result == processed_crash
 
-    def test_get_undredacted_processed_not_found(self, boto_helper):
+    def test_get_processed_not_found(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
-            boto_s3_store.get_unredacted_processed(
-                "0bba929f-dead-dead-dead-a43c20071027"
-            )
+            boto_s3_store.get_processed("0bba929f-dead-dead-dead-a43c20071027")
 
 
 class TestTelemetryBotoS3CrashStorage:
@@ -404,7 +400,7 @@ class TestTelemetryBotoS3CrashStorage:
             },
         }
 
-    def test_get_unredacted_processed(self, boto_helper):
+    def test_get_processed(self, boto_helper):
         boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
@@ -423,7 +419,7 @@ class TestTelemetryBotoS3CrashStorage:
         )
 
         # Get the crash and assert it's the same data
-        data = boto_s3_store.get_unredacted_processed(
+        data = boto_s3_store.get_processed(
             crash_id="0bba929f-8721-460c-dead-a43c20071027"
         )
         assert data == crash_data
