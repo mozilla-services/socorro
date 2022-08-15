@@ -237,7 +237,7 @@ class FSPermanentStorage(CrashStorageBase):
         return file_dump_mapping.as_memory_dumps_mapping()
 
     def get_processed(self, crash_id):
-        """this method returns an processed crash"""
+        """this method returns a processed crash"""
         parent_dir = self._get_radixed_parent_directory(crash_id)
         pathname = os.sep.join([parent_dir, crash_id + self.config.jsonz_file_suffix])
         if not os.path.exists(pathname):
