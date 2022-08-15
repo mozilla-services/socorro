@@ -15,10 +15,10 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.lib.libjson import Reducer
+from socorro.lib.libjson import Reducer, permissions_predicate
 from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
-from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
+from socorro.schemas import PROCESSED_CRASH_SCHEMA, TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 LOGGER = logging.getLogger(__name__)
@@ -290,7 +290,12 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         super().__init__(*args, **kwargs)
         # Create a reducer that traverses documents and reduces them down to the
         # structure of the specified schema
-        self.reducer = Reducer(schema=TELEMETRY_SOCORRO_CRASH_SCHEMA)
+        only_public = permissions_predicate(["public"])
+        self.processed_crash_reducer = Reducer(
+            schema=PROCESSED_CRASH_SCHEMA,
+            include_predicate=only_public,
+        )
+        self.telemetry_reducer = Reducer(schema=TELEMETRY_SOCORRO_CRASH_SCHEMA)
 
     # List of source -> target keys which have different names for historical reasons
     HISTORICAL_MANUAL_KEYS = [
@@ -311,16 +316,19 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         For historical reasons, we then add some additional fields manually.
 
         """
-        # Validate crash_report
-        crash_report = self.reducer.traverse(document=processed_crash)
+        # Reduce processed crash to public-only fields
+        public_data = self.processed_crash_reducer.traverse(document=processed_crash)
+
+        # Reduce public processed_crash to telemetry schema fields
+        telemetry_data = self.telemetry_reducer.traverse(document=public_data)
 
         # Add additional fields that have different names for historical reasons
         for source_key, target_key in self.HISTORICAL_MANUAL_KEYS:
-            if source_key in processed_crash:
-                crash_report[target_key] = processed_crash[source_key]
+            if source_key in public_data:
+                telemetry_data[target_key] = public_data[source_key]
 
-        crash_id = crash_report["uuid"]
-        data = dict_to_str(crash_report).encode("utf-8")
+        crash_id = telemetry_data["uuid"]
+        data = dict_to_str(telemetry_data).encode("utf-8")
         path = build_keys("crash_report", crash_id)[0]
         self.conn.save_file(path, data)
 
