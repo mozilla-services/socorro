@@ -743,6 +743,7 @@ class RawCrash(SocorroMiddleware):
     API_ALLOWLIST = (
         # Crash annotations:
         # https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml
+        "additional_minidumps",
         "Accessibility",
         "AdapterDeviceID",
         "AdapterDriverVersion",
