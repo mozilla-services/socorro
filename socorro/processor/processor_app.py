@@ -55,24 +55,8 @@ CONFIG_DEFAULTS = {
             "active_list": "save_processed_crash",
             "benchmark_tag": "ElasticsearchCrashStorage",
             "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "es_redactor": {
-                "forbidden_keys": ", ".join(
-                    [
-                        # NOTE(willkg): "java_stack_trace_full" messes the Elasticsearch
-                        # crashstorage up and causes errors. We can remove it in
-                        # August 2020. Bug #1619638
-                        "java_stack_trace_full",
-                        "memory_report",
-                        "upload_file_minidump_browser.json_dump",
-                        "upload_file_minidump_flash1.json_dump",
-                        "upload_file_minidump_flash2.json_dump",
-                    ]
-                )
-            },
             "metrics_prefix": "processor.es",
-            "wrapped_object_class": (
-                "socorro.external.es.crashstorage.ESCrashStorageRedactedJsonDump"
-            ),
+            "wrapped_object_class": "socorro.external.es.crashstorage.ESCrashStorage",
         },
         "statsd": {
             "active_list": "save_processed_crash",
