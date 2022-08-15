@@ -376,11 +376,6 @@ definitions:
         type: ["integer", "null"]
         socorro:
           permissions: ["public"]
-      stackwalk_version:
-        description: Version of the stackwalker that walked this stack.
-        type: ["string", "null"]
-        socorro:
-          permissions: ["public"]
       status:
         description: >
           Status of the output of the stackwalker. Currently, this is always
@@ -1629,6 +1624,13 @@ properties:
     type: string
     socorro:
       permissions: ["public"]
+  stackwalk_version:
+    description: >
+      Version of the stackwalker that walked the stack for the
+      upload_file_minidump file.
+    type: string
+    socorro:
+      permissions: ["public"]
   started_datetime:
     description: >
       Datestamp indicating the start of processing for the most recent
@@ -1754,6 +1756,11 @@ properties:
         description: >
           stderr output from the stackwalker when processing this minidump.
         type: string
+      stackwalk_version:
+        description: Version of the stackwalker that walked this stack.
+        type: ["string", "null"]
+        socorro:
+          permissions: ["public"]
       success:
         description: >
           Whether or not the status field in the stackwalker output was 'OK'.

@@ -388,12 +388,12 @@ class TestMinidumpStackwalkRule:
                 rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
             expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
-            expected_output["stackwalk_version"] = rule.stackwalk_version
 
             assert processed_crash["mdsw_return_code"] == 0
             assert processed_crash["mdsw_status_string"] == "OK"
             assert processed_crash["success"] is True
             assert processed_crash["json_dump"] == expected_output
+            assert processed_crash["stackwalk_version"] == rule.stackwalk_version
 
             mm.assert_incr(
                 "processor.minidumpstackwalk.run",
@@ -421,11 +421,9 @@ class TestMinidumpStackwalkRule:
 
                 rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-            assert processed_crash["json_dump"] == {
-                "stackwalk_version": rule.stackwalk_version
-            }
             assert processed_crash["mdsw_return_code"] == 124
             assert processed_crash["mdsw_status_string"] == "unknown error"
+            assert processed_crash["stackwalk_version"] == rule.stackwalk_version
             assert processed_crash["success"] is False
             assert processor_meta["processor_notes"] == [
                 "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
@@ -456,13 +454,11 @@ class TestMinidumpStackwalkRule:
 
             rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        assert processed_crash["json_dump"] == {
-            "stackwalk_version": rule.stackwalk_version
-        }
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
         assert processed_crash["mdsw_stderr"] == "boo hiss"
         assert not processed_crash["success"]
+        assert processed_crash["stackwalk_version"] == rule.stackwalk_version
         assert (
             processor_meta["processor_notes"][0]
             == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"

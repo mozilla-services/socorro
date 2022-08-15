@@ -1174,6 +1174,10 @@
                         <tr>
                           <th scope="row">version:</th>
                           <td>
+                            {% if report and report.stackwalk_version %}
+                              {{ report.stackwalk_version }}
+                            {% endif %}
+                            {# FIXME(willkg): this is old location; remove in December 2022 #}
                             {% if report and report.json_dump and report.json_dump.stackwalk_version %}
                               {{ report.json_dump.stackwalk_version }}
                             {% endif %}
