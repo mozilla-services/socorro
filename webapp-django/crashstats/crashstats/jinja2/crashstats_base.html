@@ -118,13 +118,6 @@
                       data-url-version="{{ url('topcrashers:topcrashers') }}?product=__PRODUCT__&amp;version=__VERSION__"
                       {% if report == 'topcrasher' %}selected{% endif %}
                       >Top Crashers</option>
-              {% if request.user.has_perm('crashstats.view_exploitability') %}
-                <option value="exploitable"
-                        data-url-product="{{ url('exploitability:report') }}?product=__PRODUCT__"
-                        data-url-version="{{ url('exploitability:report') }}?product=__PRODUCT__&amp;version=__VERSION__"
-                        {% if report == 'exploitable' %}selected{% endif %}
-                        >Exploitable Crashes</option>
-              {% endif %}
             </select>
           </li>
         </ul>

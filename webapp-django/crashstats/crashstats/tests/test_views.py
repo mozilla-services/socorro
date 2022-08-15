@@ -63,7 +63,6 @@ _SAMPLE_PROCESSED = {
     "crashing_thread": None,
     "json_dump": {
         "status": "OK",
-        "sensitive": {"exploitability": "high"},
         "threads": [],
     },
 }
@@ -117,16 +116,6 @@ SAMPLE_SIGNATURE_SUMMARY = {
         "os": [{"category": "Windows 8.1", "percentage": "55.340", "report_count": 57}],
         "process_type": [
             {"category": "Browser", "percentage": "100.000", "report_count": 103}
-        ],
-        "exploitability": [
-            {
-                "low_count": 0,
-                "high_count": 0,
-                "null_count": 0,
-                "none_count": 4,
-                "report_date": "2014-08-12",
-                "medium_count": 0,
-            }
         ],
     }
 }
@@ -386,7 +375,6 @@ class TestViews(BaseTestViews):
                 "cpu_info": "family 6 mod",
                 "cpu_count": 1,
             },
-            "sensitive": {"exploitability": "high"},
         }
 
         models.BugAssociation.objects.create(bug_id=222222, signature="FakeSignature1")
@@ -446,7 +434,6 @@ class TestViews(BaseTestViews):
         ) in content
         # Should not be able to see sensitive key from stackwalker JSON
         assert "&#34;sensitive&#34;" not in content
-        assert "&#34;exploitability&#34;" not in content
 
         # The pretty platform version should appear.
         assert "OS X 10.11" in content
@@ -461,8 +448,6 @@ class TestViews(BaseTestViews):
         content = smart_str(response.content)
         assert _SAMPLE_PROCESSED["user_comments"] in content
         assert _SAMPLE_META["URL"] in content
-        assert "&#34;sensitive&#34;" in content
-        assert "&#34;exploitability&#34;" in content
         assert response.status_code == 200
 
         # Ensure fields have their description in title.
@@ -716,7 +701,6 @@ class TestViews(BaseTestViews):
     def test_report_index_with_symbol_url_in_modules(self):
         json_dump = {
             "status": "OK",
-            "sensitive": {"exploitability": "high"},
             "threads": [],
             "modules": [
                 {
@@ -779,7 +763,6 @@ class TestViews(BaseTestViews):
     def test_report_index_with_cert_subject_in_modules(self):
         json_dump = {
             "status": "OK",
-            "sensitive": {"exploitability": "high"},
             "threads": [],
             "modules": [
                 {
@@ -1471,7 +1454,6 @@ class TestViews(BaseTestViews):
                     "version": "13.0.0.214",
                 }
             ],
-            "sensitive": {"exploitability": "none"},
             "status": "OK",
             "system_info": {
                 "cpu_arch": "x86",
@@ -1542,45 +1524,6 @@ class TestViews(BaseTestViews):
         )
         response = self.client.get(url)
         assert response.status_code == 200
-
-    def test_report_index_with_crash_exploitability(self):
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
-
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["exploitability"] = "Unknown Exploitability"
-                return crash
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse("crashstats:report_index", args=[crash_id])
-
-        response = self.client.get(url)
-        assert "Exploitability</th>" not in smart_str(response.content)
-
-        # you must be logged in to see exploitability
-        user = self._login()
-        group = self._create_group_with_permission("view_exploitability")
-        user.groups.add(group)
-
-        response = self.client.get(url)
-        assert "Exploitability</th>" in smart_str(response.content)
-        assert "Unknown Exploitability" in smart_str(response.content)
 
     def test_report_index_raw_crash_not_found(self):
         crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
@@ -1755,13 +1698,13 @@ class TestViews(BaseTestViews):
 
 class TestLogin(BaseTestViews):
     def test_login_required(self):
-        url = reverse("exploitability:report")
+        url = reverse("monitoring:permission_required")
         response = self.client.get(url)
         assert response.status_code == 302
         assert settings.LOGIN_URL in response["Location"] + "?next=%s" % url
 
     def test_unauthenticated_user_redirected_from_protected_page(self):
-        url = reverse("exploitability:report")
+        url = reverse("monitoring:permission_required")
         response = self.client.get(url, follow=False)
         expected = "%s?%s=%s" % (reverse("crashstats:login"), REDIRECT_FIELD_NAME, url)
         assert response.url == expected

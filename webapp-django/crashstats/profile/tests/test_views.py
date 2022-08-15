@@ -30,15 +30,11 @@ class TestViews(BaseTestViews):
 
         # Make some permissions.
         self._create_group_with_permission("view_pii", "Group A")
-        group_b = self._create_group_with_permission("view_exploitability", "Group B")
-        user.groups.add(group_b)
         assert not user.has_perm("crashstats.view_pii")
-        assert user.has_perm("crashstats.view_exploitability")
 
         # Test permissions.
         response = self.client.get(url)
         assert PERMISSIONS["view_pii"] in smart_str(response.content)
-        assert PERMISSIONS["view_exploitability"] in smart_str(response.content)
         doc = pyquery.PyQuery(response.content)
         for row in doc("table.permissions tbody tr"):
             cells = []
@@ -46,8 +42,6 @@ class TestViews(BaseTestViews):
                 cells.append(td.text.strip())
             if cells[0] == PERMISSIONS["view_pii"]:
                 assert cells[1] == "No"
-            elif cells[0] == PERMISSIONS["view_exploitability"]:
-                assert cells[1] == "Yes!"
 
         # If the user ceases to be active, this page should redirect instead
         user.is_active = False

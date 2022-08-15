@@ -17,10 +17,7 @@ class TestForms:
         def get_new_form(data):
             class User:
                 def has_perm(self, permission):
-                    return {
-                        "crashstats.view_pii": False,
-                        "crashstats.view_exploitability": False,
-                    }.get(permission, False)
+                    return {"crashstats.view_pii": False}.get(permission, False)
 
             return forms.SearchForm(
                 self.all_fields,
@@ -54,19 +51,15 @@ class TestForms:
         assert form.is_valid()
 
         # Verify admin restricted fields are not accepted
-        form = get_new_form({"url": "something", "exploitability": "high"})
+        form = get_new_form({"url": "something"})
         assert form.is_valid()
         assert "url" not in form.fields
-        assert "exploitability" not in form.fields
 
     def test_search_form_with_admin_mode(self):
         def get_new_form(data):
             class User:
                 def has_perm(self, permission):
-                    return {
-                        "crashstats.view_pii": True,
-                        "crashstats.view_exploitability": True,
-                    }.get(permission, False)
+                    return {"crashstats.view_pii": True}.get(permission, False)
 
             return forms.SearchForm(
                 self.all_fields,
@@ -96,23 +89,18 @@ class TestForms:
                 "reason": ["some reason"],
                 "build_id": "<20200101344556",
                 "url": ["$http://"],
-                "exploitability": ["high", "medium"],
             }
         )
         assert form.is_valid()
 
         # Verify admin restricted fields are accepted
         assert "url" in form.fields
-        assert "exploitability" in form.fields
 
     def test_get_fields_list(self):
         def get_new_form(data):
             class User:
                 def has_perm(self, permission):
-                    permissions = {
-                        "crashstats.view_pii": False,
-                        "crashstats.view_exploitability": False,
-                    }
+                    permissions = {"crashstats.view_pii": False}
                     return permissions.get(permission, False)
 
             return forms.SearchForm(

@@ -79,18 +79,15 @@ class TestViews(BaseTestViews):
         # Verify non-exposed fields are not listed.
         assert "a_test_field" not in content
 
-        # Verify fields with permissions are not listed.
-        assert "exploitability" not in content
-
         # Verify fields with permissions are listed.
-        group = self._create_group_with_permission("view_exploitability")
+        group = self._create_group_with_permission("view_pii")
         user.groups.add(group)
 
         response = self.client.get(url)
         assert response.status_code == 200
         content = json.loads(response.content)
 
-        assert "exploitability" in content
+        assert "gmp_library_path" in content
 
     def test_search_fields_metrics(self):
         self._login()
@@ -361,13 +358,12 @@ class TestViews(BaseTestViews):
         def mocked_supersearch_get(**params):
             assert "_columns" in params
 
-            if "_facets" in params and "url" in params["_facets"]:
-                facets = {
-                    "platform": [{"term": "Linux", "count": 3}],
-                    "url": [{"term": "http://example.org", "count": 3}],
-                }
-            else:
-                facets = {"platform": [{"term": "Linux", "count": 3}]}
+            facets = {}
+            if "url" in params.get("_facets", []):
+                facets["url"] = [{"term": "http://example.org", "count": 3}]
+
+            if "platform" in params.get("_facets", []):
+                facets["platform"] = [{"term": "Linux", "count": 3}]
 
             results = {
                 "hits": [
@@ -379,8 +375,8 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
+                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.2449.0 ",
                         "url": "http://example.org",
-                        "exploitability": "high",
                     },
                     {
                         "signature": "mySignatureIsCool",
@@ -390,8 +386,8 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": 888981,
+                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.2449.0 ",
                         "url": "http://example.org",
-                        "exploitability": "low",
                     },
                     {
                         "signature": "mineIsCoolerThanYours",
@@ -401,8 +397,8 @@ class TestViews(BaseTestViews):
                         "version": "1.0",
                         "platform": "Linux",
                         "build_id": None,
+                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.5000.0 ",
                         "url": "http://example.org",
-                        "exploitability": "error",
                     },
                 ],
                 "facets": facets,
@@ -417,7 +413,26 @@ class TestViews(BaseTestViews):
 
         url = reverse("supersearch:search_results")
 
-        # Logged in user, can see protected data fields
+        # When not logged in, user can only see public fields
+        response = self.client.get(
+            url,
+            {
+                "_columns": ["version", "url", "gmp_library_path"],
+                "_facets": ["url", "platform"],
+            },
+        )
+
+        assert response.status_code == 200
+        # Public
+        assert "Version" in smart_str(response.content)
+        assert "Platform facet" in smart_str(response.content)
+        # Protected
+        assert "Url facet" not in smart_str(response.content)
+        assert "http://example.org" not in smart_str(response.content)
+        assert "Gmp library path" not in smart_str(response.content)
+        assert "widevinecdm" not in smart_str(response.content)
+
+        # Logged in user, can see public and protected data fields
         user = self._login()
         group = self._create_group_with_permission("view_pii")
         user.groups.add(group)
@@ -425,47 +440,40 @@ class TestViews(BaseTestViews):
         response = self.client.get(
             url,
             {
-                "_columns": ["version", "url", "exploitability"],
+                "_columns": ["version", "url", "gmp_library_path"],
                 "_facets": ["url", "platform"],
             },
         )
 
         assert response.status_code == 200
+        # Public
+        assert "Version" in smart_str(response.content)
+        assert "Platform facet" in smart_str(response.content)
+        # Protected
         assert "Url facet" in smart_str(response.content)
         assert "http://example.org" in smart_str(response.content)
-        assert "Version" in smart_str(response.content)
-        assert "1.0" in smart_str(response.content)
+        assert "Gmp library path" in smart_str(response.content)
+        assert "widevinecdm" in smart_str(response.content)
 
-        # Without the correct permission the user cannot see exploitability.
-        assert "Exploitability" not in smart_str(response.content)
-
-        exp_group = self._create_group_with_permission("view_exploitability")
-        user.groups.add(exp_group)
-
-        response = self.client.get(
-            url,
-            {
-                "_columns": ["version", "url", "exploitability"],
-                "_facets": ["url", "platform"],
-            },
-        )
-
-        assert response.status_code == 200
-        assert "Exploitability" in smart_str(response.content)
-        assert "high" in smart_str(response.content)
-
-        # Logged out user, cannot see the protected data fields
+        # Logged out user, can only see public fields
         self._logout()
         response = self.client.get(
             url,
-            {"_columns": ["version", "url"], "_facets": ["url", "platform"]},
+            {
+                "_columns": ["version", "url"],
+                "_facets": ["url", "platform"],
+            },
         )
 
         assert response.status_code == 200
+        # Public
+        assert "Version" in smart_str(response.content)
+        assert "Platform facet" in smart_str(response.content)
+        # Protected
         assert "Url facet" not in smart_str(response.content)
         assert "http://example.org" not in smart_str(response.content)
-        assert "Version" in smart_str(response.content)
-        assert "1.0" in smart_str(response.content)
+        assert "Gmp library path" not in smart_str(response.content)
+        assert "widevinecdm" not in smart_str(response.content)
 
     def test_search_results_parameters(self):
         def mocked_supersearch_get(**params):
