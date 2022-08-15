@@ -371,16 +371,6 @@
                     </tr>
                   {% endif %}
                 {% endif %}
-                {% if request.user.has_perm('crashstats.view_exploitability') %}
-                  <tr title="{{ fields_desc['processed_crash.exploitability'] }}">
-                    <th scope="row">Exploitability</th>
-                    <td>
-                      {% if report.exploitability %}
-                        {{ report.exploitability }} - {{ protected_warning() }}
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endif %}
 
                 {# Personal user info #}
 

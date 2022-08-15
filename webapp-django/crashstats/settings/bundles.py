@@ -228,10 +228,6 @@ PIPELINE_JS = {
         "source_filenames": ("jquery-jsonview/dist/jquery.jsonview.js",),
         "output_filename": "js/jsonview.min.js",
     },
-    "exploitability_report": {
-        "source_filenames": ("exploitability/js/report.js",),
-        "output_filename": "js/exploitability-report.min.js",
-    },
     "report_index": {
         "source_filenames": (
             "crashstats/js/socorro/report.js",

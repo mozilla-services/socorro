@@ -21,7 +21,6 @@ from socorro.processor.rules.mozilla import (
     DatesAndTimesRule,
     DistributionIdRule,
     ESRVersionRewrite,
-    ExploitablityRule,
     FenixVersionRewriteRule,
     FlashVersionRule,
     JavaProcessRule,
@@ -100,7 +99,6 @@ canonical_standard_raw_crash = {
 
 canonical_processed_crash = {
     "json_dump": {
-        "sensitive": {"exploitability": "high"},
         "modules": [
             {
                 "end_addr": "0x12e6000",
@@ -1461,36 +1459,6 @@ class TestPluginUserComment:
 
         # processed_crash should be unchanged
         assert processed_crash == {}
-
-
-class TestExploitablityRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = ExploitablityRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["exploitability"] == "high"
-
-        # raw_crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
-
-    def test_this_is_not_the_crash_you_are_looking_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = ExploitablityRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["exploitability"] == "unknown"
-
-        # raw_crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
 
 
 class TestFlashVersionRule:

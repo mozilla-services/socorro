@@ -273,36 +273,3 @@
     </table>
   </div>
 </div>
-
-{% if query.facets.histogram_date %}
-  <div class="panel tab-inner-panel" id="panel-exploitability">
-    <header class="title" title="Toggle visibility">
-      <h2>Exploitability</h2>
-      <div class="options show">show</div>
-    </header>
-    <div class="content">
-      <table class="tablesorter data-table">
-        <thead>
-          <tr>
-            <th class="header">Report Date</th>
-            <th class="header">None</th>
-            <th class="header">Low</th>
-            <th class="header">Medium</th>
-            <th class="header">High</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for day in query.facets.histogram_date %}
-            <tr>
-              <td>{{ day.term[:10] }}</td>
-              <td>{{ day.exploitability.none }}</td>
-              <td>{{ day.exploitability.low }}</td>
-              <td>{{ day.exploitability.medium }}</td>
-              <td>{{ day.exploitability.high }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-{% endif %}

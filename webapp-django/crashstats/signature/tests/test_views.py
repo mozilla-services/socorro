@@ -597,20 +597,6 @@ class TestViews(BaseTestViews):
                 },
             }
 
-            if "_histogram.date" in params:
-                res["facets"]["histogram_date"] = [
-                    {
-                        "count": 2,
-                        "term": "2015-08-05T00:00:00+00:00",
-                        "facets": {"exploitability": [{"count": 2, "term": "high"}]},
-                    },
-                    {
-                        "count": 2,
-                        "term": "2015-08-06T00:00:00+00:00",
-                        "facets": {"exploitability": [{"count": 2, "term": "low"}]},
-                    },
-                ]
-
             return res
 
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
@@ -633,9 +619,6 @@ class TestViews(BaseTestViews):
         assert "Graphics Adapter" in smart_str(response.content)
         assert "Flash&trade; Version" in smart_str(response.content)
 
-        # Logged out users can't see no exploitability
-        assert "Exploitability" not in smart_str(response.content)
-
         # Check that some of the expected values are there.
         assert "Windows 7" in smart_str(response.content)
         assert "x86" in smart_str(response.content)
@@ -648,23 +631,8 @@ class TestViews(BaseTestViews):
         assert "ZTE" in smart_str(response.content)
         assert "Intel (0x0086)" in smart_str(response.content)
 
-        user = self._login()
-
         response = self.client.get(url, {"signature": DUMB_SIGNATURE})
         assert response.status_code == 200
-
-        # Logged in users without the permission can't see no exploitability
-        assert "Exploitability" not in smart_str(response.content)
-
-        group = self._create_group_with_permission("view_exploitability")
-        user.groups.add(group)
-        assert user.has_perm("crashstats.view_exploitability")
-
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
-        assert response.status_code == 200
-
-        # Logged in users with the permission can see exploitability
-        assert "Exploitability" in smart_str(response.content)
 
     def test_signature_summary_with_many_hexes(self):
         def mocked_supersearch_get(**params):

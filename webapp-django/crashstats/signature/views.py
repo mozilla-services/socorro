@@ -419,11 +419,6 @@ def signature_summary(request, params):
     ]
     params["_aggs.product.version"] = ["_cardinality.install_time"]
 
-    # If the user has permissions, show exploitability.
-    all_fields = SuperSearchFields().get()
-    if request.user.has_perms(all_fields["exploitability"]["permissions_needed"]):
-        params["_histogram.date"] = ["exploitability"]
-
     api = SuperSearchUnredacted()
 
     # Now make the actual request with all expected parameters.
@@ -439,7 +434,6 @@ def signature_summary(request, params):
     _transform_uptime_summary(facets)
     _transform_graphics_summary(facets)
     _transform_mobile_summary(facets)
-    _transform_exploitability_summary(facets)
 
     context["query"] = search_results
     context["product_version_total"] = search_results["total"]
@@ -537,22 +531,6 @@ def _transform_mobile_summary(facets):
                         )
 
         facets["android_cpu_abi"] = mobile_devices
-
-
-def _transform_exploitability_summary(facets):
-    # Transform exploitability facet.
-    if "histogram_date" in facets:
-        exploitability_base = {"none": 0, "low": 0, "medium": 0, "high": 0}
-        for day in facets["histogram_date"]:
-            exploitability = dict(exploitability_base)
-            for expl in day["facets"]["exploitability"]:
-                if expl["term"] in exploitability:
-                    exploitability[expl["term"]] = expl["count"]
-            day["exploitability"] = exploitability
-
-        facets["histogram_date"] = sorted(
-            facets["histogram_date"], key=lambda x: x["term"], reverse=True
-        )
 
 
 @track_view

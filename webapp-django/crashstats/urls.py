@@ -18,7 +18,6 @@ handler500 = "crashstats.crashstats.views.handler500"
 
 urlpatterns = [
     path("", include("crashstats.crashstats.urls", namespace="crashstats")),
-    path("", include("crashstats.exploitability.urls", namespace="exploitability")),
     path("", include("crashstats.monitoring.urls", namespace="monitoring")),
     path("search/", include("crashstats.supersearch.urls", namespace="supersearch")),
     path("signature/", include("crashstats.signature.urls", namespace="signature")),

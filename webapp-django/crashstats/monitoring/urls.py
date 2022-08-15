@@ -20,4 +20,9 @@ urlpatterns = [
         name="dockerflow_lbheartbeat",
     ),
     path("__version__", views.dockerflow_version, name="dockerflow_version"),
+    path(
+        "permission_required",
+        views.permission_required_view,
+        name="permission_required",
+    ),
 ]

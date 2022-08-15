@@ -17,8 +17,6 @@ from django.dispatch import receiver
 PERMISSIONS = {
     "view_pii": "View Personal Identifiable Information",
     "view_rawdump": "View Raw Dumps",
-    "view_exploitability": "View Exploitability Results",
-    "view_flash_exploitability": "View Flash Exploitability Results",
     "run_custom_queries": "Run Custom Queries in Super Search",
     "run_long_queries": "Run Long Queries",
     "reprocess_crashes": "Reprocess Crashes",
@@ -29,8 +27,6 @@ GROUPS = {
     "Hackers": [
         "reprocess_crashes",
         "run_long_queries",
-        "view_exploitability",
-        "view_flash_exploitability",
         "view_pii",
         "view_rawdump",
     ],
@@ -38,8 +34,6 @@ GROUPS = {
         "reprocess_crashes",
         "run_custom_queries",
         "run_long_queries",
-        "view_exploitability",
-        "view_flash_exploitability",
         "view_pii",
         "view_rawdump",
     ],

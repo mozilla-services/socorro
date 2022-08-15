@@ -650,19 +650,6 @@ class PluginUserComment(Rule):
         raw_crash["Comments"] = raw_crash["PluginUserComment"]
 
 
-class ExploitablityRule(Rule):
-    """Copies exploitability bits in json_dump to processed_crash"""
-
-    # FIXME(willkg): We no longer have this field, so we can nix this
-
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        try:
-            val = processed_crash["json_dump"]["sensitive"]["exploitability"]
-            processed_crash["exploitability"] = val
-        except KeyError:
-            processed_crash["exploitability"] = "unknown"
-
-
 class FlashVersionRule(Rule):
     # A subset of the known "debug identifiers" for flash versions, associated
     # to the version

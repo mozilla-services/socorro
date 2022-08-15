@@ -425,8 +425,6 @@ class TestViews(BaseTestViews):
 
     def test_SuperSearch(self):
         def mocked_supersearch_get(**params):
-            assert "exploitability" not in params
-
             restricted_params = ("_facets", "_aggs.signature", "_histogram.date")
             for key in restricted_params:
                 if key in params:
@@ -441,7 +439,6 @@ class TestViews(BaseTestViews):
                         "signature": "abcdef",
                         "product": "WaterWolf",
                         "version": "1.0",
-                        "exploitability": "high",
                         "url": "http://embarassing.website.com",
                         "user_comments": "hey I am thebig@lebowski.net",
                     }
@@ -461,14 +458,13 @@ class TestViews(BaseTestViews):
         assert res["facets"]
 
         # Verify forbidden fields are not exposed.
-        assert "exploitability" not in res["hits"]
         assert "url" not in res["hits"]
 
         # Verify it's not possible to use restricted parameters.
         response = self.client.get(
             url,
             {
-                "exploitability": "high",
+                "url": "example.com",
                 "_facets": ["url", "product"],
                 "_aggs.signature": ["url", "product"],
                 "_histogram.date": ["url", "product"],
@@ -482,7 +478,7 @@ class TestViews(BaseTestViews):
 
     def test_SuperSearchUnredacted(self):
         def mocked_supersearch_get(**params):
-            assert "exploitability" in params
+            assert "url" in params
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
             return {
@@ -491,8 +487,7 @@ class TestViews(BaseTestViews):
                         "signature": "abcdef",
                         "product": "WaterWolf",
                         "version": "1.0",
-                        "exploitability": "high",
-                        "url": "http://embarassing.website.com",
+                        "url": "example.com",
                         "user_comments": "hey I am thebig@lebowski.net",
                     }
                 ],
@@ -503,19 +498,18 @@ class TestViews(BaseTestViews):
         SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
 
         url = reverse("api:model_wrapper", args=("SuperSearchUnredacted",))
-        response = self.client.get(url, {"exploitability": "high"})
+        response = self.client.get(url, {"url": "example.com"})
         assert response.status_code == 403
         assert response["Content-Type"] == "application/json"
         error = json.loads(response.content)["error"]
-        permission = Permission.objects.get(codename="view_exploitability")
+        permission = Permission.objects.get(codename="view_pii")
         assert permission.name in error
 
         # Log in to get permissions.
         user = self._login()
         self._add_permission(user, "view_pii")
-        self._add_permission(user, "view_exploitability")
 
-        response = self.client.get(url, {"exploitability": "high"})
+        response = self.client.get(url, {"url": "example.com"})
         assert response.status_code == 200
         res = json.loads(response.content)
 
@@ -523,13 +517,12 @@ class TestViews(BaseTestViews):
         assert res["facets"]
 
         # Verify forbidden fields are exposed.
-        assert "exploitability" in res["hits"][0]
         assert "url" in res["hits"][0]
         assert "thebig@lebowski.net" in res["hits"][0]["user_comments"]
 
         # Verify values can be lists.
         response = self.client.get(
-            url, {"exploitability": "high", "product": ["WaterWolf", "NightTrain"]}
+            url, {"url": "example.com", "product": ["WaterWolf", "NightTrain"]}
         )
         assert response.status_code == 200
 

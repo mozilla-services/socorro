@@ -8,6 +8,7 @@ import uuid
 import elasticsearch
 
 from django.conf import settings
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
 from django.shortcuts import render
@@ -143,3 +144,9 @@ def dockerflow_lbheartbeat(request):
 def broken(request):
     """Throws an error to test Sentry connetivity."""
     raise Exception("intentional exception")
+
+
+@permission_required("crashstats.view_pii")
+def permission_required_view(request):
+    """View for testing login flow."""
+    return "Success!"

@@ -47,15 +47,12 @@ class TestModels(DjangoTestCase):
     def test_api_token_losing_permissions(self):
         bob = User.objects.create(username="bob")
         permission = Permission.objects.get(codename="view_pii")
-        permission2 = Permission.objects.get(codename="view_exploitability")
         group = Group.objects.create(name="VIP")
         group.permissions.add(permission)
-        group.permissions.add(permission2)
         bob.groups.add(group)
 
         token = models.Token.objects.create(user=bob, notes="Some notes")
         token.permissions.add(permission)
-        token.permissions.add(permission2)
 
         # change the group's permissions
         group.permissions.remove(permission)
@@ -63,5 +60,3 @@ class TestModels(DjangoTestCase):
         # reload the token
         token = models.Token.objects.get(id=token.id)
         assert permission not in token.permissions.all()
-        # it should still have this one though
-        assert permission2 in token.permissions.all()

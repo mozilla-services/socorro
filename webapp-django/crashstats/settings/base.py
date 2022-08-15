@@ -81,7 +81,6 @@ INSTALLED_APPS = [
     "crashstats.authentication",
     "crashstats.cron",
     "crashstats.documentation",
-    "crashstats.exploitability",
     "crashstats.manage",
     "crashstats.monitoring",
     "crashstats.profile",
