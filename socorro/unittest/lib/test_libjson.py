@@ -63,7 +63,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type not in \['integer'\]"
+        msg_pattern = r"invalid: .years: type string not in \['integer'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
@@ -94,7 +94,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type not in \['number'\]"
+        msg_pattern = r"invalid: .years: type string not in \['number'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
@@ -291,7 +291,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"numbers": [5, "Janice", 10]}
-        msg_pattern = r"invalid: .numbers.\[1\]: type not in \['integer'\]"
+        msg_pattern = r"invalid: .numbers.\[1\]: type string not in \['integer'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 
@@ -398,7 +398,7 @@ class Test_schema_reduce:
         jsonschema.Draft4Validator.check_schema(schema)
 
         document = {"record": [5, "Janice"]}
-        msg_pattern = r"invalid: .record.\[0\]: type not in \['string'\]"
+        msg_pattern = r"invalid: .record.\[0\]: type integer not in \['string'\]"
         with pytest.raises(InvalidDocumentError, match=msg_pattern):
             assert schema_reduce(schema, document) == document
 

@@ -228,13 +228,14 @@ class Reducer:
                 return document_part
 
             raise InvalidDocumentError(
-                f"invalid: {path}: type {type(document_part)} not in {schema_part_types}"
+                f"invalid: {path}: type {valid_schema_part_type} not in "
+                + f"{schema_part_types}"
             )
 
         if isinstance(document_part, list):
             if "array" not in schema_part_types:
                 raise InvalidDocumentError(
-                    f"invalid: {path}: array type not in {schema_part_types}"
+                    f"invalid: {path}: type array not in {schema_part_types}"
                 )
 
             schema_items = schema_part.get("items", {"type": "string"})
@@ -301,7 +302,7 @@ class Reducer:
         if isinstance(document_part, dict):
             if "object" not in schema_part_types:
                 raise InvalidDocumentError(
-                    f"invalid: {path}: object type not in {schema_part_types}"
+                    f"invalid: {path}: type object not in {schema_part_types}"
                 )
 
             new_doc = {}

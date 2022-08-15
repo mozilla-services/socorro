@@ -363,14 +363,16 @@
         "string",
         "null"
       ],
-      "description": "Set to 1 when DOM fission is enabled."
+      "description": "Set to 1 when DOM fission is enabled.",
+      "socorroConvertTo": "string"
     },
     "dom_ipc_enabled": {
       "type": [
         "string",
         "null"
       ],
-      "description": "The value of the 'dom.ipc.enabled' preference (in other terms, whether e10s is enabled)."
+      "description": "The value of the 'dom.ipc.enabled' preference (in other terms, whether e10s is enabled).",
+      "socorroConvertTo": "string"
     },
     "e10s_cohort": {
       "type": [
