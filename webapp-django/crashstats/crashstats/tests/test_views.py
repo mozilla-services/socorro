@@ -432,8 +432,6 @@ class TestViews(BaseTestViews):
             "You need to be logged in and have access to protected data to see "
             "links to crash report data."
         ) in content
-        # Should not be able to see sensitive key from stackwalker JSON
-        assert "&#34;sensitive&#34;" not in content
 
         # The pretty platform version should appear.
         assert "OS X 10.11" in content
@@ -1495,7 +1493,7 @@ class TestViews(BaseTestViews):
         assert "<th>Install Time</th>" not in smart_str(response.content)
 
     def test_report_index_with_sparse_json_dump(self):
-        json_dump = {"status": "ERROR_NO_MINIDUMP_HEADER", "sensitive": {}}
+        json_dump = {"stackwalker_version": "minidump_stackwalk 0.10.3 ..."}
 
         def mocked_raw_crash_get(**params):
             assert "datatype" in params
