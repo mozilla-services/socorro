@@ -381,8 +381,8 @@ class TestMiddlewareModels(DjangoTestCase):
                 "success": True,
                 "signature": "CLocalEndpointEnumerator::OnMediaNotific",
                 "addons": [
-                    ["testpilot@labs.mozilla.com", "1.2.1"],
-                    ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "13.0"],
+                    "testpilot@labs.mozilla.com:1.2.1",
+                    "{972ce4c6-7e08-4474-a285-3208198ce6fd}:13.0",
                 ],
             }
 

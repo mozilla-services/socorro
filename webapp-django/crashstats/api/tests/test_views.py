@@ -215,7 +215,7 @@ class TestViews(BaseTestViews):
             "last_crash": 371342,
             "os_name": "Mac OS X",
             "os_version": "10.6.8 10K549",
-            "process_type": None,
+            "process_type": "parent",
             "product": "WaterWolf",
             "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
             "release_channel": "nightly",
@@ -229,7 +229,7 @@ class TestViews(BaseTestViews):
 
         protected_data = {
             "url": "https://example.com",
-            "user_comments": None,
+            "user_comments": "no comment",
         }
 
         def mocked_get(**params):
@@ -258,7 +258,6 @@ class TestViews(BaseTestViews):
             assert key not in data
 
         # If you have permissions, you see all the data
-        # If you do have permissions, then you get it all
         user = User.objects.create(username="test")
         self._add_permission(user, "view_pii")
         view_pii_perm = Permission.objects.get(codename="view_pii")
