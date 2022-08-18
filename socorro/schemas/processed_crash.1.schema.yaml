@@ -726,7 +726,8 @@ properties:
       timestamp of the form YYYYMMDDHHMMSS.
     type: string
   client_crash_date:
-    description: ''
+    description: >
+      Crash time as a datestamp in UTC.
     type: string
   collector_notes:
     description: >
