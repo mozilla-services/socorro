@@ -277,14 +277,12 @@ class MinidumpStackwalkRule(Rule):
                 self.logger.warning(f"{msg} ({crash_id})")
                 output = {}
 
-        # Add the stackwalk_version to the stackwalk output
-        output["stackwalk_version"] = self.stackwalk_version
-
         stackwalker_data = {
             "json_dump": output,
             "mdsw_return_code": returncode,
             "mdsw_status_string": output.get("status", "unknown error"),
             "success": output.get("status", "") == "OK",
+            "stackwalk_version": self.stackwalk_version,
             # Note: this may contain proected data
             "mdsw_stderr": stderr,
         }
