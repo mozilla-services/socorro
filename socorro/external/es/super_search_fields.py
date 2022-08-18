@@ -1388,8 +1388,14 @@ FIELDS = {
         "is_exposed": True,
         "is_returned": True,
         "name": "cpu_count",
-        "namespace": "processed_crash.json_dump.system_info",
+        "namespace": "processed_crash",
         "permissions_needed": [],
+        # FIXME(willkg): We can stop pulling from the old location in 12/2022
+        "source_key": "processed_crash.json_dump.system_info.cpu_count",
+        "destination_keys": [
+            "processed_crash.json_dump.system_info.cpu_count",
+            "processed_crash.cpu_count",
+        ],
         "query_type": "number",
         "storage_mapping": {"type": "short"},
     },
@@ -2671,7 +2677,7 @@ FIELDS = {
     "stackwalk_version": keyword_field(
         name="stackwalk_version",
         description="binary and version for stackwalker used to process report",
-        namespace="processed_crash.json_dump",
+        namespace="processed_crash",
         is_protected=False,
     ),
     "startup_crash": {

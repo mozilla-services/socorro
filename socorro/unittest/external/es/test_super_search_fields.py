@@ -357,9 +357,17 @@ def test_validate_super_search_fields(name, properties):
 
     # We occasionally do multi-step migrations that change data types where we need to
     # accumulate data in a new field and specify it in a way that otherwise breaks
-    # super_search_fields validation. If the field name has "_future" at the end, it's
-    # one of these cases, so ignore these checks.
-    if not properties["name"].endswith("_future"):
+    # super_search_fields validation.
+    #
+    # If the field name has "_future" at the end, it's one of these cases, so ignore
+    # these checks.
+    #
+    # If the field has "json_dump" in the source_key, then it's another special case
+    # where we're moving it from a nested location in the processed_crash to a top-level
+    # location.
+    if not properties["name"].endswith("_future") and "json_dump" not in properties.get(
+        "source_key", ""
+    ):
         if properties["is_exposed"] is False:
             assert properties["storage_mapping"] is None
 
