@@ -835,6 +835,19 @@ properties:
       'TelemetryEnvironment.partner.distributionId' value. If there isn't a
       value in either place, this defaults to 'mozilla'.
     type: string
+  dom_fission_enabled:
+    description: >
+      Set to 1 when DOM fission is enabled and subframes are potentially loaded
+      in a separate process.
+    type: boolean
+    socorro:
+      sourceAnnotation: DOMFissionEnabled
+  dom_ipc_enabled:
+    description: >
+      Set to 1 when a tab is running in a content process.
+    type: boolean
+    socorro:
+      sourceAnnotation: DOMIPCEnabled
   dumper_error:
     description: >
       Error message of the minidump writer in case there was an error during
