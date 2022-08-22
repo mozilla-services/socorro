@@ -58,36 +58,54 @@ def sqs_group():
 def list_messages(ctx, queue):
     """List messages in queue."""
     conn = get_client()
-    try:
-        resp = conn.get_queue_url(QueueName=queue)
-        queue_url = resp["QueueUrl"]
-    except conn.exceptions.QueueDoesNotExist:
-        click.echo("Queue %s does not exist.")
-        return
 
-    # NOTE(willkg): Since the VisibilityTimeout is set to VISIBILITY_TIMEOUT and
-    # messages aren't deleted, items aren't pulled out of the queue permanently.
-    # However, if you run list_messages twice in rapid succession, VisibilityTimeout may
-    # not have passed, so we wait the timeout amount first.
-    time.sleep(VISIBILITY_TIMEOUT)
+    queues = []
+    print_titles = False
+    if queue == "all":
+        print_titles = True
+        resp = conn.list_queues()
 
-    is_empty = True
-    while True:
-        resp = conn.receive_message(
-            QueueUrl=queue_url,
-            WaitTimeSeconds=0,
-            VisibilityTimeout=VISIBILITY_TIMEOUT,
-        )
-        msgs = resp.get("Messages", [])
-        if not msgs:
-            break
+        for queue_url in resp.get("QueueUrls", []):
+            queue_name = queue_url.rsplit("/", 1)[1]
+            queues.append(queue_name)
 
-        is_empty = False
-        for msg in msgs:
-            click.echo("%s" % msg["Body"])
+    else:
+        queues.append(queue)
 
-    if is_empty:
-        click.echo("Queue %s is empty." % queue)
+    for queue in queues:
+        if print_titles:
+            click.echo(f"{queue}:")
+
+        try:
+            resp = conn.get_queue_url(QueueName=queue)
+            queue_url = resp["QueueUrl"]
+        except conn.exceptions.QueueDoesNotExist:
+            click.echo(f"Queue {queue!r} does not exist.")
+            continue
+
+        # NOTE(willkg): Since the VisibilityTimeout is set to VISIBILITY_TIMEOUT and
+        # messages aren't deleted, items aren't pulled out of the queue permanently.
+        # However, if you run list_messages twice in rapid succession, VisibilityTimeout
+        # may not have passed, so we wait the timeout amount first.
+        time.sleep(VISIBILITY_TIMEOUT)
+
+        is_empty = True
+        while True:
+            resp = conn.receive_message(
+                QueueUrl=queue_url,
+                WaitTimeSeconds=0,
+                VisibilityTimeout=VISIBILITY_TIMEOUT,
+            )
+            msgs = resp.get("Messages", [])
+            if not msgs:
+                break
+
+            is_empty = False
+            for msg in msgs:
+                click.echo("%s" % msg["Body"])
+
+        if is_empty:
+            click.echo("Queue %s is empty." % queue)
 
 
 @sqs_group.command("publish")
