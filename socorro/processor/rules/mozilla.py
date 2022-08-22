@@ -21,7 +21,7 @@ from socorro.lib.context_tools import temp_file_context
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
-from socorro.lib.libjson import InvalidSchemaError, resolve_references
+from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule

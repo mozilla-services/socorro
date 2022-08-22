@@ -15,11 +15,11 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.lib.libjson import (
-    JsonSchemaReducer,
-    SocorroDataReducer,
+from socorro.lib.libjsonschema import JsonSchemaReducer
+from socorro.lib.libsocorrodataschema import (
     permissions_transform_function,
-    transform_socorro_data_schema,
+    SocorroDataReducer,
+    transform_schema,
 )
 from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import dotdict_to_dict
@@ -299,7 +299,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
 
     def build_reducers(self):
         only_public = permissions_transform_function(permissions_have=["public"])
-        public_processed_crash_schema = transform_socorro_data_schema(
+        public_processed_crash_schema = transform_schema(
             schema=PROCESSED_CRASH_SCHEMA,
             transform_function=only_public,
         )
