@@ -288,46 +288,15 @@ class JsonSchemaReducer:
                     f"invalid: {path}: type array not in {schema_part_types}"
                 )
 
-            schema_items = schema_part.get("items", {"type": "string"})
-            if isinstance(schema_items, list):
-                # If schema_items is a list, then it's denoting a record like thing and the
-                # document must match the schema items in the list (or fewer)
-                new_doc = []
-                if len(document_part) > len(schema_items):
-                    raise InvalidDocumentError(f"invalid: {path}: too many items")
-
-                for i in range(0, len(document_part)):
-                    schema_item = schema_items[i]
-
-                    schema_item_path = f"{path}.[{i}]"
-                    # Since this is a record and position matters, we keep the
-                    # index number
-                    schema_item_general_path = f"{general_path}.[{i}]"
-
-                    new_part = self._traverse(
-                        schema_part=schema_items[i],
-                        document_part=document_part[i],
-                        path=schema_item_path,
-                        general_path=schema_item_general_path,
-                    )
-                    new_doc.append(new_part)
-                return new_doc
-
-            # If schema_items is not a list, then each document_part must match this
-            # schema
-            schema_item = schema_items
-            schema_item_path = f"{path}.[]"
-            schema_item_general_path = f"{path}.[]"
+            schema_item = schema_part.get("items", {"type": "string"})
 
             new_doc = []
             for i in range(0, len(document_part)):
-                schema_item_path = f"{path}.[{i}]"
-                schema_item_general_path = f"{path}.[]"
                 new_part = self._traverse(
                     schema_part=schema_item,
                     document_part=document_part[i],
-                    path=schema_item_path,
-                    general_path=schema_item_general_path,
+                    path=f"{path}.[{i}]",
+                    general_path=f"{path}.[]",
                 )
                 new_doc.append(new_part)
             return new_doc
