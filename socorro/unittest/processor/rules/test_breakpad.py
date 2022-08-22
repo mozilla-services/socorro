@@ -459,7 +459,6 @@ class TestMinidumpStackwalkRule:
         assert processed_crash["mdsw_stderr"] == "boo hiss"
         assert processed_crash["stackwalk_version"] == rule.stackwalk_version
         assert not processed_crash["success"]
-        assert processed_crash["stackwalk_version"] == rule.stackwalk_version
         assert (
             processor_meta["processor_notes"][0]
             == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
