@@ -403,15 +403,13 @@ class SocorroDataReducer:
                 )
 
             schema_item = schema_part["items"]
-            schema_item_path = f"{path}.[]"
 
             new_doc = []
             for i in range(0, len(document_part)):
-                schema_item_path = f"{path}.[{i}]"
                 new_part = self._traverse(
                     schema_part=schema_item,
                     document_part=document_part[i],
-                    path=schema_item_path,
+                    path=f"{path}.[{i}]",
                 )
                 new_doc.append(new_part)
             return new_doc
@@ -431,21 +429,11 @@ class SocorroDataReducer:
                 if schema_property is None:
                     continue
 
-                path_name = f"{path}.{name}"
-
                 new_doc[name] = self._traverse(
                     schema_part=schema_property,
                     document_part=document_part[name],
-                    path=path_name,
+                    path=f"{path}.{name}",
                 )
-
-            # Verify all required properties exist in the document
-            for required_property in schema_part.get("required", []):
-                if required_property not in new_doc:
-                    required_property_path = ".".join([path, required_property])
-                    raise InvalidDocumentError(
-                        f"invalid: {required_property_path}: required, but missing"
-                    )
 
             return new_doc
 
