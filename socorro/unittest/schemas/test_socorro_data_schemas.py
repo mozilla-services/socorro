@@ -31,8 +31,8 @@ def test_validate_processed_crash_cli_runs():
 def split_path(path):
     """Split a general path into parts
 
-    This handles the case where patternProperties parts are enclosed in parens and can
-    contain . which is a regex thing.
+    This handles the case where pattern_properties parts are enclosed in parens and can
+    contain ``.`` which is a regex thing.
 
     :arg path: a path to split
 
