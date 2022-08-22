@@ -393,7 +393,8 @@
         "string",
         "null"
       ],
-      "description": "Whether it is a GMP plugin crash."
+      "description": "Whether it is a GMP plugin crash.",
+      "socorroConvertTo": "string"
     },
     "graphics_critical_error": {
       "type": [
