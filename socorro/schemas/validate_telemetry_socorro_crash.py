@@ -15,7 +15,7 @@ import jsonschema
 import requests
 
 from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
-from socorro.lib.libjson import lookup_definition
+from socorro.lib.libjsonschema import lookup_definition
 
 
 API_BASE = "https://crash-stats.mozilla.org/api/{}/"
@@ -66,9 +66,6 @@ def log_schema_keys(schema):
         if "object" in type_:
             for key, val in schema.get("properties", {}).items():
                 keys_to_types.update(_log_schema_keys(val, path=f"{path}.{key}"))
-
-            for key, val in schema.get("patternProperties", {}).items():
-                keys_to_types.update(_log_schema_keys(val, path=f"{path}.(re:{key})"))
 
         elif "array" in type_:
             items = schema.get("items", {"type": "string"})

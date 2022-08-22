@@ -6,10 +6,10 @@ from click.testing import CliRunner
 import jsonschema
 import pytest
 
-from socorro.lib.libjson import (
-    FlattenSchemaKeys,
+from socorro.lib.libsocorrodataschema import (
+    FlattenKeys,
     permissions_transform_function,
-    transform_socorro_data_schema,
+    transform_schema,
 )
 from socorro.schemas import get_file_content
 from socorro.schemas.validate_processed_crash import validate_and_test
@@ -421,18 +421,15 @@ def test_processed_crash_schema():
 
     # Reduce to the public-only parts of the schema
     public_only = permissions_transform_function(permissions_have=["public"])
-    public_schema = transform_socorro_data_schema(
+    public_schema = transform_schema(
         schema=processed_crash_schema,
         transform_function=public_only,
     )
 
     # Flatten the public-only schema and compare the keys
-    flattener = FlattenSchemaKeys()
+    flattener = FlattenKeys()
 
-    transform_socorro_data_schema(
-        schema=public_schema,
-        transform_function=flattener.flatten,
-    )
+    transform_schema(schema=public_schema, transform_function=flattener.flatten)
 
     # Verify that the list of public fields is what we expect. This helps to alleviate
     # inadvertently making a field public that you didn't intend to make public.

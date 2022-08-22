@@ -5,15 +5,14 @@
 import jsonschema
 import pytest
 
-from socorro.lib.libjson import (
-    FlattenSchemaKeys,
+from socorro.lib.libsocorrodataschema import (
+    FlattenKeys,
     InvalidDocumentError,
     InvalidSchemaError,
-    JsonSchemaReducer,
     permissions_transform_function,
     resolve_references,
     SocorroDataReducer,
-    transform_socorro_data_schema,
+    transform_schema,
 )
 from socorro.schemas import get_file_content
 
@@ -157,393 +156,6 @@ from socorro.schemas import get_file_content
 )
 def test_resolve_references(schema, expected):
     assert resolve_references(schema) == expected
-
-
-class TestJsonSchemaReducer:
-    def schema_reduce(self, schema, document):
-        reducer = JsonSchemaReducer(schema=schema)
-        return reducer.traverse(document=document)
-
-    def test_multiple_types_and_null(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "years": {"type": ["integer", "null"]},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"years": 10}
-        assert self.schema_reduce(schema, document) == document
-
-        document = {"years": None}
-        assert self.schema_reduce(schema, document) == document
-
-        document = {}
-        assert self.schema_reduce(schema, document) == document
-
-    @pytest.mark.parametrize("number", [-10, 10])
-    def test_integer(self, number):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "years": {"type": "integer"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"years": number}
-        assert self.schema_reduce(schema, document) == document
-
-    def test_invalid_integer(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "years": {"type": "integer"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type string not in \['integer'\]"
-        with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert self.schema_reduce(schema, document) == document
-
-    @pytest.mark.parametrize("number", [-10.5, 10.5])
-    def test_number(self, number):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "length": {"type": "number"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"length": number}
-        assert self.schema_reduce(schema, document) == document
-
-    def test_invalid_number(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "years": {"type": "number"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"years": "10"}
-        msg_pattern = r"invalid: .years: type string not in \['number'\]"
-        with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert self.schema_reduce(schema, document) == document
-
-    def test_string(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"name": "Joe"}
-        assert self.schema_reduce(schema, document) == document
-
-    def test_object_properties(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "person": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "favorites": {
-                            "type": "object",
-                            "properties": {
-                                "color": {"type": "string"},
-                                "ice_cream": {"type": "string"},
-                            },
-                        },
-                    },
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "person": {
-                "name": "Janet",
-                "favorites": {
-                    "color": "blue",
-                    "ice_cream": "chocolate",
-                    "hobby": "napping",
-                },
-            }
-        }
-        expected_document = {
-            "person": {
-                "name": "Janet",
-                "favorites": {
-                    "color": "blue",
-                    "ice_cream": "chocolate",
-                },
-            }
-        }
-        assert self.schema_reduce(schema, document) == expected_document
-
-    def test_object_properties_required(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "person": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "age": {"type": "number"},
-                    },
-                    "required": ["name", "age"],
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "person": {
-                "name": "Dennis",
-            },
-        }
-        with pytest.raises(
-            InvalidDocumentError, match=r"invalid: .person.age: required.*"
-        ):
-            self.schema_reduce(schema, document)
-
-    def test_object_pattern_properties(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "registers": {
-                    "type": "object",
-                    "patternProperties": {
-                        "^r.*$": {"type": "string"},
-                    },
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "registers": {
-                "r10": "0x00007ffbd6a20000",
-                "r8": "0x000000b95ebfdd54",
-                "rsi": "0x000000000000002d",
-                "rsp": "0x000000b95ebfdaf0",
-                "pc": "0x000000b95ebfdaf0",
-            },
-        }
-        expected_document = {
-            "registers": {
-                "r10": "0x00007ffbd6a20000",
-                "r8": "0x000000b95ebfdd54",
-                "rsi": "0x000000000000002d",
-                "rsp": "0x000000b95ebfdaf0",
-            },
-        }
-        assert self.schema_reduce(schema, document) == expected_document
-
-    def test_object_properties_and_pattern_properties(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "registers": {
-                    "type": "object",
-                    "properties": {
-                        "pc": {"type": "string"},
-                    },
-                    "patternProperties": {
-                        "^r.*$": {"type": "string"},
-                    },
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "registers": {
-                "r10": "0x00007ffbd6a20000",
-                "r8": "0x000000b95ebfdd54",
-                "rsi": "0x000000000000002d",
-                "rsp": "0x000000b95ebfdaf0",
-                "pc": "0x000000b95ebfdaf0",
-                "fc": "0x000000b95ebfdaf0",
-            },
-        }
-        expected_document = {
-            "registers": {
-                "r10": "0x00007ffbd6a20000",
-                "r8": "0x000000b95ebfdd54",
-                "rsi": "0x000000000000002d",
-                "rsp": "0x000000b95ebfdaf0",
-                "pc": "0x000000b95ebfdaf0",
-            },
-        }
-        assert self.schema_reduce(schema, document) == expected_document
-
-    def test_array(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "numbers": {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"numbers": [1, 5, 10]}
-        assert self.schema_reduce(schema, document) == document
-
-    def test_array_invalid(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "numbers": {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"numbers": [5, "Janice", 10]}
-        msg_pattern = r"invalid: .numbers.\[1\]: type string not in \['integer'\]"
-        with pytest.raises(InvalidDocumentError, match=msg_pattern):
-            assert self.schema_reduce(schema, document) == document
-
-    def test_array_reference(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "definitions": {
-                "some_number": {"type": "integer"},
-            },
-            "properties": {
-                "numbers": {
-                    "type": "array",
-                    "items": {"$ref": "#/definitions/some_number"},
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"numbers": [1, 5, 10]}
-        assert self.schema_reduce(schema, document) == document
-
-    def test_references(self):
-        """Verify references are traversed."""
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "definitions": {
-                "person": {
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "type": ["string", "null"],
-                        }
-                    },
-                }
-            },
-            "properties": {
-                "company": {
-                    "type": "object",
-                    "properties": {
-                        "employees": {
-                            "type": "array",
-                            "items": {"$ref": "#/definitions/person"},
-                        },
-                    },
-                },
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {
-            "company": {
-                "employees": [
-                    {"name": "Fred", "desk": "front"},
-                    {"name": "Jim", "favorite_color": "red"},
-                ],
-            }
-        }
-        expected_document = {
-            "company": {
-                "employees": [
-                    {"name": "Fred"},
-                    {"name": "Jim"},
-                ],
-            }
-        }
-        assert self.schema_reduce(schema, document) == expected_document
-
-    def test_invalid_ref(self):
-        """Reducer only support json pointers to things in the schema"""
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "numbers": {
-                    "type": "array",
-                    "items": {"$ref": "http://example.com/schema"},
-                }
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        document = {"numbers": [1, 5, 10]}
-        with pytest.raises(InvalidSchemaError):
-            assert self.schema_reduce(schema, document) == document
-
-    def test_socorroConvertTo(self):
-        schema = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$target_version": 2,
-            "type": "object",
-            "properties": {
-                "years": {"type": ["string", "null"], "socorroConvertTo": "string"},
-            },
-        }
-        jsonschema.Draft4Validator.check_schema(schema)
-
-        assert self.schema_reduce(schema, {"years": "10"}) == {"years": "10"}
-        assert self.schema_reduce(schema, {"years": 10}) == {"years": "10"}
-        assert self.schema_reduce(schema, {"years": None}) == {"years": None}
 
 
 class TestSocorroDataReducer:
@@ -997,9 +609,9 @@ class TestSocorroDataReducer:
         ),
     ],
 )
-def test_transform_socorro_data_schema(schema, keys):
-    flattener = FlattenSchemaKeys()
-    transform_socorro_data_schema(schema=schema, transform_function=flattener.flatten)
+def test_transform_schema(schema, keys):
+    flattener = FlattenKeys()
+    transform_schema(schema=schema, transform_function=flattener.flatten)
     assert flattener.keys == keys
 
 
@@ -1054,10 +666,7 @@ def test_permissions_transform_function():
     public_only = permissions_transform_function(permissions_have=["public"])
 
     # Transform the schema using the public-only transform
-    public_schema = transform_socorro_data_schema(
-        schema=schema,
-        transform_function=public_only,
-    )
+    public_schema = transform_schema(schema=schema, transform_function=public_only)
 
     # Assert the new schema is correct and has no protected bits in it
     assert public_schema == {
@@ -1094,10 +703,7 @@ def test_permissions_transform_function():
     )
 
     # Transform the schema using the public-only transform
-    all_schema = transform_socorro_data_schema(
-        schema=schema,
-        transform_function=all_permissions,
-    )
+    all_schema = transform_schema(schema=schema, transform_function=all_permissions)
 
     # Assert the new schema is correct and has no protected bits in it
     assert all_schema == {

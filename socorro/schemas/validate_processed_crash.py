@@ -13,7 +13,7 @@ import pathlib
 import click
 import jsonschema
 
-from socorro.lib.libjson import transform_socorro_data_schema
+from socorro.lib.libsocorrodataschema import transform_schema
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
@@ -50,10 +50,7 @@ def validate_and_test(ctx, crashdir):
             schema_keys_to_types[path] = schema["type"]
         return schema
 
-    transform_socorro_data_schema(
-        schema=PROCESSED_CRASH_SCHEMA,
-        transform_function=log_schema_keys,
-    )
+    transform_schema(schema=PROCESSED_CRASH_SCHEMA, transform_function=log_schema_keys)
 
     document_keys_to_types = {}
 

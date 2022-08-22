@@ -26,13 +26,13 @@ from pymemcache.exceptions import MemcacheServerError
 
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.lib import BadArgumentError
-from socorro.lib.libjson import (
-    SocorroDataReducer,
-    transform_socorro_data_schema,
-    permissions_transform_function,
-)
 from socorro.lib.libooid import is_crash_id_valid
 from socorro.lib.librequests import session_with_retries
+from socorro.lib.libsocorrodataschema import (
+    SocorroDataReducer,
+    transform_schema,
+    permissions_transform_function,
+)
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 from crashstats.crashstats.configman_utils import config_from_configman
@@ -646,7 +646,7 @@ def get_processed_crash_permissions_reducer(permissions_tuple):
             f"public not in permissions_tuple {permissions_tuple}"
         )
 
-    permissioned_schema = transform_socorro_data_schema(
+    permissioned_schema = transform_schema(
         schema=PROCESSED_CRASH_SCHEMA,
         transform_function=(
             permissions_transform_function(permissions_have=permissions_tuple)
