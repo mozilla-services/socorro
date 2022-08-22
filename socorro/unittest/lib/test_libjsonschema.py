@@ -66,14 +66,12 @@ from socorro.lib.libjsonschema import (
                         "properties": {
                             "name": {
                                 "$ref": "#/definitions/color_name",
-                                "permissions": ["public"],
                             },
                             "cost": {
-                                "permissions": ["protected"],
+                                "description": "the cost",
                                 "type": "integer",
                             },
                         },
-                        "permissions": ["ignored"],
                         "type": "object",
                     },
                 },
@@ -81,7 +79,6 @@ from socorro.lib.libjsonschema import (
                     "color": {
                         "description": "the color used here",
                         "$ref": "#/definitions/color",
-                        "permissions": ["protected"],
                     },
                 },
                 "type": "object",
@@ -94,14 +91,12 @@ from socorro.lib.libjsonschema import (
                             "name": {
                                 "type": "string",
                                 "description": "color name",
-                                "permissions": ["public"],
                             },
                             "cost": {
                                 "type": "integer",
-                                "permissions": ["protected"],
+                                "description": "the cost",
                             },
                         },
-                        "permissions": ["protected"],
                         "type": "object",
                     },
                 },
@@ -115,7 +110,6 @@ from socorro.lib.libjsonschema import (
                     "color": {
                         "description": "ignored",
                         "type": "string",
-                        "permissions": ["ignored"],
                     },
                 },
                 "properties": {
@@ -124,9 +118,7 @@ from socorro.lib.libjsonschema import (
                         "items": {
                             "description": "a single color",
                             "$ref": "#/definitions/color",
-                            "permissions": ["public"],
                         },
-                        "permissions": ["public"],
                         "type": "array",
                     },
                 },
@@ -138,10 +130,8 @@ from socorro.lib.libjsonschema import (
                         "description": "list of colors",
                         "items": {
                             "description": "a single color",
-                            "permissions": ["public"],
                             "type": "string",
                         },
-                        "permissions": ["public"],
                         "type": "array",
                     },
                 },
