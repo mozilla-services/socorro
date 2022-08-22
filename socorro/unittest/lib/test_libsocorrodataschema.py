@@ -308,7 +308,8 @@ class TestSocorroDataReducer:
                 "registers": {
                     "type": "object",
                     "pattern_properties": {
-                        "^r.*$": {"type": "string"},
+                        # Only register names that start with "r"
+                        r"^r.*$": {"type": "string"},
                     },
                 },
             },
@@ -321,6 +322,7 @@ class TestSocorroDataReducer:
                 "r8": "0x000000b95ebfdd54",
                 "rsi": "0x000000000000002d",
                 "rsp": "0x000000b95ebfdaf0",
+                # This one doesn't start with "r"
                 "pc": "0x000000b95ebfdaf0",
             },
         }
@@ -345,7 +347,8 @@ class TestSocorroDataReducer:
                         "pc": {"type": "string"},
                     },
                     "pattern_properties": {
-                        "^r.*$": {"type": "string"},
+                        # Only register names that start with "r"
+                        r"^r.*$": {"type": "string"},
                     },
                 },
             },
@@ -358,7 +361,9 @@ class TestSocorroDataReducer:
                 "r8": "0x000000b95ebfdd54",
                 "rsi": "0x000000000000002d",
                 "rsp": "0x000000b95ebfdaf0",
+                # This one doesn't start with "r", but it's in properties
                 "pc": "0x000000b95ebfdaf0",
+                # This one doesn't start with "r" and isn't in properties
                 "fc": "0x000000b95ebfdaf0",
             },
         }
@@ -522,10 +527,10 @@ class TestSocorroDataReducer:
             {
                 "type": "object",
                 "pattern_properties": {
-                    "^r.+$": {
+                    r"^r.+$": {
                         "type": "string",
                     },
-                    "^c.+$": {
+                    r"^c.+$": {
                         "type": "string",
                     },
                 },
