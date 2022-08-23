@@ -650,17 +650,14 @@
                 {% for stacktrace in java_exception_stacks %}
                   {% set stacktrace = stacktrace.stacktrace %}
                   <h2>Exception: {{ stacktrace.module }}.{{ stacktrace.type }}</h2>
-
-                  {% if stacktrace.value %}
-                    <h3>
-                      Message: {{ stacktrace.value }}
-                    </h3>
-                    <p>
-                      <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
-                      Note: Unredacted exception messages are protected data.
-                      <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
-                    </p>
-                  {% endif %}
+                  <h3>
+                    Message: {% if stacktrace.value %}{{ stacktrace.value }}{% else %}--{% endif %}
+                  </h3>
+                  <p>
+                    <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+                    Note: Java exception messages are protected data.
+                    <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
+                  </p>
 
                   <table class="data-table">
                     <thead>

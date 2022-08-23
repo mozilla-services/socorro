@@ -118,7 +118,10 @@ definitions:
                       type: string
                       permissions: ["public"]
                     value:
-                      description: The exception value. This can be sensitive.
+                      description: |
+                        The exception value.
+
+                        This can contain sensitive information.
                       type: string
                       permissions: ["protected"]
                   type: object
@@ -1127,17 +1130,8 @@ properties:
   java_exception:
     $ref: "#/definitions/java_exception"
     description: >
-      Structured Java exception information with potentially sensitive fields
-      redacted.
+      Structured Java exception information.
     permissions: ["public"]
-  java_exception_raw:
-    # FIXME(willkg): we can probably get rid of this once we use the schema for
-    # reducing the public set
-    $ref: "#/definitions/java_exception"
-    description: >
-      Complete structured Java exception information which may contain
-      sensitive information.
-    permissions: ["protected"]
   java_stack_trace:
     description: >
       The unstructured JavaStackTrace crash annotation without the exception

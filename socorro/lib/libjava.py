@@ -7,8 +7,6 @@ Utility functions for parsing and manipulating JavaStackTrace field
 contents.
 """
 
-import copy
-
 import jsonschema
 from more_itertools import peekable
 
@@ -126,22 +124,3 @@ def validate_java_exception(data):
         return True
     except jsonschema.ValidationError as exc:
         raise MalformedJavaException(exc)
-
-
-def sanitize_java_exception(data):
-    """Removes PII from a JavaException value
-
-    :arg dict data: the JavaException value
-
-    :returns: a deep-copied copy of the data with PII redacted
-
-    """
-    data = copy.deepcopy(data)
-
-    # NOTE(willkg): If we ever change this code, then we should think about reprocessing
-    # all the Java crashes.
-    for item in data["exception"]["values"]:
-        stacktrace = item["stacktrace"]
-        if "value" in stacktrace:
-            stacktrace["value"] = "REDACTED"
-    return data

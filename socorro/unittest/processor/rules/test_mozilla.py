@@ -970,14 +970,7 @@ class TestJavaProcessRule:
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        # The entire JavaException structure
-        assert processed_crash["java_exception_raw"] == java_exception
-
-        # The sanitized JavaException structure has no PII in it
-        sanitized_je = copy.deepcopy(java_exception)
-        sanitized_je["exception"]["values"][0]["stacktrace"]["value"] = "REDACTED"
-        assert processed_crash["java_exception"] == sanitized_je
-        assert "PII" not in json.dumps(processed_crash["java_exception"])
+        assert processed_crash["java_exception"] == java_exception
 
     def test_malformed_javaexception(self):
         java_exception = {"exception": {}}
@@ -990,9 +983,7 @@ class TestJavaProcessRule:
         rule = JavaProcessRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
-        # The JavaException value is malformed, so we get a processor note and
-        # that's it
-        assert "java_exception_raw" not in processed_crash
+        # The JavaException value is malformed, so we get a processor note and that's it
         assert "java_exception" not in processed_crash
         assert "malformed JavaException" in processor_meta["processor_notes"][0]
 
