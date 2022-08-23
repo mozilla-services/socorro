@@ -149,14 +149,9 @@ def report_index(request, crash_id, default_context=None):
 
     # For Java crashes
     if "java_exception" in context["report"]:
-        if request.user.has_perm("crashstats.view_pii"):
-            context["java_exception_stacks"] = context["report"]["java_exception_raw"][
-                "exception"
-            ]["values"]
-        else:
-            context["java_exception_stacks"] = context["report"]["java_exception"][
-                "exception"
-            ]["values"]
+        context["java_exception_stacks"] = context["report"]["java_exception"][
+            "exception"
+        ]["values"]
 
     context["bug_associations"] = list(
         models.BugAssociation.objects.filter(signature=context["report"]["signature"])

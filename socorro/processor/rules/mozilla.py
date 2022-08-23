@@ -403,15 +403,7 @@ class JavaProcessRule(Rule):
                 # The java_exception is a structured form of the stack trace
                 java_exception = json.loads(raw_crash["JavaException"])
                 libjava.validate_java_exception(java_exception)
-
-                # The java_exception_raw value can have PII and should be treated
-                # as protected data
-                processed_crash["java_exception_raw"] = java_exception
-
-                # The java_exception is a sanitized version
-                processed_crash["java_exception"] = libjava.sanitize_java_exception(
-                    java_exception
-                )
+                processed_crash["java_exception"] = java_exception
 
             except (libjava.MalformedJavaException, json.JSONDecodeError):
                 processor_meta_data["processor_notes"].append(

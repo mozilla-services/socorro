@@ -1024,14 +1024,12 @@ class TestViews(BaseTestViews):
                             ],
                             "type": "BadException",
                             "module": "org.foo.Bar",
-                            "value": "[REDACTED]",
+                            "value": "[PII]",
                         }
                     }
                 ]
             }
         }
-        java_exception_raw = copy.deepcopy(java_exception)
-        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "[PII]"
 
         def mocked_raw_crash_get(**params):
             assert "datatype" in params
@@ -1043,7 +1041,6 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             crash = copy.deepcopy(_SAMPLE_PROCESSED)
-            crash["java_exception_raw"] = java_exception_raw
             crash["java_exception"] = java_exception
             return crash
 
@@ -1079,14 +1076,12 @@ class TestViews(BaseTestViews):
                             ],
                             "type": "BadException",
                             "module": "org.foo.Bar",
-                            "value": "[REDACTED]",
+                            "value": "[PII]",
                         }
                     }
                 ]
             }
         }
-        java_exception_raw = copy.deepcopy(java_exception)
-        java_exception_raw["exception"]["values"][0]["stacktrace"]["value"] = "[PII]"
 
         def mocked_raw_crash_get(**params):
             assert "datatype" in params
@@ -1098,7 +1093,6 @@ class TestViews(BaseTestViews):
 
         def mocked_processed_crash_get(**params):
             crash = copy.deepcopy(_SAMPLE_PROCESSED)
-            crash["java_exception_raw"] = java_exception_raw
             crash["java_exception"] = java_exception
             return crash
 
@@ -1120,7 +1114,6 @@ class TestViews(BaseTestViews):
 
         # Make sure "PII" is in the crash report
         assert "[PII]" in smart_str(response.content)
-        assert "[REDACTED]" not in smart_str(response.content)
 
     def test_last_error_value(self):
         def mocked_raw_crash_get(**params):
