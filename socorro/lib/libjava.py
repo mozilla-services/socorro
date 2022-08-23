@@ -7,10 +7,7 @@ Utility functions for parsing and manipulating JavaStackTrace field
 contents.
 """
 
-import jsonschema
 from more_itertools import peekable
-
-from socorro.schemas import JAVA_EXCEPTION_SCHEMA
 
 
 class JavaStackTrace:
@@ -105,22 +102,3 @@ def parse_java_stack_trace(text):
             new_exc.additional.append(line)
 
     return new_exc
-
-
-class MalformedJavaException(Exception):
-    pass
-
-
-def validate_java_exception(data):
-    """Validates a JavaException value
-
-    :arg dict data: the JavaException value
-
-    :raises MalformedJavaException: if the structure is malformed in some way
-
-    """
-    try:
-        jsonschema.validate(data, JAVA_EXCEPTION_SCHEMA)
-        return True
-    except jsonschema.ValidationError as exc:
-        raise MalformedJavaException(exc)

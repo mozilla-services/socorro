@@ -4,6 +4,7 @@
 
 from dataclasses import dataclass
 import datetime
+from functools import lru_cache
 import gzip
 import json
 import re
@@ -17,12 +18,14 @@ import markus
 import sentry_sdk
 
 from socorro.lib import libjava
+from socorro.lib import libsocorrodataschema
 from socorro.lib.context_tools import temp_file_context
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
 from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
+from socorro.lib.libsocorrodataschema import SocorroDataReducer
 from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
@@ -103,6 +106,18 @@ class CopyFromRawCrashRule(Rule):
                 )
         return fields
 
+    @lru_cache
+    def get_reducer(self, schema_key):
+        """Return the SocorroDataReducer for this subschema
+
+        :arg schema_key: the property key in the processed crash schema to return the
+            value of
+
+        :returns: schema
+
+        """
+        return SocorroDataReducer(self.schema["properties"][schema_key])
+
     def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         for copy_item in self.fields:
             annotation = copy_item.annotation
@@ -145,6 +160,28 @@ class CopyFromRawCrashRule(Rule):
 
             elif copy_item.type_ == "string":
                 processed_crash[copy_item.key] = value
+
+            elif copy_item.type_ == "object":
+                # If it's a string, then assume it's json-encoded and decode it
+                if isinstance(value, str):
+                    try:
+                        json_value = json.loads(value)
+                    except json.JSONDecodeError:
+                        processor_meta_data["processor_notes"].append(
+                            f"{annotation} value is malformed json"
+                        )
+                        continue
+
+                # Validate it against the schema at the specified copy_item.key of the
+                # processed crash schema
+                try:
+                    reducer = self.get_reducer(copy_item.key)
+                    reducer.traverse(json_value)
+                    processed_crash[copy_item.key] = json_value
+                except libsocorrodataschema.InvalidDocumentError:
+                    processor_meta_data["processor_notes"].append(
+                        f"{annotation} value is malformed {copy_item.key}"
+                    )
 
 
 class ConvertModuleSignatureInfoRule(Rule):
@@ -397,18 +434,6 @@ class JavaProcessRule(Rule):
                 java_stack_trace = "malformed"
 
             processed_crash["java_stack_trace"] = java_stack_trace
-
-        if "JavaException" in raw_crash:
-            try:
-                # The java_exception is a structured form of the stack trace
-                java_exception = json.loads(raw_crash["JavaException"])
-                libjava.validate_java_exception(java_exception)
-                processed_crash["java_exception"] = java_exception
-
-            except (libjava.MalformedJavaException, json.JSONDecodeError):
-                processor_meta_data["processor_notes"].append(
-                    "JavaProcessRule: malformed JavaException"
-                )
 
 
 class MalformedBreadcrumbs(Exception):

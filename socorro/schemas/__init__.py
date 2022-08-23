@@ -22,5 +22,3 @@ def get_file_content(filename):
 PROCESSED_CRASH_SCHEMA = get_file_content("processed_crash.schema.yaml")
 
 TELEMETRY_SOCORRO_CRASH_SCHEMA = get_file_content("telemetry_socorro_crash.json")
-
-JAVA_EXCEPTION_SCHEMA = get_file_content("java_exception.json")
