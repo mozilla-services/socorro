@@ -148,6 +148,21 @@ SCHEMA_WITH_ALL_TYPES = {
             "type": "integer",
             "source_annotation": "AvailablePageFile",
         },
+        "complex_structure": {
+            "description": "A complex structure.",
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "age": {"type": "integer"},
+                "shoes": {
+                    "type": "object",
+                    "properties": {
+                        "brand": {"type": "string"},
+                    },
+                },
+            },
+            "source_annotation": "ComplexStructure",
+        },
         "uptime_ts": {
             "description": "Uptime in seconds as a float.",
             "type": "number",
@@ -181,6 +196,8 @@ class TestCopyFromRawCrashRule:
         for copy_item in rule.fields:
             if copy_item.annotation == annotation:
                 return copy_item
+
+        raise Exception(f"no CopyItem for {annotation}")
 
     def test_empty(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -301,6 +318,65 @@ class TestCopyFromRawCrashRule:
 
         assert processed_crash == {copy_item.key: "some string"}
         assert processor_meta["processor_notes"] == []
+
+    def test_object(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "ComplexStructure")
+
+        json_data = {
+            "name": "Dennis",
+            "age": 37,
+            "shoes": {
+                "brand": "brownstone",
+            },
+        }
+
+        raw_crash = {copy_item.annotation: json.dumps(json_data)}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash == {copy_item.key: json_data}
+        assert processor_meta["processor_notes"] == []
+
+    def test_object_invalid_json(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "ComplexStructure")
+
+        raw_crash = {copy_item.annotation: "{"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert copy_item.key not in processed_crash
+        assert processor_meta["processor_notes"] == [
+            "ComplexStructure value is malformed json"
+        ]
+
+    def test_object_invalid_value(self):
+        rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
+        copy_item = self.get_copy_item(rule, "ComplexStructure")
+
+        json_data = {
+            "name": 42,
+            "age": 37,
+            "shoes": {
+                "brand": "brownstone",
+            },
+        }
+
+        raw_crash = {copy_item.annotation: json.dumps(json_data)}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert copy_item.key not in processed_crash
+        assert processor_meta["processor_notes"] == [
+            "ComplexStructure value is malformed complex_structure"
+        ]
 
     def test_default(self):
         # Verify that the default is used if the annotation is missing
@@ -945,47 +1021,6 @@ class TestJavaProcessRule:
 
         # Make sure there's a note in the notes about it
         assert "malformed JavaStackTrace" in processor_meta["processor_notes"][0]
-
-    def test_javaexception(self):
-        java_exception = {
-            "exception": {
-                "values": [
-                    {
-                        "stacktrace": {
-                            "frames": [],
-                            "type": "text",
-                            "module": "text",
-                            "value": "PII",
-                        }
-                    }
-                ]
-            }
-        }
-
-        raw_crash = {"JavaException": json.dumps(java_exception)}
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        assert processed_crash["java_exception"] == java_exception
-
-    def test_malformed_javaexception(self):
-        java_exception = {"exception": {}}
-
-        raw_crash = {"JavaException": json.dumps(java_exception)}
-        dumps = {}
-        processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
-
-        # The JavaException value is malformed, so we get a processor note and that's it
-        assert "java_exception" not in processed_crash
-        assert "malformed JavaException" in processor_meta["processor_notes"][0]
 
 
 class TestModuleURLRewriteRule:

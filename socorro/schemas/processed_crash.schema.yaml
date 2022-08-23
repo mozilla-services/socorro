@@ -1132,6 +1132,7 @@ properties:
     description: >
       Structured Java exception information.
     permissions: ["public"]
+    source_annotation: JavaException
   java_stack_trace:
     description: >
       The unstructured JavaStackTrace crash annotation without the exception
