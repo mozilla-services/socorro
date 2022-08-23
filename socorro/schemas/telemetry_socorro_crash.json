@@ -408,7 +408,8 @@
         "string",
         "null"
       ],
-      "description": "Whether the crash occured in the DriverCrashGuard."
+      "description": "Whether the crash occured in the DriverCrashGuard.",
+      "socorroConvertTo": "string"
     },
     "hang_type": {
       "type": [
