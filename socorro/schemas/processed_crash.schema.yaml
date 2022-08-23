@@ -490,14 +490,17 @@ definitions:
         type: ["string", "null"]
         permissions: ["public"]
       registers:
-        description: The values the general purpose registers contained.
+        description: |
+          The values the general purpose registers contained.
+
+          This can contain sensitive data.
         pattern_properties:
           ^.+$:
             description: Register contents as a hexstring.
             type: ["string", "null"]
-            permissions: ["public"]
+            permissions: ["protected"]
         type: ["object", "null"]
-        permissions: ["public"]
+        permissions: ["protected"]
       trust:
         description: The technique used to recover this stack frame.
         examples:
