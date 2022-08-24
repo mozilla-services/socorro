@@ -689,13 +689,23 @@ class ProcessedCrash(SocorroMiddleware):
             expect_json=True,
         )
 
-        # Reduce the processed crash by the schema and permissions the user has
+        # NOTE(willkg): This is a little over-engineered. It allows for other
+        # permissions and reducing the data to those permissions. This will be nice
+        # when/if we re-add view_exploitability.
+        #
+        # For now, we've got "public" and "protected" and in the case where the user can
+        # see "protected" things, then we don't reduce the processed crash at all which
+        # allows the user to see data that's not covered by the schema.
         permissions = convert_permissions(user=self.api_user)
-        reducer = get_processed_crash_permissions_reducer(
-            permissions_tuple=tuple(permissions)
-        )
 
-        return reducer.traverse(data)
+        if "protected" not in permissions:
+            reducer = get_processed_crash_permissions_reducer(
+                permissions_tuple=tuple(permissions)
+            )
+
+            return reducer.traverse(data)
+
+        return data
 
 
 class RawCrash(SocorroMiddleware):
