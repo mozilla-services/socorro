@@ -13,6 +13,6 @@ class TestUploadTelemetrySchema:
         app = UploadTelemetrySchema(config)
         boto_helper.create_bucket(app.config.telemetry.bucket_name)
 
-        assert app.main() == 0
+        assert app.run() == 0
         recs = [rec.message for rec in caplogpp.records]
         assert "Success: Schema uploaded!" in recs
