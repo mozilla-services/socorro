@@ -7,9 +7,20 @@ import sys
 
 from configman import Namespace
 from configman.converters import class_converter
+from fillmore.libsentry import set_up_sentry
+from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
+import markus
 
 from socorro.app.socorro_app import App
+from socorro.lib.libdockerflow import get_release_name
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
+
+
+METRICS = markus.get_metrics("processor")
+
+
+def count_sentry_scrub_error(msg):
+    METRICS.incr("sentry_scrub_error", 1)
 
 
 class UploadTelemetrySchema(App):
@@ -51,6 +62,23 @@ class UploadTelemetrySchema(App):
         default="telemetry_socorro_crash.json",
         doc="Name of the file/key we're going to upload to",
     )
+
+    @classmethod
+    def configure_sentry(cls, basedir, host_id, sentry_dsn):
+        release = get_release_name(basedir)
+        scrubber = Scrubber(
+            rules=SCRUB_RULES_DEFAULT,
+            error_handler=count_sentry_scrub_error,
+        )
+        set_up_sentry(
+            sentry_dsn=sentry_dsn,
+            release=release,
+            host_id=host_id,
+            # Disable frame-local variables
+            with_locals=False,
+            # Scrub sensitive data
+            before_send=scrubber,
+        )
 
     def main(self):
         path = self.config.telemetry.json_filename
