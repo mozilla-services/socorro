@@ -409,6 +409,51 @@ definitions:
             permissions: ["public"]
         type: ["object", "null"]
         permissions: ["public"]
+      unloaded_modules:
+        description: |
+          Modules no longer mapped into the process' address space when the
+          minidump was generated.
+
+          Because modules can be loaded and unloaded repeatedly,
+          'unloaded_modules' is more of a *log* of unload *events* and not a
+          clean mapping of addresses to modules. This means:
+
+          * Entries may have overlapping address ranges
+          * A module may show up repeatedly, potentially at different
+            addresses
+        permissions: ["public"]
+        items:
+          properties:
+            base_addr:
+              description: >
+                The first address that maps to this unloaded module (inclusive).
+              type: ["string", "null"]
+              permissions: ["public"]
+            end_addr:
+              description: >
+                The last address that maps to this unloaded module (exclusive).
+              type: ["string", "null"]
+              permissions: ["public"]
+            code_id:
+              description: >
+                The code id for this unloaded module.
+              type: ["string", "null"]
+              permissions: ["public"]
+            filename:
+              description: >
+                The 'name' of the module.
+              type: ["string", "null"]
+              permissions: ["public"]
+            cert_subject:
+              description: >
+                If not null, indicates that this unloaded module is known to be
+                signed by the given party. Useful for detecting unofficial DLL
+                injection.
+              type: ["string", "null"]
+              permissions: ["public"]
+          permissions: ["public"]
+          type: object
+        type: ["array", "null"]
       thread_count:
         description: How many threads there are.
         type: ["integer", "null"]
@@ -509,6 +554,33 @@ definitions:
           - frame_pointer
           - scan
         type: ["string", "null"]
+        permissions: ["public"]
+      unloaded_modules:
+        description: >
+          All of the unloaded modules that overlapped with this frame's
+          'offset'.
+        items:
+          properties:
+            module:
+              description: >
+                The name of the unloaded module.
+              permissions: ["public"]
+              type: ["string", "null"]
+            offsets:
+              description: >
+                List of offsets for this unloaded module. Modules can be loaded
+                and unloaded multiple times, so this is an array.
+              items:
+                description: >
+                  Memory address offset relative to the unloaded module's start
+                  address.
+                type: string
+                permissions: ["public"]
+              type: array
+              permissions: ["public"]
+          type: object
+          permissions: ["public"]
+        type: ["array", "null"]
         permissions: ["public"]
     type: ["object", "null"]
     # END: json_dump_frames
