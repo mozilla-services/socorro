@@ -28,10 +28,8 @@ class InvalidSchemaError(Exception):
 @click.argument("crashdir")
 @click.pass_context
 def validate_and_test(ctx, crashdir):
-    schema_name = PROCESSED_CRASH_SCHEMA["$id"]
-
     jsonschema.Draft4Validator.check_schema(PROCESSED_CRASH_SCHEMA)
-    click.echo(f"{schema_name} is a valid JSON schema.")
+    click.echo("processed crash schema is a valid JSON schema.")
 
     # Fetch crash report data from a Super Search URL
     datapath = pathlib.Path(crashdir).resolve()
@@ -102,7 +100,7 @@ def validate_and_test(ctx, crashdir):
     if keys_not_in_schema:
         click.echo("")
         click.echo(
-            f"{len(keys_not_in_schema)} keys in crash reports but not in {schema_name}:"
+            f"{len(keys_not_in_schema)} keys in crash reports but not in schema:"
         )
         click.echo("  %s%s" % ("KEY".ljust(70), "TYPE(S)"))
         for key in sorted(keys_not_in_schema):
