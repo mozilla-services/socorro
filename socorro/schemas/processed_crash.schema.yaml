@@ -1478,11 +1478,13 @@ properties:
     type: string
     permissions: ["public"]
   reason:
-    description: >
+    description: |
       The crash exception kind for the crashing thread crash. Different
       operating systems have different exception kinds. Example values
       'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'.
-    type: string
+
+      Comes from crash_info.type in the stackwalker output.
+    type: ["string", "null"]
     permissions: ["public"]
   release_channel:
     description: >
