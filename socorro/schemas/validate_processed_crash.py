@@ -90,9 +90,9 @@ def validate_and_test(ctx, crashdir):
             f"{len(keys_not_in_crashes)} (out of {len(schema_keys_to_types)}) keys "
             + "in JSON Schema, but never in any of the tested crashes:"
         )
-        click.echo("  %s%s" % ("KEY".ljust(60), "TYPE(S)"))
+        click.echo(f"  {'KEY':80}  TYPE(S)")
         for k in sorted(keys_not_in_crashes):
-            click.echo("  %s%s" % (k.ljust(60), schema_keys_to_types[k]))
+            click.echo(f"  {k:80}  {schema_keys_to_types[k]}")
 
     keys_not_in_schema = set(document_keys_to_types.keys()) - set(
         schema_keys_to_types.keys()
@@ -102,9 +102,9 @@ def validate_and_test(ctx, crashdir):
         click.echo(
             f"{len(keys_not_in_schema)} keys in crash reports but not in schema:"
         )
-        click.echo("  %s%s" % ("KEY".ljust(70), "TYPE(S)"))
+        click.echo(f"  {'KEY':80}  TYPE(S)")
         for key in sorted(keys_not_in_schema):
-            click.echo("  %s%s" % (key.ljust(70), document_keys_to_types[key]))
+            click.echo(f"  {key:80}  {document_keys_to_types[key]}")
 
 
 if __name__ == "__main__":
