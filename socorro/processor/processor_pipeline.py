@@ -97,6 +97,7 @@ class ProcessorPipeline(RequiredConfig):
             "--evil-json={raw_crash_path} "
             "--symbols-cache={symbol_cache_path} "
             "--symbols-tmp={symbol_tmp_path} "
+            "--no-color "
             "{symbols_urls} "
             "--json "
             "--verbose=error "

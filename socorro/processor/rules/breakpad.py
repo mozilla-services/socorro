@@ -144,9 +144,10 @@ class MinidumpStackwalkRule(Rule):
         command_line=(
             "timeout --signal KILL {kill_timeout} "
             "{command_path} "
-            "--raw-json={raw_crash_path} "
+            "--evil-json={raw_crash_path} "
             "--symbols-cache={symbol_cache_path} "
             "--symbols-tmp={symbol_tmp_path} "
+            "--no-color "
             "{symbols_urls} "
             "--json "
             "--verbose=error "
@@ -359,7 +360,7 @@ class MinidumpStackwalkRule(Rule):
 
                     stderr = stackwalker_data.get("mdsw_stderr", "").strip()
                     if stderr:
-                        if stderr.startswith("[ERROR]"):
+                        if stderr.startswith("ERROR"):
                             indicator = stderr.split(" ")[1]
                         else:
                             indicator = ""
