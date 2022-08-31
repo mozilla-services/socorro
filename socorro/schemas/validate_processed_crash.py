@@ -13,7 +13,7 @@ import pathlib
 import click
 import jsonschema
 
-from socorro.lib.libsocorrodataschema import transform_schema
+from socorro.lib.libsocorrodataschema import transform_schema, SocorroDataReducer
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
@@ -22,6 +22,55 @@ HERE = os.path.dirname(__file__)
 
 class InvalidSchemaError(Exception):
     pass
+
+
+class SchemaKeyLogger:
+    def __init__(self):
+        # Set of (key, type)
+        self.keys = set()
+
+    def __call__(self, path, schema):
+        if path and not path.endswith(".[]"):
+            types = schema["type"]
+            if not isinstance(schema["type"], list):
+                types = [types]
+            for type_ in types:
+                self.keys.add((path, type_))
+        return schema
+
+
+PYTHON_TO_DATA = {
+    str: "string",
+    float: "number",
+    int: "integer",
+    type(None): "null",
+    bool: "boolean",
+    list: "array",
+    dict: "object",
+}
+
+
+class DocumentKeys:
+    def __init__(self):
+        # Set of (key, type)
+        self.keys = set()
+
+    def log_keys(self, crash):
+        def traverse(crash, path):
+            if isinstance(crash, dict):
+                for key, value in crash.items():
+                    traverse(value, path=f"{path}.{key}")
+
+            elif isinstance(crash, list):
+                for item in crash:
+                    traverse(item, path=f"{path}.[]")
+
+            # Add non-arrays to the keys set
+            if path and not path.endswith(".[]"):
+                type_ = PYTHON_TO_DATA[type(crash)]
+                self.keys.add((path, type_))
+
+        traverse(crash, path="")
 
 
 @click.command()
@@ -41,70 +90,66 @@ def validate_and_test(ctx, crashdir):
     uuids = list(datapath.glob("*"))
 
     # Figure out the schema keys to types mapping
-    schema_keys_to_types = {}
+    schema_key_logger = SchemaKeyLogger()
+    transform_schema(
+        schema=PROCESSED_CRASH_SCHEMA, transform_function=schema_key_logger
+    )
 
-    def log_schema_keys(path, schema):
-        if path and not path.endswith(".[]"):
-            schema_keys_to_types[path] = schema["type"]
-        return schema
+    schema_reducer = SocorroDataReducer(PROCESSED_CRASH_SCHEMA)
 
-    transform_schema(schema=PROCESSED_CRASH_SCHEMA, transform_function=log_schema_keys)
-
-    document_keys_to_types = {}
-
-    def log_document_keys(crash, path=""):
-        if isinstance(crash, dict):
-            for key, value in crash.items():
-                log_document_keys(value, path=f"{path}.{key}")
-
-        elif isinstance(crash, list):
-            for item in crash:
-                log_document_keys(item, path=f"{path}.[]")
-
-        # Add non-arrays to the keys set
-        if path and not path.endswith(".[]"):
-            # This is silly, but we want to end up with a sorted list of types that have
-            # no duplicates; typically this should be [something] or
-            # [something, NoneType]
-            types = set(document_keys_to_types.get(path, []))
-            types.add(type(crash).__name__)
-            document_keys_to_types[path] = list(sorted(types))
+    document_keys = DocumentKeys()
+    reduced_keys = DocumentKeys()
 
     total_uuids = len(uuids)
     click.echo("")
     click.echo(f"Testing {total_uuids} recent crash reports.")
     for i, uuid in enumerate(uuids):
         click.echo(f"Working on {uuid} ({i}/{total_uuids})...")
-
         processed_crash = json.loads((datapath / uuid).read_text())
-        log_document_keys(processed_crash)
+
+        # Log the keys
+        document_keys.log_keys(processed_crash)
+
+        # Reduce the document by the schema and remove whatever keys are in the document
+        # which is what the schema knows about
+        reduced_processed_crash = schema_reducer.traverse(processed_crash)
+        reduced_keys.log_keys(reduced_processed_crash)
+
         jsonschema.validate(processed_crash, PROCESSED_CRASH_SCHEMA)
 
     click.echo("Done testing, all crash reports passed.")
 
-    keys_not_in_crashes = set(schema_keys_to_types.keys()) - set(
-        document_keys_to_types.keys()
-    )
-    if keys_not_in_crashes:
-        click.echo(
-            f"{len(keys_not_in_crashes)} (out of {len(schema_keys_to_types)}) keys "
-            + "in JSON Schema, but never in any of the tested crashes:"
-        )
-        click.echo(f"  {'KEY':80}  TYPE(S)")
-        for k in sorted(keys_not_in_crashes):
-            click.echo(f"  {k:80}  {schema_keys_to_types[k]}")
+    reduced_keys_keys = set([key for key, type_ in reduced_keys.keys])
 
-    keys_not_in_schema = set(document_keys_to_types.keys()) - set(
-        schema_keys_to_types.keys()
-    )
+    keys_not_in_doc = set()
+    for key, type_ in schema_key_logger.keys:
+        # We have to iterate over these one at a time because of pattern_properties
+        # matching by regex
+        if "(re:" in key:
+            click.echo(f"{key} is a pattern_property ... ignoring")
+            continue
+
+        if key not in reduced_keys_keys:
+            keys_not_in_doc.add((key, type_))
+
+    if keys_not_in_doc:
+        click.echo(
+            f"{len(keys_not_in_doc)} (out of {len(schema_key_logger.keys)} "
+            + "keys in JSON Schema, but never in any of the tested crashes:"
+        )
+        click.echo(f"  {'KEY':90}  TYPE(S)")
+        for key, val in sorted(keys_not_in_doc):
+            click.echo(f"  {key:90}  {val}")
+
+    keys_not_in_schema = document_keys.keys - reduced_keys.keys
     if keys_not_in_schema:
         click.echo("")
         click.echo(
             f"{len(keys_not_in_schema)} keys in crash reports but not in schema:"
         )
-        click.echo(f"  {'KEY':80}  TYPE(S)")
-        for key in sorted(keys_not_in_schema):
-            click.echo(f"  {key:80}  {document_keys_to_types[key]}")
+        click.echo(f"  {'KEY':90}  TYPE(S)")
+        for key, val in sorted(keys_not_in_schema):
+            click.echo(f"  {key:90}  {val}")
 
 
 if __name__ == "__main__":
