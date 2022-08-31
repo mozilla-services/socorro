@@ -258,8 +258,6 @@ class ProductRule(Rule):
         processed_crash["version"] = raw_crash.get("Version", "")
         processed_crash["productid"] = raw_crash.get("ProductID", "")
         processed_crash["release_channel"] = raw_crash.get("ReleaseChannel", "")
-        # FIXME(willkg): We should remove this
-        processed_crash["ReleaseChannel"] = raw_crash.get("ReleaseChannel", "")
         processed_crash["build"] = raw_crash.get("BuildID", "")
 
         # NOTE(willkg): ApplicationBuildID is for Fenix which sends the GeckoView build
