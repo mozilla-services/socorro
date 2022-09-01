@@ -25,6 +25,38 @@ def listify(item):
     return [item]
 
 
+def split_path(path):
+    """Split a general path into parts
+
+    This handles the case where pattern_properties parts are enclosed in parens and can
+    contain ``.`` which is a regex thing.
+
+    :arg path: a path to split
+
+    :returns: generator of parts
+
+    """
+    part = []
+    in_paren = False
+    for c in path:
+        if in_paren:
+            if c == ")":
+                in_paren = False
+            part.append(c)
+        elif c == "(":
+            in_paren = True
+            part.append(c)
+        elif c == ".":
+            if part:
+                yield "".join(part)
+            part = []
+        else:
+            part.append(c)
+
+    if part:
+        yield "".join(part)
+
+
 BASIC_TYPES = {
     type(None): "null",
     bool: "boolean",

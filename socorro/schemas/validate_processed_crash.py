@@ -6,6 +6,7 @@
 
 # Usage: python socorro/schemas/validate_processed_crash.py
 
+from itertools import zip_longest
 import json
 import os
 import pathlib
@@ -13,7 +14,12 @@ import pathlib
 import click
 import jsonschema
 
-from socorro.lib.libsocorrodataschema import transform_schema, SocorroDataReducer
+from socorro.lib.libsocorrodataschema import (
+    compile_pattern_re,
+    SocorroDataReducer,
+    split_path,
+    transform_schema,
+)
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
@@ -73,6 +79,35 @@ class DocumentKeys:
         traverse(crash, path="")
 
 
+def match_key(schema_key, document_key):
+    """Determines whether a key matches
+
+    The schema_key can contain regex parts. This accounts for that.
+
+    :arg str schema_key: the key from the schema which can contain regex parts
+    :arg str document_key: the key from the document
+
+    :returns: boolean
+
+    """
+    if "(re:" not in schema_key:
+        return schema_key == document_key
+
+    schema_parts = split_path(schema_key)
+    doc_parts = split_path(document_key)
+
+    for schema_part, doc_part in zip_longest(schema_parts, doc_parts, fillvalue=""):
+        if "(re:" in schema_part:
+            pattern_re = compile_pattern_re(schema_part[4:-1])
+            if not pattern_re.match(doc_part):
+                return False
+
+        elif schema_part != doc_part:
+            return False
+
+    return True
+
+
 @click.command()
 @click.argument("crashdir")
 @click.pass_context
@@ -121,26 +156,30 @@ def validate_and_test(ctx, crashdir):
 
     reduced_keys_keys = set([key for key, type_ in reduced_keys.keys])
 
+    # Figure out which schema keys weren't in documents taking into account
+    # pattern_property regexes
     keys_not_in_doc = set()
     for key, type_ in schema_key_logger.keys:
-        # We have to iterate over these one at a time because of pattern_properties
-        # matching by regex
-        if "(re:" in key:
-            click.echo(f"{key} is a pattern_property ... ignoring")
-            continue
+        is_in_reduced_keys = False
+        for reduced_key in reduced_keys_keys:
+            if match_key(key, reduced_key):
+                is_in_reduced_keys = True
+                break
 
-        if key not in reduced_keys_keys:
+        if not is_in_reduced_keys:
             keys_not_in_doc.add((key, type_))
 
     if keys_not_in_doc:
         click.echo(
-            f"{len(keys_not_in_doc)} (out of {len(schema_key_logger.keys)} "
+            f"{len(keys_not_in_doc)} (out of {len(schema_key_logger.keys)}) "
             + "keys in JSON Schema, but never in any of the tested crashes:"
         )
         click.echo(f"  {'KEY':90}  TYPE(S)")
         for key, val in sorted(keys_not_in_doc):
             click.echo(f"  {key:90}  {val}")
 
+    # Figure out which doc keys aren't in the schema; this also handles cases where the
+    # key is in the schema, but is missing a type
     keys_not_in_schema = document_keys.keys - reduced_keys.keys
     if keys_not_in_schema:
         click.echo("")
