@@ -9,6 +9,7 @@ import pytest
 from socorro.lib.libsocorrodataschema import (
     FlattenKeys,
     permissions_transform_function,
+    split_path,
     transform_schema,
 )
 from socorro.schemas import get_file_content
@@ -26,38 +27,6 @@ def test_validate_processed_crash_cli_runs():
     runner = CliRunner()
     result = runner.invoke(validate_and_test, ["--help"])
     assert result.exit_code == 0
-
-
-def split_path(path):
-    """Split a general path into parts
-
-    This handles the case where pattern_properties parts are enclosed in parens and can
-    contain ``.`` which is a regex thing.
-
-    :arg path: a path to split
-
-    :returns: generator of parts
-
-    """
-    part = []
-    in_paren = False
-    for c in path:
-        if in_paren:
-            if c == ")":
-                in_paren = False
-            part.append(c)
-        elif c == "(":
-            in_paren = True
-            part.append(c)
-        elif c == ".":
-            if part:
-                yield "".join(part)
-            part = []
-        else:
-            part.append(c)
-
-    if part:
-        yield "".join(part)
 
 
 @pytest.mark.parametrize(
