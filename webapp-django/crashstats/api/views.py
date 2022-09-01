@@ -160,6 +160,36 @@ def no_csrf_i_mean_it(fun):
     return _no_csrf
 
 
+def reject_unknown_models(view):
+    @wraps(view)
+    def inner(request, model_name, **kwargs):
+        model = None
+
+        for source in MODELS_MODULES:
+            try:
+                model = getattr(source, model_name)
+                break
+            except AttributeError:
+                pass
+
+            try:
+                model = getattr(source, model_name + "Middleware")
+            except AttributeError:
+                pass
+
+        if model is None or not is_valid_model_class(model) or not model.IS_PUBLIC:
+            return http.JsonResponse(
+                {"error": f"No service called '{model_name}'"}, status=404
+            )
+
+        return view(request, model_name=model_name, model=model, **kwargs)
+
+    return inner
+
+
+# NOTE(willkg): This rejects unknown models before tracking the view so we're not
+# getting metrics on fuzzing attempts on the API.
+@reject_unknown_models
 @track_view
 @anonymous_csrf_exempt
 @csrf_exempt
@@ -169,26 +199,7 @@ def no_csrf_i_mean_it(fun):
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
 @utils.json_view
-def model_wrapper(request, model_name):
-    model = None
-
-    for source in MODELS_MODULES:
-        try:
-            model = getattr(source, model_name)
-            break
-        except AttributeError:
-            pass
-
-        try:
-            model = getattr(source, model_name + "Middleware")
-        except AttributeError:
-            pass
-
-    if model is None or not is_valid_model_class(model) or not model.IS_PUBLIC:
-        return http.JsonResponse(
-            {"error": f"No service called '{model_name}'"}, status=404
-        )
-
+def model_wrapper(request, model_name, model):
     required_permissions = getattr(model(), "API_REQUIRED_PERMISSIONS", None)
     if required_permissions and (
         not request.user.is_active or not request.user.has_perms(required_permissions)
