@@ -778,10 +778,10 @@ properties:
     source_annotation: AbortMessage
   accessibility:
     description: >
-      Set to 'Active' by the accessibility service when it is active.
+      Set to True in the processed crash if the annotation exists and is set to
+      'Active' by the accessibility service when it is active.
     type: boolean
     permissions: ["public"]
-    source_annotation: Accessibility
   accessibility_client:
     description: >
       Out-of-process accessibility client program name and version information.

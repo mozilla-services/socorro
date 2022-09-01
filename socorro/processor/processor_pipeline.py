@@ -32,6 +32,7 @@ from socorro.processor.rules.general import (
 )
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 from socorro.processor.rules.mozilla import (
+    AccessibilityRule,
     AddonsRule,
     BetaVersionRule,
     BreadcrumbsRule,
@@ -192,6 +193,7 @@ class ProcessorPipeline(RequiredConfig):
                 ProductRule(),
                 MajorVersionRule(),
                 PluginRule(),
+                AccessibilityRule(),
                 AddonsRule(),
                 DatesAndTimesRule(),
                 OutOfMemoryBinaryRule(),

@@ -184,6 +184,22 @@ class CopyFromRawCrashRule(Rule):
                     )
 
 
+class AccessibilityRule(Rule):
+    """Add accessibility data to processed crash
+
+    The Accessibility annotation is set to "Active" by the accessibility service when it
+    is active and doesn't appear in the crash report when it is not.
+
+    This converts that state of affairs to a True if the field exists and is "Active",
+    and False if not.
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
+        value = raw_crash.get("Accessibility", "")
+        processed_crash["accessibility"] = value == "Active"
+
+
 class ConvertModuleSignatureInfoRule(Rule):
     """Make ModuleSignatureInfo to a string.
 
