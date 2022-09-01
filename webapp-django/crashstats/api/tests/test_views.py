@@ -107,8 +107,11 @@ class TestViews(BaseTestViews):
 
     def test_invalid_url(self):
         url = reverse("api:model_wrapper", args=("BlaBLabla",))
-        response = self.client.get(url)
+        with MetricsMock() as metrics_mock:
+            response = self.client.get(url)
         assert response.status_code == 404
+        # Assert no metrics were emitted
+        metrics_mock.assert_not_timing("webapp.view.pageview")
 
     def test_base_classes_raise_not_found(self):
         url = reverse("api:model_wrapper", args=("SocorroMiddleware",))
