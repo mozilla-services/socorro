@@ -79,7 +79,8 @@
         "string",
         "null"
       ],
-      "description": "The presence of this field indicates that accessibility services were accessed."
+      "description": "The presence of this field indicates that accessibility services were accessed. Previously, the value sent to Telemetry was 'Active'. Now the value sent is '1'.",
+      "socorroConvertTo": "string"
     },
     "adapter_device_id": {
       "type": [

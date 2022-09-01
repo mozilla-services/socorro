@@ -12,6 +12,7 @@ import requests_mock
 import pytest
 
 from socorro.processor.rules.mozilla import (
+    AccessibilityRule,
     AddonsRule,
     BetaVersionRule,
     BreadcrumbsRule,
@@ -566,6 +567,30 @@ class TestPluginRule:
             "plugin_version": "1.0",
         }
         assert processed_crash == expected
+
+
+class TestAccessibilityRule:
+    def test_not_there(self):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+
+        rule = AccessibilityRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash["accessibility"] is False
+
+    def test_active(self):
+        raw_crash = {"Accessibility": "Active"}
+        dumps = {}
+        processed_crash = {}
+        processor_meta = get_basic_processor_meta_data()
+
+        rule = AccessibilityRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash["accessibility"] is True
 
 
 class TestAddonsRule:
