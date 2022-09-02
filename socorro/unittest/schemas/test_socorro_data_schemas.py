@@ -106,6 +106,7 @@ KNOWN_PUBLIC_FIELDS = {
     "crash_report_keys.[]",
     "crash_time",
     "crashing_thread",
+    "crashing_thread_name",
     "date_processed",
     "distribution_id",
     "dom_fission_enabled",

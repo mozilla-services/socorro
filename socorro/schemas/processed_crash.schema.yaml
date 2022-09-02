@@ -1057,6 +1057,11 @@ properties:
       Index of the crashing thread.
     type: ["integer", "null"]
     permissions: ["public"]
+  crashing_thread_name:
+    description: >
+      Name of the crashing thread.
+    type: ["string", "null"]
+    permissions: ["public"]
   date_processed:
     description: |
       Date when the crash report was submitted to Socorro.
