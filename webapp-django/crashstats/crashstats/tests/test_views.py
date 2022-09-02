@@ -1007,6 +1007,93 @@ class TestViews(BaseTestViews):
         assert "context" in smart_str(response.content)
         assert "frame_pointer" in smart_str(response.content)
 
+    def test_report_index_crashing_thread_stack_truncated(self):
+        json_dump = {
+            "crash_info": {"crashing_thread": 0},
+            "status": "OK",
+            "threads": [
+                {
+                    "frame_count": 0,
+                    "frames": [
+                        {
+                            "frame": 0,
+                            "file": "hg:hg.mozilla.org/000",
+                            "function": "js::something",
+                            "function_offset": "0x00",
+                            "line": 1000,
+                            "module": "xul.dll",
+                            "module_offset": "0x000000",
+                            "offset": "0x00000000",
+                            "registers": {
+                                "eax": "0x00000001",
+                                "ebp": "0x00000002",
+                                "ebx": "0x00000003",
+                                "ecx": "0x00000004",
+                                "edi": "0x00000005",
+                                "edx": "0x00000006",
+                                "efl": "0x00000007",
+                                "eip": "0x00000008",
+                                "esi": "0x00000009",
+                                "esp": "0x0000000a",
+                            },
+                            "trust": "context",
+                        },
+                        {
+                            "frame": 1,
+                            "file": "hg:hg.mozilla.org/bbb",
+                            "function": "js::somethingelse",
+                            "function_offset": "0xbb",
+                            "line": 1001,
+                            "module": "xul.dll",
+                            "module_offset": "0xbbbbbb",
+                            "offset": "0xbbbbbbbb",
+                            "trust": "frame_pointer",
+                        },
+                    ],
+                }
+            ],
+            "modules": [],
+        }
+
+        # Now we make the stack 1,000 frames long
+        frame = json_dump["threads"][0]["frames"][-1]
+        for i in range(1000):
+            new_frame = copy.copy(frame)
+            new_frame["frame"] = i + 2
+            json_dump["threads"][0]["frames"].append(new_frame)
+
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
+                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+                crash["json_dump"] = json_dump
+                crash["signature"] = "shutdownhang | foo::bar()"
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.ProcessedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure the stack is truncated; there were 2 frames, then we added 1,000
+        # more, so 1,000 + 2 - 100 = 902
+        assert "truncated 902 frames..." in smart_str(response.content)
+
     def test_java_exception_table_not_logged_in(self):
         java_exception = {
             "exception": {
