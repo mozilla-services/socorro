@@ -1440,6 +1440,18 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
+    "crashing_thread": number_field(
+        "crashing_thread",
+        description="Index of the crashing thread.",
+        in_database_name="crashing_thread",
+        is_protected=False,
+    ),
+    "crashing_thread_name": keyword_field(
+        "crashing_thread_name",
+        description="Name of the crashing thread.",
+        in_database_name="crashing_thread_name",
+        is_protected=False,
+    ),
     "date": {
         "data_validation_type": "datetime",
         "description": "Date at which the crash report was received by Socorro.",
