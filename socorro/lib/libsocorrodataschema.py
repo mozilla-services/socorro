@@ -9,6 +9,8 @@ Utilities for working with socorro-data schemas.
 import copy
 import re
 
+import jsonschema
+
 
 class InvalidDocumentError(Exception):
     """Raised when the document is invalid"""
@@ -473,3 +475,19 @@ class SocorroDataReducer:
             raise InvalidDocumentError(
                 f"invalid: {path}: type {type(document_part)} not recognized"
             )
+
+
+def validate_instance(instance, schema):
+    """Validates an instance document against the specified socorro-data schema
+
+    :arg dict instance: the instance document
+    :arg dict schema: the schema which is valid socorro-data schema
+
+    :raises: validation errors
+
+    """
+    # NOTE(willkg): If we update the jsonschema used for socorro-data, we need to update
+    # this, too
+    jsonschema.validate(
+        instance=instance, schema=schema, cls=jsonschema.Draft7Validator
+    )

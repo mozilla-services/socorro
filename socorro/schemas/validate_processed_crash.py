@@ -19,6 +19,7 @@ from socorro.lib.libsocorrodataschema import (
     SocorroDataReducer,
     split_path,
     transform_schema,
+    validate_instance,
 )
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
@@ -150,7 +151,7 @@ def validate_and_test(ctx, crashdir):
         reduced_processed_crash = schema_reducer.traverse(processed_crash)
         reduced_keys.log_keys(reduced_processed_crash)
 
-        jsonschema.validate(processed_crash, PROCESSED_CRASH_SCHEMA)
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
 
     click.echo("Done testing, all crash reports passed.")
 
