@@ -8,12 +8,14 @@ from unittest import mock
 
 from markus.testing import MetricsMock
 
+from socorro.lib.libsocorrodataschema import validate_instance
 from socorro.processor.processor_pipeline import ProcessorPipeline
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
 )
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.unittest.processor import get_basic_processor_meta_data
 
 
@@ -163,24 +165,38 @@ canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
 class TestCrashingThreadInfoRule:
-    def test_everything_we_hoped_for(self):
+    def test_valid_data(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {"json_dump": copy.deepcopy(canonical_stackwalker_output)}
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {
+                    "crashing_thread": 0,
+                    "address": "0x0",
+                    "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+                "crashing_thread": {
+                    "thread_name": "MainThread",
+                },
+            }
+        }
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
         processor_meta = get_basic_processor_meta_data()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, processor_meta)
 
         assert processed_crash["crashing_thread"] == 0
+        assert processed_crash["crashing_thread_name"] == "MainThread"
         assert processed_crash["address"] == "0x0"
         assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
 
-    def test_stuff_missing(self):
+    def test_json_dump_missing(self):
         """If there's no dump data, then this rule doesn't do anything"""
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
         processor_meta = get_basic_processor_meta_data()
 
         rule = CrashingThreadInfoRule()
@@ -188,6 +204,21 @@ class TestCrashingThreadInfoRule:
 
         assert processed_crash == {}
         assert processor_meta["processor_notes"] == []
+
+    def test_empty_json_dump(self):
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        dumps = {}
+        processed_crash = {"json_dump": {}}
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+        processor_meta = get_basic_processor_meta_data()
+
+        rule = CrashingThreadInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+
+        assert processed_crash["crashing_thread"] is None
+        assert processed_crash["crashing_thread_name"] is None
+        assert processed_crash["address"] is None
+        assert processed_crash["reason"] == ""
 
 
 class TestMinidumpSha256HashRule:

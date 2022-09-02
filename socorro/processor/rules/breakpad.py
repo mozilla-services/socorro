@@ -27,6 +27,7 @@ class CrashingThreadInfoRule(Rule):
     Fills in:
 
     * crashing_thread (int or None): index of the crashing thread
+    * crashing_thread_name (str or None): name of crashing thread
     * address (str or None): the address of the crash
     * type (str): the crash reason
 
@@ -44,6 +45,9 @@ class CrashingThreadInfoRule(Rule):
                 "mdsw did not identify the crashing thread"
             )
 
+        processed_crash["crashing_thread_name"] = glom.glom(
+            processed_crash, "json_dump.crashing_thread.thread_name", default=None
+        )
         processed_crash["address"] = glom.glom(
             processed_crash, "json_dump.crash_info.address", default=None
         )
