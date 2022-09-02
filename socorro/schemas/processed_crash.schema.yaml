@@ -512,6 +512,32 @@ definitions:
           instruction in the library/binary.
         type: ["string", "null"]
         permissions: ["public"]
+      inlines:
+        description: >
+          Pseudo-frames for functions that were inlined into this one.
+
+          Inlined frames are in the same ordering that normal frames are, and
+          logically come 'before' the real frame in the backtrace.
+        items:
+          properties:
+            function:
+              description: >
+                Name of the inline function.
+              type: ["string", "null"]
+              permissions: ["public"]
+            file:
+              description: >
+                The name of the source file for the inline function.
+              type: ["string", "null"]
+              permissions: ["public"]
+            line:
+              description: >
+                The line in the source file that is roughly executing.
+              type: ["integer", "null"]
+              permissions: ["public"]
+          type: ["object", "null"]
+        type: ["array", "null"]
+        permissions: ["public"]
       line:
         description: The line in the source file that is roughly executing.
         type: ["integer", "null"]
