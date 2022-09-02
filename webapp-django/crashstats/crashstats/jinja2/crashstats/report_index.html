@@ -702,22 +702,26 @@
                     <tbody>
                       {% for frame in parsed_dump.threads[crashing_thread].frames %}
                         <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                          <td>
-                            {% if frame.missing_symbols %}
-                              <span class="row-notice" title="missing symbol">&Oslash;</span>
-                            {% endif %}
-                            {{ frame.frame }}
-                          </td>
-                          <td>{{ frame.module }}</td>
-                          <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                          <td>
-                            {% if frame.source_link %}
-                              <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                            {% else %}
-                              {% if frame.file %}{{ frame.file }}:{{ frame.line }}{% endif %}
-                            {% endif %}
-                          </td>
-                          <td>{{ frame.trust }}</td>
+                          {% if frame.truncated %}
+                            <td colspan="5">truncated {{ frame.truncated|digitgroupseparator }} frames...</td>
+                          {% else %}
+                            <td>
+                              {% if frame.missing_symbols %}
+                                <span class="row-notice" title="missing symbol">&Oslash;</span>
+                              {% endif %}
+                              {{ frame.frame }}
+                            </td>
+                            <td>{{ frame.module }}</td>
+                            <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                            <td>
+                              {% if frame.source_link %}
+                                <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
+                              {% else %}
+                                {% if frame.file %}{{ frame.file }}:{{ frame.line }}{% endif %}
+                              {% endif %}
+                            </td>
+                            <td>{{ frame.trust }}</td>
+                          {% endif %}
                         </tr>
                       {% endfor %}
                     </tbody>

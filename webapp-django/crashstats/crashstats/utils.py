@@ -260,6 +260,9 @@ def enhance_frame(frame, vcs_mappings):
     Add some additional info to a stack frame--signature
     and source links from vcs_mappings.
     """
+    if frame.get("truncated", None) is not None:
+        return
+
     if frame.get("function"):
         # Remove spaces before all stars, ampersands, and commas
         function = re.sub(r" (?=[\*&,])", "", frame["function"])
@@ -316,16 +319,37 @@ def enhance_frame(frame, vcs_mappings):
                 frame["file"] = path_parts.pop()
 
 
+def special_frame(num_truncated):
+    return {"truncated": num_truncated}
+
+
+MAX_FRAMES = 100
+
+
 def enhance_json_dump(dump, vcs_mappings):
     """
     Add some information to the stackwalker's json_dump output
     for display. Mostly applying vcs_mappings to stack frames.
     """
-    for i, thread in enumerate(dump.get("threads", [])):
+    for thread_index, thread in enumerate(dump.get("threads", [])):
         if "thread" not in thread:
-            thread["thread"] = i
-        for frame in thread["frames"]:
+            thread["thread"] = thread_index
+
+        # We're only going to show 100 frames. If there are more than that in the stack,
+        # we're going to truncate in the middle with a "special" frame
+        frames = thread["frames"]
+        if len(frames) > MAX_FRAMES:
+            HALF_MAX_FRAMES = int(MAX_FRAMES / 2)
+            frames = (
+                frames[:HALF_MAX_FRAMES]
+                + [special_frame(len(frames) - MAX_FRAMES)]
+                + frames[-HALF_MAX_FRAMES:]
+            )
+
+        for frame in frames:
             enhance_frame(frame, vcs_mappings)
+
+        thread["frames"] = frames
     return dump
 
 

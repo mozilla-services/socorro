@@ -125,13 +125,11 @@ def report_index(request, crash_id, default_context=None):
     # For C++/Rust crashes
     if "json_dump" in context["report"]:
         json_dump = context["report"]["json_dump"]
-        if "sensitive" in json_dump and not request.user.has_perm(
-            "crashstats.view_pii"
-        ):
-            del json_dump["sensitive"]
+        # This is for the "Raw data and minidumps" tab
         context["raw_stackwalker_output"] = json.dumps(
             json_dump, sort_keys=True, indent=4, separators=(",", ": ")
         )
+        # This is for displaying on the "Details" tab
         utils.enhance_json_dump(json_dump, settings.VCS_MAPPINGS)
         parsed_dump = json_dump
     else:
