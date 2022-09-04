@@ -256,9 +256,10 @@ def _json_clean(value):
 
 
 def enhance_frame(frame, vcs_mappings):
-    """
-    Add some additional info to a stack frame--signature
-    and source links from vcs_mappings.
+    """Add additional info to a stack frame
+
+    This adds signature and source links from vcs_mappings.
+
     """
     if frame.get("truncated", None) is not None:
         return
@@ -348,6 +349,8 @@ def enhance_json_dump(dump, vcs_mappings):
 
         for frame in frames:
             enhance_frame(frame, vcs_mappings)
+            for inline in frame.get("inlines") or []:
+                enhance_frame(inline, vcs_mappings)
 
         thread["frames"] = frames
     return dump
