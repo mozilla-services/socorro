@@ -742,26 +742,32 @@
                             <th scope="col">Module</th>
                             <th class="signature-column" scope="col">Signature</th>
                             <th scope="col">Source</th>
+                            <th scope="col">Trust</th>
                           </tr>
                         </thead>
                         <tbody>
                           {% for frame in thread.frames %}
                             <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                              <td>
-                                {% if frame.missing_symbols %}
-                                  <span class="row-notice" title="missing symbol">&Oslash;</span>
-                                {% endif %}
-                                {{ frame.frame }}
-                              </td>
-                              <td>{{ frame.module }}</td>
-                              <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                              <td>
-                                {% if frame.source_link %}
-                                  <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                                {% else %}
-                                  {{ frame.file }}{% if frame.line %}:{{ frame.line }}{% endif %}
-                                {% endif %}
-                              </td>
+                              {% if frame.truncated %}
+                                <td colspan="5">truncated {{ frame.truncated|digitgroupseparator }} frames...</td>
+                              {% else %}
+                                <td>
+                                  {% if frame.missing_symbols %}
+                                    <span class="row-notice" title="missing symbol">&Oslash;</span>
+                                  {% endif %}
+                                  {{ frame.frame }}
+                                </td>
+                                <td>{{ frame.module }}</td>
+                                <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                                <td>
+                                  {% if frame.source_link %}
+                                    <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
+                                  {% else %}
+                                    {{ frame.file }}{% if frame.line %}:{{ frame.line }}{% endif %}
+                                  {% endif %}
+                                </td>
+                                <td>{{ frame.trust }}</td>
+                              {% endif %}
                             </tr>
                           {% endfor %}
                         </tbody>
