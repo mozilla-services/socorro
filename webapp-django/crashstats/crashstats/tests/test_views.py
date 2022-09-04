@@ -21,6 +21,8 @@ from django.test.utils import override_settings
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import BaseTestViews, Response
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.lib.libsocorrodataschema import validate_instance
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
 _SAMPLE_META = {
@@ -1093,6 +1095,90 @@ class TestViews(BaseTestViews):
         # Make sure the stack is truncated; there were 2 frames, then we added 1,000
         # more, so 1,000 + 2 - 100 = 902
         assert "truncated 902 frames..." in smart_str(response.content)
+
+    def test_inlines(self):
+        json_dump = {
+            "crash_info": {"crashing_thread": 0},
+            "status": "OK",
+            "threads": [
+                {
+                    "frame_count": 0,
+                    "frames": [
+                        {
+                            "frame": 0,
+                            "file": "hg:hg.mozilla.org/000",
+                            "function": "js::something",
+                            "function_offset": "0x00",
+                            "inlines": [
+                                {
+                                    "file": "hg:hg.mozilla.org/inlinefile1.cpp",
+                                    "function": "InlineFunction1",
+                                    "line": 381,
+                                },
+                                {
+                                    "file": "hg:hg.mozilla.org/inlinefile2.cpp",
+                                    "function": "InlineFunction2",
+                                    "line": 374,
+                                },
+                            ],
+                            "line": 1000,
+                            "module": "xul.dll",
+                            "module_offset": "0x000000",
+                            "offset": "0x00000000",
+                            "trust": "context",
+                        },
+                        {
+                            "frame": 1,
+                            "file": "hg:hg.mozilla.org/bbb",
+                            "function": "js::somethingelse",
+                            "function_offset": "0xbb",
+                            "line": 1001,
+                            "module": "xul.dll",
+                            "module_offset": "0xbbbbbb",
+                            "offset": "0xbbbbbbbb",
+                            "trust": "frame_pointer",
+                        },
+                    ],
+                }
+            ],
+            "modules": [],
+        }
+
+        processed_crash = copy.deepcopy(_SAMPLE_PROCESSED)
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        processed_crash["json_dump"] = json_dump
+        processed_crash["signature"] = "shutdownhang | foo::bar()"
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                return copy.deepcopy(_SAMPLE_META)
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "processed":
+                return processed_crash
+
+            raise NotImplementedError(params)
+
+        models.ProcessedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        # Make sure inline function show up
+        assert "InlineFunction1" in smart_str(response.content)
+        assert "inlinefile1.cpp:381" in smart_str(response.content)
+        assert "InlineFunction2" in smart_str(response.content)
+        assert "inlinefile2.cpp:374" in smart_str(response.content)
 
     def test_java_exception_table_not_logged_in(self):
         java_exception = {
