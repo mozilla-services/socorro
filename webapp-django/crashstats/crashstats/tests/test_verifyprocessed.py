@@ -16,8 +16,12 @@ TODAY = utc_now().strftime("%Y%m%d")
 BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
 
 
-def get_small_entropy(self):
-    """Returns small entropy so we're not spending ages cycling through things."""
+def get_threechars_subset(self):
+    """Returns subset of threechars combinations
+
+    This reduces the time it takes to run the tests.
+
+    """
     yield from ["000", "111", "222"]
 
 
@@ -58,9 +62,9 @@ class TestVerifyProcessed:
             conn.index(index=index_name, doc_type=doctype, body=document, id=crash_id)
         es_conn.refresh()
 
-    def test_get_entropy(self):
+    def test_get_threechars(self):
         cmd = Command()
-        entropy = list(sorted(cmd.get_entropy()))
+        entropy = list(sorted(cmd.get_threechars()))
 
         # We don't want to assert the contents of the whole list, so let's
         # just assert some basic facts and it's probably fine
@@ -70,7 +74,7 @@ class TestVerifyProcessed:
 
     def test_no_crashes(self, boto_helper, monkeypatch):
         """Verify no crashes in bucket result in no missing crashes."""
-        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+        monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.create_bucket(bucket)
@@ -81,7 +85,7 @@ class TestVerifyProcessed:
 
     def test_no_missing_crashes(self, boto_helper, es_conn, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
-        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+        monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.create_bucket(bucket)
@@ -105,7 +109,7 @@ class TestVerifyProcessed:
 
     def test_missing_crashes(self, boto_helper, es_conn, monkeypatch):
         """Verify it finds a missing crash."""
-        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+        monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.create_bucket(bucket)
@@ -126,7 +130,7 @@ class TestVerifyProcessed:
 
     def test_missing_crashes_es(self, boto_helper, es_conn, monkeypatch):
         """Verify it finds a processed crash missing in ES."""
-        monkeypatch.setattr(Command, "get_entropy", get_small_entropy)
+        monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
         boto_helper.create_bucket(bucket)

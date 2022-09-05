@@ -79,13 +79,20 @@ def build_keys(name_of_thing, crashid):
         entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
+            "v2/%(nameofthing)s/%(date)s/%(crashid)s"
+            % {
+                "nameofthing": name_of_thing,
+                "date": date,
+                "crashid": crashid,
+            },
+            # NOTE(willkg): This format is deprecated and will be removed in April 2023
             "v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
             % {
                 "nameofthing": name_of_thing,
                 "entropy": entropy,
                 "date": date,
                 "crashid": crashid,
-            }
+            },
         ]
 
     elif name_of_thing == "crash_report":
@@ -193,21 +200,23 @@ class BotoS3CrashStorage(CrashStorageBase):
         self.conn.save_file(path, data)
 
     def get_raw_crash(self, crash_id):
-        """Get the raw crash file for the given crash id.
+        """Get the raw crash file for the given crash id
 
         :returns: DotDict
 
         :raises CrashIDNotFound: if the crash doesn't exist
 
         """
-        try:
-            path = build_keys("raw_crash", crash_id)[0]
-            raw_crash_as_string = self.conn.load_file(path)
-            return json.loads(
-                raw_crash_as_string, object_hook=self.config.json_object_hook
-            )
-        except self.conn.KeyNotFound as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+        for path in build_keys("raw_crash", crash_id):
+            try:
+                raw_crash_as_string = self.conn.load_file(path)
+                return json.loads(
+                    raw_crash_as_string, object_hook=self.config.json_object_hook
+                )
+            except self.conn.KeyNotFound:
+                continue
+
+        raise CrashIDNotFound("%s not found" % crash_id)
 
     def get_raw_dump(self, crash_id, name=None):
         """Get a specified dump file for the given crash id.

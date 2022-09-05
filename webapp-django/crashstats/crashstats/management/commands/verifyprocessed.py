@@ -27,7 +27,8 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 from socorro.lib.libooid import date_from_ooid
 
 
-RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
+RAW_CRASH_ENTROPY_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
+RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s"
 PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 # Number of seconds until we decide a worker has stalled
@@ -82,8 +83,16 @@ def check_elasticsearch(supersearch, crash_ids):
     return set(crash_ids) - set(crash_ids_in_es)
 
 
-def check_crashids(entropy_chunk, date):
-    """Checks crash ids for a given entropy and date."""
+def check_crashids_for_entropy_date(entropy_chunk, date):
+    """Checks crash ids for a given entropy and date.
+
+    NOTE(willkg): the entropy part is being phased out, so this checks the entropy/date
+    possible key (deprecated) and then checks the date directory directly.
+
+    We can remove this a week after Antenna switches to the no-entropy keys. Maybe
+    October 2022.
+
+    """
     s3_context = get_s3_context()
     bucket = s3_context.config.bucket_name
     s3_client = s3_context.client
@@ -91,14 +100,58 @@ def check_crashids(entropy_chunk, date):
     supersearch = SuperSearchUnredacted()
 
     missing = []
+
+    # Grab all the crash ids at the given entropy/date directory
+    #
+    # NOTE(willkg): this path is deprecated and will get removed; apirl 2023
     for entropy in entropy_chunk:
-        raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (entropy, date)
+        raw_crash_key_prefix = RAW_CRASH_ENTROPY_PREFIX_TEMPLATE % (entropy, date)
 
         paginator = s3_client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
 
         for page in page_iterator:
             # NOTE(willkg): Keys look like /v2/raw_crash/ENTRPOY/DATE/CRASHID
+            crash_ids = [
+                item["Key"].split("/")[-1] for item in page.get("Contents", [])
+            ]
+
+            if not crash_ids:
+                continue
+
+            # Check S3 first
+            for crash_id in crash_ids:
+                if not is_in_s3(s3_client, bucket, crash_id):
+                    missing.append(crash_id)
+
+            # Check Elasticsearch in batches
+            for crash_ids_batch in chunked(crash_ids, 100):
+                missing_in_es = check_elasticsearch(supersearch, crash_ids_batch)
+                missing.extend(missing_in_es)
+
+    return list(set(missing))
+
+
+def check_crashids_for_date(firstchars_chunk, date):
+    """Check crash ids for a given firstchars and date"""
+    s3_context = get_s3_context()
+    bucket = s3_context.config.bucket_name
+    s3_client = s3_context.client
+
+    supersearch = SuperSearchUnredacted()
+
+    missing = []
+
+    for firstchars in firstchars_chunk:
+        # Grab all the crash ids at the given date directory
+        raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (date, firstchars)
+
+        paginator = s3_client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
+
+        for page in page_iterator:
+            # NOTE(willkg): Keys here look like /v2/raw_crash/ENTROPY/DATE/CRASHID or
+            # /v2/raw_crash/DATE/CRASHID
             crash_ids = [
                 item["Key"].split("/")[-1] for item in page.get("Contents", [])
             ]
@@ -135,7 +188,7 @@ class Command(BaseCommand):
             help="Number of concurrent workers to list raw_crashes.",
         )
 
-    def get_entropy(self):
+    def get_threechars(self):
         """Generate all entropy combinations."""
         chars = "0123456789abcdef"
         for x in chars:
@@ -144,19 +197,34 @@ class Command(BaseCommand):
                     yield x + y + z
 
     def find_missing(self, num_workers, date):
-        check_crashids_for_date = partial(check_crashids, date=date)
+        check_crashids_for_entropy = partial(check_crashids_for_entropy_date, date=date)
+        check_crashids = partial(check_crashids_for_date, date=date)
 
         missing = []
-        entropy_chunked = chunked(self.get_entropy(), CHUNK_SIZE)
+        entropy_chunked = chunked(self.get_threechars(), CHUNK_SIZE)
+        firstchars_chunked = chunked(self.get_threechars(), CHUNK_SIZE)
+
         if num_workers == 1:
-            for result in map(check_crashids_for_date, entropy_chunked):
+            # NOTE(willkg): entropy bit is deprecated. we can remove in October 2022
+            # maybe.
+            for result in map(check_crashids_for_entropy, entropy_chunked):
+                missing.extend(result)
+
+            for result in map(check_crashids, firstchars_chunked):
                 missing.extend(result)
         else:
             with concurrent.futures.ProcessPoolExecutor(
                 max_workers=num_workers
             ) as executor:
+                # NOTE(willkg): entropy bit is deprecated. we can remove in October 2022
+                # maybe.
                 for result in executor.map(
-                    check_crashids_for_date, entropy_chunked, timeout=WORKER_TIMEOUT
+                    check_crashids_for_entropy, entropy_chunked, timeout=WORKER_TIMEOUT
+                ):
+                    missing.extend(result)
+
+                for result in executor.map(
+                    check_crashids, firstchars_chunked, timeout=WORKER_TIMEOUT
                 ):
                     missing.extend(result)
 

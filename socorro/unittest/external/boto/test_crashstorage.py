@@ -10,11 +10,51 @@ import pytest
 
 from socorro.external.boto.crashstorage import (
     BotoS3CrashStorage,
-    TelemetryBotoS3CrashStorage,
+    build_keys,
     dict_to_str,
+    TelemetryBotoS3CrashStorage,
 )
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
 from socorro.unittest.external.boto import get_config
+
+
+@pytest.mark.parametrize(
+    "kind, crashid, expected",
+    [
+        (
+            "raw_crash",
+            "0bba929f-8721-460c-dead-a43c20071027",
+            [
+                "v2/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
+                "v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            ],
+        ),
+        (
+            "dump_names",
+            "0bba929f-8721-460c-dead-a43c20071027",
+            [
+                "v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
+            ],
+        ),
+        (
+            "processed_crash",
+            "0bba929f-8721-460c-dead-a43c20071027",
+            [
+                "v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
+            ],
+        ),
+        # For telemetry
+        (
+            "crash_report",
+            "0bba929f-8721-460c-dead-a43c20071027",
+            [
+                "v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            ],
+        ),
+    ],
+)
+def test_build_keys(kind, crashid, expected):
+    assert build_keys(kind, crashid) == expected
 
 
 class TestBotoS3CrashStorage:
@@ -41,7 +81,7 @@ class TestBotoS3CrashStorage:
         # contents
         raw_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v2/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
         )
 
         assert json.loads(raw_crash) == {
@@ -73,7 +113,7 @@ class TestBotoS3CrashStorage:
         # Verify the raw_crash made it to the right place and has the right contents
         raw_crash = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key="v2/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
         )
 
         assert json.loads(raw_crash) == {
@@ -139,7 +179,7 @@ class TestBotoS3CrashStorage:
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v2/raw_crash/936/20120408/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key="v2/raw_crash/20120408/936ce666-ff3b-4c7a-9674-367fe2120408",
             data=dict_to_str(raw_crash).encode("utf-8"),
         )
 

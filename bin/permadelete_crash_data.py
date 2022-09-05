@@ -33,6 +33,7 @@ Usage::
 import json
 import logging
 import os
+from traceback import print_exception
 
 import click
 from configman import ConfigurationManager
@@ -40,6 +41,7 @@ from configman.environment import environment
 from elasticsearch_dsl import Search
 
 from socorro.external.boto.connection_context import S3Connection
+from socorro.external.boto.crashstorage import build_keys
 from socorro.external.es.connection_context import ConnectionContext
 
 
@@ -108,18 +110,18 @@ def s3_delete(crashid):
     bucket = s3_context.config.bucket_name
     s3_client = s3_context.client
 
-    # Delete the raw crash
-    key = "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s" % {
-        "entropy": crashid[0:3],
-        "date": "20" + crashid[-6:],
-        "crashid": crashid,
-    }
-    obj = s3_fetch_object(s3_client, bucket, key)
-    if obj:
-        s3_delete_object(s3_client, bucket, key)
+    keys = build_keys("raw_crash", crashid)
+    for key in keys:
+        try:
+            obj = s3_fetch_object(s3_client, bucket, key)
+            if obj:
+                s3_delete_object(s3_client, bucket, key)
+        except Exception as exc:
+            print(f"exception fetching/deleting raw crash: {key}")
+            print_exception(exc)
 
     # Fetch dump_names which tells us which dumps exist
-    key = "v1/dump_names/%(crashid)s" % {"crashid": crashid}
+    key = build_keys("dump_names", crashid)[0]
     dump_names = s3_fetch_object(s3_client, bucket, key)
     if dump_names:
         try:
@@ -134,10 +136,7 @@ def s3_delete(crashid):
             # Handle dump_name -> key goofiness
             if dump_name in (None, "", "upload_file_minidump"):
                 dump_name = "dump"
-            key = "v1/%(dump_name)s/%(crashid)s" % {
-                "dump_name": dump_name,
-                "crashid": crashid,
-            }
+            key = build_keys(dump_name, crashid)[0]
 
             # If the dump is not there, that's fine; but if deleting the dump kicks up
             # an error, we want to make sure we don't delete dump_names.
@@ -148,11 +147,11 @@ def s3_delete(crashid):
 
         # If there were no errors, then we try to delete dump_names
         if dump_errors == 0:
-            key = "v1/dump_names/%(crashid)s" % {"crashid": crashid}
+            key = build_keys("dump_names", crashid)[0]
             s3_delete_object(s3_client, bucket, key)
 
     # Delete processed crash
-    key = "v1/processed_crash/%(crashid)s" % {"crashid": crashid}
+    key = build_keys("processed_crash", crashid)[0]
     obj = s3_fetch_object(s3_client, bucket, key)
     if obj:
         s3_delete_object(s3_client, bucket, key)
