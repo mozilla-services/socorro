@@ -12,6 +12,12 @@ Usage::
 
     python bin/remove_field.py CRASHIDSFILE FIELD [FIELD...]
 
+File should be a set of lines of the form:
+
+    {"crashid": CRASHID, "index": INDEX, ...}
+
+Lines prefixed with "#" are ignored.
+
 """
 
 import concurrent.futures
@@ -197,9 +203,12 @@ def cmd_remove_field(ctx, parallel, max_workers, crashidsfile, fields):
     """
     Remove a field from raw crash data on S3 and Elasticsearch.
 
-    The crashidsfile is a path to a file with crash ids in it--one per line.
-    Lines prefixed with # are treated as comments and are ignored.
+    The crashidsfile is a path to a file with crash ids in it. File should be a set of
+    lines of the form:
 
+        {"crashid": CRASHID, "index": INDEX, ...}
+
+    Lines prefixed with "#" are ignored.
 
     """
     if not os.path.exists(crashidsfile):
