@@ -30,9 +30,8 @@ from elasticsearch_dsl import Search
 from more_itertools import chunked
 
 from socorro.external.boto.connection_context import S3Connection
-from socorro.external.boto.crashstorage import dict_to_str
+from socorro.external.boto.crashstorage import build_keys, dict_to_str
 from socorro.external.es.connection_context import ConnectionContext
-from socorro.lib.libooid import date_from_ooid
 from socorro.lib.util import retry
 
 
@@ -88,12 +87,22 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
     """Fix data in raw_crash file in S3."""
     crashid = crash_data["crashid"]
 
-    path = "v2/raw_crash/%(entropy)s/%(date)s/%(crashid)s" % {
-        "entropy": crashid[:3],
-        "date": date_from_ooid(crashid).strftime("%Y%m%d"),
-        "crashid": crashid,
-    }
-    resp = s3_client.get_object(Bucket=bucket, Key=path)
+    # Iterate through the available keys until we find one we like.
+    paths = build_keys("raw_crash", crashid)
+    path = None
+    for possible_path in paths:
+        try:
+            resp = s3_client.get_object(Bucket=bucket, Key=possible_path)
+            path = possible_path
+            break
+        except s3_client.exceptions.NoSuchKey:
+            continue
+
+    if not path:
+        # We're in a weird situation where we know there's a raw crash, but we can't
+        # find it with the key options.
+        raise Exception(f"raw crash not available at any keys: {paths}")
+
     raw_crash_as_string = resp["Body"].read()
     data = json.loads(raw_crash_as_string)
     should_save = False

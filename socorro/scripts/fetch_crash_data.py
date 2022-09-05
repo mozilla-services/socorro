@@ -7,6 +7,7 @@ import json
 import os
 import os.path
 
+from socorro.external.boto.crashstorage import build_keys
 from socorro.lib.libdatetime import JsonDTEncoder
 from socorro.lib.librequests import session_with_retries
 from socorro.scripts import FallbackToPipeAction, FlagAction, WrappedTextHelpFormatter
@@ -82,9 +83,8 @@ def fetch_crash(
 
         # Save raw crash to file system
         raw_crash = resp.json()
-        fn = os.path.join(
-            outputdir, "v2", "raw_crash", crash_id[0:3], "20" + crash_id[-6:], crash_id
-        )
+        key = build_keys("raw_crash", crash_id)[0]
+        fn = os.path.join(outputdir, key)
         create_dir_if_needed(os.path.dirname(fn))
         with open(fn, "w") as fp:
             json.dump(raw_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
@@ -117,7 +117,8 @@ def fetch_crash(
             dumps[dump_name] = resp.content
 
         # Save dump_names to file system
-        fn = os.path.join(outputdir, "v1", "dump_names", crash_id)
+        key = build_keys("dump_names", crash_id)[0]
+        fn = os.path.join(outputdir, key)
         create_dir_if_needed(os.path.dirname(fn))
         with open(fn, "w") as fp:
             json.dump(list(dumps.keys()), fp)
@@ -127,7 +128,8 @@ def fetch_crash(
             if dump_name == "upload_file_minidump":
                 dump_name = "dump"
 
-            fn = os.path.join(outputdir, "v1", dump_name, crash_id)
+            key = build_keys(dump_name, crash_id)[0]
+            fn = os.path.join(outputdir, key)
             create_dir_if_needed(os.path.dirname(fn))
             with open(fn, "wb") as fp:
                 fp.write(data)
@@ -152,7 +154,8 @@ def fetch_crash(
 
         # Save processed crash to file system
         processed_crash = resp.json()
-        fn = os.path.join(outputdir, "v1", "processed_crash", crash_id)
+        key = build_keys("processed_crash", crash_id)[0]
+        fn = os.path.join(outputdir, key)
         create_dir_if_needed(os.path.dirname(fn))
         with open(fn, "w") as fp:
             json.dump(processed_crash, fp, cls=JsonDTEncoder, indent=2, sort_keys=True)
