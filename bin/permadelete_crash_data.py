@@ -33,7 +33,6 @@ Usage::
 import json
 import logging
 import os
-from traceback import print_exception
 
 import click
 from configman import ConfigurationManager
@@ -80,10 +79,10 @@ def s3_delete_object(client, bucket, key):
     """
     try:
         client.delete_object(Bucket=bucket, Key=key)
-        click.echo("s3: deleted %s" % key)
+        click.echo(f"s3: deleted {key!r}")
         return True
     except Exception:
-        logger.exception("ERROR: s3: when deleting %s" % key)
+        logger.exception(f"ERROR: s3: when deleting {key!r}")
         return False
 
 
@@ -99,9 +98,9 @@ def s3_fetch_object(client, bucket, key):
         resp = client.get_object(Bucket=bucket, Key=key)
         return resp["Body"].read()
     except client.exceptions.NoSuchKey:
-        click.echo("s3: not found: %s" % key)
+        click.echo(f"s3: not found: {key!r}")
     except Exception:
-        logger.exception("ERROR: s3: when fetching %s" % key)
+        logger.exception(f"ERROR: s3: when fetching {key!r}")
 
 
 def s3_delete(crashid):
@@ -112,49 +111,53 @@ def s3_delete(crashid):
 
     keys = build_keys("raw_crash", crashid)
     for key in keys:
-        try:
-            obj = s3_fetch_object(s3_client, bucket, key)
-            if obj:
-                s3_delete_object(s3_client, bucket, key)
-        except Exception as exc:
-            print(f"exception fetching/deleting raw crash: {key}")
-            print_exception(exc)
+        obj = s3_fetch_object(s3_client, bucket, key)
+        if obj:
+            s3_delete_object(s3_client, bucket, key)
 
     # Fetch dump_names which tells us which dumps exist
-    key = build_keys("dump_names", crashid)[0]
-    dump_names = s3_fetch_object(s3_client, bucket, key)
-    if dump_names:
-        try:
-            dump_names = json.loads(dump_names)
-        except Exception:
-            logger.exception("ERROR: %s: s3: when parsing dump_names json" % crashid)
-            dump_names = []
+    keys = build_keys("dump_names", crashid)
+    dump_names = []
+    for key in keys:
+        data = s3_fetch_object(s3_client, bucket, key)
+        if data:
+            try:
+                # dump_names is a JSON encoded list of strings
+                dump_names.extend(json.loads(data))
+            except Exception:
+                logger.exception(
+                    "ERROR: %s: s3: when parsing dump_names json" % crashid
+                )
 
+    if dump_names:
         # For each dump, delete it if it exists
         dump_errors = 0
         for dump_name in dump_names:
             # Handle dump_name -> key goofiness
             if dump_name in (None, "", "upload_file_minidump"):
                 dump_name = "dump"
-            key = build_keys(dump_name, crashid)[0]
 
-            # If the dump is not there, that's fine; but if deleting the dump kicks up
-            # an error, we want to make sure we don't delete dump_names.
-            obj = s3_fetch_object(s3_client, bucket, key)
-            if obj:
-                if not s3_delete_object(s3_client, bucket, key):
-                    dump_errors += 1
+            keys = build_keys(dump_name, crashid)
+            for key in keys:
+                # If the dump is not there, that's fine; but if deleting the dump kicks
+                # up an error, we want to make sure we don't delete dump_names.
+                obj = s3_fetch_object(s3_client, bucket, key)
+                if obj:
+                    if not s3_delete_object(s3_client, bucket, key):
+                        dump_errors += 1
 
         # If there were no errors, then we try to delete dump_names
         if dump_errors == 0:
-            key = build_keys("dump_names", crashid)[0]
-            s3_delete_object(s3_client, bucket, key)
+            keys = build_keys("dump_names", crashid)
+            for key in keys:
+                s3_delete_object(s3_client, bucket, key)
 
     # Delete processed crash
-    key = build_keys("processed_crash", crashid)[0]
-    obj = s3_fetch_object(s3_client, bucket, key)
-    if obj:
-        s3_delete_object(s3_client, bucket, key)
+    keys = build_keys("processed_crash", crashid)
+    for key in keys:
+        obj = s3_fetch_object(s3_client, bucket, key)
+        if obj:
+            s3_delete_object(s3_client, bucket, key)
 
 
 def get_es_conn():
@@ -185,7 +188,7 @@ def es_fetch_document(es_conn, crashid):
         except Exception:
             logger.exception("ERROR: es: when fetching %s %s" % (doc_type, crashid))
 
-    click.echo("es: not found: %s %s" % (doc_type, crashid))
+    click.echo(f"es: not found: {doc_type} {crashid}")
 
 
 def es_delete_document(es_conn, index, doc_type, doc_id):
@@ -193,7 +196,7 @@ def es_delete_document(es_conn, index, doc_type, doc_id):
     with es_conn() as conn:
         try:
             conn.delete(index=index, doc_type=doc_type, id=doc_id)
-            click.echo("es: deleted %s %s %s" % (index, doc_type, doc_id))
+            click.echo(f"es: deleted {index} {doc_type} {doc_id}")
         except Exception:
             logger.exception(
                 "ERROR: es: when deleting %s %s %s" % (index, doc_type, doc_id)
@@ -222,13 +225,13 @@ def cmd_permadelete(ctx, crashidsfile):
 
     """
     if not os.path.exists(crashidsfile):
-        click.echo("File %s does not exist." % crashidsfile)
+        click.echo(f"File {crashidsfile!r} does not exist.")
         return 1
 
     crashids = crashid_generator(crashidsfile)
 
     for crashid in crashids:
-        click.echo("Working on %s" % crashid)
+        click.echo(f"Working on {crashid!r}")
         s3_delete(crashid)
         es_delete(crashid)
 
