@@ -28,7 +28,7 @@ from socorro.lib.libooid import date_from_ooid
 
 
 RAW_CRASH_ENTROPY_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
-RAW_CRASH_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s"
+RAW_CRASH_PREFIX_TEMPLATE = "v1/raw_crash/%s/%s"
 PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 # Number of seconds until we decide a worker has stalled
@@ -151,7 +151,7 @@ def check_crashids_for_date(firstchars_chunk, date):
 
         for page in page_iterator:
             # NOTE(willkg): Keys here look like /v2/raw_crash/ENTROPY/DATE/CRASHID or
-            # /v2/raw_crash/DATE/CRASHID
+            # /v1/raw_crash/DATE/CRASHID
             crash_ids = [
                 item["Key"].split("/")[-1] for item in page.get("Contents", [])
             ]

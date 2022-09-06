@@ -79,7 +79,7 @@ def build_keys(name_of_thing, crashid):
         entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
-            "v2/%(nameofthing)s/%(date)s/%(crashid)s"
+            "v1/%(nameofthing)s/%(date)s/%(crashid)s"
             % {
                 "nameofthing": name_of_thing,
                 "date": date,

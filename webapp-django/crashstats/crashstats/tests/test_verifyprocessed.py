@@ -34,7 +34,7 @@ class TestVerifyProcessed:
     def create_raw_crash_in_s3(self, boto_helper, crash_id):
         boto_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
-            key="v2/raw_crash/%s/%s/%s" % (crash_id[0:3], TODAY, crash_id),
+            key="v1/raw_crash/%s/%s" % (TODAY, crash_id),
             data=b"test",
         )
 
