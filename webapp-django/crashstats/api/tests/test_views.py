@@ -633,7 +633,7 @@ class TestCrashVerify:
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        raw_crash_key = "v2/raw_crash/20%s/%s" % (uuid[-6:], uuid)
+        raw_crash_key = "v1/raw_crash/20%s/%s" % (uuid[-6:], uuid)
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key=raw_crash_key,

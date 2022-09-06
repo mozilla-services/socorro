@@ -44,11 +44,11 @@ do
     fi
 
     # Find the raw crash file
-    RAWCRASHFILE=$(find ${DATADIR}/v2/raw_crash/ -name $CRASHID -type f)
+    RAWCRASHFILE=$(find ${DATADIR}/v1/raw_crash/ -name $CRASHID -type f)
 
     timeout -s KILL 600 "${STACKWALKER}" \
         --raw-json $RAWCRASHFILE \
-        --symbols-url "https://s3-us-west-2.amazonaws.com/org.mozilla.crash-stats.symbols-public/v1" \
+        --symbols-url "https://symbols.mozilla.org/" \
         --symbols-cache /tmp/symbols/cache \
         --symbols-tmp /tmp/symbols/tmp \
         ${DATADIR}/v1/dump/$CRASHID
