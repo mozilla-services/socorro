@@ -12,7 +12,6 @@ from typing import Any
 from urllib.parse import unquote_plus, urlparse, urlunparse
 from zlib import error as ZlibError
 
-from configman.dotdict import DotDict
 from glom import glom
 import markus
 import sentry_sdk
@@ -26,7 +25,6 @@ from socorro.lib.libdatetime import UTC
 from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import SocorroDataReducer
-from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
@@ -211,16 +209,10 @@ class ConvertModuleSignatureInfoRule(Rule):
     """
 
     def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
-        return "ModuleSignatureInfo" in raw_crash and not isinstance(
-            raw_crash["ModuleSignatureInfo"], str
-        )
+        return not isinstance(raw_crash.get("ModuleSignatureInfo", ""), str)
 
     def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
         info = raw_crash["ModuleSignatureInfo"]
-        if isinstance(info, DotDict):
-            # Sometimes the value is a DotDict which json.dumps doesn't work with so
-            # convert it to a dict first
-            info = dotdict_to_dict(info)
         raw_crash["ModuleSignatureInfo"] = json.dumps(info)
 
 

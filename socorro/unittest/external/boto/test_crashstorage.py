@@ -5,7 +5,6 @@
 import json
 import os.path
 
-from configman.dotdict import DotDict
 import pytest
 
 from socorro.external.boto.crashstorage import (
@@ -345,16 +344,14 @@ class TestBotoS3CrashStorage:
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
-        processed_crash = DotDict(
-            {
-                "a": {"b": {"c": 11}},
-                "sensitive": {"x": 2},
-                "not_url": "not a url",
-                # These keys do not survive redaction
-                "url": "http://example.com",
-                "json_dump": {"sensitive": 22},
-            }
-        )
+        processed_crash = {
+            "a": {"b": {"c": 11}},
+            "sensitive": {"x": 2},
+            "not_url": "not a url",
+            # These keys do not survive redaction
+            "url": "http://example.com",
+            "json_dump": {"sensitive": 22},
+        }
 
         boto_helper.upload_fileobj(
             bucket_name=bucket,

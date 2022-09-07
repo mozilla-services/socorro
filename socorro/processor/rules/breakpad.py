@@ -14,7 +14,6 @@ import threading
 import glom
 import markus
 
-from socorro.lib.util import dotdict_to_dict
 from socorro.processor.rules.base import Rule
 
 
@@ -72,7 +71,7 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
     """Saves JSON data to file, returns path, and deletes file when done.
 
     :param tmp_path: str path to temp storage
-    :param raw_crash: dotdict or dict of raw crash data
+    :param raw_crash: dict of raw crash data
     :param crash_id: crash id for this crash report
 
     :yields: absolute path to temp file
@@ -83,7 +82,7 @@ def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
         tmp_path, f"{crash_id}.{threading.currentThread().getName()}.TEMPORARY.json"
     )
     with open(path, "w") as fp:
-        json.dump(dotdict_to_dict(raw_crash), fp)
+        json.dump(raw_crash, fp)
 
     try:
         yield path

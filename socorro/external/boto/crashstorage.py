@@ -8,7 +8,6 @@ import logging
 
 from configman import Namespace
 from configman.converters import class_converter
-from configman.dotdict import DotDict
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -22,7 +21,6 @@ from socorro.lib.libsocorrodataschema import (
     transform_schema,
 )
 from socorro.lib.libooid import date_from_ooid
-from socorro.lib.util import dotdict_to_dict
 from socorro.schemas import PROCESSED_CRASH_SCHEMA, TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
@@ -117,8 +115,6 @@ class JSONISOEncoder(json.JSONEncoder):
 
 
 def dict_to_str(a_mapping):
-    if isinstance(a_mapping, DotDict):
-        a_mapping = dotdict_to_dict(a_mapping)
     return json.dumps(a_mapping, cls=JSONISOEncoder)
 
 
@@ -152,11 +148,6 @@ class BotoS3CrashStorage(CrashStorageBase):
         doc="the suffix used to identify a dump file (for use in temp files)",
         default=".dump",
         reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "json_object_hook",
-        default="configman.dotdict.DotDict",
-        from_string_converter=class_converter,
     )
 
     def __init__(self, config, namespace=""):
@@ -202,7 +193,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     def get_raw_crash(self, crash_id):
         """Get the raw crash file for the given crash id
 
-        :returns: DotDict
+        :returns: dict
 
         :raises CrashIDNotFound: if the crash doesn't exist
 
@@ -210,9 +201,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         for path in build_keys("raw_crash", crash_id):
             try:
                 raw_crash_as_string = self.conn.load_file(path)
-                return json.loads(
-                    raw_crash_as_string, object_hook=self.config.json_object_hook
-                )
+                return json.loads(raw_crash_as_string)
             except self.conn.KeyNotFound:
                 continue
 
@@ -277,7 +266,7 @@ class BotoS3CrashStorage(CrashStorageBase):
     def get_processed(self, crash_id):
         """Get the processed crash.
 
-        :returns: DotDict
+        :returns: dict
 
         :raises CrashIDNotFound: if file does not exist
 
@@ -285,9 +274,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         path = build_keys("processed_crash", crash_id)[0]
         try:
             processed_crash_as_string = self.conn.load_file(path)
-            return json.loads(
-                processed_crash_as_string, object_hook=self.config.json_object_hook
-            )
+            return json.loads(processed_crash_as_string)
         except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
@@ -358,7 +345,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     def get_processed(self, crash_id):
         """Get a crash report from the S3 bucket.
 
-        :returns: DotDict
+        :returns: dict
 
         :raises CrashIDNotFound: if file does not exist
 
@@ -366,8 +353,6 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         path = build_keys("crash_report", crash_id)[0]
         try:
             crash_report_as_str = self.conn.load_file(path)
-            return json.loads(
-                crash_report_as_str, object_hook=self.config.json_object_hook
-            )
+            return json.loads(crash_report_as_str)
         except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))

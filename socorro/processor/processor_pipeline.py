@@ -13,7 +13,6 @@ import tempfile
 
 from configman import Namespace, RequiredConfig
 from configman.converters import str_to_list
-from configman.dotdict import DotDict
 import sentry_sdk
 
 from socorro.lib.libdatetime import date_to_string, utc_now
@@ -239,16 +238,16 @@ class ProcessorPipeline(RequiredConfig):
         # processor_meta_data will be used to ferry "inside information" to
         # transformation rules. Sometimes rules need a bit more extra
         # information about the transformation process itself.
-        processor_meta_data = DotDict()
-        processor_meta_data.processor = self
-        processor_meta_data.config = self.config
-        processor_meta_data.processor_notes = []
+        processor_meta_data = {}
+        processor_meta_data["processor"] = self
+        processor_meta_data["config"] = self.config
+        processor_meta_data["processor_notes"] = []
 
         processed_crash["success"] = False
         start_time = utc_now()
         processed_crash["started_datetime"] = date_to_string(start_time)
 
-        processor_meta_data.processor_notes.append(
+        processor_meta_data["processor_notes"].append(
             f">>> Start processing: {start_time} ({self.host_id})"
         )
 
@@ -258,13 +257,13 @@ class ProcessorPipeline(RequiredConfig):
 
         ruleset = self.rulesets.get(ruleset_name)
         if ruleset is None:
-            processor_meta_data.processor_notes.append(
+            processor_meta_data["processor_notes"].append(
                 f"error: no ruleset: {ruleset_name}"
             )
             return processed_crash
 
         self.logger.info(f"starting transform {ruleset_name} for crash: {crash_id}")
-        processor_meta_data.started_timestamp = utc_now()
+        processor_meta_data["started_timestamp"] = utc_now()
 
         # Apply rules; if a rule fails, capture the error and continue onward
         for rule in ruleset:
@@ -291,7 +290,7 @@ class ProcessorPipeline(RequiredConfig):
 
                     # NOTE(willkg): notes are public, so we can't put exception
                     # messages in them
-                    processor_meta_data.processor_notes.append(
+                    processor_meta_data["processor_notes"].append(
                         f"ruleset {ruleset_name!r} rule {rule.name!r} failed: "
                         f"{exc.__class__.__name__}"
                     )
@@ -304,17 +303,17 @@ class ProcessorPipeline(RequiredConfig):
         if processed_crash.get("processor_notes"):
             previous_notes = processed_crash["processor_notes"]
             previous_notes = [line.strip() for line in previous_notes.split("\n")]
-            processor_meta_data.processor_notes.extend(previous_notes)
+            processor_meta_data["processor_notes"].extend(previous_notes)
 
         processed_crash["processor_notes"] = "\n".join(
-            processor_meta_data.processor_notes
+            processor_meta_data["processor_notes"]
         )
         completed_datetime = utc_now()
         processed_crash["completed_datetime"] = date_to_string(completed_datetime)
 
         self.logger.info(
             "finishing %s transform for crash: %s",
-            "successful" if processed_crash.success else "failed",
+            "successful" if processed_crash["success"] else "failed",
             crash_id,
         )
         return processed_crash

@@ -11,7 +11,6 @@ import time
 
 from configman import Namespace
 from configman.converters import class_converter
-from configman.dotdict import DotDict
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
@@ -28,7 +27,6 @@ from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.libdockerflow import get_release_name
-from socorro.lib.util import dotdict_to_dict
 
 
 CONFIG_DEFAULTS = {
@@ -217,7 +215,7 @@ class ProcessorApp(FetchTransformSaveApp):
                 new_crash = False
             except CrashIDNotFound:
                 new_crash = True
-                processed_crash = DotDict()
+                processed_crash = {}
 
             # Process the crash and remove any temporary artifacts from disk
             try:
@@ -225,11 +223,6 @@ class ProcessorApp(FetchTransformSaveApp):
                 processed_crash = self.processor.process_crash(
                     ruleset_name, raw_crash, dumps, processed_crash
                 )
-
-                # Convert the raw and processed crashes from DotDict into Python
-                # standard data structures
-                raw_crash = dotdict_to_dict(raw_crash)
-                processed_crash = dotdict_to_dict(processed_crash)
 
                 self.destination.save_processed_crash(raw_crash, processed_crash)
                 self.logger.info("saved - %s", crash_id)
