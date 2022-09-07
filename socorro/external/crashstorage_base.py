@@ -155,7 +155,7 @@ class CrashStorageBase(RequiredConfig):
 
         :param crash_id: crash report id for data to fetch
 
-        :returns: DotDict of raw crash data
+        :returns: dict of raw crash data
 
         """
         raise NotImplementedError("get_raw_crash is not implemented")
@@ -196,7 +196,7 @@ class CrashStorageBase(RequiredConfig):
 
         :arg crash_id: crash report id
 
-        :returns: DotDict
+        :returns: dict of processed crash data
 
         """
         raise NotImplementedError("get_processed is not implemented")

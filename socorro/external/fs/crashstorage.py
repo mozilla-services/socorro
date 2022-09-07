@@ -9,7 +9,6 @@ from io import BytesIO
 import os
 
 from configman import Namespace
-from configman.dotdict import DotDict
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -203,7 +202,7 @@ class FSPermanentStorage(CrashStorageBase):
         with open(
             os.sep.join([parent_dir, crash_id + self.config.json_file_suffix])
         ) as f:
-            return json.load(f, object_hook=DotDict)
+            return json.load(f)
 
     def get_raw_dump(self, crash_id, name=None):
         parent_dir = self._get_radixed_parent_directory(crash_id)
@@ -243,7 +242,7 @@ class FSPermanentStorage(CrashStorageBase):
         if not os.path.exists(pathname):
             raise CrashIDNotFound
         with closing(gzip.GzipFile(pathname, "rb")) as f:
-            return json.load(f, object_hook=DotDict)
+            return json.load(f)
 
     def _get_radixed_parent_directory(self, crash_id):
         return os.sep.join(

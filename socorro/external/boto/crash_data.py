@@ -17,19 +17,12 @@ class SimplifiedCrashData(BotoS3CrashStorage):
 
     The difference between this and the base CrashData class is that this one
     only makes the get() and if it fails it does NOT try to put the crash ID
-    back into the priority jobs queue. Also, it returns a python dict instead
-    of a DotDict which makes this easier to work with from the webapp's model
-    bridge.
+    back into the priority jobs queue.
 
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Forcibly set this to override the default in the base
-        # crash storage class for boto. We're confident that at this
-        # leaf point we want to NOT return a DotDict but just a plain
-        # python dict.
-        self.config.json_object_hook = dict
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def get(self, **kwargs):
@@ -80,13 +73,6 @@ class SimplifiedCrashData(BotoS3CrashStorage):
 
 class TelemetryCrashData(TelemetryBotoS3CrashStorage):
     """Fetches data from TelemetryBotoS3CrashStorage"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Forcibly set this to override the default in the base crash storage
-        # class for boto. We're confident that at this leaf point we want to
-        # NOT return a DotDict but just a plain python dict.
-        self.config.json_object_hook = dict
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""
