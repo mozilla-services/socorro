@@ -25,13 +25,13 @@ class Rule:
     def name(self):
         return self.__class__.__module__ + "." + self.__class__.__name__
 
-    def predicate(self, raw_crash, dumps, processed_crash, processor_meta_data):
+    def predicate(self, raw_crash, dumps, processed_crash, status):
         """Determines whether to run the action for this crash
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
-        :arg processor_meta_data: any notes or bookkeeping we need to keep about
+        :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
         :returns: True if the action should run, False otherwise
@@ -39,25 +39,25 @@ class Rule:
         """
         return True
 
-    def action(self, raw_crash, dumps, processed_crash, processor_meta_data):
+    def action(self, raw_crash, dumps, processed_crash, status):
         """Executes the rule transforming the crash data
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
-        :arg processor_meta_data: any notes or bookkeeping we need to keep about
+        :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
         """
         return
 
-    def act(self, raw_crash, dumps, processed_crash, processor_meta_data):
+    def act(self, raw_crash, dumps, processed_crash, status):
         """Runs predicate and action for a rule
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
-        :arg processor_meta_data: any notes or bookkeeping we need to keep about
+        :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
         """
@@ -67,14 +67,14 @@ class Rule:
                 raw_crash=raw_crash,
                 dumps=dumps,
                 processed_crash=processed_crash,
-                processor_meta_data=processor_meta_data,
+                status=status,
             )
             if ret:
                 self.action(
                     raw_crash=raw_crash,
                     dumps=dumps,
                     processed_crash=processed_crash,
-                    processor_meta_data=processor_meta_data,
+                    status=status,
                 )
 
     def close(self):

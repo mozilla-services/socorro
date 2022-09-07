@@ -27,7 +27,3 @@ def create_basic_fake_processor():
 
 def get_basic_config():
     return DotDict()
-
-
-def get_basic_processor_meta_data():
-    return {"processor_notes": []}

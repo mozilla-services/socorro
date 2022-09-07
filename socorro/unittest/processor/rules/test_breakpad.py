@@ -9,14 +9,13 @@ from unittest import mock
 from markus.testing import MetricsMock
 
 from socorro.lib.libsocorrodataschema import validate_instance
-from socorro.processor.processor_pipeline import ProcessorPipeline
+from socorro.processor.processor_pipeline import ProcessorPipeline, Status
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256Rule,
     MinidumpStackwalkRule,
 )
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
-from socorro.unittest.processor import get_basic_processor_meta_data
 
 
 example_uuid = "00000000-0000-0000-0000-000002140504"
@@ -181,10 +180,10 @@ class TestCrashingThreadInfoRule:
             }
         }
         validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["crashing_thread"] == 0
         assert processed_crash["crashing_thread_name"] == "MainThread"
@@ -197,23 +196,23 @@ class TestCrashingThreadInfoRule:
         dumps = {}
         processed_crash = {}
         validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_empty_json_dump(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {"json_dump": {}}
         validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["crashing_thread"] is None
         assert processed_crash["crashing_thread_name"] is None
@@ -226,26 +225,21 @@ class TestMinidumpSha256HashRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MinidumpSha256Rule()
-        assert (
-            rule.predicate(raw_crash, dumps, processed_crash, processor_meta) is False
-        )
+        assert rule.predicate(raw_crash, dumps, processed_crash, status) is False
 
     def test_hash_in_raw_crash(self):
         raw_crash = {"MinidumpSha256Hash": "hash"}
         dumps = {}
         processed_crash = {}
-        processor_meta_data = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MinidumpSha256Rule()
-        assert (
-            rule.predicate(raw_crash, dumps, processed_crash, processor_meta_data)
-            is True
-        )
+        assert rule.predicate(raw_crash, dumps, processed_crash, status) is True
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta_data)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
 
@@ -404,7 +398,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with MetricsMock() as mm:
             with mock.patch(
@@ -416,7 +410,7 @@ class TestMinidumpStackwalkRule:
                     stderr=b"",
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, processor_meta)
+                rule.act(raw_crash, dumps, processed_crash, status)
 
             expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
 
@@ -440,7 +434,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with MetricsMock() as mm:
             with mock.patch(
@@ -450,13 +444,13 @@ class TestMinidumpStackwalkRule:
                     returncode=124, stdout=b"{}\n", stderr=b""
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, processor_meta)
+                rule.act(raw_crash, dumps, processed_crash, status)
 
             assert processed_crash["mdsw_return_code"] == 124
             assert processed_crash["mdsw_status_string"] == "unknown error"
             assert processed_crash["stackwalk_version"] == rule.stackwalk_version
             assert processed_crash["success"] is False
-            assert processor_meta["processor_notes"] == [
+            assert status.notes == [
                 "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
             ]
 
@@ -474,7 +468,7 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with mock.patch(
             "socorro.processor.rules.breakpad.subprocess"
@@ -483,7 +477,7 @@ class TestMinidumpStackwalkRule:
                 returncode=-1, stdout=b"{ff", stderr=b"boo hiss"
             )
 
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
@@ -491,7 +485,7 @@ class TestMinidumpStackwalkRule:
         assert processed_crash["stackwalk_version"] == rule.stackwalk_version
         assert not processed_crash["success"]
         assert (
-            processor_meta["processor_notes"][0]
+            status.notes[0]
             == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
         )
 
@@ -505,9 +499,9 @@ class TestMinidumpStackwalkRule:
         raw_crash = {"uuid": example_uuid}
         dumps = {rule.dump_field: str(dumppath)}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["mdsw_status_string"] == "EmptyMinidump"
         assert processed_crash["mdsw_stderr"] == "Shortcut for 0-bytes minidump."

@@ -13,7 +13,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
-from socorro.unittest.processor import get_basic_processor_meta_data
+from socorro.processor.processor_pipeline import Status
 
 
 canonical_standard_raw_crash = {
@@ -129,7 +129,7 @@ class TestDeNullRule:
         raw_crash = {"key1": "val1", b"\0key2": b"val2\0", "\0key3": "\0val3"}
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, get_basic_processor_meta_data())
+        rule.act(raw_crash, {}, {}, Status())
 
         assert raw_crash == {"key1": "val1", b"key2": b"val2", "key3": "val3"}
 
@@ -138,7 +138,7 @@ class TestDeNullRule:
         raw_crash = DotDict({"key1": "val1", "\0key2": b"val2\0", "\0key3": "\0val3"})
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, get_basic_processor_meta_data())
+        rule.act(raw_crash, {}, {}, Status())
 
         assert raw_crash == DotDict({"key1": "val1", "key2": b"val2", "key3": "val3"})
 
@@ -149,10 +149,10 @@ class TestIdentifierRule:
         raw_crash = {"uuid": uuid}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["crash_id"] == uuid
         assert processed_crash["uuid"] == uuid
@@ -161,10 +161,10 @@ class TestIdentifierRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         # raw crash and processed crashes should be unchanged
         assert raw_crash == {}
@@ -175,29 +175,29 @@ class TestCPUInfoRule:
     def test_cpu_count(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
         processed_crash = {"json_dump": {"system_info": {"cpu_count": 4}}}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_count"] == 4
 
     def test_cpu_count_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_count"] == 0
 
     def test_cpu_info(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
@@ -208,7 +208,7 @@ class TestCPUInfoRule:
                 }
             }
         }
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert (
             processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
         )
@@ -216,36 +216,36 @@ class TestCPUInfoRule:
     def test_cpu_info_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_info"] == "unknown"
 
     def test_cpu_arch_no_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
         # If there's no information, then it should be "unknown"
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_arch"] == "unknown"
 
     def test_cpu_arch_from_json_dump(self):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
 
         # If it's in the minidump-stackwalk output, use that
         processed_crash = {"json_dump": {"system_info": {"cpu_arch": "x86"}}}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_arch"] == "x86"
 
     @pytest.mark.parametrize(
@@ -261,10 +261,10 @@ class TestCPUInfoRule:
         raw_crash = {"Android_CPU_ABI": android_cpu_abi}
         processed_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_arch"] == expected
 
 
@@ -279,12 +279,12 @@ class TestOSInfoRule:
                 }
             }
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = OSInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, {}, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, status)
 
         assert processed_crash["os_name"] == "Windows NT"
         assert processed_crash["os_version"] == "6.1.7601 Service Pack 1"
@@ -295,12 +295,12 @@ class TestOSInfoRule:
     def test_stuff_missing(self):
         raw_crash = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = OSInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, {}, processed_crash, processor_meta)
+        rule.act(raw_crash, {}, processed_crash, status)
 
         # processed crash should have empties
         assert processed_crash["os_name"] == "Unknown"
@@ -323,13 +323,13 @@ class TestCrashReportKeysRule:
             "upload_file_minidump_flash1": "fake data",
         }
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = CrashReportKeysRule()
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
         assert processed_crash == {
             "crash_report_keys": [
                 "Product",
