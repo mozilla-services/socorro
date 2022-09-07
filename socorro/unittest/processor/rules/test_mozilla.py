@@ -43,8 +43,8 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
     validate_breadcrumbs,
 )
+from socorro.processor.processor_pipeline import Status
 from socorro.signature.generator import SignatureGenerator
-from socorro.unittest.processor import get_basic_processor_meta_data
 
 
 canonical_standard_raw_crash = {
@@ -206,11 +206,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash == {}
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_boolean(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -220,21 +220,21 @@ class TestCopyFromRawCrashRule:
             raw_crash = {copy_item.annotation: value}
             dumps = {}
             processed_crash = {}
-            processor_meta = get_basic_processor_meta_data()
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            status = Status()
+            rule.act(raw_crash, dumps, processed_crash, status)
 
             assert processed_crash == {copy_item.key: True}
-            assert processor_meta["processor_notes"] == []
+            assert status.notes == []
 
         for value in ("0", "false", "FALSE"):
             raw_crash = {copy_item.annotation: value}
             dumps = {}
             processed_crash = {}
-            processor_meta = get_basic_processor_meta_data()
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            status = Status()
+            rule.act(raw_crash, dumps, processed_crash, status)
 
             assert processed_crash == {copy_item.key: False}
-            assert processor_meta["processor_notes"] == []
+            assert status.notes == []
 
     def test_invalid_boolean(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -243,13 +243,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [
-            f"{copy_item.annotation} has non-boolean value foo"
-        ]
+        assert status.notes == [f"{copy_item.annotation} has non-boolean value foo"]
 
     def test_integer(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -258,11 +256,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "1"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: 1}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_invalid_integer(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -271,13 +269,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [
-            f"{copy_item.annotation} has a non-int value"
-        ]
+        assert status.notes == [f"{copy_item.annotation} has a non-int value"]
 
     def test_number(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -286,11 +282,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "10.0"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: 10.0}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_invalid_number(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -299,13 +295,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "foo"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert processor_meta["processor_notes"] == [
-            f"{copy_item.annotation} has a non-float value"
-        ]
+        assert status.notes == [f"{copy_item.annotation} has a non-float value"]
 
     def test_string(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -314,11 +308,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "some string"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: "some string"}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_object(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -335,11 +329,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: json.dumps(json_data)}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: json_data}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_object_invalid_json(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -348,13 +342,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "{"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert copy_item.key not in processed_crash
-        assert processor_meta["processor_notes"] == [
-            "ComplexStructure value is malformed json"
-        ]
+        assert status.notes == ["ComplexStructure value is malformed json"]
 
     def test_object_invalid_value(self):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
@@ -371,13 +363,11 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: json.dumps(json_data)}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert copy_item.key not in processed_crash
-        assert processor_meta["processor_notes"] == [
-            "ComplexStructure value is malformed complex_structure"
-        ]
+        assert status.notes == ["ComplexStructure value is malformed complex_structure"]
 
     def test_default(self):
         # Verify that the default is used if the annotation is missing
@@ -387,20 +377,20 @@ class TestCopyFromRawCrashRule:
         raw_crash = {copy_item.annotation: "gpu"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: "gpu"}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {copy_item.key: copy_item.default}
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
 
 class TestConvertModuleSignatureInfoRule:
@@ -408,10 +398,10 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ConvertModuleSignatureInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash == {}
         assert processed_crash == {}
 
@@ -419,10 +409,10 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": "{}"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ConvertModuleSignatureInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash == {"ModuleSignatureInfo": "{}"}
         assert processed_crash == {}
 
@@ -430,10 +420,10 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ConvertModuleSignatureInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash == {"ModuleSignatureInfo": '{"foo": "bar"}'}
         assert processed_crash == {}
 
@@ -441,10 +431,10 @@ class TestConvertModuleSignatureInfoRule:
         raw_crash = {"ModuleSignatureInfo": {"foo": "bar"}}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ConvertModuleSignatureInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash == {"ModuleSignatureInfo": '{"foo": "bar"}'}
         assert processed_crash == {}
 
@@ -485,9 +475,9 @@ class TestSubmittedFromRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
         rule = SubmittedFromRule()
-        rule.action(raw_crash, dumps, processed_crash, processor_meta)
+        rule.action(raw_crash, dumps, processed_crash, status)
         assert processed_crash == {
             "submitted_from": expected_submitted_from,
             "submitted_from_infobar": expected_submitted_from_infobar,
@@ -499,10 +489,10 @@ class TestProductRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ProductRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["product"] == "Firefox"
         assert processed_crash["version"] == "12.0"
@@ -519,10 +509,10 @@ class TestProductRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ProductRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["product"] == "Firefox"
         assert processed_crash["version"] == ""
@@ -538,10 +528,10 @@ class TestPluginRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert "plugin_filename" not in processed_crash
         assert "plugin_name" not in processed_crash
@@ -556,10 +546,10 @@ class TestPluginRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         expected = {
             "plugin_name": "name1",
@@ -574,10 +564,10 @@ class TestAccessibilityRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = AccessibilityRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["accessibility"] is False
 
@@ -585,10 +575,10 @@ class TestAccessibilityRule:
         raw_crash = {"Accessibility": "Active"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = AccessibilityRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["accessibility"] is True
 
@@ -598,10 +588,10 @@ class TestAddonsRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         addons_rule = AddonsRule()
-        addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        addons_rule.act(raw_crash, dumps, processed_crash, status)
 
         # the raw crash & dumps should not have changed
         assert raw_crash == canonical_standard_raw_crash
@@ -629,10 +619,10 @@ class TestAddonsRule:
         raw_crash["EMCheckCompatibility"] = "Nope"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         addons_rule = AddonsRule()
-        addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        addons_rule.act(raw_crash, dumps, processed_crash, status)
 
         expected_addon_list = ["adblockpopups@jessehakanen.net:0:3:1"]
         assert processed_crash["addons"] == expected_addon_list
@@ -643,10 +633,10 @@ class TestAddonsRule:
         raw_crash["Add-ons"] = "naoenut813teq;mz;<[`19ntaotannn8999anxse `"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         addons_rule = AddonsRule()
-        addons_rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        addons_rule.act(raw_crash, dumps, processed_crash, status)
 
         expected_addon_list = ["naoenut813teq;mz;<[`19ntaotannn8999anxse `:NO_VERSION"]
         assert processed_crash["addons"] == expected_addon_list
@@ -656,30 +646,30 @@ class TestAddonsRule:
 class TestDatesAndTimesRule:
     def test_get_truncate_or_warn(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        processor_notes = []
+        status = Status()
         ret = DatesAndTimesRule._get_truncate_or_warn(
-            raw_crash, "submitted_timestamp", processor_notes, "", 50
+            raw_crash, "submitted_timestamp", status, "", 50
         )
         assert ret == "2012-05-08T23:26:33.454482+00:00"
-        assert processor_notes == []
+        assert status.notes == []
 
-        processor_notes = []
+        status = Status()
         ret = DatesAndTimesRule._get_truncate_or_warn(
             raw_crash,
             "terrible_timestamp",
-            processor_notes,
+            status,
             "2012-05-08T23:26:33.454482+00:00",
             "50",
         )
         assert ret == "2012-05-08T23:26:33.454482+00:00"
-        assert processor_notes == ["WARNING: raw_crash missing terrible_timestamp"]
+        assert status.notes == ["WARNING: raw_crash missing terrible_timestamp"]
 
         raw_crash["submitted_timestamp"] = 17
-        processor_notes = []
+        status = Status()
         ret = DatesAndTimesRule._get_truncate_or_warn(
             raw_crash,
             "submitted_timestamp",
-            processor_notes,
+            status,
             "2012-05-08T23:26:33.454482+00:00",
             "50",
         )
@@ -689,11 +679,10 @@ class TestDatesAndTimesRule:
             val[:1]
         except TypeError as err:
             type_error_value = str(err)
-        expected = [
+        assert status.notes == [
             "WARNING: raw_crash[submitted_timestamp] contains unexpected "
             "value: 17; %s" % type_error_value
         ]
-        assert processor_notes == expected
 
     def test_everything_we_hoped_for(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -701,10 +690,10 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
@@ -725,10 +714,10 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         expected = datetime.datetime.fromisoformat(raw_crash["submitted_timestamp"])
         expected_timestamp = int(expected.timestamp())
@@ -744,21 +733,20 @@ class TestDatesAndTimesRule:
         assert processed_crash["uptime"] == 20155
         assert processed_crash["last_crash"] == 86985
 
-        expected = [
+        assert status.notes == [
             "WARNING: raw_crash missing CrashTime",
             "client_crash_date is unknown",
         ]
-        assert processor_meta["processor_notes"] == expected
 
     def test_no_startup_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         del raw_crash["StartupTime"]
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
@@ -771,7 +759,7 @@ class TestDatesAndTimesRule:
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 0
         assert processed_crash["last_crash"] == 86985
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_bad_install_time(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
@@ -780,10 +768,10 @@ class TestDatesAndTimesRule:
         processed_crash = {
             "startup_time": raw_crash["StartupTime"],
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
@@ -796,19 +784,17 @@ class TestDatesAndTimesRule:
         assert processed_crash["install_age"] == 1336519554
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] == 86985
-        assert processor_meta["processor_notes"] == [
-            'non-integer value of "InstallTime"'
-        ]
+        assert status.notes == ['non-integer value of "InstallTime"']
 
     def test_bad_seconds_since_last_crash(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["SecondsSinceLastCrash"] = "feed the goats"
         dumps = {}
         processed_crash = {"startup_time": raw_crash["StartupTime"]}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
@@ -821,19 +807,17 @@ class TestDatesAndTimesRule:
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] is None
-        assert processor_meta["processor_notes"] == [
-            'non-integer value of "SecondsSinceLastCrash"'
-        ]
+        assert status.notes == ['non-integer value of "SecondsSinceLastCrash"']
 
     def test_absent_seconds_since_last_crash(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash.pop("SecondsSinceLastCrash")
         dumps = {}
         processed_crash = {"startup_time": raw_crash["StartupTime"]}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = DatesAndTimesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["submitted_timestamp"] == raw_crash["submitted_timestamp"]
@@ -846,7 +830,7 @@ class TestDatesAndTimesRule:
         assert processed_crash["install_age"] == 1079662
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] is None
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
 
 class TestMacCrashInfoRule:
@@ -866,10 +850,10 @@ class TestMacCrashInfoRule:
     def test_mac_crash_info_variations(self, processed, expected):
         raw_crash = {}
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
         rule = MacCrashInfoRule()
 
-        rule.action(raw_crash, dumps, processed, processor_meta)
+        rule.action(raw_crash, dumps, processed, status)
 
         assert ("mac_crash_info" in processed) == expected
 
@@ -886,10 +870,10 @@ class TestMacCrashInfoRule:
                 },
             }
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MacCrashInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["mac_crash_info"] == (
             '{"num_records": 1, "records": [{"thread": null}]}'
@@ -915,10 +899,10 @@ class TestMajorVersionRule:
             raw_crash["Version"] = version
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MajorVersionRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["major_version"] == expected
 
@@ -950,13 +934,12 @@ def test_validate_breadcrumbs(data, expected):
 class TestBreadcrumbRule:
     def test_basic(self):
         raw_crash = {"Breadcrumbs": json.dumps([{"timestamp": "2021-01-07T16:09:31"}])}
-
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = BreadcrumbsRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
 
@@ -966,13 +949,12 @@ class TestBreadcrumbRule:
                 {"values": [{"timestamp": "2021-01-07T16:09:31"}]}
             )
         }
-
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = BreadcrumbsRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
 
@@ -980,25 +962,23 @@ class TestBreadcrumbRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
+
         rule = BreadcrumbsRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash == {}
 
     def test_malformed(self):
         raw_crash = {"Breadcrumbs": "{}"}
-
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = BreadcrumbsRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert processor_meta == {
-            "processor_notes": ["Breadcrumbs: malformed: not a list"]
-        }
+        assert status.notes == ["Breadcrumbs: malformed: not a list"]
 
 
 class TestJavaProcessRule:
@@ -1013,10 +993,10 @@ class TestJavaProcessRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         # The entire JavaStackTrace blob
         assert processed_crash["java_stack_trace_raw"] == raw_crash["JavaStackTrace"]
@@ -1033,10 +1013,10 @@ class TestJavaProcessRule:
 
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         # The entire JavaStackTrace blob
         assert processed_crash["java_stack_trace_raw"] == raw_crash["JavaStackTrace"]
@@ -1045,7 +1025,7 @@ class TestJavaProcessRule:
         assert processed_crash["java_stack_trace"] == "malformed"
 
         # Make sure there's a note in the notes about it
-        assert "malformed JavaStackTrace" in processor_meta["processor_notes"][0]
+        assert "malformed JavaStackTrace" in status.notes[0]
 
 
 class TestModuleURLRewriteRule:
@@ -1062,17 +1042,20 @@ class TestModuleURLRewriteRule:
         ],
     )
     def test_predicate(self, processed, expected):
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
+
         rule = ModuleURLRewriteRule()
-        assert rule.predicate({}, {}, processed, processor_meta) == expected
+        assert rule.predicate({}, {}, processed, status) == expected
 
     def test_action_no_modules(self):
         processed = {"json_dump": {"modules": []}}
+        status = Status()
+
         # The rule shouldn't change the processed crash at all
         expected = copy.deepcopy(processed)
-        processor_meta = get_basic_processor_meta_data()
+
         rule = ModuleURLRewriteRule()
-        rule.act({}, {}, processed, processor_meta)
+        rule.act({}, {}, processed, status)
         assert processed == expected
 
     def test_rewrite_no_url(self):
@@ -1094,11 +1077,13 @@ class TestModuleURLRewriteRule:
                 ]
             }
         }
+        status = Status()
+
         # The rule shouldn't change the processed crash at all
         expected = copy.deepcopy(processed)
-        processor_meta = get_basic_processor_meta_data()
+
         rule = ModuleURLRewriteRule()
-        rule.act({}, {}, processed, processor_meta)
+        rule.act({}, {}, processed, status)
         assert processed == expected
 
     @pytest.mark.parametrize(
@@ -1145,9 +1130,10 @@ class TestModuleURLRewriteRule:
                 ]
             }
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
+
         rule = ModuleURLRewriteRule()
-        rule.act({}, {}, processed, processor_meta)
+        rule.act({}, {}, processed, status)
         assert processed["json_dump"]["modules"][0]["symbol_url"] == expected
 
 
@@ -1156,49 +1142,51 @@ class TestMozCrashReasonRule:
         raw_crash = {}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MozCrashReasonRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash == {}
 
     def test_good_mozcrashreason(self):
         raw_crash = {"MozCrashReason": "MOZ_CRASH(OOM)"}
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = MozCrashReasonRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash == {
             "moz_crash_reason_raw": "MOZ_CRASH(OOM)",
             "moz_crash_reason": "MOZ_CRASH(OOM)",
         }
 
-    def test_bad_mozcrashreason(self):
-        rule = MozCrashReasonRule()
-
-        bad_reasons = [
+    @pytest.mark.parametrize(
+        "bad_reason",
+        [
             "byte index 21548 is not a char boundary",
             'Failed to load module "jar:file..."'
             "do not use eval with system privileges: jar:file...",
-        ]
-        for reason in bad_reasons:
-            raw_crash = {"MozCrashReason": reason}
-            dumps = {}
-            processed_crash = {}
-            processor_meta = get_basic_processor_meta_data()
+        ],
+    )
+    def test_bad_mozcrashreason(self, bad_reason):
+        rule = MozCrashReasonRule()
 
-            rule.action(raw_crash, dumps, processed_crash, processor_meta)
-            assert processed_crash == {
-                "moz_crash_reason_raw": reason,
-                "moz_crash_reason": "sanitized--see moz_crash_reason_raw",
-            }
+        raw_crash = {"MozCrashReason": bad_reason}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule.action(raw_crash, dumps, processed_crash, status)
+        assert processed_crash == {
+            "moz_crash_reason_raw": bad_reason,
+            "moz_crash_reason": "sanitized--see moz_crash_reason_raw",
+        }
 
 
 class TestOutOfMemoryBinaryRule:
     def test_extract_memory_info(self):
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1208,9 +1196,7 @@ class TestOutOfMemoryBinaryRule:
             rule = OutOfMemoryBinaryRule()
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 1024
-            memory = rule._extract_memory_info(
-                "a_pathname", processor_meta["processor_notes"]
-            )
+            memory = rule._extract_memory_info("a_pathname", status)
             mocked_gzip_open.assert_called_with("a_pathname", "rb")
             assert memory == {"mysterious": ["awesome", "memory"]}
 
@@ -1219,7 +1205,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1237,18 +1223,16 @@ class TestOutOfMemoryBinaryRule:
             # Stomp on the value to make it easier to test with
             rule.MAX_SIZE_UNCOMPRESSED = 5
 
-            memory = rule._extract_memory_info(
-                "a_pathname", processor_meta["processor_notes"]
-            )
+            memory = rule._extract_memory_info("a_pathname", status)
             expected_error_message = (
                 "Uncompressed memory info too large %d (max: %s)"
                 % (35, rule.MAX_SIZE_UNCOMPRESSED)
             )
             assert memory == {"ERROR": expected_error_message}
-            assert processor_meta["processor_notes"] == [expected_error_message]
+            assert status.notes == [expected_error_message]
             opened.close.assert_called_with()
 
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
             assert "memory_report" not in processed_crash
             assert processed_crash["memory_report_error"] == expected_error_message
 
@@ -1257,7 +1241,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1265,15 +1249,11 @@ class TestOutOfMemoryBinaryRule:
             mocked_gzip_open.side_effect = IOError
             rule = OutOfMemoryBinaryRule()
 
-            memory = rule._extract_memory_info(
-                "a_pathname", processor_meta["processor_notes"]
-            )
+            memory = rule._extract_memory_info("a_pathname", status)
             assert memory["ERROR"] == "error in gzip for a_pathname: OSError()"
-            assert processor_meta["processor_notes"] == [
-                "error in gzip for a_pathname: OSError()"
-            ]
+            assert status.notes == ["error in gzip for a_pathname: OSError()"]
 
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
             assert "memory_report" not in processed_crash
             assert (
                 processed_crash["memory_report_error"]
@@ -1285,7 +1265,7 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         with mock.patch(
             "socorro.processor.rules.mozilla.gzip.open"
@@ -1296,16 +1276,13 @@ class TestOutOfMemoryBinaryRule:
                 mocked_json_loads.side_effect = ValueError
 
                 rule = OutOfMemoryBinaryRule()
-                memory = rule._extract_memory_info(
-                    "a_pathname", processor_meta["processor_notes"]
-                )
+                memory = rule._extract_memory_info("a_pathname", status)
                 mocked_gzip_open.assert_called_with("a_pathname", "rb")
                 assert memory == {"ERROR": "error in json for a_pathname: ValueError()"}
-                expected = ["error in json for a_pathname: ValueError()"]
-                assert processor_meta["processor_notes"] == expected
+                assert status.notes == ["error in json for a_pathname: ValueError()"]
                 mocked_gzip_open.return_value.close.assert_called_with()
 
-                rule.act(raw_crash, dumps, processed_crash, processor_meta)
+                rule.act(raw_crash, dumps, processed_crash, status)
                 assert "memory_report" not in processed_crash
                 expected = "error in json for a_pathname: ValueError()"
                 assert processed_crash["memory_report_error"] == expected
@@ -1315,18 +1292,18 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {"memory_report": "a_pathname"}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         class MyOutOfMemoryBinaryRule(OutOfMemoryBinaryRule):
             @staticmethod
-            def _extract_memory_info(dump_pathname, processor_notes):
+            def _extract_memory_info(dump_pathname, status):
                 assert dump_pathname == dumps["memory_report"]
-                assert processor_notes == []
+                assert status.notes == []
                 return "mysterious-awesome-memory"
 
         with mock.patch("socorro.processor.rules.mozilla.temp_file_context"):
             rule = MyOutOfMemoryBinaryRule()
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
             assert processed_crash["memory_report"] == "mysterious-awesome-memory"
 
     def test_this_is_not_the_crash_you_are_looking_for(self):
@@ -1334,10 +1311,10 @@ class TestOutOfMemoryBinaryRule:
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = OutOfMemoryBinaryRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert "memory_report" not in processed_crash
 
@@ -1361,10 +1338,10 @@ class TestFenixVersionRewriteRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = FenixVersionRewriteRule()
-        ret = rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
+        ret = rule.predicate(raw_crash, dumps, processed_crash, status)
         assert ret == expected
 
     def test_act(self):
@@ -1374,14 +1351,12 @@ class TestFenixVersionRewriteRule:
         }
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = FenixVersionRewriteRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert raw_crash["Version"] == "0.0a1"
-        assert processor_meta["processor_notes"] == [
-            "Changed version from 'Nightly 200315 05:05' to 0.0a1"
-        ]
+        assert status.notes == ["Changed version from 'Nightly 200315 05:05' to 0.0a1"]
 
 
 class TestESRVersionRewrite:
@@ -1390,10 +1365,10 @@ class TestESRVersionRewrite:
         raw_crash["ReleaseChannel"] = "esr"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ESRVersionRewrite()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["Version"] == "12.0esr"
 
@@ -1405,10 +1380,10 @@ class TestESRVersionRewrite:
         raw_crash["ReleaseChannel"] = "not_esr"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ESRVersionRewrite()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["Version"] == "12.0"
 
@@ -1421,15 +1396,13 @@ class TestESRVersionRewrite:
         del raw_crash["Version"]
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ESRVersionRewrite()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert "Version" not in raw_crash
-        assert processor_meta["processor_notes"] == [
-            '"Version" missing from esr release raw_crash'
-        ]
+        assert status.notes == ['"Version" missing from esr release raw_crash']
 
         # processed_crash should be unchanged
         assert processed_crash == {}
@@ -1442,10 +1415,10 @@ class TestPluginContentURL:
         raw_crash["URL"] = "http://google.com"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginContentURL()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["URL"] == "http://mozilla.com"
 
@@ -1457,10 +1430,10 @@ class TestPluginContentURL:
         raw_crash["URL"] = "http://google.com"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginContentURL()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["URL"] == "http://google.com"
 
@@ -1475,10 +1448,10 @@ class TestPluginUserComment:
         raw_crash["Comments"] = "I wrote something here, too"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginUserComment()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["Comments"] == "I hate it when this happens"
 
@@ -1490,10 +1463,10 @@ class TestPluginUserComment:
         raw_crash["Comments"] = "I wrote something here"
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = PluginUserComment()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert raw_crash["Comments"] == "I wrote something here"
 
@@ -1550,10 +1523,10 @@ class TestFlashVersionRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = copy.deepcopy(canonical_processed_crash)
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = FlashVersionRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["flash_version"] == "9.1.3.08"
 
@@ -1578,10 +1551,10 @@ class TestTopMostFilesRule:
             "threads": [{"frames": [{"source": "dwight.dll"}, {"file": "wilma.cpp"}]}],
         }
 
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = TopMostFilesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["topmost_filenames"] == "wilma.cpp"
 
@@ -1593,10 +1566,10 @@ class TestTopMostFilesRule:
         expected_raw_crash = copy.deepcopy(raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = TopMostFilesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["topmost_filenames"] is None
 
@@ -1612,11 +1585,10 @@ class TestTopMostFilesRule:
                 "frames": [{"filename": "dwight.dll"}, {"filename": "wilma.cpp"}]
             }
         }
-
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = TopMostFilesRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["topmost_filenames"] is None
 
@@ -1642,11 +1614,10 @@ class TestModulesInStackRule:
                 ],
             },
         }
-
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ModulesInStackRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         assert (
             processed_crash["modules_in_stack"]
@@ -1686,10 +1657,10 @@ class TestModulesInStackRule:
         ],
     )
     def test_missing_things(self, processed_crash):
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
         rule = ModulesInStackRule()
 
-        rule.act({}, {}, processed_crash, processor_meta)
+        rule.act({}, {}, processed_crash, status)
         assert "modules_in_stack" not in processed_crash
 
     @pytest.mark.parametrize(
@@ -1735,12 +1706,10 @@ class TestBetaVersionRule:
             "version": "3.0",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
+
         rule = self.build_rule()
-        assert (
-            rule.predicate(raw_crash, dumps, processed_crash, processor_meta)
-            == expected
-        )
+        assert rule.predicate(raw_crash, dumps, processed_crash, status) == expected
 
     def test_beta_channel_known_version(self):
         # Beta channel with known version gets converted correctly
@@ -1752,7 +1721,7 @@ class TestBetaVersionRule:
             "version": "3.0",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1760,9 +1729,9 @@ class TestBetaVersionRule:
                 self.API_URL + "?product=Firefox&channel=beta&build_id=20001001101010",
                 json={"hits": [{"version_string": "3.0b1"}], "total": 1},
             )
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["version"] == "3.0b1"
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_release_channel(self):
         """Release channel doesn't trigger rule"""
@@ -1774,14 +1743,14 @@ class TestBetaVersionRule:
             "release_channel": "release",
             "build": "20000801101010",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker():
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["version"] == "2.0"
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_nightly_channel(self):
         """Nightly channel doesn't trigger rule"""
@@ -1793,14 +1762,14 @@ class TestBetaVersionRule:
             "release_channel": "nightly",
             "build": "20000105101010",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker():
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["version"] == "5.0a1"
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_bad_buildid(self):
         """Invalid buildids don't cause errors"""
@@ -1812,7 +1781,7 @@ class TestBetaVersionRule:
             "version": "5.0",
             "build": '2",381,,"',
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1822,10 +1791,10 @@ class TestBetaVersionRule:
                 self.API_URL + '?product=Firefox&channel=beta&build_id=2",381,,"',
                 json={"hits": [], "total": 0},
             )
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["version"] == "5.0b0"
-        assert processor_meta["processor_notes"] == [
+        assert status.notes == [
             "release channel is beta but no version data was found - "
             'added "b0" suffix to version number'
         ]
@@ -1840,7 +1809,7 @@ class TestBetaVersionRule:
             "release_channel": "beta",
             "build": "220000101101011",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1848,10 +1817,10 @@ class TestBetaVersionRule:
                 self.API_URL + "?product=Firefox&channel=beta&build_id=220000101101011",
                 json={"hits": [], "total": 0},
             )
-            rule.action(raw_crash, dumps, processed_crash, processor_meta)
+            rule.action(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["version"] == "3.0.1b0"
-        assert processor_meta["processor_notes"] == [
+        assert status.notes == [
             "release channel is beta but no version data was found - "
             'added "b0" suffix to version number'
         ]
@@ -1866,7 +1835,7 @@ class TestBetaVersionRule:
             "release_channel": "aurora",
             "build": "20001001101010",
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = self.build_rule()
         with requests_mock.Mocker() as req_mock:
@@ -1875,9 +1844,9 @@ class TestBetaVersionRule:
                 + "?product=Firefox&channel=aurora&build_id=20001001101010",
                 json={"hits": [{"version_string": "3.0b1"}], "total": 0},
             )
-            rule.act(raw_crash, dumps, processed_crash, processor_meta)
+            rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["version"] == "3.0b1"
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
 
 class TestOsPrettyName:
@@ -1908,13 +1877,11 @@ class TestOsPrettyName:
     def test_everything_we_hoped_for(self, os_name, os_version, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        processed_crash = {"os_name": os_name, "os_version": os_version}
+        status = Status()
 
         rule = OSPrettyVersionRule()
-
-        processed_crash = {"os_name": os_name, "os_version": os_version}
-
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["os_pretty_version"] == expected
 
     def test_lsb_release(self):
@@ -1922,17 +1889,15 @@ class TestOsPrettyName:
         # use that
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = OSPrettyVersionRule()
-
         processed_crash = {
             "os_name": "Linux",
             "os_version": "0.0.0 Linux etc",
             "json_dump": {"lsb_release": {"description": "Ubuntu 18.04 LTS"}},
         }
+        status = Status()
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule = OSPrettyVersionRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["os_pretty_version"] == "Ubuntu 18.04 LTS"
 
     @pytest.mark.parametrize(
@@ -1949,40 +1914,36 @@ class TestOsPrettyName:
     def test_junk_data(self, os_name, os_version, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
-
-        rule = OSPrettyVersionRule()
-
         # Now try some bogus processed_crashes.
         processed_crash = {}
         if os_name is not None:
             processed_crash["os_name"] = os_name
         if os_version is not None:
             processed_crash["os_version"] = os_version
+        status = Status()
 
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule = OSPrettyVersionRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["os_pretty_version"] == expected
 
     def test_dotdict(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        processed_crash = {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
+        status = Status()
 
         rule = OSPrettyVersionRule()
-
-        processed_crash = {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["os_pretty_version"] == "Windows 10"
 
     def test_none(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processor_meta = get_basic_processor_meta_data()
+        processed_crash = {"os_name": None, "os_version": None}
+        status = Status()
 
         rule = OSPrettyVersionRule()
-
-        processed_crash = {"os_name": None, "os_version": None}
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["os_pretty_version"] is None
 
 
@@ -1991,7 +1952,6 @@ class TestThemePrettyNameRule:
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
         processed_crash["addons"] = [
             "adblockpopups@jessehakanen.net:0.3",
             "dmpluginff@westbyte.com:1,4.8",
@@ -2005,9 +1965,10 @@ class TestThemePrettyNameRule:
             "{972ce4c6-7e08-4474-a285-3208198ce6fd}:12.0",
             "elemhidehelper@adblockplus.org:1.2.1",
         ]
+        status = Status()
 
         rule = ThemePrettyNameRule()
-        rule.act(raw_crash, dumps, processed_crash, processor_meta)
+        rule.act(raw_crash, dumps, processed_crash, status)
 
         # the raw crash & dumps should not have changed
         assert raw_crash == canonical_standard_raw_crash
@@ -2030,17 +1991,17 @@ class TestThemePrettyNameRule:
 
     def test_missing_key(self):
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
         rule = ThemePrettyNameRule()
 
         # Test with missing key.
-        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        res = rule.predicate({}, {}, processed_crash, status)
         assert res is False
 
         # Test with empty list.
         processed_crash["addons"] = []
-        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        res = rule.predicate({}, {}, processed_crash, status)
         assert res is False
 
         # Test with key missing from list.
@@ -2048,22 +2009,20 @@ class TestThemePrettyNameRule:
             "adblockpopups@jessehakanen.net:0.3",
             "dmpluginff@westbyte.com:1,4.8",
         ]
-        res = rule.predicate({}, {}, processed_crash, processor_meta)
+        res = rule.predicate({}, {}, processed_crash, status)
         assert res is False
 
     def test_with_malformed_addons_field(self):
-        rule = ThemePrettyNameRule()
-
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
-
         processed_crash["addons"] = [
             "addon_with_no_version",
             "{972ce4c6-7e08-4474-a285-3208198ce6fd}",
             "elemhidehelper@adblockplus.org:1.2.1",
         ]
-        rule.act({}, {}, processed_crash, processor_meta)
+        status = Status()
 
+        rule = ThemePrettyNameRule()
+        rule.act({}, {}, processed_crash, status)
         expected_addon_list = [
             "addon_with_no_version",
             "{972ce4c6-7e08-4474-a285-3208198ce6fd} (default theme)",
@@ -2098,24 +2057,23 @@ class TestSignatureGeneratorRule:
                 ],
             }
         }
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
-        rule.action(raw_crash, {}, processed_crash, processor_meta)
-
+        rule.action(raw_crash, {}, processed_crash, status)
         assert processed_crash["signature"] == "Alpha<T>::Echo<T>"
         assert (
             processed_crash["proto_signature"]
             == "Alpha<T>::Echo<T> | std::something::something"
         )
-        assert processor_meta["processor_notes"] == []
+        assert status.notes == []
 
     def test_empty_raw_and_processed_crashes(self):
         rule = SignatureGeneratorRule()
         raw_crash = {}
         processed_crash = {}
-        processor_meta = get_basic_processor_meta_data()
+        status = Status()
 
-        rule.action(raw_crash, {}, processed_crash, processor_meta)
+        rule.action(raw_crash, {}, processed_crash, status)
 
         # NOTE(willkg): This is what the current pipeline yields. If any of
         # those parts change, this might change, too. The point of this test is
@@ -2123,7 +2081,7 @@ class TestSignatureGeneratorRule:
         # the generation rules in the default pipeline don't fall over.
         assert processed_crash["signature"] == "EMPTY: no crashing thread identified"
         assert "proto_signature" not in processed_crash
-        assert processor_meta["processor_notes"] == [
+        assert status.notes == [
             "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
         ]
 
@@ -2148,15 +2106,15 @@ class TestSignatureGeneratorRule:
 
             raw_crash = {}
             processed_crash = {}
-            processor_meta = get_basic_processor_meta_data()
+            status = Status()
 
-            rule.action(raw_crash, {}, processed_crash, processor_meta)
+            rule.action(raw_crash, {}, processed_crash, status)
 
             # NOTE(willkg): The signature is an empty string because there are no
             # working rules that add anything to it.
             assert processed_crash["signature"] == ""
             assert "proto_signature" not in processed_crash
-            assert processor_meta["processor_notes"] == ["BadRule: Rule failed: Cough"]
+            assert status.notes == ["BadRule: Rule failed: Cough"]
 
             (event,) = sentry_client.events
             # NOTE(willkg): Some of the extra bits come from the processor app and since
@@ -2182,7 +2140,7 @@ class TestPHCRule:
 
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         if expected is None:
             assert "phc_base_address" not in processed_crash
         else:
@@ -2198,7 +2156,7 @@ class TestPHCRule:
 
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         if expected is None:
             assert "phc_usable_size" not in processed_crash
         else:
@@ -2214,7 +2172,7 @@ class TestPHCRule:
         }
         rule = PHCRule()
         processed_crash = {}
-        rule.action(raw_crash, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash == {
             "phc_kind": "FreedPage",
             "phc_usable_size": 8,
@@ -2229,14 +2187,14 @@ class TestDistributionIdRule:
         raw_crash = {}
         processed_crash = {}
         rule = DistributionIdRule()
-        rule.action(raw_crash, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "unknown"
 
     def test_annotation(self):
         raw_crash = {"DistributionID": "mint"}
         processed_crash = {}
         rule = DistributionIdRule()
-        rule.action(raw_crash, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "mint"
 
     @pytest.mark.parametrize(
@@ -2251,21 +2209,25 @@ class TestDistributionIdRule:
         ],
     )
     def test_telemetry_values_unknown(self, telemetry_value):
+        raw_crash = {"TelemetryEnvironment": telemetry_value}
         processed_crash = {}
+
         rule = DistributionIdRule()
-        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "unknown"
 
     def test_telemetry_value_mozilla(self):
-        telemetry_value = '{"partner": {"distributionId": null}}'
+        raw_crash = {"TelemetryEnvironment": '{"partner": {"distributionId": null}}'}
         processed_crash = {}
+
         rule = DistributionIdRule()
-        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "mozilla"
 
     def test_telemetry_value_mint(self):
-        telemetry_value = '{"partner": {"distributionId": "mint"}}'
+        raw_crash = {"TelemetryEnvironment": '{"partner": {"distributionId": "mint"}}'}
         processed_crash = {}
+
         rule = DistributionIdRule()
-        rule.action({"TelemetryEnvironment": telemetry_value}, {}, processed_crash, {})
+        rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "mint"
