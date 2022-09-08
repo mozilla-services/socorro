@@ -70,29 +70,29 @@
       <pre class="helptext">{{ endpoint.help_text }}</pre>
 
       {% if endpoint.parameters %}
-        <table class="data-table vertical">
+        <table class="data-table hardwrapped">
           <thead>
             <tr>
-              <th class="fixed" scope="col">Parameter key</th>
-              <th class="fixed" scope="col">Required?</th>
-              <th class="fixed" scope="col">Type</th>
-              <th class="fixed" scope="col">Default</th>
+              <th class="w-3/12" scope="col">Parameter key</th>
+              <th class="w-1/12" scope="col">Required?</th>
+              <th class="w-2/12" scope="col">Type</th>
+              <th class="w-2/12" scope="col">Default</th>
               <th>Test drive</th>
             </tr>
           </thead>
           <tbody>
             {% for parameter in endpoint.parameters %}
               <tr>
-                <td class="fixed">
+                <td>
                   <b>{{ parameter.name }}</b>
                 </td>
-                <td class="fixed">
+                <td>
                   {% if parameter.required %}Required {% else %}Optional {% endif %}
                 </td>
-                <td class="fixed">
+                <td>
                   {{ describe_friendly_type(parameter['type']) }}
                 </td>
-                <td class="fixed">
+                <td>
                   {% set default_val = endpoint['defaults'].get(parameter['name'], '') %}
                   {% if default_val %}
                     <code>{{ default_val }}</code>
