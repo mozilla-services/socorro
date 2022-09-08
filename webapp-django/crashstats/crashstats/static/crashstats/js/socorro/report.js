@@ -151,4 +151,14 @@ $(document).ready(function () {
 
   // Enhance bug links.
   BugLinks.enhance();
+
+  // Fix accessibility for the tab links so that the tabs respond to click
+  // events and not just the a tags. bug #1767566
+  $('.ui-tab').each(function (i, tab) {
+    tab.addEventListener('click', function (evt) {
+      if (evt.target == tab) {
+        tab.firstElementChild.click();
+      }
+    });
+  });
 });
