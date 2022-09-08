@@ -64,6 +64,10 @@ def get_api_allowlist(include_all_fields=False):
 class ESSocorroMiddleware(models.SocorroMiddleware):
     implementation_config_namespace = "elasticsearch"
 
+    post = None
+    put = None
+    delete = None
+
 
 def validate_products(product_value):
     """Validates product values against supported products.
@@ -248,7 +252,7 @@ class SuperSearchFields(ESSocorroMiddleware):
 
     API_ALLOWLIST = None
 
-    def get(self):
+    def get(self, **kwargs):
         return copy.deepcopy(self._fields)
 
 

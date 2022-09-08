@@ -629,6 +629,10 @@ class TelemetryCrash(SocorroMiddleware):
     required_params = ("crash_id",)
     aliases = {"crash_id": "uuid"}
 
+    post = None
+    put = None
+    delete = None
+
 
 class PermissionsReducerError(Exception):
     pass
@@ -706,6 +710,10 @@ class ProcessedCrash(SocorroMiddleware):
             return reducer.traverse(data)
 
         return data
+
+    post = None
+    put = None
+    delete = None
 
 
 class RawCrash(SocorroMiddleware):
@@ -858,6 +866,10 @@ class RawCrash(SocorroMiddleware):
             raise BadArgumentError("format")
         return result
 
+    post = None
+    put = None
+    delete = None
+
 
 class Bugs(SocorroMiddleware):
     # NOTE(willkg): This is implemented with a Django model.
@@ -900,19 +912,21 @@ class Bugs(SocorroMiddleware):
             {"id": int(hit["bug_id"]), "signature": hit["signature"]} for hit in hits
         ]
 
-    def get(self, *args, **kwargs):
+    def get(self, **kwargs):
         params = self.parse_parameters(kwargs)
 
         hits = self.get_bug_id_data(params["signatures"])
         return {"hits": hits, "total": len(hits)}
 
-    def post(self, **data):
-        signatures = data["signatures"]
+    def post(self, signatures, **kwargs):
         if not isinstance(signatures, (list, tuple)):
             signatures = [signatures]
 
         hits = self.get_bug_id_data(signatures)
         return {"hits": hits, "total": len(hits)}
+
+    put = None
+    delete = None
 
 
 class SignaturesByBugs(SocorroMiddleware):
@@ -937,7 +951,7 @@ class SignaturesByBugs(SocorroMiddleware):
 
     API_ALLOWLIST = {"hits": ("id", "signature")}
 
-    def get(self, *args, **kwargs):
+    def get(self, **kwargs):
         params = self.parse_parameters(kwargs)
 
         # Make sure bug_ids is a list of numbers and if not, raise
@@ -956,6 +970,10 @@ class SignaturesByBugs(SocorroMiddleware):
         ]
 
         return {"hits": hits, "total": len(hits)}
+
+    post = None
+    put = None
+    delete = None
 
 
 class SignatureFirstDate(SocorroMiddleware):
@@ -990,7 +1008,7 @@ class SignatureFirstDate(SocorroMiddleware):
 
     API_ALLOWLIST = {"hits": ("signature", "first_date", "first_build")}
 
-    def get(self, *args, **kwargs):
+    def get(self, **kwargs):
         params = self.parse_parameters(kwargs)
 
         hits = list(
@@ -1009,6 +1027,10 @@ class SignatureFirstDate(SocorroMiddleware):
         ]
 
         return {"hits": hits, "total": len(hits)}
+
+    post = None
+    put = None
+    delete = None
 
 
 class VersionString(SocorroMiddleware):
@@ -1039,7 +1061,7 @@ class VersionString(SocorroMiddleware):
 
     API_ALLOWLIST = {"hits": ("version_string",)}
 
-    def get(self, *args, **kwargs):
+    def get(self, **kwargs):
         params = self.parse_parameters(kwargs)
 
         versions = list(
@@ -1068,6 +1090,10 @@ class VersionString(SocorroMiddleware):
 
         return {"hits": versions, "total": len(versions)}
 
+    post = None
+    put = None
+    delete = None
+
 
 class BugzillaBugInfo(SocorroCommon):
     # This is for how long we cache the metadata of each individual bug.
@@ -1081,7 +1107,7 @@ class BugzillaBugInfo(SocorroCommon):
         # the jinja helper function.
         return f"buginfo:{bug_id}"
 
-    def get(self, bugs):
+    def get(self, bugs, **kwargs):
         if isinstance(bugs, str):
             bugs = [bugs]
         fields = ("summary", "status", "id", "resolution")
@@ -1118,6 +1144,10 @@ class BugzillaBugInfo(SocorroCommon):
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
         return {"bugs": results}
+
+    post = None
+    put = None
+    delete = None
 
 
 class Reprocessing(SocorroMiddleware):
@@ -1157,8 +1187,7 @@ class Reprocessing(SocorroMiddleware):
 
     get = None
 
-    def post(self, **data):
-        crash_ids = data["crash_ids"]
+    def post(self, crash_ids, **kwargs):
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
 
@@ -1179,6 +1208,9 @@ class Reprocessing(SocorroMiddleware):
             queue="reprocessing", crash_ids=crash_ids
         )
 
+    put = None
+    delete = None
+
 
 class PriorityJob(SocorroMiddleware):
     """Submit crash ids to priority queue."""
@@ -1189,11 +1221,13 @@ class PriorityJob(SocorroMiddleware):
 
     get = None
 
-    def post(self, **data):
-        crash_ids = data["crash_ids"]
+    def post(self, crash_ids, **kwargs):
         if not isinstance(crash_ids, (list, tuple)):
             crash_ids = [crash_ids]
         return self.get_implementation().publish(queue="priority", crash_ids=crash_ids)
+
+    put = None
+    delete = None
 
 
 class NoOpMiddleware(SocorroMiddleware):
@@ -1216,3 +1250,7 @@ class NoOpMiddleware(SocorroMiddleware):
             raise BadArgumentError("Bad product")
 
         return {"hits": [], "total": 0}
+
+    post = None
+    put = None
+    delete = None
