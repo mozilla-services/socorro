@@ -628,6 +628,35 @@ class OOMSignature(Rule):
         return True
 
 
+class BadHardware(Rule):
+    """Prepends ``bad hardware`` to signatures that are from bad hardware.
+
+    See bug #1733904.
+
+    """
+
+    # These reason values indicate an OOM
+    bad_hardware_reason = [
+        "STATUS_DEVICE_DATA_ERROR",
+    ]
+
+    def predicate(self, crash_data, result):
+        # Check the reason to see if it's one of a few values that indicate an OOM
+        reason = crash_data.get("reason", None)
+        if not reason:
+            return False
+
+        for possibility in self.bad_hardware_reason:
+            if possibility in reason:
+                return True
+
+        return False
+
+    def action(self, crash_data, result):
+        result.set_signature(self.name, f"bad hardware | {result.signature}")
+        return True
+
+
 class AbortSignature(Rule):
     """Prepends abort message to signature.
 
