@@ -704,29 +704,16 @@
                         {% if frame.truncated %}
                           <tr><td colspan="5">truncated {{ frame.truncated|digitgroupseparator }} frames...</td></tr>
                         {% else %}
-                          <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                            <td rowspan="{{ rowspan_for_inlines(frame) }}">
-                              {% if frame.missing_symbols %}
-                                <span class="row-notice" title="missing symbol">&Oslash;</span>
-                              {% endif %}
-                              {{ frame.frame }}
-                            </td>
-                            <td rowspan="{{ rowspan_for_inlines(frame) }}">{{ frame.module }}</td>
-                            <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                            <td>
-                              {% if frame.source_link %}
-                                <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                              {% else %}
-                                {% if frame.file %}{{ frame.file }}:{{ frame.line }}{% endif %}
-                              {% endif %}
-                            </td>
-                            <td rowspan="{{ rowspan_for_inlines(frame) }}">{{ frame.trust }}</td>
-                          </tr>
                           {% if frame.inlines %}
                             {% for inline in frame.inlines %}
                               <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                                {# frame index #}
-                                {# module #}
+                                <td>
+                                  {% if frame.missing_symbols %}
+                                    <span class="row-notice" title="missing symbol">&Oslash;</span>
+                                  {% endif %}
+                                  {{ frame.frame }}
+                                </td>
+                                <td>{{ frame.module }}</td>
                                 <td title="{{ inline.function }}">{{ inline.function }}</td>
                                 <td>
                                   {% if inline.source_link %}
@@ -735,10 +722,28 @@
                                     {% if inline.file %}{{ inline.file }}:{{ inline.line }}{% endif %}
                                   {% endif %}
                                 </td>
-                                {# trust #}
+                                <td>inlined</td>
                               </tr>
                             {% endfor %}
                           {% endif %}
+                          <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
+                            <td>
+                              {% if frame.missing_symbols %}
+                                <span class="row-notice" title="missing symbol">&Oslash;</span>
+                              {% endif %}
+                              {{ frame.frame }}
+                            </td>
+                            <td>{{ frame.module }}</td>
+                            <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                            <td>
+                              {% if frame.source_link %}
+                                <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
+                              {% else %}
+                                {% if frame.file %}{{ frame.file }}:{{ frame.line }}{% endif %}
+                              {% endif %}
+                            </td>
+                            <td>{{ frame.trust }}</td>
+                          </tr>
                         {% endif %}
                       {% endfor %}
                     </tbody>
@@ -767,29 +772,16 @@
                             {% if frame.truncated %}
                               <tr><td colspan="5">truncated {{ frame.truncated|digitgroupseparator }} frames...</td></tr>
                             {% else %}
-                              <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                                <td rowspan="{{ rowspan_for_inlines(frame) }}">
-                                  {% if frame.missing_symbols %}
-                                    <span class="row-notice" title="missing symbol">&Oslash;</span>
-                                  {% endif %}
-                                  {{ frame.frame }}
-                                </td>
-                                <td rowspan="{{ rowspan_for_inlines(frame) }}">{{ frame.module }}</td>
-                                <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                                <td>
-                                  {% if frame.source_link %}
-                                    <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                                  {% else %}
-                                    {{ frame.file }}{% if frame.line %}:{{ frame.line }}{% endif %}
-                                  {% endif %}
-                                </td>
-                                <td rowspan="{{ rowspan_for_inlines(frame) }}">{{ frame.trust }}</td>
-                              </tr>
                               {% if frame.inlines %}
                                 {% for inline in frame.inlines %}
                                   <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
-                                    {# frame index #}
-                                    {# module #}
+                                    <td>
+                                      {% if frame.missing_symbols %}
+                                        <span class="row-notice" title="missing symbol">&Oslash;</span>
+                                      {% endif %}
+                                      {{ frame.frame }}
+                                    </td>
+                                    <td>{{ frame.module }}</td>
                                     <td title="{{ inline.function }}">{{ inline.function }}</td>
                                     <td>
                                       {% if inline.source_link %}
@@ -798,10 +790,28 @@
                                         {% if inline.file %}{{ inline.file }}:{{ inline.line }}{% endif %}
                                       {% endif %}
                                     </td>
-                                    {# trust #}
+                                    <td>inlined</td>
                                   </tr>
                                 {% endfor %}
                               {% endif %}
+                              <tr class="{% if frame.missing_symbols %}missingsymbols{% endif %}">
+                                <td>
+                                  {% if frame.missing_symbols %}
+                                    <span class="row-notice" title="missing symbol">&Oslash;</span>
+                                  {% endif %}
+                                  {{ frame.frame }}
+                                </td>
+                                <td>{{ frame.module }}</td>
+                                <td title="{{ frame.signature }}">{{ frame.signature }}</td>
+                                <td>
+                                  {% if frame.source_link %}
+                                    <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
+                                  {% else %}
+                                    {{ frame.file }}{% if frame.line %}:{{ frame.line }}{% endif %}
+                                  {% endif %}
+                                </td>
+                                <td>{{ frame.trust }}</td>
+                              </tr>
                             {% endif %}
                           {% endfor %}
                         </tbody>

@@ -509,8 +509,3 @@ def filter_featured_versions(product_versions):
 @library.global_function
 def filter_not_featured_versions(product_versions):
     return [pv for pv in product_versions if not pv["is_featured"]]
-
-
-@library.global_function
-def rowspan_for_inlines(frame):
-    return 1 + len(frame.get("inlines") or [])
