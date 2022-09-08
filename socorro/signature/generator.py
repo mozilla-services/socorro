@@ -7,23 +7,25 @@ import sys
 from typing import Any, Dict, List
 
 from .rules import (
-    SignatureGenerationRule,
-    StackwalkerErrorSignatureRule,
-    OOMSignature,
     AbortSignature,
-    SignatureShutdownTimeout,
-    SignatureRunWatchDog,
+    BadHardware,
+    OOMSignature,
+    SigFixWhitespace,
+    SignatureGenerationRule,
     SignatureIPCChannelError,
     SignatureIPCMessageName,
-    SigFixWhitespace,
-    SigTruncate,
     SignatureParentIDNotEqualsChildID,
+    SignatureRunWatchDog,
+    SignatureShutdownTimeout,
+    SigTruncate,
+    StackwalkerErrorSignatureRule,
 )
 
 
 DEFAULT_PIPELINE = [
     SignatureGenerationRule(),
     StackwalkerErrorSignatureRule(),
+    BadHardware(),
     OOMSignature(),
     AbortSignature(),
     SignatureShutdownTimeout(),

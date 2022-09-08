@@ -1230,6 +1230,35 @@ class TestOOMSignature:
         assert result.signature == "OOM | large | hello"
 
 
+class TestBadHardware:
+    @pytest.mark.parametrize(
+        "reason, expected",
+        [
+            ("FOO", False),
+            ("EXCEPTION_IN_PAGE_ERROR_READ / STATUS_DEVICE_DATA_ERROR", True),
+            ("EXCEPTION_IN_PAGE_ERROR_EXEC / STATUS_DEVICE_DATA_ERROR", True),
+            ("EXCEPTION_IN_PAGE_ERROR_WRITE / STATUS_DEVICE_DATA_ERROR", True),
+        ],
+    )
+    def test_predicate_reason(self, reason, expected):
+        crash_data = {"reason": reason}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.BadHardware()
+        assert rule.predicate(crash_data, result) is expected
+
+    def test_action(self):
+        crash_data = {
+            "reason": "EXCEPTION_IN_PAGE_ERROR_READ / STATUS_DEVICE_DATA_ERROR",
+        }
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.BadHardware()
+        action_result = rule.action(crash_data, result)
+        assert action_result is True
+        assert result.signature == "bad hardware | Text"
+
+
 class TestAbortSignature:
     def test_predicate(self):
         rule = rules.AbortSignature()
