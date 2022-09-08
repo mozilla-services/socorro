@@ -1,10 +1,11 @@
-
 table {
     thead,
     tbody {
         tr {
             z-index: 50;
-            th,
+            th {
+                border: 1px solid @black;
+            }
             td {
                 border: solid 1px @grey;
             }
@@ -68,7 +69,6 @@ table {
             overflow-wrap: anywhere;
         }
     }
-
 }
 
 .tablesorter {
