@@ -107,14 +107,14 @@
           </ul>
 
           <div id="details" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
-            <table class="record data-table vertical hardwrapped">
+            <table class="record data-table hardwrapped">
               <tbody>
 
                 {# Crash Annotations #}
 
                 <tr title="{{ fields_desc['processed_crash.signature'] }}">
-                  <th scope="row">Signature</th>
-                  <td>
+                  <th class="w-2/12" scope="row">Signature</th>
+                  <td class="w-10/12">
                     {{ report.signature }}
                     <a href="{{ url('signature:signature_report') }}?{{ make_query_string(product=report.product, signature=report.signature) }}" class="sig-overview" title="View more reports of this type">More Reports</a>
                     <a href="{{ url('supersearch:search') }}?{{ make_query_string(product=report.product, signature='=' + report.signature) }}" class="sig-search" title="Search for more reports of this type">Search</a>
@@ -869,18 +869,18 @@
               These are the crash annotations from the submitted crash report
               that do not contain protected data.
             </div>
-            <table class="record data-table vertical hardwrapped">
+            <table class="record data-table hardwrapped">
               <tbody>
                 {% for key in public_raw_keys %}
                   <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                    <th scope="row">
+                    <th class="w-2/12" scope="row">
                       {% if key %}
                         {{ key }}
                       {% else %}
                         <i>empty key</i>
                       {% endif %}
                     </th>
-                    <td><pre>{{ raw[key] }}</pre></td>
+                    <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -896,18 +896,18 @@
               <div>
                 {{ protected_warning() }}
               </div>
-              <table class="record data-table vertical hardwrapped">
+              <table class="record data-table hardwrapped">
                 <tbody>
                   {% for key in protected_raw_keys %}
                     <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                      <th scope="row">
+                      <th class="w-2/12" scope="row">
                         {% if key %}
                           {{ key }}
                         {% else %}
                           <i>empty key</i>
                         {% endif %}
                       </th>
-                      <td><pre>{{ raw[key] }}</pre></td>
+                      <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -1110,10 +1110,10 @@
               {{ protected_warning() }}
 
               <h4>Timeline</h4>
-              <table class="record data-table vertical hardwrapped">
+              <table class="record data-table hardwrapped">
                 <tbody>
                   <tr>
-                    <th scope="row">Collected</th>
+                    <th class="w-2/12" scope="row">Collected</th>
                     <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
                   </tr>
                   <tr>
@@ -1128,10 +1128,10 @@
               </table>
 
               <h4>Collector</h4>
-              <table class="record data-table vertical hardwrapped">
+              <table class="record data-table hardwrapped">
                 <tbody>
                   <tr>
-                    <th scope="row">UUID</th>
+                    <th class="w-2/12" scope="row">UUID</th>
                     <td>{{ raw.uuid }}</td>
                   </tr>
                   <tr>
@@ -1165,7 +1165,7 @@
                         <table class="data-table">
                           {% for name, sha in raw.dump_checksums.items() %}
                             <tr>
-                              <th>{{ name }}:</th>
+                              <th class="w-2/12">{{ name }}:</th>
                               <td>
                                 <code>{{ sha }}</code>
                                 {% if sha == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %}
@@ -1186,10 +1186,10 @@
               </table>
 
               <h4>Processor</h4>
-              <table class="record data-table vertical hardwrapped">
+              <table class="record data-table hardwrapped">
                 <tbody>
                   <tr>
-                    <th scope="row">Processing pipeline timestamps<br>(most recent)</th>
+                    <th class="w-2/12" scope="row">Processing pipeline timestamps<br>(most recent)</th>
                     <td>
                       start: {{ report.started_datetime | human_readable_iso_date }} UTC &#8594;
                       end: {{ report.completed_datetime | human_readable_iso_date }} UTC
@@ -1213,7 +1213,7 @@
                     <td>
                       <table class="data-table">
                         <tr>
-                          <th scope="row">version:</th>
+                          <th class="w-2/12" scope="row">version:</th>
                           <td>
                             {% if report and report.stackwalk_version %}
                               {{ report.stackwalk_version }}
@@ -1244,7 +1244,7 @@
                     <td>
                       <table class="data-table">
                         <tr>
-                          <th scope="row">signature:</th>
+                          <th class="w-2/12" scope="row">signature:</th>
                           <td>{{ report.signature }}</td>
                         </tr>
                         <tr>
