@@ -979,7 +979,7 @@
                           {{ module.filename }}
                         {% endif %}
                       </td>
-                      <td>{{ module.version }}</td>
+                      <td>{{ module.version or "" }}</td>
                       <td>{{ module.debug_id }}</td>
                       <td>{{ module.debug_file }}</td>
                       {% if parsed_dump.modules_contains_cert_info %}<td>{% if module.cert_subject %}{{ module.cert_subject }}{% endif %}</td>{% endif %}
