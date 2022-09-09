@@ -1175,11 +1175,11 @@ class TestSignatureGenerationRule:
         # the call to be tested
         assert sgr.action(crash_data, result) is True
 
-        assert result.signature == "EMPTY: no crashing thread identified"
+        assert result.signature == "EMPTY: no frame data available"
         assert "proto_signature" not in result.extra
         assert "normalized_frames" not in result.extra
         assert result.notes == [
-            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
+            "SignatureGenerationRule: CSignatureTool: no frame data for crashing thread (0)"
         ]
 
     def test_lower_case_modules(self):

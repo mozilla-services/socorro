@@ -362,13 +362,16 @@ class CSignatureTool:
             if crashed_thread is None:
                 notes.append("CSignatureTool: no crashing thread identified")
                 signature = "EMPTY: no crashing thread identified"
+
             else:
                 notes.append(
                     f"CSignatureTool: no frame data for crashing thread ({crashed_thread})"
                 )
-                try:
+                if source_list:
+                    # The frames were probably all irrelevant, so pick the first one.
                     signature = source_list[0]
-                except IndexError:
+                else:
+                    # There wasn't any frame data to look at.
                     signature = "EMPTY: no frame data available"
 
         return signature, notes, debug_notes
@@ -577,7 +580,7 @@ class SignatureGenerationRule(Rule):
 
         signature, notes, debug_notes = self.c_signature_tool.generate(
             signature_list,
-            crash_data.get("crashing_thread"),
+            crashing_thread,
         )
 
         if signature_list:
