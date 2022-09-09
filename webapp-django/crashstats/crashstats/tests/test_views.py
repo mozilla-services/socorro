@@ -45,7 +45,6 @@ _SAMPLE_PROCESSED = {
     "cpu_info": "AuthenticAMD family 20 model 2 stepping 0 | 2 ",
     "crashing_thread": None,
     "date_processed": "2022-06-11T06:08:44",
-    "flash_version": "[blank]",
     "hangid": None,
     "id": 383569625,
     "json_dump": {
@@ -84,9 +83,6 @@ SAMPLE_SIGNATURE_SUMMARY = {
         "uptime": [{"category": "< 1 min", "percentage": "29.126", "report_count": 30}],
         "architecture": [
             {"category": "x86", "percentage": "100.000", "report_count": 103}
-        ],
-        "flash_version": [
-            {"category": "[blank]", "percentage": "100.000", "report_count": 103}
         ],
         "graphics": [
             {
@@ -1575,10 +1571,10 @@ class TestViews(BaseTestViews):
             "modules": [
                 {
                     "base_addr": "0x980000",
-                    "debug_file": "FlashPlayerPlugin.pdb",
+                    "debug_file": "foo.pdb",
                     "debug_id": "5F3C0D3034CA49FE9B94FC97EBF590A81",
                     "end_addr": "0xb4d000",
-                    "filename": "FlashPlayerPlugin_13_0_0_214.exe",
+                    "filename": "foo.exe",
                     "version": "13.0.0.214",
                 }
             ],

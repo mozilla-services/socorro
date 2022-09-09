@@ -22,7 +22,6 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
-    FlashVersionRule,
     JavaProcessRule,
     MacCrashInfoRule,
     MajorVersionRule,
@@ -112,13 +111,6 @@ canonical_processed_crash = {
                 "end_addr": "0x12e6000",
                 "filename": "plugin-container.exe",
                 "version": "26.0.0.5084",
-                "debug_id": "8385BD80FD534F6E80CF65811735A7472",
-                "debug_file": "plugin-container.pdb",
-                "base_addr": "0x12e0000",
-            },
-            {
-                "end_addr": "0x12e6000",
-                "filename": "FlashPlayerPlugin9_1_3_08.exe",
                 "debug_id": "8385BD80FD534F6E80CF65811735A7472",
                 "debug_file": "plugin-container.pdb",
                 "base_addr": "0x12e0000",
@@ -1472,66 +1464,6 @@ class TestPluginUserComment:
 
         # processed_crash should be unchanged
         assert processed_crash == {}
-
-
-class TestFlashVersionRule:
-    def test_get_flash_version(self):
-        rule = FlashVersionRule()
-
-        assert (
-            rule._get_flash_version(filename="NPSWF32_1_2_3.dll", version="1.2.3")
-            == "1.2.3"
-        )
-        assert rule._get_flash_version(filename="NPSWF32_1_2_3.dll") == "1.2.3"
-
-        data = rule._get_flash_version(
-            filename="FlashPlayerPlugin_2_3_4.exe", version="2.3.4"
-        )
-        assert data == "2.3.4"
-        assert (
-            rule._get_flash_version(filename="FlashPlayerPlugin_2_3_4.exe") == "2.3.4"
-        )
-
-        data = rule._get_flash_version(
-            filename="libflashplayer3.4.5.so", version="3.4.5"
-        )
-        assert data == "3.4.5"
-        assert rule._get_flash_version(filename="libflashplayer3.4.5.so") == "3.4.5"
-
-        assert (
-            rule._get_flash_version(filename="Flash Player-", version="4.5.6")
-            == "4.5.6"
-        )
-        assert rule._get_flash_version(filename="Flash Player-.4.5.6") == ".4.5.6"
-
-        ret = rule._get_flash_version(
-            filename="Flash Player-",
-            version=".4.5.6",
-            debug_id="83CF4DC03621B778E931FC713889E8F10",
-        )
-        assert ret == ".4.5.6"
-        ret = rule._get_flash_version(
-            filename="Flash Player-.4.5.6", debug_id="83CF4DC03621B778E931FC713889E8F10"
-        )
-        assert ret == ".4.5.6"
-        ret = rule._get_flash_version(
-            filename="Flash Player-", debug_id="83CF4DC03621B778E931FC713889E8F10"
-        )
-        assert ret == "9.0.16.0"
-
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = copy.deepcopy(canonical_processed_crash)
-        status = Status()
-
-        rule = FlashVersionRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert processed_crash["flash_version"] == "9.1.3.08"
-
-        # raw_crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
 
 
 class TestTopMostFilesRule:

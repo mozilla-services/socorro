@@ -550,7 +550,6 @@ class TestViews(BaseTestViews):
                             },
                         }
                     ],
-                    "flash_version": [{"count": 4, "term": "1.1.1.14"}],
                     "adapter_vendor_id": [
                         {
                             "term": "0x0086",
@@ -617,7 +616,6 @@ class TestViews(BaseTestViews):
         assert "Process Type" in smart_str(response.content)
         assert "Mobile Devices" in smart_str(response.content)
         assert "Graphics Adapter" in smart_str(response.content)
-        assert "Flash&trade; Version" in smart_str(response.content)
 
         # Check that some of the expected values are there.
         assert "Windows 7" in smart_str(response.content)
@@ -625,7 +623,6 @@ class TestViews(BaseTestViews):
         assert "WaterWolf" in smart_str(response.content)
         assert "2.1b99" in smart_str(response.content)
         assert "parent" in smart_str(response.content)
-        assert "1.1.1.14" in smart_str(response.content)
         assert "&lt; 1 min" in smart_str(response.content)
         assert "1-5 min" in smart_str(response.content)
         assert "ZTE" in smart_str(response.content)

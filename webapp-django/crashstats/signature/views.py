@@ -409,7 +409,6 @@ def signature_summary(request, params):
         "platform_pretty_version",
         "cpu_arch",
         "process_type",
-        "flash_version",
     ]
     params["_histogram.uptime"] = ["product"]
     params["_histogram_interval.uptime"] = 60

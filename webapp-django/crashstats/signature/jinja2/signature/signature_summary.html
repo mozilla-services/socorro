@@ -218,33 +218,6 @@
   </div>
 </div>
 
-<div class="panel tab-inner-panel" id="panel-flash-version">
-  <header class="title" title="Toggle visibility">
-    <h2>Flash&trade; Version</h2>
-    <div class="options show">show</div>
-  </header>
-  <div class="content">
-    <table class="tablesorter data-table">
-      <thead>
-        <tr>
-          <th class="header w-8/12">Flash&trade; Version</th>
-          <th class="header w-2/12">Count</th>
-          <th class="header w-2/12">Percentage</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for flash_version in query.facets.flash_version %}
-          <tr>
-            <td>{{ flash_version.term }}</td>
-            <td>{{ flash_version.count }}</td>
-            <td>{{ (100.0 * flash_version.count / query.total) | round(1) }}%</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
 <div class="panel tab-inner-panel" id="panel-adapter">
   <header class="title" title="Toggle visibility">
     <h2>Graphics Adapter</h2>

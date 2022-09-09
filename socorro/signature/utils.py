@@ -99,7 +99,7 @@ def convert_to_crash_data(processed_crash):
         # text
         "moz_crash_reason": glom(processed_crash, "moz_crash_reason", default=None),
         # list of str; for example:
-        # ["upload_file_minidump_browser", "upload_file_minidump_flash1"]
+        # ["upload_file_minidump_browser", "upload_file_minidump_content"]
         "additional_minidumps": glom(
             processed_crash, "additional_minidumps", default=[]
         ),

@@ -43,7 +43,6 @@ SAMPLE_PROCESSED_CRASH = {
     "cpu_info": "None | 0",
     "cpu_arch": "arm",
     "date_processed": "2012-04-08 10:56:41.558922",
-    "flash_version": "[blank]",
     "hangid": None,
     "id": 361399767,
     "json_dump": {
@@ -73,14 +72,6 @@ SAMPLE_PROCESSED_CRASH = {
     "user_comments": None,
     "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
     "version": "13.0a1",
-    "upload_file_minidump_flash1": {
-        "things": "untouched",
-        "json_dump": "stackwalker output",
-    },
-    "upload_file_minidump_flash2": {
-        "things": "untouched",
-        "json_dump": "stackwalker output",
-    },
     "upload_file_minidump_browser": {
         "things": "untouched",
         "json_dump": "stackwalker output",

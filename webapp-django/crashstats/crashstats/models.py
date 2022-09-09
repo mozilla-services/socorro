@@ -791,7 +791,6 @@ class RawCrash(SocorroMiddleware):
         "CoUnmarshalInterfaceResult",
         "DOMIPCEnabled",
         "EMCheckCompatibility",
-        "FlashVersion",
         "InstallTime",
         "IsGarbageCollecting",
         "MacAvailableMemorySysctl",
