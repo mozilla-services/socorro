@@ -2011,10 +2011,10 @@ class TestSignatureGeneratorRule:
         # those parts change, this might change, too. The point of this test is
         # that we can pass in empty dicts and the SignatureGeneratorRule and
         # the generation rules in the default pipeline don't fall over.
-        assert processed_crash["signature"] == "EMPTY: no crashing thread identified"
+        assert processed_crash["signature"] == "EMPTY: no frame data available"
         assert "proto_signature" not in processed_crash
         assert status.notes == [
-            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
+            "SignatureGenerationRule: CSignatureTool: no frame data for crashing thread (0)"
         ]
 
     def test_rule_fail_and_capture_error(self, sentry_helper):

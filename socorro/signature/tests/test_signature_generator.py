@@ -21,9 +21,9 @@ class TestSignatureGenerator:
         # NOTE(willkg): This is what the current pipeline yields. If any of those parts change, this
         # might change, too. The point of this test is that we can pass in empty dicts and the
         # SignatureGenerator and the rules in the default pipeline don't fall over.
-        assert ret.signature == "EMPTY: no crashing thread identified"
+        assert ret.signature == "EMPTY: no frame data available"
         assert ret.notes == [
-            "SignatureGenerationRule: CSignatureTool: no crashing thread identified"
+            "SignatureGenerationRule: CSignatureTool: no frame data for crashing thread (0)"
         ]
 
     def test_failing_rule(self):
