@@ -3,6 +3,14 @@
   Protected data: <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
 {%- endmacro %}
 
+{% macro source_link(link, file, line) -%}
+{% if link %}
+  <a href="{{ link }}">{{ file }}{% if line is not none %}:{{ line }}{% endif %}</a>
+{% elif file %}
+  {{ file }}{% if line is not none %}:{{line }}{% endif %}
+{% endif %}
+{%- endmacro %}
+
 {% extends "crashstats_base.html" %}
 
 {% block summary_page_tags %}
@@ -715,13 +723,7 @@
                                 </td>
                                 <td>{{ frame.module }}</td>
                                 <td title="{{ inline.function }}">{{ inline.function }}</td>
-                                <td>
-                                  {% if inline.source_link %}
-                                    <a href="{{ inline.source_link }}">{{ inline.file }}:{{ inline.line }}</a>
-                                  {% else %}
-                                    {% if inline.file %}{{ inline.file }}:{{ inline.line }}{% endif %}
-                                  {% endif %}
-                                </td>
+                                <td>{{ source_link(inline.source_link, inline.file, inline.line) }}</td>
                                 <td>inlined</td>
                               </tr>
                             {% endfor %}
@@ -735,13 +737,7 @@
                             </td>
                             <td>{{ frame.module }}</td>
                             <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                            <td>
-                              {% if frame.source_link %}
-                                <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                              {% else %}
-                                {% if frame.file %}{{ frame.file }}:{{ frame.line }}{% endif %}
-                              {% endif %}
-                            </td>
+                            <td>{{ source_link(frame.source_link, frame.file, frame.line) }}</td>
                             <td>{{ frame.trust }}</td>
                           </tr>
                         {% endif %}
@@ -783,13 +779,7 @@
                                     </td>
                                     <td>{{ frame.module }}</td>
                                     <td title="{{ inline.function }}">{{ inline.function }}</td>
-                                    <td>
-                                      {% if inline.source_link %}
-                                        <a href="{{ inline.source_link }}">{{ inline.file }}:{{ inline.line }}</a>
-                                      {% else %}
-                                        {% if inline.file %}{{ inline.file }}:{{ inline.line }}{% endif %}
-                                      {% endif %}
-                                    </td>
+                                    <td>{{ source_link(inline.source_link, inline.file, inline.line) }}</td>
                                     <td>inlined</td>
                                   </tr>
                                 {% endfor %}
@@ -803,13 +793,7 @@
                                 </td>
                                 <td>{{ frame.module }}</td>
                                 <td title="{{ frame.signature }}">{{ frame.signature }}</td>
-                                <td>
-                                  {% if frame.source_link %}
-                                    <a href="{{ frame.source_link }}">{{ frame.file }}:{{ frame.line }}</a>
-                                  {% else %}
-                                    {{ frame.file }}{% if frame.line %}:{{ frame.line }}{% endif %}
-                                  {% endif %}
-                                </td>
+                                <td>{{ source_link(frame.source_link, frame.file, frame.line) }}</td>
                                 <td>{{ frame.trust }}</td>
                               </tr>
                             {% endif %}
