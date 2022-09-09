@@ -83,33 +83,34 @@ class Group:
 
 COMMANDS = [
     Group(
-        'Crash processing utilities', {
-            'fetch_crashids': import_path('socorro.scripts.fetch_crashids.main'),
-            'fetch_crash_data': import_path('socorro.scripts.fetch_crash_data.main'),
-            'reprocess': import_path('socorro.scripts.reprocess.main'),
+        "Crash processing utilities", {
+            "fetch_crashids": import_path("socorro.scripts.fetch_crashids.main"),
+            "fetch_crash_data": import_path("socorro.scripts.fetch_crash_data.main"),
+            "reprocess": import_path("socorro.scripts.reprocess.main"),
+            "fetch_missing": import_path("socorro.scripts.fetch_missing.main"),
         }
     ),
     Group(
-        'Local development environment maintenance', {
-            'upload_telemetry_schema': import_path(
-                'socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema'
+        "Local development environment maintenance", {
+            "upload_telemetry_schema": import_path(
+                "socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema"
             ),
-            'db': import_path('socorro.scripts.db.db_group'),
-            'es': import_path('socorro.scripts.es.es_group'),
-            'sqs': import_path('socorro.scripts.sqs_cli.main'),
+            "db": import_path("socorro.scripts.db.db_group"),
+            "es": import_path("socorro.scripts.es.es_group"),
+            "sqs": import_path("socorro.scripts.sqs_cli.main"),
         }
     ),
     Group(
-        'Services', {
-            'cronrun': django_cmd('cronrun'),
-            'processor': import_path('socorro.processor.processor_app.ProcessorApp'),
+        "Services", {
+            "cronrun": django_cmd("cronrun"),
+            "processor": import_path("socorro.processor.processor_app.ProcessorApp"),
         }
     ),
     Group(
-        'Miscellaneous', {
-            'showcommands': showcommands_cmd,
-            'signature': import_path('socorro.signature.cmd_signature.main'),
-            'signature-doc': import_path('socorro.signature.cmd_doc.main'),
+        "Miscellaneous", {
+            "showcommands": showcommands_cmd,
+            "signature": import_path("socorro.signature.cmd_signature.main"),
+            "signature-doc": import_path("socorro.signature.cmd_doc.main"),
         }
     )
 ]
