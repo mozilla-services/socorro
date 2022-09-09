@@ -43,7 +43,6 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
-    FlashVersionRule,
     JavaProcessRule,
     MajorVersionRule,
     ModulesInStackRule,
@@ -221,7 +220,6 @@ class ProcessorPipeline(RequiredConfig):
                 BetaVersionRule(
                     version_string_api=config.betaversion.version_string_api
                 ),
-                FlashVersionRule(),
                 OSPrettyVersionRule(),
                 TopMostFilesRule(),
                 ModulesInStackRule(),

@@ -320,7 +320,6 @@ class TestCrashReportKeysRule:
         }
         dumps = {
             "upload_file_minidump": "fake data",
-            "upload_file_minidump_flash1": "fake data",
         }
         processed_crash = {}
         status = Status()
@@ -337,7 +336,6 @@ class TestCrashReportKeysRule:
                 "Version",
                 "ipc_channel_error",
                 "upload_file_minidump",
-                "upload_file_minidump_flash1",
             ],
         }
 

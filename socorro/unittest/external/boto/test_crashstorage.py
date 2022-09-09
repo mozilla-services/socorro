@@ -104,7 +104,7 @@ class TestBotoS3CrashStorage:
         boto_s3_store.save_raw_crash(
             {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
             MemoryDumpsMapping(
-                {"dump": b"fake dump", "flash_dump": b"fake flash dump"}
+                {"dump": b"fake dump", "content_dump": b"fake content dump"}
             ),
             "0bba929f-8721-460c-dead-a43c20071027",
         )
@@ -125,7 +125,7 @@ class TestBotoS3CrashStorage:
             bucket_name=bucket,
             key="v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
         )
-        assert sorted(json.loads(dump_names)) == ["dump", "flash_dump"]
+        assert sorted(json.loads(dump_names)) == ["content_dump", "dump"]
 
         # Verify dumps
         dump = boto_helper.download_fileobj(
@@ -134,11 +134,11 @@ class TestBotoS3CrashStorage:
         )
         assert dump == b"fake dump"
 
-        flash_dump = boto_helper.download_fileobj(
+        content_dump = boto_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/flash_dump/0bba929f-8721-460c-dead-a43c20071027",
+            key="v1/content_dump/0bba929f-8721-460c-dead-a43c20071027",
         )
-        assert flash_dump == b"fake flash dump"
+        assert content_dump == b"fake content dump"
 
     def test_save_processed_crash(self, boto_helper):
         boto_s3_store = self.get_s3_store()
@@ -257,7 +257,7 @@ class TestBotoS3CrashStorage:
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
-            data=b'["dump", "flash_dump", "city_dump"]',
+            data=b'["dump", "content_dump", "city_dump"]',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
@@ -266,8 +266,8 @@ class TestBotoS3CrashStorage:
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
-            data=b'this is "flash_dump", the second one',
+            key="v1/content_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            data=b'this is "content_dump", the second one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
@@ -278,7 +278,7 @@ class TestBotoS3CrashStorage:
         result = boto_s3_store.get_dumps("936ce666-ff3b-4c7a-9674-367fe2120408")
         assert result == {
             "dump": b'this is "dump", the first one',
-            "flash_dump": b'this is "flash_dump", the second one',
+            "content_dump": b'this is "content_dump", the second one',
             "city_dump": b'this is "city_dump", the last one',
         }
 
@@ -298,7 +298,7 @@ class TestBotoS3CrashStorage:
         boto_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
-            data=b'["dump", "flash_dump", "city_dump"]',
+            data=b'["dump", "content_dump", "city_dump"]',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
@@ -307,8 +307,8 @@ class TestBotoS3CrashStorage:
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/flash_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
-            data=b'this is "flash_dump", the second one',
+            key="v1/content_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            data=b'this is "content_dump", the second one',
         )
         boto_helper.upload_fileobj(
             bucket_name=bucket,
@@ -324,9 +324,9 @@ class TestBotoS3CrashStorage:
         # function is tested elsewhere.
         # We just need to be concerned about the file writing worked.
         expected = {
-            "flash_dump": os.path.join(
+            "content_dump": os.path.join(
                 str(tmpdir),
-                "936ce666-ff3b-4c7a-9674-367fe2120408.flash_dump.TEMPORARY.dump",
+                "936ce666-ff3b-4c7a-9674-367fe2120408.content_dump.TEMPORARY.dump",
             ),
             "city_dump": os.path.join(
                 str(tmpdir),

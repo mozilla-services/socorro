@@ -1130,11 +1130,6 @@ properties:
     type: boolean
     permissions: ["public"]
     source_annotation: EMCheckCompatibility
-  flash_version:
-    description: >
-      Version of the Flash Player plugin.
-    type: string
-    permissions: ["public"]
   gmp_library_path:
     description: |
       Holds the path to the GMP plugin library.

@@ -387,7 +387,7 @@
         "string",
         "null"
       ],
-      "description": "Version of the Flash Player plugin."
+      "description": "Version of the Flash Player plugin. (deprecated)"
     },
     "gmp_plugin": {
       "type": [

@@ -112,7 +112,6 @@ KNOWN_PUBLIC_FIELDS = {
     "dom_fission_enabled",
     "dom_ipc_enabled",
     "em_check_compatibility",
-    "flash_version",
     "gmp_plugin",
     "graphics_critical_error",
     "graphics_startup_test",

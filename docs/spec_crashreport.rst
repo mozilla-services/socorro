@@ -167,8 +167,6 @@ Dumps and other binary data
    * ``upload_file_minidump``
    * ``upload_file_minidump_browser``
    * ``upload_file_minidump_content``
-   * ``upload_file_minidump_flash1``
-   * ``upload_file_minidump_flash2``
 
 3. The ``Content-Disposition`` may specify a ``filename``.
 
