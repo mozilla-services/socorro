@@ -198,7 +198,6 @@ class CSignatureTool:
         line=None,
         module_offset=None,
         offset=None,
-        **kwargs,
     ):
         """Normalizes a single frame
 
@@ -232,6 +231,63 @@ class CSignatureTool:
 
         # Return module/module_offset
         return "{}@{}".format(module or "", strip_leading_zeros(module_offset))
+
+    def frame_generator(self, frames):
+        """Yields frames one at a time from a list of frames
+
+        Note: this treats inlines as individual frames and yields those when they're
+        available.
+
+        :arg frames: list of frame dicts
+
+        :returns: generator of frame data for normalization
+
+        """
+        for frame in frames:
+            inlines = frame.get("inlines") or []
+            for inline in inlines:
+                yield {
+                    "module": frame.get("module"),
+                    "function": inline.get("function"),
+                    "file": inline.get("file"),
+                    "line": inline.get("line"),
+                    "module_offset": frame.get("module_offset"),
+                    "offset": frame.get("offset"),
+                }
+
+            yield {
+                "module": frame.get("module"),
+                "function": frame.get("function"),
+                "file": frame.get("file"),
+                "line": frame.get("line"),
+                "module_offset": frame.get("module_offset"),
+                "offset": frame.get("offset"),
+            }
+
+    def create_frame_list(self, thread_data, make_modules_lower_case=False):
+        """Takes thread data and builds a list of frames
+
+        Note: this treats inlines as individual frames.
+
+        :arg thread_data: dict of thread data
+        :arg make_modules_lower_case: whether or not to lowercase module
+
+        :returns: list of normalized frames
+
+        """
+        normalized_frames = []
+        frames = thread_data.get("frames", [])
+        for frame in islice(self.frame_generator(frames), MAXIMUM_FRAMES_TO_CONSIDER):
+            # Bug #1544246. In Rust 1.34, the panic symbols are missing the module in
+            # symbols files. This fixes that by adding the module.
+            frame = fix_missing_module(frame)
+
+            if make_modules_lower_case and frame.get("module"):
+                frame["module"] = frame["module"].lower()
+
+            normalized_frame = self.normalize_frame(**frame)
+            normalized_frames.append(normalized_frame)
+        return normalized_frames
 
     def generate(self, source_list, crashed_thread=None, delimiter=" | "):
         """Iterate over frames in the crash stack and generate a signature.
@@ -486,24 +542,6 @@ class SignatureGenerationRule(Rule):
         self.java_signature_tool = JavaSignatureTool()
         self.c_signature_tool = CSignatureTool()
 
-    def _create_frame_list(
-        self, crashing_thread_mapping, make_modules_lower_case=False
-    ):
-        frame_signatures_list = []
-        for a_frame in islice(
-            crashing_thread_mapping.get("frames", []), MAXIMUM_FRAMES_TO_CONSIDER
-        ):
-            # Bug #1544246. In Rust 1.34, the panic symbols are missing the
-            # module in symbols files. This fixes that by adding the module.
-            a_frame = fix_missing_module(a_frame)
-
-            if make_modules_lower_case and a_frame.get("module"):
-                a_frame["module"] = a_frame["module"].lower()
-
-            normalized_frame = self.c_signature_tool.normalize_frame(**a_frame)
-            frame_signatures_list.append(normalized_frame)
-        return frame_signatures_list
-
     def action(self, crash_data, result):
         # If this is a Java crash, then generate a Java signature
         if crash_data.get("java_stack_trace"):
@@ -525,7 +563,7 @@ class SignatureGenerationRule(Rule):
             # If we have a thread to look at, pull the frames for that.
             # Otherwise we don't have frames to use.
             if crashing_thread is not None:
-                signature_list = self._create_frame_list(
+                signature_list = self.c_signature_tool.create_frame_list(
                     glom(crash_data, "threads.%d" % crashing_thread, default={}),
                     crash_data.get("os") == "Windows NT",
                 )

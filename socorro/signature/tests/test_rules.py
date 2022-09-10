@@ -77,6 +77,172 @@ class TestCSignatureTool:
         assert fixup_space.pattern == s.fixup_space.pattern
         assert fixup_comma.pattern == s.fixup_comma.pattern
 
+    def test_create_frame_list(self):
+        thread_0 = {
+            "frames": [
+                {
+                    "frame": 0,
+                    "function": "NtWaitForMultipleObjects",
+                    "function_offset": "0x15",
+                    "module": "ntdll.dll",
+                    "module_offset": "0x2015d",
+                    "offset": "0x77ad015d",
+                    "trust": "context",
+                },
+                {
+                    "frame": 1,
+                    "function": "WaitForMultipleObjectsEx",
+                    "function_offset": "0xff",
+                    "module": "KERNELBASE.dll",
+                    "module_offset": "0x115f6",
+                    "offset": "0x775e15f6",
+                    "trust": "cfi",
+                },
+                {
+                    "frame": 2,
+                    "function": "WaitForMultipleObjectsExImplementation",
+                    "function_offset": "0x8d",
+                    "module": "kernel32.dll",
+                    "module_offset": "0x119f7",
+                    "offset": "0x766119f7",
+                    "trust": "cfi",
+                },
+                {
+                    "frame": 3,
+                    "function": "RealMsgWaitForMultipleObjectsEx",
+                    "function_offset": "0xe1",
+                    "module": "user32.dll",
+                    "module_offset": "0x20869",
+                    "offset": "0x77370869",
+                    "trust": "cfi",
+                },
+                {
+                    "frame": 4,
+                    "function": "MsgWaitForMultipleObjects",
+                    "function_offset": "0x1e",
+                    "module": "user32.dll",
+                    "module_offset": "0x20b68",
+                    "offset": "0x77370b68",
+                    "trust": "cfi",
+                },
+                {
+                    "file": "F_766591945_______________________________________",
+                    "frame": 5,
+                    "function": "F_1428703866________________________________",
+                    "function_offset": "0xc1",
+                    "line": 203,
+                    "module": "NPSWF32_14_0_0_125.dll",
+                    "module_offset": "0x35bf21",
+                    "offset": "0x5e39bf21",
+                    "trust": "cfi",
+                },
+            ],
+            "threads_index": 0,
+            "frame_count": 32,
+        }
+
+        s = self.setup_config_c_sig_tool()
+        frame_signatures_list = s.create_frame_list(thread_0)
+        expected = [
+            "NtWaitForMultipleObjects",
+            "WaitForMultipleObjectsEx",
+            "WaitForMultipleObjectsExImplementation",
+            "RealMsgWaitForMultipleObjectsEx",
+            "MsgWaitForMultipleObjects",
+            "F_1428703866________________________________",
+        ]
+        assert frame_signatures_list == expected
+
+    def test_create_frame_list_with_inlines(self):
+        thread_0 = {
+            "frames": [
+                {
+                    "frame": 0,
+                    "function": "NtWaitForMultipleObjects",
+                    "function_offset": "0x15",
+                    "module": "ntdll.dll",
+                    "module_offset": "0x2015d",
+                    "offset": "0x77ad015d",
+                    "trust": "context",
+                    "inlines": None,
+                },
+                {
+                    "frame": 1,
+                    "function": "WaitForMultipleObjectsEx",
+                    "function_offset": "0xff",
+                    "module": "KERNELBASE.dll",
+                    "module_offset": "0x115f6",
+                    "offset": "0x775e15f6",
+                    "trust": "cfi",
+                    "inlines": [
+                        {
+                            "function": "inline_a",
+                            "file": "some_file.rs",
+                            "line": 59,
+                        },
+                        {
+                            "function": "inline_b",
+                            "file": "some_file.rs",
+                            "line": 299,
+                        },
+                    ],
+                },
+                {
+                    "frame": 2,
+                    "function": "WaitForMultipleObjectsExImplementation",
+                    "function_offset": "0x8d",
+                    "module": "kernel32.dll",
+                    "module_offset": "0x119f7",
+                    "offset": "0x766119f7",
+                    "trust": "cfi",
+                },
+            ],
+            "threads_index": 0,
+            "frame_count": 3,
+        }
+
+        s = self.setup_config_c_sig_tool()
+        frame_signatures_list = s.create_frame_list(thread_0)
+        expected = [
+            "NtWaitForMultipleObjects",
+            "inline_a",
+            "inline_b",
+            "WaitForMultipleObjectsEx",
+            "WaitForMultipleObjectsExImplementation",
+        ]
+        assert frame_signatures_list == expected
+
+    def test_no_mutation(self):
+        s = self.setup_config_c_sig_tool()
+        frames = {
+            "frames": [
+                {
+                    "frame": 0,
+                    "function": "NtWaitForMultipleObjects",
+                    "function_offset": "0x15",
+                    "module": "ntdll.dll",
+                    "module_offset": "0x2015d",
+                    "offset": "0x77ad015d",
+                    "trust": "context",
+                },
+                {
+                    "frame": 1,
+                    "function": "WaitForMultipleObjectsEx",
+                    "function_offset": "0xff",
+                    "module": "KERNELBASE.dll",
+                    "module_offset": "0x115f6",
+                    "offset": "0x775e15f6",
+                    "trust": "cfi",
+                },
+            ]
+        }
+        frames_copy = copy.deepcopy(frames)
+        s = self.setup_config_c_sig_tool()
+        s.create_frame_list(frames_copy)
+
+        # If they're the same, then there was no mutation
+        assert frames == frames_copy
+
     def test_normalize_frame(self):
         """test_normalize: bunch of variations"""
         s = self.setup_config_c_sig_tool()
@@ -880,53 +1046,6 @@ FRAMES_FROM_JSON_DUMP_WITH_TEMPLATES_AND_SPECIAL_CASE = {
 
 
 class TestSignatureGenerationRule:
-    def test_create_frame_list(self):
-        sgr = rules.SignatureGenerationRule()
-        frame_signatures_list = sgr._create_frame_list(FRAMES_FROM_JSON_DUMP)
-        expected = [
-            "NtWaitForMultipleObjects",
-            "WaitForMultipleObjectsEx",
-            "WaitForMultipleObjectsExImplementation",
-            "RealMsgWaitForMultipleObjectsEx",
-            "MsgWaitForMultipleObjects",
-            "F_1152915508__________________________________",
-            "F2166389______________________________________",
-            "F_917831355___________________________________",
-            "F1315696776________________________________",
-            "F_1428703866________________________________",
-        ]
-        assert frame_signatures_list == expected
-
-    def test_no_mutation(self):
-        sgr = rules.SignatureGenerationRule()
-        frames = {
-            "frames": [
-                {
-                    "frame": 0,
-                    "function": "NtWaitForMultipleObjects",
-                    "function_offset": "0x15",
-                    "module": "ntdll.dll",
-                    "module_offset": "0x2015d",
-                    "offset": "0x77ad015d",
-                    "trust": "context",
-                },
-                {
-                    "frame": 1,
-                    "function": "WaitForMultipleObjectsEx",
-                    "function_offset": "0xff",
-                    "module": "KERNELBASE.dll",
-                    "module_offset": "0x115f6",
-                    "offset": "0x775e15f6",
-                    "trust": "cfi",
-                },
-            ]
-        }
-        frames_copy = copy.deepcopy(frames)
-        sgr._create_frame_list(frames_copy)
-
-        # If they're the same, then there was no mutation
-        assert frames == frames_copy
-
     def test_java_stack_trace(self):
         sgr = rules.SignatureGenerationRule()
 
