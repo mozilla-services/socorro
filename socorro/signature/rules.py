@@ -676,13 +676,12 @@ class BadHardware(Rule):
 
     """
 
-    # These reason values indicate an OOM
+    # These reason value substrings indicate an error caused by bad hardware
     bad_hardware_reason = [
         "STATUS_DEVICE_DATA_ERROR",
     ]
 
     def predicate(self, crash_data, result):
-        # Check the reason to see if it's one of a few values that indicate an OOM
         reason = crash_data.get("reason", None)
         if not reason:
             return False
