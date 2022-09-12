@@ -37,6 +37,9 @@ crontabber)  ## Run crontabber service
 webapp)  ## Run webapp service
     /app/bin/run_webapp.sh "$@"
     ;;
+symbolsserver)  ## Runs a local symbols server
+    /app/bin/run_symbolsserver.sh
+    ;;
 shell)  ## Open a shell or run something else
     if [ -z "$*" ]; then
         bash
