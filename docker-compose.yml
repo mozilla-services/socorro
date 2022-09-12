@@ -139,6 +139,17 @@ services:
     volumes:
       - .:/socorro
 
+  symbolsserver:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - my.env
+    command: ["symbolsserver"]
+    ports:
+      - "8070:8070"
+    volumes:
+      - .:/app
+
   # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:
     image: hopsoft/graphite-statsd
