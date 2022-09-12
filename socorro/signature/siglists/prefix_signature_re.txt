@@ -33,6 +33,7 @@ core::option::expect_none_failed
 core::ptr::drop_in_place
 core::ptr::real_drop_in_place
 core::result::unwrap_failed
+core::slice::index::slice_end_index_len_fail
 core::slice::slice_index_order_fail
 core::str::slice_error_fail
 CreateFileMappingA
