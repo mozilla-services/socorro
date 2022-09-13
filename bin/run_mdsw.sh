@@ -20,7 +20,13 @@ function getenv {
 }
 
 DATADIR=./crashdata_mdsw_tmp
-STACKWALKER="$(getenv 'processor.command_pathname')"
+STACKWALKER="/stackwalk-rust/minidump-stackwalk"
+
+# This will pull symbols from the symbols server
+SYMBOLS="--symbols-url=https://symbols.mozilla.org"
+
+# This will pull symbols from disk
+# SYMBOLS="--symbols-path=/app/symbols/
 
 if [[ $# -eq 0 ]]; then
     if [ -t 0 ]; then
@@ -47,9 +53,12 @@ do
     RAWCRASHFILE=$(find ${DATADIR}/v1/raw_crash/ -name $CRASHID -type f)
 
     timeout -s KILL 600 "${STACKWALKER}" \
-        --raw-json $RAWCRASHFILE \
-        --symbols-url "https://symbols.mozilla.org/" \
-        --symbols-cache /tmp/symbols/cache \
-        --symbols-tmp /tmp/symbols/tmp \
+        --evil-json=$RAWCRASHFILE \
+        --symbols-cache=/tmp/symbols/cache \
+        --symbols-tmp=/tmp/symbols/tmp \
+        --no-color \
+        ${SYMBOLS} \
+        --json \
+        --verbose=error \
         ${DATADIR}/v1/dump/$CRASHID
 done
