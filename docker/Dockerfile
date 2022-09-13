@@ -1,36 +1,4 @@
 # =========================================================================
-# Dokcer image with https://github.com/rust-minidump/rust-minidump
-# =========================================================================
-
-# https://hub.docker.com/_/rust/
-FROM rust:1.63.0-buster@sha256:13d2a0af50f0d86c7e107de4acb13b21829c28751f441f796b640659cb4442c5 as rustminidump
-
-ARG groupid=10001
-ARG userid=10001
-
-WORKDIR /app/
-
-RUN update-ca-certificates && \
-    groupadd --gid $groupid app && \
-    useradd -g app --uid $userid --shell /usr/sbin/nologin --create-home app && \
-    chown app:app /app/
-
-USER app
-
-# From: https://github.com/rust-minidump/rust-minidump
-# This is 0.14.0
-ARG MINIDUMPREV=f9933c36c5f48bf806a428b06399242e1b170020
-ARG MINIDUMPREVDATE=2022-08-30
-
-RUN cargo install --locked --root=/app/ \
-    --git https://github.com/rust-minidump/rust-minidump.git \
-    --rev $MINIDUMPREV \
-    minidump-stackwalk
-RUN echo "{\"sha\":\"$MINIDUMPREV\",\"date\":\"$MINIDUMPREVDATE\"}" > /app/bin/minidump-stackwalk.version.json
-RUN ls -al /app/bin/
-
-
-# =========================================================================
 # Building app image
 # =========================================================================
 
@@ -51,9 +19,10 @@ RUN groupadd --gid $groupid app && \
     DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh && \
     rm /tmp/set_up_ubuntu.sh
 
-# Copy stackwalk bits from rust-minidump minidump-stackwalker; this picks
-# up minidump-stackwalk.sha as well
-COPY --from=rustminidump /app/bin/* /stackwalk-rust/
+# Install stackwalker
+COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
+RUN /tmp/set_up_stackwalker.sh && \
+    rm /tmp/set_up_stackwalker.sh
 
 # Install frontend JS deps
 COPY ./webapp-django/package*.json /webapp-frontend-deps/
