@@ -15,6 +15,7 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     FileDumpsMapping,
     MemoryDumpsMapping,
+    migrate_raw_crash,
 )
 from socorro.lib.libdatetime import utc_now, JsonDTEncoder
 from socorro.lib.libooid import date_from_ooid, depth_from_ooid
@@ -199,10 +200,13 @@ class FSPermanentStorage(CrashStorageBase):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
-        with open(
-            os.sep.join([parent_dir, crash_id + self.config.json_file_suffix])
-        ) as f:
-            return json.load(f)
+        path = os.sep.join([parent_dir, crash_id + self.config.json_file_suffix])
+
+        with open(path) as f:
+            data = json.load(f)
+
+        data = migrate_raw_crash(data)
+        return data
 
     def get_raw_dump(self, crash_id, name=None):
         parent_dir = self._get_radixed_parent_directory(crash_id)

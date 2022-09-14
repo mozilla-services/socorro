@@ -101,6 +101,46 @@ class CrashIDNotFound(Exception):
     pass
 
 
+def migrate_raw_crash(data):
+    """Migrates the raw crash structure to the current structure
+
+    Currently, the version is 2.
+
+    :arg data: the raw crash structure as saved
+
+    :returns: the migrated raw crash structure
+
+    """
+    if "version" not in data:
+        # If it has no version, then it's version 1
+        data["version"] = 1
+
+    if data["version"] == 1:
+        # Convert to version 2 by moving some keys to a new metadata section, deleting
+        # the old location, and updating to version 2
+        old_keys = [
+            "collector_notes",
+            "dump_checksums",
+            "payload",
+            "payload_compressed",
+        ]
+        metadata = data.get("metadata", {})
+        metadata.update({
+            "collector_notes": data.get("collector_notes", []),
+            "dump_checksums": data.get("dump_checksums", {}),
+            "payload_compressed": data.get("payload_compressed", "0"),
+            "payload": data.get("payload", "unknown"),
+            "migrated_from_version_1": True,
+        })
+        data["metadata"] = metadata
+        for key in old_keys:
+            if key in data:
+                del data[key]
+        data["version"] = 2
+
+    return data
+
+
 class CrashStorageBase(RequiredConfig):
     """Base class for all crash storage classes."""
 
