@@ -20,7 +20,7 @@ import sentry_sdk
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
-    MinidumpSha256Rule,
+    MinidumpSha256HashRule,
     MinidumpStackwalkRule,
 )
 from socorro.processor.rules.general import (
@@ -188,7 +188,7 @@ class ProcessorPipeline(RequiredConfig):
                 CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA),
                 SubmittedFromRule(),
                 IdentifierRule(),
-                MinidumpSha256Rule(),
+                MinidumpSha256HashRule(),
                 MinidumpStackwalkRule(
                     dump_field=config.minidumpstackwalk.dump_field,
                     symbols_urls=config.minidumpstackwalk.symbols_urls,

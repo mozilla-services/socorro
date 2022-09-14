@@ -12,7 +12,7 @@ from socorro.lib.libsocorrodataschema import validate_instance
 from socorro.processor.processor_pipeline import ProcessorPipeline, Status
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
-    MinidumpSha256Rule,
+    MinidumpSha256HashRule,
     MinidumpStackwalkRule,
 )
 from socorro.schemas import PROCESSED_CRASH_SCHEMA
@@ -221,24 +221,23 @@ class TestCrashingThreadInfoRule:
 
 
 class TestMinidumpSha256HashRule:
-    def test_hash_not_in_raw_crash(self):
+    def test_no_dump_checksum(self):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
 
-        rule = MinidumpSha256Rule()
-        assert rule.predicate(raw_crash, dumps, processed_crash, status) is False
+        rule = MinidumpSha256HashRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+        assert processed_crash["minidump_sha256_hash"] == ""
 
-    def test_hash_in_raw_crash(self):
-        raw_crash = {"MinidumpSha256Hash": "hash"}
+    def test_copy_over(self):
+        raw_crash = {"metadata": {"dump_checksums": {"upload_file_minidump": "hash"}}}
         dumps = {}
         processed_crash = {}
         status = Status()
 
-        rule = MinidumpSha256Rule()
-        assert rule.predicate(raw_crash, dumps, processed_crash, status) is True
-
+        rule = MinidumpSha256HashRule()
         rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
