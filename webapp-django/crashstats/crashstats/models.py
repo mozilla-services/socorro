@@ -761,7 +761,6 @@ class RawCrash(SocorroMiddleware):
     API_ALLOWLIST = (
         # Crash annotations:
         # https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml
-        "additional_minidumps",
         "Accessibility",
         "AdapterDeviceID",
         "AdapterDriverVersion",
@@ -799,7 +798,6 @@ class RawCrash(SocorroMiddleware):
         "MacMemoryPressureNormalTime",
         "MacMemoryPressureSysctl",
         "MacMemoryPressureWarningTime",
-        "MinidumpSha256Hash",
         "Notes",
         "NumberOfProcessors",
         "OOMAllocationSize",
@@ -815,7 +813,6 @@ class RawCrash(SocorroMiddleware):
         "ShutdownProgress",
         "SubmittedFrom",
         "StartupTime",
-        "submitted_timestamp",
         "SystemMemoryUsePercentage",
         "TotalVirtualMemory",
         "useragent_locale",
@@ -825,7 +822,7 @@ class RawCrash(SocorroMiddleware):
         "Winsock_LSP",
         "XPCOMSpinEventLoopStack",
         # Fields added by the collector
-        "additional_minidumps",
+        "submitted_timestamp",
         "uuid",
     )
 

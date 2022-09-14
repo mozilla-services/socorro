@@ -54,14 +54,18 @@ class CrashingThreadInfoRule(Rule):
         )
 
 
-class MinidumpSha256Rule(Rule):
-    """Copy over MinidumpSha256Hash value if there is one"""
+class MinidumpSha256HashRule(Rule):
+    """Copy sha256 hash of upload_file_minidump value if there is one
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
-        return "MinidumpSha256Hash" in raw_crash
+    Fills in:
+
+    * minidump_sha256_hash (str): hash of upload_file_minidump
+
+    """
 
     def action(self, raw_crash, dumps, processed_crash, status):
-        processed_crash["minidump_sha256_hash"] = raw_crash["MinidumpSha256Hash"]
+        checksums = raw_crash.get("metadata", {}).get("dump_checksums", {})
+        processed_crash["minidump_sha256_hash"] = checksums.get("upload_file_minidump", "")
 
 
 @contextmanager
