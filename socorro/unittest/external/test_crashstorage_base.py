@@ -35,7 +35,7 @@ class Test_migrate_raw_crash:
                         "payload": "unknown",
                     },
                     "version": 2,
-                }
+                },
             ),
             # If it's version 2 already, nothing happens
             (
@@ -55,7 +55,7 @@ class Test_migrate_raw_crash:
                         "payload_compressed": "0",
                         "payload": "json",
                     },
-                    "version": 2
+                    "version": 2,
                 },
             ),
             # Migrate version 1 to latest
@@ -87,7 +87,7 @@ class Test_migrate_raw_crash:
                     "version": 2,
                 },
             ),
-        ]
+        ],
     )
     def test_migration(self, data, expected):
         assert migrate_raw_crash(data) == expected

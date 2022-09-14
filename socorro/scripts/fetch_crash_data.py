@@ -92,7 +92,15 @@ def fetch_crash(
     if fetchdumps:
         # Fetch dumps
         dumps = {}
-        dump_names = raw_crash.get("dump_checksums", {}).keys()
+
+        # The dump_checksums is in a different place depending on the raw_crash
+        # structure version
+        raw_crash_version = raw_crash.get("version", 1)
+        if raw_crash_version == 1:
+            dump_names = raw_crash.get("dump_checksums", {}).keys()
+        elif raw_crash_version == 2:
+            dump_names = raw_crash.get("metadata", {}).get("dump_checksums", {}).keys()
+
         for dump_name in dump_names:
             print("Fetching dump %s/%s" % (crash_id, dump_name))
 

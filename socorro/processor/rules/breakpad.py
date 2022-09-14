@@ -65,7 +65,9 @@ class MinidumpSha256HashRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, status):
         checksums = raw_crash.get("metadata", {}).get("dump_checksums", {})
-        processed_crash["minidump_sha256_hash"] = checksums.get("upload_file_minidump", "")
+        processed_crash["minidump_sha256_hash"] = checksums.get(
+            "upload_file_minidump", ""
+        )
 
 
 @contextmanager

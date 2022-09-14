@@ -125,13 +125,15 @@ def migrate_raw_crash(data):
             "payload_compressed",
         ]
         metadata = data.get("metadata", {})
-        metadata.update({
-            "collector_notes": data.get("collector_notes", []),
-            "dump_checksums": data.get("dump_checksums", {}),
-            "payload_compressed": data.get("payload_compressed", "0"),
-            "payload": data.get("payload", "unknown"),
-            "migrated_from_version_1": True,
-        })
+        metadata.update(
+            {
+                "collector_notes": data.get("collector_notes", []),
+                "dump_checksums": data.get("dump_checksums", {}),
+                "payload_compressed": data.get("payload_compressed", "0"),
+                "payload": data.get("payload", "unknown"),
+                "migrated_from_version_1": True,
+            }
+        )
         data["metadata"] = metadata
         for key in old_keys:
             if key in data:
