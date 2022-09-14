@@ -45,6 +45,7 @@ dlmalloc
 dvm
 EtwEventEnabled
 extent_
+enum$<T>::unwrap
 fastcopy_I
 fastzero_I
 FindElementCommon
