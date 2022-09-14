@@ -633,10 +633,12 @@ class TestViews(BaseTestViews):
                     "Version": "5.0a1",
                     "Vendor": "Mozilla",
                     "URL": "farmville.com",
-                    "dump_checksums": {
-                        "upload_file_minidump": "xxx",
-                        "upload_file_minidump_foo": "xxx",
-                        "upload_file_minidump_bar": "xxx",
+                    "metadata": {
+                        "dump_checksums": {
+                            "upload_file_minidump": "xxx",
+                            "upload_file_minidump_foo": "xxx",
+                            "upload_file_minidump_bar": "xxx",
+                        },
                     },
                 }
 

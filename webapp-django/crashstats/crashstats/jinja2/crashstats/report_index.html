@@ -1125,11 +1125,11 @@
               <table class="record data-table hardwrapped">
                 <tbody>
                   <tr>
-                    <th class="w-2/12" scope="row">UUID</th>
+                    <th class="w-2/12" scope="row">uuid</th>
                     <td>{{ raw.uuid }}</td>
                   </tr>
                   <tr>
-                    <th scope="row">Collected timestamp</th>
+                    <th scope="row">submitted_timestamp</th>
                     <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
                   </tr>
                   <tr>
@@ -1144,38 +1144,32 @@
                     <th scope="row">SubmittedFromInfobar</th>
                     <td>{{ raw.SubmittedFromInfobar|default("--") }}</td>
                   </tr>
-                  <tr>
-                    <th scope="row">Payload</th>
-                    <td>{{ raw.payload }}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Payload compressed</th>
-                    <td>{{ raw.payload_compressed }}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Dump checksums</th>
-                    <td>
-                      {% if raw.dump_checksums %}
-                        <table class="data-table">
-                          {% for name, sha in raw.dump_checksums.items() %}
-                            <tr>
-                              <th class="w-2/12">{{ name }}:</th>
-                              <td>
-                                <code>{{ sha }}</code>
-                                {% if sha == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %}
-                                  <span class="humanized">(empty minidump)</span>
-                                {% endif %}
-                              </td>
-                            </tr>
-                          {% endfor %}
-                        </table>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Collector notes</th>
-                    <td><pre>{{ raw.collector_notes|join("\n") }}</pre></td>
-                  </tr>
+                  {% for key, val in raw.metadata | dictsort %}
+                    <tr>
+                      <th scope="row">{{ key }}</th>
+                      <td>
+                        {% if key == "collector_notes" %}
+                          <pre>{{ val | join("\n") }}</pre>
+                        {% elif key == "dump_checksums" %}
+                          <table class="data-table">
+                            {% for name, sha in val | dictsort %}
+                              <tr>
+                                <th class="w-2/12">{{ name }}:</th>
+                                <td>
+                                  <code>{{ sha }}</code>
+                                  {% if sha == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %}
+                                    <span class="humanized">(empty minidump)</span>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          </table>
+                        {% else %}
+                          {{ val }}
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
                 </tbody>
               </table>
 

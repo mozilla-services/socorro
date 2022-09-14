@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from urllib.parse import quote
 
+import glom
+
 from django import http
 from django.conf import settings
 from django.core.cache import cache
@@ -216,7 +218,9 @@ def report_index(request, crash_id, default_context=None):
     dump_urls = []
     if request.user.has_perm("crashstats.view_rawdump"):
         # Add link for minidumps and memory report
-        dumps = sorted(context["raw"].get("dump_checksums", {}).keys())
+        dumps = sorted(
+            glom.glom(context, "raw.metadata.dump_checksums", default={}).keys()
+        )
         for dump_name in dumps:
             dump_urls.append(
                 (

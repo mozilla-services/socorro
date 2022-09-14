@@ -183,7 +183,18 @@ class TestBotoS3CrashStorage:
         )
 
         result = boto_s3_store.get_raw_crash("936ce666-ff3b-4c7a-9674-367fe2120408")
-        assert result == raw_crash
+        expected = {
+            "metadata": {
+                "collector_notes": [],
+                "dump_checksums": {},
+                "migrated_from_version_1": True,
+                "payload": "unknown",
+                "payload_compressed": "0",
+            },
+            "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
+            "version": 2,
+        }
+        assert result == expected
 
     def test_get_raw_crash_not_found(self, boto_helper):
         boto_s3_store = self.get_s3_store()
