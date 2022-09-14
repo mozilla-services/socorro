@@ -543,7 +543,7 @@ class MozCrashReasonRule(Rule):
 
 
 class OutOfMemoryBinaryRule(Rule):
-    # Number of bytes, max, that we accept memory info payloads as JSON.
+    # Number of bytes, max, that we accept memory_report value as JSON.
     MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
     def predicate(self, raw_crash, dumps, processed_crash, status):

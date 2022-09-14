@@ -13,6 +13,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
+    migrate_raw_crash,
 )
 from socorro.lib.libjsonschema import JsonSchemaReducer
 from socorro.lib.libsocorrodataschema import (
@@ -201,7 +202,8 @@ class BotoS3CrashStorage(CrashStorageBase):
         for path in build_keys("raw_crash", crash_id):
             try:
                 raw_crash_as_string = self.conn.load_file(path)
-                return json.loads(raw_crash_as_string)
+                data = json.loads(raw_crash_as_string)
+                return migrate_raw_crash(data)
             except self.conn.KeyNotFound:
                 continue
 
