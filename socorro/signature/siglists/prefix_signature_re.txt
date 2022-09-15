@@ -107,6 +107,7 @@ mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::MozPromise<T>::ThenCommand<T>::Track
 mozilla::MozPromise<T>::ThenInternal
+mozilla::OffTheBooksMutex::Lock
 SleepConditionVariableCS
 SleepConditionVariableSRW
 mozilla::TimeStamp::Now
