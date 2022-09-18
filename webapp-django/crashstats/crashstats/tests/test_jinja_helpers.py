@@ -148,6 +148,7 @@ class Test_generate_create_bug_url:
         signature="fake_signature",
         file="fake.cpp",
         line=1,
+        inlines=None,
     ):
         return {
             "frame": frame,
@@ -155,6 +156,7 @@ class Test_generate_create_bug_url:
             "signature": signature,
             "file": file,
             "line": line,
+            "inlines": inlines,
         }
 
     @staticmethod
@@ -401,6 +403,51 @@ class Test_generate_create_bug_url:
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
         assert quote_plus("0 test_module foo::bar foo.cpp:7") in url
+
+    def test_comment_function_inlines(self):
+        """Include inlines functions."""
+        req = RequestFactory().get("/report/index")
+        raw_crash = {}
+        report = self._create_report()
+        parsed_dump = self._create_dump(
+            threads=[
+                self._create_thread(
+                    frames=[
+                        self._create_frame(
+                            frame=0,
+                            module="test_module",
+                            signature="foo::bar(char* x, int y)",
+                            file="foo.cpp",
+                            line=7,
+                            inlines=[
+                                {
+                                    "file": "foo_inline.cpp",
+                                    "line": 100,
+                                    "function": "_foo_inline",
+                                },
+                                {
+                                    "file": "foo_inline.cpp",
+                                    "line": 4,
+                                    "function": "_foo_inline_amd64",
+                                },
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        )
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
+        qs = self._extract_query_string(url)
+        comment = (
+            "```\n"
+            + "0 test_module _foo_inline foo_inline.cpp:100\n"
+            + "0 test_module _foo_inline_amd64 foo_inline.cpp:4\n"
+            + "0 test_module foo::bar foo.cpp:7\n"
+            + "```"
+        )
+        assert comment in qs["comment"][0]
 
     def test_comment_missing_line(self):
         """If a frame is missing a line number, do not include it."""

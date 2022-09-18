@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+from itertools import islice
 import json
 import re
 from urllib.parse import urlencode, parse_qs, quote_plus
@@ -215,12 +216,36 @@ def generate_create_bug_url(
 
 
 def bugzilla_thread_frames(thread):
-    """Extract frame info for the top frames of a crashing thread to be
-    included in the Bugzilla summary when reporting the crash.
+    """Build frame information for bug creation link
+
+    Extract frame info for the top frames of a crashing thread to be included in the
+    Bugzilla summary when reporting the crash.
+
+    :arg thread: dict of thread information including "frames" list
+
+    :returns: list of frame information dicts
 
     """
+
+    def frame_generator(thread):
+        """Yield frames in a thread factoring in inlines"""
+        for frame in thread["frames"]:
+            for inline in frame.get("inlines") or []:
+                yield {
+                    "frame": frame.get("frame", "?"),
+                    "module": frame.get("module", ""),
+                    "signature": inline["function"],
+                    "file": inline["file"],
+                    "line": inline["line"],
+                }
+
+            yield frame
+
+    # We only want to include 10 frames in the link
+    MAX_FRAMES = 10
+
     frames = []
-    for frame in thread["frames"][:10]:  # Max 10 frames
+    for frame in islice(frame_generator(thread), MAX_FRAMES):
         # Source is an empty string if data isn't available
         source = frame.get("file") or ""
         if frame.get("line"):
@@ -237,6 +262,7 @@ def bugzilla_thread_frames(thread):
                 "source": source,
             }
         )
+
     return frames
 
 
