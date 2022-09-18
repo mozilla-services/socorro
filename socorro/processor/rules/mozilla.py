@@ -13,6 +13,7 @@ from urllib.parse import unquote_plus, urlparse, urlunparse
 from zlib import error as ZlibError
 
 from glom import glom
+import jsonschema
 import markus
 import sentry_sdk
 
@@ -24,8 +25,9 @@ from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
 from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
-from socorro.lib.libsocorrodataschema import SocorroDataReducer
+from socorro.lib.libsocorrodataschema import SocorroDataReducer, validate_instance
 from socorro.processor.rules.base import Rule
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
 
@@ -424,41 +426,15 @@ class JavaProcessRule(Rule):
             processed_crash["java_stack_trace"] = java_stack_trace
 
 
-class MalformedBreadcrumbs(Exception):
-    pass
-
-
-def validate_breadcrumbs(data):
-    """Validates a Breadcrumbs data structure
-
-    :arg list data: list of breadcrumbs dicts
-
-    :raises MalformedBreadcrumbs: if it's malformed in some way
-
-    """
-    # NOTE(willkg): Sentry doesn't _require_ timestamp in their Breadcrumbs event, but
-    # it's highly recommended. We try to match their spec since that seemed helpful.
-    # The other top level fields are optional. If we want to require other fields, we
-    # can add them here.
-    required_keys = {"timestamp"}
-
-    if not isinstance(data, list):
-        raise MalformedBreadcrumbs("not a list")
-
-    for i, item in enumerate(data):
-        if not isinstance(item, dict):
-            raise MalformedBreadcrumbs(f"item {i} not a dict")
-
-        # missing_keys is the required_keys minus the intersection of required_keys and
-        # the item's keys
-        missing_keys = required_keys - (required_keys & set(item.keys()))
-        if missing_keys:
-            missing_keys = ", ".join(sorted(missing_keys))
-            raise MalformedBreadcrumbs(f"item {i} missing keys: {missing_keys}")
-
-
 class BreadcrumbsRule(Rule):
     """Validate and move over breadcrumbs."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # NOTE(willkg): if the "breadcrumbs" section ever gets moved in the processed
+        # crash schema, we'll need to update this
+        self.BREADCRUMBS_SCHEMA = PROCESSED_CRASH_SCHEMA["definitions"]["breadcrumbs"]
 
     def predicate(self, raw_crash, dumps, processed_crash, status):
         return bool(raw_crash.get("Breadcrumbs", None))
@@ -475,12 +451,12 @@ class BreadcrumbsRule(Rule):
             if isinstance(breadcrumbs_data, dict) and "values" in breadcrumbs_data:
                 breadcrumbs_data = breadcrumbs_data["values"]
 
-            validate_breadcrumbs(breadcrumbs_data)
+            validate_instance(breadcrumbs_data, self.BREADCRUMBS_SCHEMA)
             processed_crash["breadcrumbs"] = breadcrumbs_data
         except json.JSONDecodeError:
             status.add_note("Breadcrumbs: malformed: not valid json")
-        except MalformedBreadcrumbs as exc:
-            status.add_note(f"Breadcrumbs: malformed: {exc}")
+        except jsonschema.exceptions.ValidationError as jexc:
+            status.add_note(f"Breadcrumbs: malformed: {jexc.message}")
 
 
 class MacCrashInfoRule(Rule):
