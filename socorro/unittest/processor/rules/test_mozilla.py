@@ -25,7 +25,6 @@ from socorro.processor.rules.mozilla import (
     JavaProcessRule,
     MacCrashInfoRule,
     MajorVersionRule,
-    MalformedBreadcrumbs,
     ModulesInStackRule,
     ModuleURLRewriteRule,
     MozCrashReasonRule,
@@ -40,7 +39,6 @@ from socorro.processor.rules.mozilla import (
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
-    validate_breadcrumbs,
 )
 from socorro.processor.processor_pipeline import Status
 from socorro.signature.generator import SignatureGenerator
@@ -899,30 +897,6 @@ class TestMajorVersionRule:
         assert processed_crash["major_version"] == expected
 
 
-VALID = True
-
-
-@pytest.mark.parametrize(
-    "data, expected",
-    [
-        # Empty list is valid
-        ([], VALID),
-        ([{"timestamp": ""}], VALID),
-        # Breadcrumb item is not a dict
-        ([{"timestamp": ""}, []], "item 1 not a dict"),
-        # Breadcrumb item missing required keys is invalid
-        ([{}], "item 0 missing keys: timestamp"),
-    ],
-)
-def test_validate_breadcrumbs(data, expected):
-    if expected is VALID:
-        validate_breadcrumbs(data)
-
-    else:
-        with pytest.raises(MalformedBreadcrumbs, match=expected):
-            validate_breadcrumbs(data)
-
-
 class TestBreadcrumbRule:
     def test_basic(self):
         raw_crash = {"Breadcrumbs": json.dumps([{"timestamp": "2021-01-07T16:09:31"}])}
@@ -970,7 +944,7 @@ class TestBreadcrumbRule:
         rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}
-        assert status.notes == ["Breadcrumbs: malformed: not a list"]
+        assert status.notes == ["Breadcrumbs: malformed: {} is not of type 'array'"]
 
 
 class TestJavaProcessRule:
