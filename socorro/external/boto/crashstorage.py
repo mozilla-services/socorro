@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import copy
 import datetime
 import json
 import logging
@@ -298,7 +299,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
     def build_reducers(self):
         only_public = permissions_transform_function(permissions_have=["public"])
         public_processed_crash_schema = transform_schema(
-            schema=PROCESSED_CRASH_SCHEMA,
+            schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA),
             transform_function=only_public,
         )
         self.processed_crash_reducer = SocorroDataReducer(

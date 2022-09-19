@@ -41,6 +41,7 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
 )
 from socorro.processor.processor_pipeline import Status
+from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.signature.generator import SignatureGenerator
 
 
@@ -904,7 +905,7 @@ class TestBreadcrumbRule:
         processed_crash = {}
         status = Status()
 
-        rule = BreadcrumbsRule()
+        rule = BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA))
         rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
@@ -919,7 +920,7 @@ class TestBreadcrumbRule:
         processed_crash = {}
         status = Status()
 
-        rule = BreadcrumbsRule()
+        rule = BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA))
         rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash["breadcrumbs"] == [{"timestamp": "2021-01-07T16:09:31"}]
@@ -930,7 +931,7 @@ class TestBreadcrumbRule:
         processed_crash = {}
         status = Status()
 
-        rule = BreadcrumbsRule()
+        rule = BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA))
         rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash == {}
 
@@ -940,7 +941,7 @@ class TestBreadcrumbRule:
         processed_crash = {}
         status = Status()
 
-        rule = BreadcrumbsRule()
+        rule = BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA))
         rule.act(raw_crash, dumps, processed_crash, status)
 
         assert processed_crash == {}

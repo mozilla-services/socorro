@@ -362,6 +362,7 @@ class SocorroDataReducer:
         """
         :arg schema: the schema document specifying the structure to traverse
         """
+        schema = copy.deepcopy(schema)
         if "definitions" in schema:
             schema = resolve_references(schema)
 

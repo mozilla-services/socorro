@@ -27,7 +27,6 @@ from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import SocorroDataReducer, validate_instance
 from socorro.processor.rules.base import Rule
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
 
@@ -429,12 +428,13 @@ class JavaProcessRule(Rule):
 class BreadcrumbsRule(Rule):
     """Validate and move over breadcrumbs."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, schema):
+        super().__init__()
+        self.schema = schema
 
         # NOTE(willkg): if the "breadcrumbs" section ever gets moved in the processed
         # crash schema, we'll need to update this
-        self.BREADCRUMBS_SCHEMA = PROCESSED_CRASH_SCHEMA["definitions"]["breadcrumbs"]
+        self.BREADCRUMBS_SCHEMA = schema["definitions"]["breadcrumbs"]
 
     def predicate(self, raw_crash, dumps, processed_crash, status):
         return bool(raw_crash.get("Breadcrumbs", None))
