@@ -7,6 +7,7 @@ crash.  In this latest version, all transformations have been reimplemented
 as sets of loadable rules.  The rules are applied one at a time, each doing
 some small part of the transformation process."""
 
+import copy
 import logging
 import os
 import tempfile
@@ -185,7 +186,7 @@ class ProcessorPipeline(RequiredConfig):
                 PluginContentURL(),
                 PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
-                CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA),
+                CopyFromRawCrashRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA)),
                 SubmittedFromRule(),
                 IdentifierRule(),
                 MinidumpSha256HashRule(),
@@ -209,7 +210,7 @@ class ProcessorPipeline(RequiredConfig):
                 DatesAndTimesRule(),
                 OutOfMemoryBinaryRule(),
                 PHCRule(),
-                BreadcrumbsRule(),
+                BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA)),
                 JavaProcessRule(),
                 MacCrashInfoRule(),
                 MozCrashReasonRule(),
