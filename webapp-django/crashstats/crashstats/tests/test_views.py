@@ -21,8 +21,10 @@ from django.test.utils import override_settings
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import BaseTestViews, Response
 from socorro.external.crashstorage_base import CrashIDNotFound
-from socorro.lib.libsocorrodataschema import validate_instance
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
+from socorro.lib.libsocorrodataschema import get_schema, validate_instance
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 _SAMPLE_META = {

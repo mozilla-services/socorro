@@ -434,7 +434,7 @@ class BreadcrumbsRule(Rule):
 
         # NOTE(willkg): if the "breadcrumbs" section ever gets moved in the processed
         # crash schema, we'll need to update this
-        self.BREADCRUMBS_SCHEMA = schema["definitions"]["breadcrumbs"]
+        self.breadcrumbs_schema = schema["properties"]["breadcrumbs"]
 
     def predicate(self, raw_crash, dumps, processed_crash, status):
         return bool(raw_crash.get("Breadcrumbs", None))
@@ -451,7 +451,7 @@ class BreadcrumbsRule(Rule):
             if isinstance(breadcrumbs_data, dict) and "values" in breadcrumbs_data:
                 breadcrumbs_data = breadcrumbs_data["values"]
 
-            validate_instance(breadcrumbs_data, self.BREADCRUMBS_SCHEMA)
+            validate_instance(breadcrumbs_data, self.breadcrumbs_schema)
             processed_crash["breadcrumbs"] = breadcrumbs_data
         except json.JSONDecodeError:
             status.add_note("Breadcrumbs: malformed: not valid json")

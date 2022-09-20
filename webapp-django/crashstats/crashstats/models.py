@@ -29,11 +29,11 @@ from socorro.lib import BadArgumentError
 from socorro.lib.libooid import is_crash_id_valid
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import (
+    get_schema,
+    permissions_transform_function,
     SocorroDataReducer,
     transform_schema,
-    permissions_transform_function,
 )
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 from crashstats.crashstats.configman_utils import config_from_configman
 
@@ -42,6 +42,9 @@ logger = logging.getLogger("crashstats.models")
 
 
 metrics = markus.get_metrics("webapp.crashstats.models")
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 # Django models first

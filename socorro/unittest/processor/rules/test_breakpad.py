@@ -8,14 +8,16 @@ from unittest import mock
 
 from markus.testing import MetricsMock
 
-from socorro.lib.libsocorrodataschema import validate_instance
+from socorro.lib.libsocorrodataschema import get_schema, validate_instance
 from socorro.processor.processor_pipeline import ProcessorPipeline, Status
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
 )
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 example_uuid = "00000000-0000-0000-0000-000002140504"

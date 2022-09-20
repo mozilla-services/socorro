@@ -7,7 +7,6 @@ crash.  In this latest version, all transformations have been reimplemented
 as sets of loadable rules.  The rules are applied one at a time, each doing
 some small part of the transformation process."""
 
-import copy
 import logging
 import os
 import tempfile
@@ -19,6 +18,7 @@ from configman.converters import str_to_list
 import sentry_sdk
 
 from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.lib.libsocorrodataschema import get_schema
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
@@ -62,7 +62,6 @@ from socorro.processor.rules.mozilla import (
     ThemePrettyNameRule,
     TopMostFilesRule,
 )
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
 @define
@@ -186,7 +185,7 @@ class ProcessorPipeline(RequiredConfig):
                 PluginContentURL(),
                 PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
-                CopyFromRawCrashRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA)),
+                CopyFromRawCrashRule(schema=get_schema("processed_crash.schema.yaml")),
                 SubmittedFromRule(),
                 IdentifierRule(),
                 MinidumpSha256HashRule(),
@@ -210,7 +209,7 @@ class ProcessorPipeline(RequiredConfig):
                 DatesAndTimesRule(),
                 OutOfMemoryBinaryRule(),
                 PHCRule(),
-                BreadcrumbsRule(schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA)),
+                BreadcrumbsRule(schema=get_schema("processed_crash.schema.yaml")),
                 JavaProcessRule(),
                 MacCrashInfoRule(),
                 MozCrashReasonRule(),

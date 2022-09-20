@@ -11,6 +11,8 @@ import re
 
 import jsonschema
 
+from socorro.schemas import get_file_content
+
 
 class InvalidDocumentError(Exception):
     """Raised when the document is invalid"""
@@ -492,3 +494,19 @@ def validate_instance(instance, schema):
     jsonschema.validate(
         instance=instance, schema=schema, cls=jsonschema.Draft7Validator
     )
+
+
+def get_schema(schema_filename, resolve_refs=True):
+    """Returns a schema with references resolved
+
+    :arg schema_filename: the filename of the socorro data schema in the schemas/
+        directory
+    :arg resolve_refs: whether or not to resolve references
+
+    :returns: schema structure as a Python dict
+
+    """
+    schema = get_file_content(schema_filename)
+    if resolve_refs:
+        schema = resolve_references(schema)
+    return schema

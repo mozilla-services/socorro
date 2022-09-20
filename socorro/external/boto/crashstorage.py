@@ -18,15 +18,19 @@ from socorro.external.crashstorage_base import (
 )
 from socorro.lib.libjsonschema import JsonSchemaReducer
 from socorro.lib.libsocorrodataschema import (
+    get_schema,
     permissions_transform_function,
     SocorroDataReducer,
     transform_schema,
 )
 from socorro.lib.libooid import date_from_ooid
-from socorro.schemas import PROCESSED_CRASH_SCHEMA, TELEMETRY_SOCORRO_CRASH_SCHEMA
+from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 def wait_time_generator():

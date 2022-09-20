@@ -19,6 +19,4 @@ def get_file_content(filename):
     return schema
 
 
-PROCESSED_CRASH_SCHEMA = get_file_content("processed_crash.schema.yaml")
-
 TELEMETRY_SOCORRO_CRASH_SCHEMA = get_file_content("telemetry_socorro_crash.json")
