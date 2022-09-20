@@ -17,11 +17,6 @@ urlpatterns = [
     path("crash-me-now/", admin.crash_me_now, name="crash_me_now"),
     path("sitestatus/", admin.site_status, name="site_status"),
     path(
-        "supersearch-fields/missing/",
-        admin.supersearch_fields_missing,
-        name="supersearch_fields_missing",
-    ),
-    path(
         "supersearch-status/",
         admin.supersearch_status,
         name="supersearch_status",

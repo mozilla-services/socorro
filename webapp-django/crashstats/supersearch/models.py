@@ -256,14 +256,6 @@ class SuperSearchFields(ESSocorroMiddleware):
         return copy.deepcopy(self._fields)
 
 
-class SuperSearchMissingFields(ESSocorroMiddleware):
-    implementation = super_search_fields.SuperSearchMissingFieldsModel
-
-    # This service's data doesn't change a lot over time, it's fine to cache
-    # it for a long time.
-    cache_seconds = 60 * 60 * 12  # 12 hours
-
-
 class SuperSearchStatus(ESSocorroMiddleware):
     implementation = super_search_fields.SuperSearchStatusModel
 

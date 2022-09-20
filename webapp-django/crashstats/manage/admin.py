@@ -15,10 +15,7 @@ from django.db import connection
 from django.shortcuts import render
 
 from crashstats.manage.decorators import superuser_required
-from crashstats.supersearch.models import (
-    SuperSearchMissingFields,
-    SuperSearchStatus,
-)
+from crashstats.supersearch.models import SuperSearchStatus
 
 
 @superuser_required
@@ -90,18 +87,6 @@ def analyze_model_fetches(request):
     context["title"] = "Analyze model fetches"
 
     return render(request, "admin/analyze-model-fetches.html", context)
-
-
-@superuser_required
-def supersearch_fields_missing(request):
-    context = {}
-    missing_fields = SuperSearchMissingFields().get()
-
-    context["missing_fields"] = missing_fields["hits"]
-    context["missing_fields_count"] = missing_fields["total"]
-    context["title"] = "Super search missing fields"
-
-    return render(request, "admin/supersearch_fields_missing.html", context)
 
 
 @superuser_required

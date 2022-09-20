@@ -264,7 +264,7 @@ class SuperSearchFieldsData:
         return FIELDS
 
     # Alias ``get`` as ``get_fields`` so this can be used in the API well and
-    # can be conveniently subclassed by ``SuperSearchMissingFields``.
+    # can be conveniently subclassed by ``SuperSearchFields``.
     get = get_fields
 
 
@@ -333,49 +333,6 @@ class SuperSearchFields(SuperSearchFieldsData):
             "latest_index": latest_index,
             "mapping": mapping_properties,
         }
-
-    def get_missing_fields(self):
-        """Return fields missing from our FIELDS list
-
-        Go through the last three weeks of indexes, fetch the mappings, and
-        figure out which fields are in the mapping that aren't in our list of
-        known fields.
-
-        :returns: dict of missing fields (``hits``) and total number of missing
-            fields (``total``)
-
-        """
-        now = libdatetime.utc_now()
-        two_weeks_ago = now - datetime.timedelta(weeks=2)
-        index_template = self.context.get_index_template()
-        indices = generate_list_of_indexes(two_weeks_ago, now, index_template)
-
-        es_connection = self.get_connection()
-        index_client = elasticsearch.client.IndicesClient(es_connection)
-        doctype = self.context.get_doctype()
-
-        all_existing_fields = set()
-        for index in indices:
-            try:
-                mapping = index_client.get_mapping(index=index)
-                properties = mapping[index]["mappings"][doctype]["properties"]
-                all_existing_fields.update(parse_mapping(properties, None))
-            except elasticsearch.exceptions.NotFoundError as e:
-                # If an index does not exist, this should not fail
-                logger.warning(
-                    "Missing index in elasticsearch while running "
-                    "SuperSearchFields.get_missing_fields, error is: %s",
-                    str(e),
-                )
-
-        all_known_fields = {
-            ".".join((x["namespace"], x["in_database_name"]))
-            for x in self.get_fields().values()
-        }
-
-        missing_fields = sorted(all_existing_fields - all_known_fields)
-
-        return {"hits": missing_fields, "total": len(missing_fields)}
 
     def test_mapping(self, mapping):
         """Verify that a mapping is correct
@@ -470,13 +427,6 @@ class SuperSearchFieldsModel(RequiredConfig, SuperSearchFields):
         # sets everything up itself.
         self.config = config
         self.context = self.config.elasticsearch_class(self.config)
-
-
-class SuperSearchMissingFieldsModel(SuperSearchFieldsModel):
-    """Model that returns fields missing from super search fields."""
-
-    def get(self):
-        return super().get_missing_fields()
 
 
 class SuperSearchStatusModel(SuperSearchFieldsModel):
