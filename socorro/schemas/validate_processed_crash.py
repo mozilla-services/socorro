@@ -16,15 +16,18 @@ import jsonschema
 
 from socorro.lib.libsocorrodataschema import (
     compile_pattern_re,
+    get_schema,
     SocorroDataReducer,
     split_path,
     transform_schema,
     validate_instance,
 )
-from socorro.schemas import PROCESSED_CRASH_SCHEMA
 
 
 HERE = os.path.dirname(__file__)
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 class InvalidSchemaError(Exception):
