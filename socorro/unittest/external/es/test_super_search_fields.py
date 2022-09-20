@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-from datetime import timedelta
 import json
 
 import pytest
@@ -149,100 +148,6 @@ class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
     def test_get_fields(self):
         results = self.api.get_fields()
         assert results == FIELDS
-
-    def test_get_missing_fields(self):
-        config = self.get_base_config(cls=SuperSearchFieldsModel)
-        api = SuperSearchFieldsModel(config=config)
-
-        fake_mapping_1 = {
-            config.elasticsearch_doctype: {
-                "properties": {
-                    # Add a bunch of unknown fields.
-                    "field_z": {"type": "string"},
-                    "namespace1": {
-                        "type": "object",
-                        "properties": {
-                            "field_a": {"type": "string"},
-                            "field_b": {"type": "long"},
-                        },
-                    },
-                    "namespace2": {
-                        "type": "object",
-                        "properties": {
-                            "subspace1": {
-                                "type": "object",
-                                "properties": {"field_b": {"type": "long"}},
-                            }
-                        },
-                    },
-                    # Add a few known fields that should not appear.
-                    "processed_crash": {
-                        "type": "object",
-                        "properties": {
-                            "signature": {"type": "string"},
-                            "product": {"type": "string"},
-                        },
-                    },
-                }
-            }
-        }
-
-        fake_mapping_2 = {
-            config.elasticsearch_doctype: {
-                "properties": {
-                    "namespace1": {
-                        "type": "object",
-                        "properties": {
-                            "subspace1": {
-                                "type": "object",
-                                "properties": {"field_d": {"type": "long"}},
-                            }
-                        },
-                    }
-                }
-            }
-        }
-
-        # Refresh and then delete existing indices so we can rebuild the mappings
-        # in order to diff them
-        self.es_context.refresh()
-        self.es_context.health_check()
-        for index_name in self.es_context.get_indices():
-            self.es_context.delete_index(index_name)
-
-        # Refresh ES to wait for indices to delete
-        self.es_context.refresh()
-        self.es_context.health_check()
-
-        now = libdatetime.utc_now()
-        template = api.context.get_index_template()
-
-        # Create an index for now
-        index_name = now.strftime(template)
-        mapping = fake_mapping_1
-        api.context.create_index(index_name, mappings=mapping)
-
-        # Create an index for 7 days ago
-        index_name = (now - timedelta(days=7)).strftime(template)
-        mapping = fake_mapping_2
-        api.context.create_index(index_name, mappings=mapping)
-
-        # Refresh ES to wait for indices to be created
-        self.es_context.refresh()
-        self.es_context.health_check()
-
-        api = SuperSearchFieldsModel(config=config)
-        missing_fields = api.get_missing_fields()
-        expected = [
-            "field_z",
-            "namespace1.field_a",
-            "namespace1.field_b",
-            "namespace1.subspace1.field_d",
-            "namespace2.subspace1.field_b",
-        ]
-
-        assert missing_fields["hits"] == expected
-        assert missing_fields["total"] == 5
 
     def test_test_mapping(self):
         """Much test. So meta. Wow test_test_."""
