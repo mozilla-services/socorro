@@ -104,7 +104,6 @@ objc_msgLookupSuper2
 objc_terminate
 org\.mozilla\.f.*\.apk@0x
 panic_abort::
-_platform
 PR_WaitCondVar
 __psynch_cvwait
 __pthread_
@@ -171,3 +170,14 @@ RtlFailFast2
 RtlpExecuteHandlerForException
 RtlpHandleInvalidUserCallTarget
 seh_filter_exe
+
+# macOS X libc internals
+_platform
+std::__1
+
+# Windows atomics
+std::atomic
+std::_Atomic
+std::_Fetch
+std::_Load
+std::_Store
