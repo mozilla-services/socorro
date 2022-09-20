@@ -84,8 +84,8 @@ libart\.so@0x
 libobjc.A.dylib@0x
 (libxul\.so|xul\.dll|XUL)@0x
 LL_
-lstrcatA
-lstrlenA
+lstrcat(A|W)
+lstrlen(A|W)
 malloc
 _MD_
 memcmp
@@ -208,30 +208,16 @@ send
 servo_arc::Arc<T>::drop_slow
 SetEvent
 setjmp
-SocketAccept
-SocketAcceptRead
-SocketAvailable
-SocketAvailable64
-SocketBind
-SocketClose
-SocketConnect
-SocketGetName
-SocketGetPeerName
-SocketListen
-SocketPoll
-SocketRead
-SocketRecv
-SocketSend
-SocketShutdown
-SocketSync
-SocketTransmitFile
-SocketWrite
-SocketWritev
+Socket
 ssl_
 SSL_
 std::alloc::rust_oom
 std::_Allocate
-std::_Func_impl_no_alloc<T>::_Do_call
+std::_Func_class<T>::
+std::_Func_impl_no_alloc<T>::
+std::_Func_impl<T>::
+std::_Function_base::_Base_manager<T>::
+std::_Function_handler<T>::
 std::_Hash<T>::
 std::list<.*>::
 std::collections::hash::map::
@@ -275,18 +261,10 @@ mozilla::UniquePtr<T>::reset
 .*\.dll
 
 # platform-specific memset implementations
-avx::memset16
-avx::memset32
-neon::memset32
-portable::memset32
-SK_OPTS_NS::memset32
-sse2::memset32
-sse2::memsetT<T>
+avx::memset
+neon::memset
+portable::memset
 
 # platform-specific strcmp implementations
-g_strcmp0
-lstrcmpA
-lstrcmpW
-lstrcmpiA
-lstrcmpiW
-wstrcmp
+lstrcmp(A|W)
+lstrcmpi(A|W)
