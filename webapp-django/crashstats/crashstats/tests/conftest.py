@@ -14,7 +14,7 @@ from django.core.cache import cache
 from crashstats import productlib
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.testbase import DjangoTestCase
-from socorro.external.es.super_search_fields import FIELDS
+from crashstats.supersearch.libsupersearch import SUPERSEARCH_FIELDS
 
 
 class Response:
@@ -116,7 +116,7 @@ class SuperSearchFieldsMock:
         super().setUp()
 
         def mocked_supersearchfields(**params):
-            results = copy.deepcopy(FIELDS)
+            results = copy.deepcopy(SUPERSEARCH_FIELDS)
             # to be realistic we want to introduce some dupes that have a
             # different key but its `in_database_name` is one that is already
             # in the hardcoded list (the baseline)

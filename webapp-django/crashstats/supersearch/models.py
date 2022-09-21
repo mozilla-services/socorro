@@ -9,9 +9,12 @@ from django.core.cache import cache
 
 from crashstats import productlib
 from crashstats.crashstats import models
+from crashstats.supersearch.libsupersearch import (
+    SUPERSEARCH_FIELDS,
+    SuperSearchStatusModel,
+)
 from socorro.external.es import query
 from socorro.external.es import supersearch
-from socorro.external.es import super_search_fields
 from socorro.lib import BadArgumentError
 
 
@@ -43,7 +46,7 @@ def get_api_allowlist(include_all_fields=False):
         cache_key = "api_supersearch_fields"
         fields = cache.get(cache_key)
         if fields is None:
-            all_fields = SuperSearchFields().get()
+            all_fields = SUPERSEARCH_FIELDS
             fields = []
             for meta in all_fields.values():
                 if (
@@ -103,7 +106,7 @@ class SuperSearch(ESSocorroMiddleware):
     API_ALLOWLIST = get_api_allowlist()
 
     def __init__(self):
-        self.all_fields = SuperSearchFields().get()
+        self.all_fields = SUPERSEARCH_FIELDS
 
         # These fields contain lists of other fields. Later on, we want to
         # make sure that none of those listed fields are restricted.
@@ -197,8 +200,8 @@ class SuperSearchUnredacted(SuperSearch):
     IS_PUBLIC = True
 
     HELP_TEXT = """
-    API for searching and faceting on crash reports. Requires
-    permissions depending on which fields are being queried.
+    API for searching and faceting on crash reports. Requires permissions depending on
+    which fields are being queried.
     """
 
     API_ALLOWLIST = get_api_allowlist(include_all_fields=True)
@@ -206,7 +209,7 @@ class SuperSearchUnredacted(SuperSearch):
     implementation = supersearch.SuperSearch
 
     def __init__(self):
-        self.all_fields = SuperSearchFields().get()
+        self.all_fields = SUPERSEARCH_FIELDS
 
         histogram_fields = self._get_extended_params()
 
@@ -239,10 +242,7 @@ class SuperSearchUnredacted(SuperSearch):
 
 
 class SuperSearchFields(ESSocorroMiddleware):
-    # Read it in once as a class attribute since it'll never change unless the
-    # Python code changes and if that happens you will have reloaded the
-    # Python process.
-    _fields = super_search_fields.SuperSearchFieldsData().get()
+    _fields = SUPERSEARCH_FIELDS
 
     IS_PUBLIC = True
 
@@ -257,7 +257,7 @@ class SuperSearchFields(ESSocorroMiddleware):
 
 
 class SuperSearchStatus(ESSocorroMiddleware):
-    implementation = super_search_fields.SuperSearchStatusModel
+    implementation = SuperSearchStatusModel
 
     cache_seconds = 0
 
