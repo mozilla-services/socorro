@@ -656,7 +656,10 @@ def get_processed_crash_permissions_reducer(permissions_tuple):
     permissioned_schema = transform_schema(
         schema=PROCESSED_CRASH_SCHEMA,
         transform_function=(
-            permissions_transform_function(permissions_have=permissions_tuple)
+            permissions_transform_function(
+                permissions_have=permissions_tuple,
+                default_permissions=PROCESSED_CRASH_SCHEMA["default_permissions"],
+            )
         ),
     )
 

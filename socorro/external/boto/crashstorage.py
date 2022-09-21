@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import copy
 import datetime
 import json
 import logging
@@ -28,9 +27,6 @@ from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 def wait_time_generator():
@@ -301,9 +297,13 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         self.build_reducers()
 
     def build_reducers(self):
-        only_public = permissions_transform_function(permissions_have=["public"])
+        processed_crash_schema = get_schema("processed_crash.schema.yaml")
+        only_public = permissions_transform_function(
+            permissions_have=["public"],
+            default_permissions=processed_crash_schema["default_permissions"],
+        )
         public_processed_crash_schema = transform_schema(
-            schema=copy.deepcopy(PROCESSED_CRASH_SCHEMA),
+            schema=processed_crash_schema,
             transform_function=only_public,
         )
         self.processed_crash_reducer = SocorroDataReducer(

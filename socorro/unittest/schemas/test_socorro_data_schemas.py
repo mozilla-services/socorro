@@ -421,7 +421,10 @@ def test_processed_crash_schema():
     jsonschema.validate(instance=processed_crash_schema, schema=schema)
 
     # Reduce to the public-only parts of the schema
-    public_only = permissions_transform_function(permissions_have=["public"])
+    public_only = permissions_transform_function(
+        permissions_have=["public"],
+        default_permissions=processed_crash_schema["default_permissions"],
+    )
     public_schema = transform_schema(
         schema=processed_crash_schema,
         transform_function=public_only,

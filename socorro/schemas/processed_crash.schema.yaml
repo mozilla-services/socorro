@@ -9,6 +9,8 @@
 $schema: moz://mozilla.org/schemas/socorro/socorro-data/1-0-0
 type: object
 
+default_permissions: ["public", "protected"]
+
 definitions:
   breadcrumbs:
     description: >
@@ -536,6 +538,7 @@ definitions:
               type: ["integer", "null"]
               permissions: ["public"]
           type: ["object", "null"]
+          permissions: ["public"]
         type: ["array", "null"]
         permissions: ["public"]
       line:
