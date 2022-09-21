@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import copy
 import jsonschema
 import pytest
 
@@ -155,7 +156,11 @@ from socorro.schemas import get_file_content
     ],
 )
 def test_resolve_references(schema, expected):
+    original_schema = copy.deepcopy(schema)
     assert resolve_references(schema) == expected
+
+    # resolve_references should never modify the original schema argument
+    assert original_schema == schema
 
 
 class TestSocorroDataReducer:
