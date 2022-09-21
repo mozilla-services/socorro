@@ -7,7 +7,6 @@ import json
 
 import pytest
 
-from socorro.lib import BadArgumentError
 from socorro.external.es.super_search_fields import (
     add_doc_values,
     build_mapping,
@@ -16,7 +15,6 @@ from socorro.external.es.super_search_fields import (
     get_fields_by_item,
     SuperSearchFieldsModel,
 )
-from socorro.lib import libdatetime
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
 
@@ -135,65 +133,7 @@ class Test_build_mapping(ElasticsearchTestCase):
         }
 
 
-class TestIntegrationSuperSearchFields(ElasticsearchTestCase):
-    """Test SuperSearchFields with an elasticsearch database containing fake data"""
-
-    def setup_method(self):
-        super().setup_method()
-
-        config = self.get_base_config(cls=SuperSearchFieldsModel)
-        self.api = SuperSearchFieldsModel(config=config)
-        self.api.get_fields = lambda: copy.deepcopy(FIELDS)
-
-    def test_get_fields(self):
-        results = self.api.get_fields()
-        assert results == FIELDS
-
-    def test_test_mapping(self):
-        """Much test. So meta. Wow test_test_."""
-        # First test a valid mapping.
-        doctype = self.api.context.get_doctype()
-        mapping = build_mapping(doctype=doctype)
-        assert self.api.test_mapping(mapping) is None
-
-        # Insert an invalid storage mapping.
-        fields = {
-            "fake_field": {
-                "name": "fake_field",
-                "namespace": "raw_crash",
-                "in_database_name": "fake_field",
-                "storage_mapping": {"type": "unkwown"},
-            }
-        }
-        mapping = build_mapping(doctype=doctype, fields=fields)
-        with pytest.raises(BadArgumentError):
-            self.api.test_mapping(mapping)
-
-        # Test with a correct mapping, but changes the storage (long) for a field
-        # that's indexed as a string so test_mapping throws an error because those
-        # are incompatible types
-        self.index_crash(
-            {"date_processed": libdatetime.utc_now(), "product": "WaterWolf"}
-        )
-        self.es_context.refresh()
-        fields = {
-            "product": {
-                "name": "product",
-                "namespace": "processed_crash",
-                "in_database_name": "product",
-                "storage_mapping": {"type": "long"},
-            }
-        }
-        mapping = build_mapping(doctype=doctype, fields=fields)
-        with pytest.raises(BadArgumentError):
-            self.api.test_mapping(mapping)
-
-
-def get_fields():
-    return FIELDS.items()
-
-
-@pytest.mark.parametrize("name, properties", get_fields())
+@pytest.mark.parametrize("name, properties", FIELDS.items())
 def test_validate_super_search_fields(name, properties):
     """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
 
