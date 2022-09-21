@@ -10,16 +10,8 @@ from configman import class_converter, Namespace, RequiredConfig
 import elasticsearch
 from elasticsearch_dsl import Search
 
-from socorro.external.es.base import generate_list_of_indexes
-from socorro.lib import libdatetime, BadArgumentError
-
 
 logger = logging.getLogger(__name__)
-
-
-# The number of crash reports to test against when attempting to validate a new
-# Elasticsearch mapping.
-MAPPING_TEST_CRASH_NUMBER = 100
 
 
 def parse_mapping(mapping, namespace):
@@ -333,76 +325,6 @@ class SuperSearchFields(SuperSearchFieldsData):
             "latest_index": latest_index,
             "mapping": mapping_properties,
         }
-
-    def test_mapping(self, mapping):
-        """Verify that a mapping is correct
-
-        This method verifies a mapping by creating a new, temporary index in
-        elasticsearch using the mapping. It then takes some recent crash
-        reports that are in elasticsearch and tries to insert them in the
-        temporary index. Any failure in any of those steps will raise an
-        exception. If any is raised, that means the mapping is incorrect in
-        some way (either it doesn't validate against elasticsearch's rules, or
-        is not compatible with the data we currently store).
-
-        Raises an exception if the mapping is bad.
-
-        Use this to test any mapping changes.
-
-        :arg mapping: the Elasticsearch mapping to test
-
-        """
-        temp_index = "socorro_mapping_test"
-
-        es_connection = self.get_connection()
-
-        try:
-            self.context.create_index(temp_index, mappings=mapping)
-            self.context.refresh()
-            self.context.health_check()
-
-            now = libdatetime.utc_now()
-            last_week = now - datetime.timedelta(days=7)
-            index_template = self.context.get_index_template()
-            current_indices = generate_list_of_indexes(last_week, now, index_template)
-
-            # Attempt the search a few times to allow for ephemeral failures which keep
-            # happening in CI
-            attempts = 5
-            while attempts > 0:
-                try:
-                    crashes_sample = es_connection.search(
-                        index=current_indices,
-                        doc_type=self.context.get_doctype(),
-                        size=MAPPING_TEST_CRASH_NUMBER,
-                    )
-                    break
-                except elasticsearch.exceptions.TransportError:
-                    attempts -= 1
-                    if attempts == 0:
-                        raise
-
-            crashes = [x["_source"] for x in crashes_sample["hits"]["hits"]]
-
-            for crash in crashes:
-                es_connection.index(
-                    index=temp_index, doc_type=self.context.get_doctype(), body=crash
-                )
-        except elasticsearch.exceptions.ElasticsearchException as e:
-            raise BadArgumentError(
-                "storage_mapping",
-                msg=(
-                    "Indexing existing data in Elasticsearch failed with the "
-                    "new mapping. Error is: %s" % str(e)
-                ),
-            )
-        finally:
-            try:
-                self.context.indices_client().delete(temp_index)
-            except elasticsearch.exceptions.NotFoundError:
-                # If the index does not exist (if the index creation failed
-                # for example), we don't need to do anything.
-                pass
 
 
 class SuperSearchFieldsModel(RequiredConfig, SuperSearchFields):
