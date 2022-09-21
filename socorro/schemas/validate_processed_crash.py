@@ -22,6 +22,7 @@ from socorro.lib.libsocorrodataschema import (
     transform_schema,
     validate_instance,
 )
+from socorro.schemas import get_file_content
 
 
 HERE = os.path.dirname(__file__)
@@ -116,8 +117,12 @@ def match_key(schema_key, document_key):
 @click.argument("crashdir")
 @click.pass_context
 def validate_and_test(ctx, crashdir):
-    jsonschema.Draft4Validator.check_schema(PROCESSED_CRASH_SCHEMA)
-    click.echo("processed crash schema is a valid JSON schema.")
+    socorro_data_schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+    jsonschema.Draft7Validator.check_schema(socorro_data_schema)
+    click.echo("socorro-data-1-0-0.schema.yaml is a valid jsonschema.")
+
+    jsonschema.validate(instance=PROCESSED_CRASH_SCHEMA, schema=socorro_data_schema)
+    click.echo("processed crash schema is a valid socorro data schema.")
 
     # Fetch crash report data from a Super Search URL
     datapath = pathlib.Path(crashdir).resolve()
