@@ -125,30 +125,30 @@ def resolve_reference(root_schema, schema, ref):
 def resolve_references(schema):
     """Returns a schema with all ``$ref`` resolved
 
-    This works for both jsonschema schemas and socorro-data schemas because they
-    both support ``$ref`` in the same way Socorro uses it.
-
     .. Note::
 
-       When resolving a ``$ref``, all the properties are replaced with the exception of
-       "socorro" which is copied into the referenced schema.
+       When resolving a ``$ref`` in a schema, the fields in the schema are kept with the
+       exception of ``$ref``.
 
        For example::
 
            "definitions": {
                "color_definition": {
+                   # These are kept in the final resolved schema.
                    "type": "object",
                    "properties": {
                        "name": {"type": "string"},
                        "hex": {"type": "string"},
                    },
+                   # These are dropped.
                    "foo": "bat",
-                   # This is overwritten by the referring schema
                    "properties": ["public"],
                },
            },
            "color": {
+               # This is dropped.
                "$ref": "#/definitions/color_definition",
+               # These are kept in the final resolved schema.
                "foo": "bar",
                "properties": ["protected"],
            }
@@ -156,14 +156,14 @@ def resolve_references(schema):
        Results in:
 
            "color": {
-               # From the referenced schema
+               # From the schema.
                "type": "object",
                "properties": {
                    "name": {"type": "string"},
                    "hex": {"type": "string"},
                },
                "foo": "bat",
-               # From the referring schema
+               # From the reference schema.
                "properties": ["protected"],
            }
 
@@ -185,23 +185,24 @@ def resolve_references(schema):
                 ref=schema["$ref"],
             )
 
-        type_ = schema["type"]
-        if "object" in type_:
-            if schema.get("properties"):
-                schema["properties"] = {
-                    key: _resolve(root_schema, val)
-                    for key, val in schema["properties"].items()
+        new_schema = {}
+        for key, val in schema.items():
+            if key == "properties":
+                val = {
+                    subkey: _resolve(root_schema, subval)
+                    for subkey, subval in val.items()
                 }
-            if schema.get("pattern_properties"):
-                schema["pattern_properties"] = {
-                    key: _resolve(root_schema, val)
-                    for key, val in schema["pattern_properties"].items()
+            elif key == "pattern_properties":
+                val = {
+                    subkey: _resolve(root_schema, subval)
+                    for subkey, subval in val.items()
                 }
+            elif key == "items":
+                val = _resolve(root_schema, val)
 
-        elif "array" in type_:
-            schema["items"] = _resolve(root_schema, schema["items"])
+            new_schema[key] = val
 
-        return schema
+        return new_schema
 
     # Remove the "definitions" section to make it smaller
     new_schema = _resolve(root_schema=schema, schema=schema)
