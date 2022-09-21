@@ -7,7 +7,11 @@ from socorro.unittest.external.boto import get_config
 
 
 class TestUploadTelemetrySchema:
-    def test_upload_worked(self, boto_helper, caplogpp):
+    def test_upload_worked(self, boto_helper, caplogpp, monkeypatch):
+        # NOTE(willkg): configman apps look at sys.argv for command line arguments, so
+        # we monkey patch sys.argv so it doesn't pick up pytest arguments and errors
+        # out
+        monkeypatch.setattr("sys.argv", ["upload_telemetry_schema.py"])
         caplogpp.set_level("DEBUG")
         config = get_config(UploadTelemetrySchema)
         app = UploadTelemetrySchema(config)
