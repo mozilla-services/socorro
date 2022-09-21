@@ -13,7 +13,6 @@ from socorro.external.es.super_search_fields import (
     FIELDS,
     is_doc_values_friendly,
     get_fields_by_item,
-    SuperSearchFieldsModel,
 )
 from socorro.unittest.external.es.base import ElasticsearchTestCase
 
@@ -23,6 +22,10 @@ from socorro.unittest.external.es.base import ElasticsearchTestCase
 # import logging
 # logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 # logging.getLogger('requests').setLevel(logging.ERROR)
+
+
+def get_fields():
+    return copy.deepcopy(FIELDS)
 
 
 class Test_get_fields_by_item:
@@ -94,16 +97,9 @@ class Test_get_fields_by_item:
 class Test_build_mapping(ElasticsearchTestCase):
     """Test build_mapping with an elasticsearch database containing fake data"""
 
-    def setup_method(self):
-        super().setup_method()
-
-        config = self.get_base_config(cls=SuperSearchFieldsModel)
-        self.api = SuperSearchFieldsModel(config=config)
-        self.api.get_fields = lambda: copy.deepcopy(FIELDS)
-
     def test_get_mapping(self):
         doctype = self.es_context.get_doctype()
-        mapping = build_mapping(doctype=doctype, fields=self.api.get_fields())
+        mapping = build_mapping(doctype=doctype, fields=get_fields())
 
         assert doctype in mapping
         properties = mapping[doctype]["properties"]

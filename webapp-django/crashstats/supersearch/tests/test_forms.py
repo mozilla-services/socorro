@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from crashstats.supersearch import forms
-from socorro.external.es.super_search_fields import FIELDS
+from crashstats.supersearch.libsupersearch import SUPERSEARCH_FIELDS
 
 
 class TestForms:
@@ -11,7 +11,7 @@ class TestForms:
         self.products = ["WaterWolf", "NightTrain", "SeaMonkey", "Tinkerbell"]
         self.product_versions = ["20.0", "21.0a1", "20.0", "9.5"]
         self.platforms = ["Windows", "Mac OS X", "Linux"]
-        self.all_fields = FIELDS
+        self.all_fields = SUPERSEARCH_FIELDS
 
     def test_search_form(self):
         def get_new_form(data):
