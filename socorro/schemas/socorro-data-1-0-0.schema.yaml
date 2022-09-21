@@ -10,6 +10,12 @@ description: >
   Schema for defining Socorro-related data schemas.
 
 definitions:
+  simple_permissions:
+    enum:
+      - "public"
+      - "protected"
+    type: string
+
   simple_types:
     enum:
       - "array"
@@ -19,6 +25,7 @@ definitions:
       - "number"
       - "object"
       - "string"
+    type: string
 
   medium_id:
     allOf:
@@ -99,8 +106,7 @@ definitions:
         description: >
           The permissions required to view this field.
         items:
-          enum: ["public", "protected"]
-          type: string
+          $ref: "#/definitions/simple_permissions"
 
         type: array
         uniqueItems: true
@@ -134,6 +140,16 @@ properties:
   $schema:
     type: string
     format: url
+
+  default_permissions:
+    description: >
+      The default permission set required for items not defined by the schema
+      and items defined by the schema that don't have a permission set.
+
+    items:
+      $ref: "#/definitions/simple_permissions"
+    type: array
+    uniqueItems: true
 
   definitions:
     type: object

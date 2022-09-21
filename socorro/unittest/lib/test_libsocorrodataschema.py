@@ -673,7 +673,10 @@ def test_permissions_transform_function():
     jsonschema.validate(instance=schema, schema=socorro_data_schema)
 
     # Create a public-only transform
-    public_only = permissions_transform_function(permissions_have=["public"])
+    public_only = permissions_transform_function(
+        permissions_have=["public"],
+        default_permissions=["public", "protected"],
+    )
 
     # Transform the schema using the public-only transform
     public_schema = transform_schema(schema=schema, transform_function=public_only)
@@ -709,7 +712,8 @@ def test_permissions_transform_function():
 
     # Create a public/protected transform
     all_permissions = permissions_transform_function(
-        permissions_have=["public", "protected"]
+        permissions_have=["public", "protected"],
+        default_permissions=["public", "protected"],
     )
 
     # Transform the schema using the public-only transform

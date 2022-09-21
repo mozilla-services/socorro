@@ -219,11 +219,13 @@ class _DropItem:
 DROP_ITEM = _DropItem()
 
 
-def permissions_transform_function(permissions_have):
+def permissions_transform_function(permissions_have, default_permissions):
     """Creates a permissions transform function that returns True iff user has all
     required permissions for specified field
 
     :arg permissions_have: the list of permissions the user has
+    :arg default_permissions: list of default required permissions if the schema
+        item doesn't specify
 
     :returns: True if the user has all required permissions
 
@@ -231,10 +233,12 @@ def permissions_transform_function(permissions_have):
     permissions_have = frozenset(permissions_have)
 
     def _permissions_predicate(path, schema_item):
-        permissions_required = schema_item.get("permissions") or []
+        permissions_required = schema_item.get("permissions") or default_permissions
         permissions_required = frozenset(permissions_required)
 
-        if len(permissions_required - permissions_have) > 0:
+        # Check permissions and drop fields when the user doesn't have permissions
+        # except for when path is "" which is the top-level of the schema
+        if path and len(permissions_required - permissions_have) > 0:
             return DROP_ITEM
         return schema_item
 
@@ -325,12 +329,11 @@ def transform_schema(schema, transform_function):
     if "definitions" in schema:
         schema = resolve_references(schema)
 
-    new_schema = _transform_schema(
+    return _transform_schema(
         schema=schema,
         path="",
         transform_function=transform_function,
     )
-    return new_schema
 
 
 # Cache of pattern -> re object
