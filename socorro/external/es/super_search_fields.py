@@ -4,8 +4,13 @@
 
 import logging
 
+from socorro.lib.libsocorrodataschema import get_schema
+
 
 logger = logging.getLogger(__name__)
+
+
+PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
 def parse_mapping(mapping, namespace):
@@ -287,7 +292,6 @@ def boolean_field(
     description,
     namespace="processed_crash",
     in_database_name="",
-    is_protected=True,
 ):
     """Generates a boolean field.
 
@@ -300,16 +304,10 @@ def boolean_field(
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
-    :param is_protected: whether or not this is protected data
 
     :returns: super search field specification as a dict
 
     """
-    if is_protected:
-        permissions_needed = ["crashstats.view_pii"]
-    else:
-        permissions_needed = []
-
     in_database_name = in_database_name or name
 
     return {
@@ -323,7 +321,6 @@ def boolean_field(
         "is_exposed": True,
         "is_returned": True,
         "query_type": "bool",
-        "permissions_needed": permissions_needed,
         "storage_mapping": {"type": "boolean"},
     }
 
@@ -334,7 +331,6 @@ def keyword_field(
     namespace="processed_crash",
     in_database_name="",
     choices=None,
-    is_protected=True,
 ):
     """Generates a keyword field.
 
@@ -348,17 +344,10 @@ def keyword_field(
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
     :param choices: a list of valid values for the dropdown
-    :param is_protected: whether or not this is protected data
 
     :returns: super search field specification as a dict
 
     """
-
-    if is_protected:
-        permissions_needed = ["crashstats.view_pii"]
-    else:
-        permissions_needed = []
-
     in_database_name = in_database_name or name
 
     choices = choices or []
@@ -373,7 +362,6 @@ def keyword_field(
         "in_database_name": in_database_name,
         "is_exposed": True,
         "is_returned": True,
-        "permissions_needed": permissions_needed,
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     }
@@ -385,7 +373,6 @@ def number_field(
     namespace="processed_crash",
     in_database_name="",
     number_type="integer",
-    is_protected=True,
 ):
     """Generates a numeric field.
 
@@ -396,16 +383,10 @@ def number_field(
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
     :param number_type: "short", "integer", "long", "double"
-    :param is_protected: whether or not this is protected data
 
     :returns: super search field specification as a dict
 
     """
-    if is_protected:
-        permissions_needed = ["crashstats.view_pii"]
-    else:
-        permissions_needed = []
-
     in_database_name = in_database_name or name
 
     if number_type not in ["short", "integer", "long", "double"]:
@@ -422,9 +403,42 @@ def number_field(
         "is_exposed": True,
         "is_returned": True,
         "query_type": "number",
-        "permissions_needed": permissions_needed,
         "storage_mapping": {"type": number_type},
     }
+
+
+def apply_schema_properties(fields, schema):
+    """Applies schema properties to super search fields
+
+    This applies properties from the schema to super search fields. Currently, this
+    is just "permissions", but later will include other things.
+
+    Note: This mutates the fields input.
+
+    :arg fields: the super search FIELDS structure
+    :arg schema: a socorro data schema
+
+    :returns: a super search FIELDS structure with schema properties added
+
+    """
+    default_permissions = schema["default_permissions"]
+
+    for key, val in fields.items():
+        source_key = get_source_key(val)
+        if not source_key or not source_key.startswith("processed_crash."):
+            continue
+
+        path = source_key.split(".")[1:]
+        schema_node = schema
+
+        # NOTE(willkg): if the path doesn't point to something in the schema, that's
+        # an error and we should fix the field
+        for part in path:
+            schema_node = schema_node["properties"][part]
+
+        val["permissions_needed"] = schema_node.get("permissions", default_permissions)
+
+    return fields
 
 
 # Tree of super search fields
@@ -439,14 +453,12 @@ FIELDS = {
         "is_returned": True,
         "name": "application_build_id",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
     "crash_report_keys": keyword_field(
         name="crash_report_keys",
         description="Crash annotation keys and dump filenames from the crash report.",
-        is_protected=False,
     ),
     "phc_kind": {
         "data_validation_type": "str",
@@ -461,7 +473,6 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_kind",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -478,7 +489,6 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_base_address",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -495,7 +505,6 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_usable_size",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -513,7 +522,6 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_alloc_stack",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -531,7 +539,6 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_free_stack",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -545,7 +552,6 @@ FIELDS = {
         "is_returned": True,
         "name": "abort_message",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -565,7 +571,6 @@ FIELDS = {
         "is_returned": True,
         "name": "accessibility",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -579,7 +584,6 @@ FIELDS = {
         "is_returned": True,
         "name": "accessibility_client",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -596,7 +600,6 @@ FIELDS = {
         "is_returned": True,
         "name": "accessibility_in_proc_client",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -610,7 +613,6 @@ FIELDS = {
         "is_returned": True,
         "name": "adapter_device_id",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -624,7 +626,6 @@ FIELDS = {
         "is_returned": True,
         "name": "adapter_driver_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -638,7 +639,6 @@ FIELDS = {
         "is_returned": True,
         "name": "adapter_subsys_id",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -656,7 +656,6 @@ FIELDS = {
         "is_returned": True,
         "name": "adapter_vendor_id",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -675,7 +674,6 @@ FIELDS = {
         "is_returned": True,
         "name": "addons",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -689,7 +687,6 @@ FIELDS = {
         "is_returned": True,
         "name": "addons_checked",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "boolean"},
     },
@@ -706,7 +703,6 @@ FIELDS = {
         "is_returned": True,
         "name": "address",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -720,7 +716,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_board",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -734,7 +729,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_brand",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -748,7 +742,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_cpu_abi",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -762,7 +755,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_cpu_abi2",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -776,7 +768,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_device",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -790,7 +781,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_display",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -804,7 +794,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_fingerprint",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -818,7 +807,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_hardware",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -832,7 +820,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_manufacturer",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -846,7 +833,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_model",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -866,7 +852,6 @@ FIELDS = {
         "is_returned": True,
         "name": "android_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -880,7 +865,6 @@ FIELDS = {
         "is_returned": True,
         "name": "app_init_dlls",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
@@ -897,7 +881,6 @@ FIELDS = {
         "is_returned": True,
         "name": "app_notes",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -915,7 +898,6 @@ FIELDS = {
         "is_returned": True,
         "name": "async_shutdown_timeout",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -942,7 +924,6 @@ FIELDS = {
         "is_returned": True,
         "name": "available_page_file",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -960,7 +941,6 @@ FIELDS = {
         "is_returned": True,
         "name": "available_physical_memory",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -979,7 +959,6 @@ FIELDS = {
         "is_returned": True,
         "name": "available_virtual_memory",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -993,7 +972,6 @@ FIELDS = {
         "is_returned": True,
         "name": "bios_manufacturer",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1010,7 +988,6 @@ FIELDS = {
         "is_returned": True,
         "name": "build_id",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1028,7 +1005,6 @@ FIELDS = {
         "is_returned": True,
         "name": "co_marshal_interface_failure",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -1045,7 +1021,6 @@ FIELDS = {
         "is_returned": True,
         "name": "collector_notes",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1068,7 +1043,6 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_capabilities",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "integer"},
     },
@@ -1082,7 +1056,6 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_capable",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1096,7 +1069,6 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_enabled",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1110,7 +1082,6 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_level",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "short"},
     },
@@ -1127,7 +1098,6 @@ FIELDS = {
         "is_returned": True,
         "name": "cpu_arch",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1141,7 +1111,6 @@ FIELDS = {
         "is_returned": True,
         "name": "cpu_count",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         # FIXME(willkg): We can stop pulling from the old location in 12/2022
         "source_key": "processed_crash.json_dump.system_info.cpu_count",
         "destination_keys": [
@@ -1164,7 +1133,6 @@ FIELDS = {
         "is_returned": True,
         "name": "cpu_info",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -1188,7 +1156,6 @@ FIELDS = {
         "is_returned": True,
         "name": "cpu_microcode_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -1196,13 +1163,11 @@ FIELDS = {
         "crashing_thread",
         description="Index of the crashing thread.",
         in_database_name="crashing_thread",
-        is_protected=False,
     ),
     "crashing_thread_name": keyword_field(
         "crashing_thread_name",
         description="Name of the crashing thread.",
         in_database_name="crashing_thread_name",
-        is_protected=False,
     ),
     "date": {
         "data_validation_type": "datetime",
@@ -1214,7 +1179,6 @@ FIELDS = {
         "is_returned": True,
         "name": "date",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "date",
         "storage_mapping": {
             "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ",
@@ -1227,7 +1191,6 @@ FIELDS = {
             "Product application's distribution ID. This is either the DistributionID "
             "annotation or the TelemetryEnvironment.partner.distributionId value."
         ),
-        is_protected=False,
     ),
     "dom_fission_enabled": {
         "data_validation_type": "bool",
@@ -1242,7 +1205,6 @@ FIELDS = {
         "is_returned": True,
         "name": "dom_fission_enabled",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1256,7 +1218,6 @@ FIELDS = {
         "is_returned": True,
         "name": "dom_ipc_enabled",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1272,7 +1233,6 @@ FIELDS = {
         "is_returned": True,
         "name": "dumper_error",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -1296,7 +1256,6 @@ FIELDS = {
         "is_returned": True,
         "name": "em_check_compatibility",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1310,10 +1269,6 @@ FIELDS = {
         "is_returned": True,
         "name": "gmp_library_path",
         "namespace": "processed_crash",
-        "permissions_needed": [
-            # This contains file paths on the user's computer.
-            "crashstats.view_pii"
-        ],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1327,7 +1282,6 @@ FIELDS = {
         "is_returned": True,
         "name": "gmp_plugin",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1341,7 +1295,6 @@ FIELDS = {
         "is_returned": True,
         "name": "graphics_critical_error",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1359,7 +1312,6 @@ FIELDS = {
         "is_returned": True,
         "name": "graphics_startup_test",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1376,7 +1328,6 @@ FIELDS = {
         "is_returned": True,
         "name": "has_device_touch_screen",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1390,7 +1341,6 @@ FIELDS = {
         "is_returned": True,
         "name": "install_age",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1408,7 +1358,6 @@ FIELDS = {
         "is_returned": True,
         "name": "install_time",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1422,7 +1371,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_channel_error",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -1436,7 +1384,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_fatal_error_msg",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1454,7 +1401,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_fatal_error_protocol",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -1468,7 +1414,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_message_name",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1486,7 +1431,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_message_size",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1503,7 +1447,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_shutdown_state",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1520,7 +1463,6 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_system_error",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "integer"},
     },
@@ -1534,7 +1476,6 @@ FIELDS = {
         "is_returned": True,
         "name": "is_garbage_collecting",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -1551,7 +1492,6 @@ FIELDS = {
         "is_returned": True,
         "name": "java_stack_trace",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1572,7 +1512,6 @@ FIELDS = {
         "is_returned": True,
         "name": "java_stack_trace_raw",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1593,7 +1532,6 @@ FIELDS = {
         "is_returned": True,
         "name": "last_crash",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1607,7 +1545,6 @@ FIELDS = {
         "is_returned": True,
         "name": "mac_crash_info",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -1622,7 +1559,6 @@ FIELDS = {
             "Expected to be a percentage integer value."
         ),
         number_type="integer",
-        is_protected=False,
     ),
     "mac_memory_pressure": keyword_field(
         name="mac_memory_pressure",
@@ -1635,7 +1571,6 @@ FIELDS = {
             "is a Mac-specific annotation."
         ),
         choices=["Normal", "Unset", "Warning", "Critical", "Unexpected"],
-        is_protected=False,
     ),
     "mac_memory_pressure_sysctl": number_field(
         name="mac_memory_pressure_sysctl",
@@ -1646,7 +1581,6 @@ FIELDS = {
             "are one of 4 (Critical), 2 (Warning), or 0 (Normal)."
         ),
         number_type="integer",
-        is_protected=False,
     ),
     "major_version": {
         "data_validation_type": "int",
@@ -1658,7 +1592,6 @@ FIELDS = {
         "is_returned": True,
         "name": "major_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "integer"},
     },
@@ -1686,7 +1619,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_error_correction",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -1703,7 +1635,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_explicit",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1720,7 +1651,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_gfx_textures",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1737,7 +1667,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_ghost_windows",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1754,7 +1683,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_allocated",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1771,7 +1699,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_overhead",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1788,7 +1715,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_unclassified",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1805,7 +1731,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_host_object_urls",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1822,7 +1747,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_images",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1839,7 +1763,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_js_main_runtime",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1854,7 +1777,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_measures",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": None,
     },
@@ -1871,7 +1793,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_private",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1888,7 +1809,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_resident",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1905,7 +1825,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_resident_unique",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1922,7 +1841,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_system_heap_allocated",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1939,7 +1857,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_top_none_detached",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1956,7 +1873,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_vsize",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1973,7 +1889,6 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_vsize_max_contiguous",
         "namespace": "processed_crash.memory_measures",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -1987,7 +1902,6 @@ FIELDS = {
         "is_returned": True,
         "name": "minidump_sha256_hash",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -2001,7 +1915,6 @@ FIELDS = {
         "is_returned": True,
         "name": "modules_in_stack",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
@@ -2018,7 +1931,6 @@ FIELDS = {
         "is_returned": True,
         "name": "moz_crash_reason",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2039,7 +1951,6 @@ FIELDS = {
         "is_returned": True,
         "name": "moz_crash_reason_raw",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2062,7 +1973,6 @@ FIELDS = {
         "is_returned": True,
         "name": "oom_allocation_size",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2080,7 +1990,6 @@ FIELDS = {
         "is_returned": True,
         "name": "platform",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
@@ -2100,7 +2009,6 @@ FIELDS = {
         "is_returned": True,
         "name": "platform_pretty_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2118,7 +2026,6 @@ FIELDS = {
         "is_returned": True,
         "name": "platform_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2139,7 +2046,6 @@ FIELDS = {
         "is_returned": True,
         "name": "plugin_filename",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
@@ -2163,7 +2069,6 @@ FIELDS = {
         "is_returned": True,
         "name": "plugin_name",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
@@ -2187,7 +2092,6 @@ FIELDS = {
         "is_returned": True,
         "name": "plugin_version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
@@ -2218,7 +2122,6 @@ FIELDS = {
         "is_returned": True,
         "name": "process_type",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -2235,7 +2138,6 @@ FIELDS = {
         "is_returned": True,
         "name": "processor_notes",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2253,7 +2155,6 @@ FIELDS = {
         "is_returned": True,
         "name": "product",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
@@ -2273,7 +2174,6 @@ FIELDS = {
         "is_returned": True,
         "name": "productid",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2289,7 +2189,6 @@ FIELDS = {
         "is_returned": True,
         "name": "proto_signature",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
@@ -2310,7 +2209,6 @@ FIELDS = {
         "is_returned": True,
         "name": "reason",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -2333,7 +2231,6 @@ FIELDS = {
         "is_returned": True,
         "name": "release_channel",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2345,12 +2242,11 @@ FIELDS = {
         ),
         "form_field_choices": [],
         "has_full_version": False,
-        "in_database_name": "Remote_type",
+        "in_database_name": "remote_type",
         "is_exposed": True,
         "is_returned": True,
         "name": "remote_type",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2364,7 +2260,6 @@ FIELDS = {
         "is_returned": True,
         "name": "safe_mode",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -2378,7 +2273,6 @@ FIELDS = {
         "is_returned": True,
         "name": "shutdown_progress",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
@@ -2397,7 +2291,6 @@ FIELDS = {
         "is_returned": True,
         "name": "signature",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -2407,28 +2300,10 @@ FIELDS = {
             "type": "multi_field",
         },
     },
-    # FIXME(willkg): where does this come from?
-    "skunk_classification": {
-        "data_validation_type": "enum",
-        "description": (
-            "The skunk classification of this crash report, assigned by the processors."
-        ),
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "classification",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "skunk_classification",
-        "namespace": "processed_crash.classifications.skunk_works",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "string"},
-    },
     "stackwalk_version": keyword_field(
         name="stackwalk_version",
         description="binary and version for stackwalker used to process report",
         namespace="processed_crash",
-        is_protected=False,
     ),
     "startup_crash": {
         "data_validation_type": "bool",
@@ -2443,7 +2318,6 @@ FIELDS = {
         "is_returned": True,
         "name": "startup_crash",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         # NOTE(willkg): startup_crash is used in signature report in some interesting
         # ways so I think we need to have both T and F values in ES
@@ -2459,7 +2333,6 @@ FIELDS = {
         "is_returned": True,
         "name": "startup_time",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2470,25 +2343,7 @@ FIELDS = {
             "this crash was submitted by the user: Auto, Infobar, AboutCrashes, "
             "CrashedTab, and Client."
         ),
-        is_protected=False,
     ),
-    # FIXME(willkg): where does this come from?
-    "support_classification": {
-        "data_validation_type": "enum",
-        "description": (
-            "The support classification of this crash report, assigned by the processors."
-        ),
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "classification",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "support_classification",
-        "namespace": "processed_crash.classifications.support",
-        "permissions_needed": [],
-        "query_type": "enum",
-        "storage_mapping": {"type": "string"},
-    },
     "system_memory_use_percentage": {
         "data_validation_type": "int",
         "description": "The approximate percentage of physical memory that is in use.",
@@ -2499,7 +2354,6 @@ FIELDS = {
         "is_returned": True,
         "name": "system_memory_use_percentage",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2513,7 +2367,6 @@ FIELDS = {
         "is_returned": True,
         "name": "throttleable",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
@@ -2527,7 +2380,6 @@ FIELDS = {
         "is_returned": True,
         "name": "topmost_filenames",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "string",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
@@ -2541,7 +2393,6 @@ FIELDS = {
         "is_returned": True,
         "name": "total_page_file",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2555,7 +2406,6 @@ FIELDS = {
         "is_returned": True,
         "name": "total_physical_memory",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2574,7 +2424,6 @@ FIELDS = {
         "is_returned": True,
         "name": "total_virtual_memory",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2589,7 +2438,6 @@ FIELDS = {
         "is_returned": True,
         "name": "upload_file_minidump_browser",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": None,
     },
@@ -2607,7 +2455,6 @@ FIELDS = {
         "is_returned": True,
         "name": "uptime",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
@@ -2624,7 +2471,6 @@ FIELDS = {
         "is_returned": True,
         "name": "uptime_ts",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "number",
         "storage_mapping": {"type": "double"},
     },
@@ -2643,7 +2489,6 @@ FIELDS = {
         "is_returned": True,
         "name": "url",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2657,7 +2502,6 @@ FIELDS = {
         "is_returned": True,
         "name": "user_comments",
         "namespace": "processed_crash",
-        "permissions_needed": ["crashstats.view_pii"],
         "query_type": "string",
         "storage_mapping": {
             "fields": {
@@ -2677,7 +2521,6 @@ FIELDS = {
         "is_returned": True,
         "name": "useragent_locale",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
@@ -2685,7 +2528,6 @@ FIELDS = {
         name="utility_process_sandboxing_kind",
         description="The SandboxingKind passed for this Utility process instance",
         number_type="integer",
-        is_protected=False,
     ),
     "uuid": {
         "data_validation_type": "enum",
@@ -2697,7 +2539,6 @@ FIELDS = {
         "is_returned": True,
         "name": "uuid",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2711,7 +2552,6 @@ FIELDS = {
         "is_returned": True,
         "name": "vendor",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
@@ -2730,7 +2570,6 @@ FIELDS = {
         "is_returned": True,
         "name": "version",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
@@ -2740,7 +2579,6 @@ FIELDS = {
             "Set to 1 if this crash was intercepted via the Windows Error Reporting "
             "runtime exception module."
         ),
-        is_protected=False,
     ),
     "xpcom_spin_event_loop_stack": keyword_field(
         name="xpcom_spin_event_loop_stack",
@@ -2748,6 +2586,8 @@ FIELDS = {
             "If we crash while some code is spinning manually the event loop, we will "
             "see the stack of nested annotations here."
         ),
-        is_protected=False,
     ),
 }
+
+
+FIELDS = apply_schema_properties(FIELDS, schema=PROCESSED_CRASH_SCHEMA)

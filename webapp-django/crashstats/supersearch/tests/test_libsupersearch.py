@@ -3,4 +3,35 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-# FIXME(willkg): test SuperSearchStatusModel
+from crashstats.supersearch.libsupersearch import convert_permissions
+
+
+def test_convert_permissions():
+    fields = {
+        "build": {
+            "permissions_needed": [],
+        },
+        "product": {
+            "permissions_needed": ["public"],
+        },
+        "version": {
+            "permissions_needed": ["public", "protected"],
+        },
+    }
+
+    expected = {
+        "build": {
+            # No permission -> no required permissions
+            "permissions_needed": [],
+        },
+        "product": {
+            # "public" -> no required permissions
+            "permissions_needed": [],
+        },
+        "version": {
+            # "protected" -> "crashstats.view_pii"
+            "permissions_needed": ["crashstats.view_pii"],
+        },
+    }
+
+    assert convert_permissions(fields) == expected
