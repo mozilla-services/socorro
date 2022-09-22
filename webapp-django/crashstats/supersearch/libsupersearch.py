@@ -12,7 +12,38 @@ from elasticsearch_dsl import Search
 from socorro.external.es.super_search_fields import FIELDS
 
 
-SUPERSEARCH_FIELDS = FIELDS
+# Map of processed crash schema permissions to webapp permissions
+PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS = {
+    "public": "",
+    "protected": "crashstats.view_pii",
+}
+
+
+def convert_permissions(fields):
+    """Converts processed crash schema / super search permissions to webapp permissions
+
+    :arg fields: super search fields structure to convert permissions of
+
+    :returns: fields with permissions converted
+
+    """
+
+    def _convert(permissions):
+        if not permissions:
+            return permissions
+
+        new_permissions = [
+            PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS[perm] for perm in permissions
+        ]
+        return [perm for perm in new_permissions if perm]
+
+    for key, val in fields.items():
+        val["permissions_needed"] = _convert(val["permissions_needed"])
+
+    return fields
+
+
+SUPERSEARCH_FIELDS = convert_permissions(FIELDS)
 
 
 @dataclass
