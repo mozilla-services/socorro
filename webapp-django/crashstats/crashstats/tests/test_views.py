@@ -451,10 +451,10 @@ class TestViews(BaseTestViews):
 
         # Ensure fields have their description in title.
         assert "No description for this field." in content
-        # NOTE(willkg): This is the description of "crash address". If we ever
+        # NOTE(willkg): This is the description of the "address" field. If we ever
         # change that we'll need to update this to another description that
         # shows up.
-        assert "The crashing address." in content
+        assert "The address where the crashing thread crashed." in content
 
         metrics_mock.assert_timing(
             "webapp.view.pageview",

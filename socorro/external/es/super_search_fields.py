@@ -289,7 +289,6 @@ def get_fields_by_item(fields, key, val):
 
 def boolean_field(
     name,
-    description,
     namespace="processed_crash",
     in_database_name="",
 ):
@@ -299,8 +298,6 @@ def boolean_field(
     show up in aggregations.
 
     :param name: the name used to query the field in super search
-    :param description: the description of this field; if this is a crash annotation,
-        you can copy the annotation description
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
@@ -312,7 +309,6 @@ def boolean_field(
 
     return {
         "name": name,
-        "description": description,
         "data_validation_type": "bool",
         "form_field_choices": [],
         "has_full_version": False,
@@ -327,7 +323,6 @@ def boolean_field(
 
 def keyword_field(
     name,
-    description,
     namespace="processed_crash",
     in_database_name="",
     choices=None,
@@ -338,8 +333,6 @@ def keyword_field(
     names, fields that have a limited set of choices, etc.
 
     :param name: the name used to query the field in super search
-    :param description: the description of this field; if this is a crash annotation,
-        you can copy the annotation description
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
@@ -354,7 +347,6 @@ def keyword_field(
 
     return {
         "name": name,
-        "description": description,
         "data_validation_type": "str",
         "form_field_choices": choices,
         "has_full_version": False,
@@ -369,7 +361,6 @@ def keyword_field(
 
 def number_field(
     name,
-    description,
     namespace="processed_crash",
     in_database_name="",
     number_type="integer",
@@ -377,8 +368,6 @@ def number_field(
     """Generates a numeric field.
 
     :param name: the name used to query the field in super search
-    :param description: the description of this field; if this is a crash annotation,
-        you can copy the annotation description
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
@@ -394,7 +383,6 @@ def number_field(
 
     return {
         "name": name,
-        "description": description,
         "data_validation_type": "int",
         "form_field_choices": [],
         "has_full_version": False,
@@ -437,6 +425,7 @@ def apply_schema_properties(fields, schema):
             schema_node = schema_node["properties"][part]
 
         val["permissions_needed"] = schema_node.get("permissions", default_permissions)
+        val["description"] = schema_node.get("description", "")
 
     return fields
 
@@ -445,7 +434,6 @@ def apply_schema_properties(fields, schema):
 FIELDS = {
     "application_build_id": {
         "data_validation_type": "int",
-        "description": "Product application's build ID.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "application_build_id",
@@ -458,14 +446,9 @@ FIELDS = {
     },
     "crash_report_keys": keyword_field(
         name="crash_report_keys",
-        description="Crash annotation keys and dump filenames from the crash report.",
     ),
     "phc_kind": {
         "data_validation_type": "str",
-        "description": (
-            "The allocation kind, if the crash involved a bad access of a special PHC "
-            "allocation."
-        ),
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "phc_kind",
@@ -478,10 +461,6 @@ FIELDS = {
     },
     "phc_base_address": {
         "data_validation_type": "str",
-        "description": (
-            "The allocation's base address, if the crash involved a bad access of a "
-            "special PHC allocation. Encoded as a decimal address."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_base_address",
@@ -494,10 +473,6 @@ FIELDS = {
     },
     "phc_usable_size": {
         "data_validation_type": "int",
-        "description": (
-            "The allocation's usable size, if the crash involved a bad access of a "
-            "special PHC allocation."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_usable_size",
@@ -510,11 +485,6 @@ FIELDS = {
     },
     "phc_alloc_stack": {
         "data_validation_type": "str",
-        "description": (
-            "The allocation's allocation stack trace, if the crash involved a bad "
-            "access of a special PHC allocation. Encoded as a comma-separated list "
-            "of decimal addresses."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_alloc_stack",
@@ -527,11 +497,6 @@ FIELDS = {
     },
     "phc_free_stack": {
         "data_validation_type": "str",
-        "description": (
-            "The allocation's free stack trace, if the crash involved a bad access "
-            "of a special PHC allocation. Encoded as a comma-separated list of decimal "
-            "addresses."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "phc_free_stack",
@@ -544,7 +509,6 @@ FIELDS = {
     },
     "abort_message": {
         "data_validation_type": "str",
-        "description": "The abort message.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "abort_message",
@@ -561,9 +525,6 @@ FIELDS = {
     },
     "accessibility": {
         "data_validation_type": "bool",
-        "description": (
-            "The presence of this field indicates that accessibility services were accessed."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "accessibility",
@@ -576,7 +537,6 @@ FIELDS = {
     },
     "accessibility_client": {
         "data_validation_type": "str",
-        "description": "Out-of-process accessibility client program name and version information.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "accessibility_client",
@@ -589,10 +549,6 @@ FIELDS = {
     },
     "accessibility_in_proc_client": {
         "data_validation_type": "str",
-        "description": (
-            "In-process accessibility client detection information. See Compatibility.h for more "
-            "details."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "accessibility_in_proc_client",
@@ -605,7 +561,6 @@ FIELDS = {
     },
     "adapter_device_id": {
         "data_validation_type": "str",
-        "description": "The graphics adapter device identifier.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "adapter_device_id",
@@ -618,7 +573,6 @@ FIELDS = {
     },
     "adapter_driver_version": {
         "data_validation_type": "str",
-        "description": "The graphics adapter driver version.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "adapter_driver_version",
@@ -631,7 +585,6 @@ FIELDS = {
     },
     "adapter_subsys_id": {
         "data_validation_type": "str",
-        "description": "The graphics adapter subsystem identifier.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "adapter_subsys_id",
@@ -644,11 +597,6 @@ FIELDS = {
     },
     "adapter_vendor_id": {
         "data_validation_type": "str",
-        "description": (
-            "The graphics adapter vendor. This value is sometimes a name, and sometimes a "
-            "hexidecimal identifier. Common identifiers include: 0x8086 (Intel), 0x1002 (AMD), "
-            "0x10de (NVIDIA)."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "adapter_vendor_id",
@@ -661,12 +609,6 @@ FIELDS = {
     },
     "addons": {
         "data_validation_type": "str",
-        "description": (
-            "A list of the addons currently enabled at the time of the crash. This takes the form "
-            'of "addonid:version,[addonid:version...]". This value could be empty if the crash '
-            "happens during startup before the addon manager is enabled, and on products/platforms "
-            "which do not support addons."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "addons",
@@ -679,7 +621,6 @@ FIELDS = {
     },
     "addons_checked": {
         "data_validation_type": "bool",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "addons_checked",
@@ -692,10 +633,6 @@ FIELDS = {
     },
     "address": {
         "data_validation_type": "str",
-        "description": (
-            "The crashing address. This value is only meaningful for crashes involving bad memory "
-            "accesses."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "address",
@@ -708,7 +645,6 @@ FIELDS = {
     },
     "android_board": {
         "data_validation_type": "enum",
-        "description": "The board used by the Android device.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_board",
@@ -721,7 +657,6 @@ FIELDS = {
     },
     "android_brand": {
         "data_validation_type": "enum",
-        "description": "The Android device brand.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_brand",
@@ -734,7 +669,6 @@ FIELDS = {
     },
     "android_cpu_abi": {
         "data_validation_type": "enum",
-        "description": "The Android primary CPU ABI being used.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_cpu_abi",
@@ -747,7 +681,6 @@ FIELDS = {
     },
     "android_cpu_abi2": {
         "data_validation_type": "enum",
-        "description": "The Android secondary CPU ABI being used.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_cpu_abi2",
@@ -760,7 +693,6 @@ FIELDS = {
     },
     "android_device": {
         "data_validation_type": "enum",
-        "description": "The android device name.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_device",
@@ -773,7 +705,6 @@ FIELDS = {
     },
     "android_display": {
         "data_validation_type": "enum",
-        "description": "",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "android_display",
@@ -786,7 +717,6 @@ FIELDS = {
     },
     "android_fingerprint": {
         "data_validation_type": "enum",
-        "description": "",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "android_fingerprint",
@@ -799,7 +729,6 @@ FIELDS = {
     },
     "android_hardware": {
         "data_validation_type": "enum",
-        "description": "The android device hardware.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_hardware",
@@ -812,7 +741,6 @@ FIELDS = {
     },
     "android_manufacturer": {
         "data_validation_type": "enum",
-        "description": "The Android device manufacturer.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_manufacturer",
@@ -825,7 +753,6 @@ FIELDS = {
     },
     "android_model": {
         "data_validation_type": "str",
-        "description": "The Android device model name.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "android_model",
@@ -844,7 +771,6 @@ FIELDS = {
     },
     "android_version": {
         "data_validation_type": "str",
-        "description": "The Android version.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "android_version",
@@ -857,7 +783,6 @@ FIELDS = {
     },
     "app_init_dlls": {
         "data_validation_type": "str",
-        "description": "DLLs injected through the AppInit_DLLs registry key.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "app_init_dlls",
@@ -870,10 +795,6 @@ FIELDS = {
     },
     "app_notes": {
         "data_validation_type": "str",
-        "description": (
-            "Notes from the application that crashed. Mostly contains graphics-related "
-            "annotations."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "app_notes",
@@ -890,7 +811,6 @@ FIELDS = {
     },
     "async_shutdown_timeout": {
         "data_validation_type": "str",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "async_shutdown_timeout",
@@ -913,10 +833,6 @@ FIELDS = {
     },
     "available_page_file": {
         "data_validation_type": "int",
-        "description": (
-            "The maximum amount of memory the current process can commit. This value is equal "
-            "to or smaller than the system-wide available commit value."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "available_page_file",
@@ -929,11 +845,6 @@ FIELDS = {
     },
     "available_physical_memory": {
         "data_validation_type": "int",
-        "description": (
-            "The amount of physical memory currently available. This is the amount of physical "
-            "memory that can be immediately reused without having to write its contents to disk "
-            "first."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "available_physical_memory",
@@ -946,12 +857,6 @@ FIELDS = {
     },
     "available_virtual_memory": {
         "data_validation_type": "int",
-        "description": (
-            "The amount of unreserved and uncommited (i.e. available) memory in the process's "
-            "address space. Note that this memory may be fragmented into many separate segments, "
-            "so an allocation attempt may fail even when this value is substantially greater than "
-            "zero."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "available_virtual_memory",
@@ -964,7 +869,6 @@ FIELDS = {
     },
     "bios_manufacturer": {
         "data_validation_type": "enum",
-        "description": "The BIOS manufacturer.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "bios_manufacturer",
@@ -977,10 +881,6 @@ FIELDS = {
     },
     "build_id": {
         "data_validation_type": "int",
-        "description": (
-            "The unique build identifier of this version, which is a timestamp of the form "
-            "YYYYMMDDHHMMSS."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "build",
@@ -993,11 +893,6 @@ FIELDS = {
     },
     "co_marshal_interface_failure": {
         "data_validation_type": "enum",
-        "description": (
-            "Contains the hexadecimal value of the return code from Windows "
-            "CoMarshalInterfaceFailure API when invoked by IPDL serialization and "
-            "deserialization code."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "co_marshal_interface_failure",
@@ -1010,10 +905,6 @@ FIELDS = {
     },
     "collector_notes": {
         "data_validation_type": "str",
-        "description": (
-            "Notes of the Socorro collector, contains information about the report "
-            "during collection."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "collector_notes",
@@ -1035,7 +926,6 @@ FIELDS = {
     # day.
     "content_sandbox_capabilities": {
         "data_validation_type": "int",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "content_sandbox_capabilities",
@@ -1048,7 +938,6 @@ FIELDS = {
     },
     "content_sandbox_capable": {
         "data_validation_type": "bool",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "content_sandbox_capable",
@@ -1061,7 +950,6 @@ FIELDS = {
     },
     "content_sandbox_enabled": {
         "data_validation_type": "bool",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "content_sandbox_enabled",
@@ -1074,7 +962,6 @@ FIELDS = {
     },
     "content_sandbox_level": {
         "data_validation_type": "int",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "content_sandbox_level",
@@ -1087,10 +974,6 @@ FIELDS = {
     },
     "cpu_arch": {
         "data_validation_type": "enum",
-        "description": (
-            'The build architecture. Usually one of: "x86", "amd64" (a.k.a. x86-64), "arm", '
-            '"arm64".'
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "cpu_arch",
@@ -1103,7 +986,6 @@ FIELDS = {
     },
     "cpu_count": {
         "data_validation_type": "int",
-        "description": "Number of processor units in the CPU.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "cpu_count",
@@ -1122,10 +1004,6 @@ FIELDS = {
     },
     "cpu_info": {
         "data_validation_type": "str",
-        "description": (
-            "Detailed processor info. Usually contains information such as the family, model, "
-            "and stepping number."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "cpu_info",
@@ -1148,7 +1026,6 @@ FIELDS = {
     },
     "cpu_microcode_version": {
         "data_validation_type": "enum",
-        "description": "Microcode version of the CPU.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "cpu_microcode_version",
@@ -1161,17 +1038,14 @@ FIELDS = {
     },
     "crashing_thread": number_field(
         "crashing_thread",
-        description="Index of the crashing thread.",
         in_database_name="crashing_thread",
     ),
     "crashing_thread_name": keyword_field(
         "crashing_thread_name",
-        description="Name of the crashing thread.",
         in_database_name="crashing_thread_name",
     ),
     "date": {
         "data_validation_type": "datetime",
-        "description": "Date at which the crash report was received by Socorro.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "date_processed",
@@ -1187,17 +1061,9 @@ FIELDS = {
     },
     "distribution_id": keyword_field(
         name="distribution_id",
-        description=(
-            "Product application's distribution ID. This is either the DistributionID "
-            "annotation or the TelemetryEnvironment.partner.distributionId value."
-        ),
     ),
     "dom_fission_enabled": {
         "data_validation_type": "bool",
-        "description": (
-            "Set to 1 when DOM fission is enabled, and subframes are potentially "
-            "loaded in a separate process."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "dom_fission_enabled",
@@ -1210,7 +1076,6 @@ FIELDS = {
     },
     "dom_ipc_enabled": {
         "data_validation_type": "bool",
-        "description": "Set to 1 when a tab is running in a content process.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "dom_ipc_enabled",
@@ -1223,9 +1088,6 @@ FIELDS = {
     },
     "dumper_error": {
         "data_validation_type": "str",
-        "description": (
-            "Error message of the minidump writer, in case there was an error during dumping."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "dumper_error",
@@ -1248,7 +1110,6 @@ FIELDS = {
     },
     "em_check_compatibility": {
         "data_validation_type": "bool",
-        "description": "",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "em_check_compatibility",
@@ -1261,7 +1122,6 @@ FIELDS = {
     },
     "gmp_library_path": {
         "data_validation_type": "str",
-        "description": "Holds the path to the GMP plugin library.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "gmp_library_path",
@@ -1274,7 +1134,6 @@ FIELDS = {
     },
     "gmp_plugin": {
         "data_validation_type": "bool",
-        "description": "Whether it is a GMP plugin crash.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "gmp_plugin",
@@ -1287,7 +1146,6 @@ FIELDS = {
     },
     "graphics_critical_error": {
         "data_validation_type": "str",
-        "description": "Log of graphics-related errors.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "graphics_critical_error",
@@ -1304,7 +1162,6 @@ FIELDS = {
     },
     "graphics_startup_test": {
         "data_validation_type": "bool",
-        "description": "Whether the crash occured in the DriverCrashGuard.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "graphics_startup_test",
@@ -1317,10 +1174,6 @@ FIELDS = {
     },
     "has_device_touch_screen": {
         "data_validation_type": "bool",
-        "description": (
-            "Set to 1 if the device had a touch-screen, this only applies to Firefox "
-            "desktop as on mobile devices we assume a touch-screen is always present."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "has_device_touch_screen",
@@ -1333,7 +1186,6 @@ FIELDS = {
     },
     "install_age": {
         "data_validation_type": "int",
-        "description": "Length of time since this version was installed.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "install_age",
@@ -1346,11 +1198,6 @@ FIELDS = {
     },
     "install_time": {
         "data_validation_type": "int",
-        "description": (
-            "Epoch time of when this version was installed. Commonly used as a unique "
-            "identifier for software installations (since it is unlikely that two instances "
-            "are installed at the very same second)."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "install_time",
@@ -1363,7 +1210,6 @@ FIELDS = {
     },
     "ipc_channel_error": {
         "data_validation_type": "str",
-        "description": "The IPC channel error.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ipc_channel_error",
@@ -1376,7 +1222,6 @@ FIELDS = {
     },
     "ipc_fatal_error_msg": {
         "data_validation_type": "str",
-        "description": "The message linked to an IPC fatal error.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "ipc_fatal_error_msg",
@@ -1393,7 +1238,6 @@ FIELDS = {
     },
     "ipc_fatal_error_protocol": {
         "data_validation_type": "str",
-        "description": "The protocol linked to an IPC fatal error.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ipc_fatal_error_protocol",
@@ -1406,7 +1250,6 @@ FIELDS = {
     },
     "ipc_message_name": {
         "data_validation_type": "str",
-        "description": "The name of the IPC message.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "ipc_message_name",
@@ -1423,7 +1266,6 @@ FIELDS = {
     },
     "ipc_message_size": {
         "data_validation_type": "int",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ipc_message_size",
@@ -1436,10 +1278,6 @@ FIELDS = {
     },
     "ipc_shutdown_state": {
         "data_validation_type": "enum",
-        "description": (
-            "IPC shutdown state, can be set to either 'RecvShutdown' or "
-            "'SendFinishShutdown' by a content process while it's shutting down."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ipc_shutdown_state",
@@ -1452,10 +1290,6 @@ FIELDS = {
     },
     "ipc_system_error": {
         "data_validation_type": "int",
-        "description": (
-            "A replacement of `system_error`. "
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1267222"
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ipc_system_error",
@@ -1468,7 +1302,6 @@ FIELDS = {
     },
     "is_garbage_collecting": {
         "data_validation_type": "bool",
-        "description": "",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "is_garbage_collecting",
@@ -1481,10 +1314,6 @@ FIELDS = {
     },
     "java_stack_trace": {
         "data_validation_type": "str",
-        "description": (
-            "The unstructured JavaStackTrace crash annotation without the exception "
-            "value which is protected data."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "java_stack_trace",
@@ -1501,10 +1330,6 @@ FIELDS = {
     },
     "java_stack_trace_raw": {
         "data_validation_type": "str",
-        "description": (
-            "The raw unstructured JavaStackTrace crash annotation value. This is "
-            "protected data."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "java_stack_trace_raw",
@@ -1521,10 +1346,6 @@ FIELDS = {
     },
     "last_crash": {
         "data_validation_type": "int",
-        "description": (
-            "Length of time between the previous crash submission and this one. Low values "
-            "indicate repeated crashes."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "last_crash",
@@ -1537,7 +1358,6 @@ FIELDS = {
     },
     "mac_crash_info": {
         "data_validation_type": "str",
-        "description": "macOS __crash_info data.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "mac_crash_info",
@@ -1554,37 +1374,18 @@ FIELDS = {
     },
     "mac_available_memory_sysctl": number_field(
         name="mac_available_memory_sysctl",
-        description=(
-            "The value of the available memory sysctl 'kern.memorystatus_level'. "
-            "Expected to be a percentage integer value."
-        ),
         number_type="integer",
     ),
     "mac_memory_pressure": keyword_field(
         name="mac_memory_pressure",
-        description=(
-            "The current memory pressure state as provided by the macOS memory "
-            'pressure dispatch source. The annotation value is one of "Normal" '
-            'for no memory pressure, "Unset" indicating a memory pressure event '
-            'has not been received, "Warning" or "Critical" mapping to the system '
-            'memory pressure levels, or "Unexpected" for an unexpected level. This '
-            "is a Mac-specific annotation."
-        ),
         choices=["Normal", "Unset", "Warning", "Critical", "Unexpected"],
     ),
     "mac_memory_pressure_sysctl": number_field(
         name="mac_memory_pressure_sysctl",
-        description=(
-            "The value of the memory pressure sysctl "
-            "'kern.memorystatus_vm_pressure_level'. Indicates which memory pressure "
-            "level the system is in at the time of the crash. The expected values "
-            "are one of 4 (Critical), 2 (Warning), or 0 (Normal)."
-        ),
         number_type="integer",
     ),
     "major_version": {
         "data_validation_type": "int",
-        "description": "Major part of the version",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "major_version",
@@ -1597,11 +1398,6 @@ FIELDS = {
     },
     "memory_error_correction": {
         "data_validation_type": "str",
-        "description": (
-            "Windows only, type of error correction used by system memory.  See "
-            "documentation for MemoryErrorCorrection property of "
-            "Win32_PhysicalMemoryArray WMI class."
-        ),
         "form_field_choices": [
             "Reserved",
             "Other",
@@ -1624,10 +1420,6 @@ FIELDS = {
     },
     "memory_explicit": {
         "data_validation_type": "int",
-        "description": (
-            'The "explicit" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "explicit",
@@ -1640,10 +1432,6 @@ FIELDS = {
     },
     "memory_gfx_textures": {
         "data_validation_type": "int",
-        "description": (
-            'The "gfx-textures" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "gfx_textures",
@@ -1656,10 +1444,6 @@ FIELDS = {
     },
     "memory_ghost_windows": {
         "data_validation_type": "int",
-        "description": (
-            'The "ghost-windows" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "ghost_windows",
@@ -1672,10 +1456,6 @@ FIELDS = {
     },
     "memory_heap_allocated": {
         "data_validation_type": "int",
-        "description": (
-            'The "heap-allocated" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "heap_allocated",
@@ -1688,10 +1468,6 @@ FIELDS = {
     },
     "memory_heap_overhead": {
         "data_validation_type": "int",
-        "description": (
-            'The "heap-overhead" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "heap_overhead",
@@ -1704,10 +1480,6 @@ FIELDS = {
     },
     "memory_heap_unclassified": {
         "data_validation_type": "int",
-        "description": (
-            'The "heap-unclassified" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "heap_unclassified",
@@ -1720,10 +1492,6 @@ FIELDS = {
     },
     "memory_host_object_urls": {
         "data_validation_type": "int",
-        "description": (
-            'The "host-object-urls" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "host_object_urls",
@@ -1736,10 +1504,6 @@ FIELDS = {
     },
     "memory_images": {
         "data_validation_type": "int",
-        "description": (
-            'The "images" measurement from the memory report. See about:memory for a fuller '
-            "description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "images",
@@ -1752,10 +1516,6 @@ FIELDS = {
     },
     "memory_js_main_runtime": {
         "data_validation_type": "int",
-        "description": (
-            'The "js-main-runtime" measurement from the memory report. See about:memory for a '
-            "fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "js_main_runtime",
@@ -1766,26 +1526,8 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
-    # FIXME(willkg): what is this for? can we remove it?
-    "memory_measures": {
-        "data_validation_type": "enum",
-        "description": "",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "memory_measures",
-        "is_exposed": False,
-        "is_returned": True,
-        "name": "memory_measures",
-        "namespace": "processed_crash",
-        "query_type": "enum",
-        "storage_mapping": None,
-    },
     "memory_private": {
         "data_validation_type": "int",
-        "description": (
-            'The "private" measurement from the memory report. See about:memory for a fuller '
-            "description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "private",
@@ -1798,10 +1540,6 @@ FIELDS = {
     },
     "memory_resident": {
         "data_validation_type": "int",
-        "description": (
-            'The "resident" measurement from the memory report. See about:memory for a fuller '
-            "description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "resident",
@@ -1814,10 +1552,6 @@ FIELDS = {
     },
     "memory_resident_unique": {
         "data_validation_type": "int",
-        "description": (
-            'The "resident-unique" measurement from the memory report. See about:memory for a '
-            "fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "resident_unique",
@@ -1830,10 +1564,6 @@ FIELDS = {
     },
     "memory_system_heap_allocated": {
         "data_validation_type": "int",
-        "description": (
-            'The "system-heap-allocated" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "system_heap_allocated",
@@ -1846,10 +1576,6 @@ FIELDS = {
     },
     "memory_top_none_detached": {
         "data_validation_type": "int",
-        "description": (
-            'The "top(none)/detached" measurement from the memory report. See about:memory for a '
-            "fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "top_none_detached",
@@ -1862,10 +1588,6 @@ FIELDS = {
     },
     "memory_vsize": {
         "data_validation_type": "int",
-        "description": (
-            'The "vsize" measurement from the memory report. See about:memory for a fuller '
-            "description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "vsize",
@@ -1878,10 +1600,6 @@ FIELDS = {
     },
     "memory_vsize_max_contiguous": {
         "data_validation_type": "int",
-        "description": (
-            'The "vsize-max-contiguous" measurement from the memory report. See about:memory for '
-            "a fuller description."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "vsize_max_contiguous",
@@ -1894,7 +1612,6 @@ FIELDS = {
     },
     "minidump_sha256_hash": {
         "data_validation_type": "str",
-        "description": "SHA256 hash of the minidump if there was one.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "minidump_sha256_hash",
@@ -1907,7 +1624,6 @@ FIELDS = {
     },
     "modules_in_stack": {
         "data_validation_type": "str",
-        "description": "Set of module/debugid strings that show up in stack of the crashing thread.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "modules_in_stack",
@@ -1920,10 +1636,6 @@ FIELDS = {
     },
     "moz_crash_reason": {
         "data_validation_type": "str",
-        "description": (
-            "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the "
-            "accompanying description. This is the sanitized value from the crash report."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "moz_crash_reason",
@@ -1940,10 +1652,6 @@ FIELDS = {
     },
     "moz_crash_reason_raw": {
         "data_validation_type": "str",
-        "description": (
-            "For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT and related macros, this is the "
-            "accompanying description. This is the raw value from the crash report."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "moz_crash_reason_raw",
@@ -1960,12 +1668,6 @@ FIELDS = {
     },
     "oom_allocation_size": {
         "data_validation_type": "int",
-        "description": (
-            "A measure or estimate of the allocation request size that triggered an OOM crash. "
-            "Note that allocators usually work with large (e.g. 1 MiB) chunks of memory, and a "
-            "small request may have triggered a large chunk request, in which case the latter "
-            "actually caused the OOM crash."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "oom_allocation_size",
@@ -1978,11 +1680,6 @@ FIELDS = {
     },
     "platform": {
         "data_validation_type": "enum",
-        "description": (
-            "Basic name of the operating system. Can be 'Windows NT', 'Mac OS X' or "
-            "'Linux'. Use `platform_pretty_version` for a more precise OS name including "
-            "version."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "os_name",
@@ -2001,7 +1698,6 @@ FIELDS = {
     },
     "platform_pretty_version": {
         "data_validation_type": "str",
-        "description": "A better platform name, including version for Windows and Mac OS X.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "os_pretty_version",
@@ -2018,7 +1714,6 @@ FIELDS = {
     },
     "platform_version": {
         "data_validation_type": "str",
-        "description": "Version of the operating system.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "os_version",
@@ -2035,10 +1730,6 @@ FIELDS = {
     },
     "plugin_filename": {
         "data_validation_type": "enum",
-        "description": (
-            "When a plugin process crashes, this is the name of the file of the plugin "
-            "loaded into that process."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "plugin_filename",
@@ -2058,10 +1749,6 @@ FIELDS = {
     },
     "plugin_name": {
         "data_validation_type": "enum",
-        "description": (
-            "When a plugin process crashes, this is the name of the plugin loaded into "
-            "that process."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "plugin_name",
@@ -2081,10 +1768,6 @@ FIELDS = {
     },
     "plugin_version": {
         "data_validation_type": "enum",
-        "description": (
-            "When a plugin process crashes, this is the version of the plugin loaded into "
-            "that process."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "plugin_version",
@@ -2104,10 +1787,6 @@ FIELDS = {
     },
     "process_type": {
         "data_validation_type": "str",
-        "description": (
-            'Type of the process that crashed. This will be "parent" if the crash '
-            "report had no ProcessType annotation."
-        ),
         "form_field_choices": [
             "any",
             "parent",
@@ -2127,10 +1806,6 @@ FIELDS = {
     },
     "processor_notes": {
         "data_validation_type": "str",
-        "description": (
-            "Notes of the Socorro processor, contains information about what changes were made to "
-            "the report during processing."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "processor_notes",
@@ -2147,7 +1822,6 @@ FIELDS = {
     },
     "product": {
         "data_validation_type": "enum",
-        "description": "Name of the software.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "product",
@@ -2166,7 +1840,6 @@ FIELDS = {
     },
     "productid": {
         "data_validation_type": "enum",
-        "description": "Identifier of the software.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "productid",
@@ -2179,9 +1852,6 @@ FIELDS = {
     },
     "proto_signature": {
         "data_validation_type": "str",
-        "description": (
-            "A concatenation of the signatures of all the frames of the crashing thread."
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "proto_signature",
@@ -2198,10 +1868,6 @@ FIELDS = {
     },
     "reason": {
         "data_validation_type": "str",
-        "description": (
-            "The crash's exception kind. Different OSes have different exception kinds. Example"
-            'values: "EXCEPTION_ACCESS_VIOLATION_READ", "EXCEPTION_BREAKPOINT", "SIGSEGV".'
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "reason",
@@ -2220,10 +1886,6 @@ FIELDS = {
     },
     "release_channel": {
         "data_validation_type": "enum",
-        "description": (
-            "The update channel that the user is on. Typically 'nightly', 'aurora', 'beta', "
-            "or 'release', but this may also be other values like 'release-cck-partner'."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "release_channel",
@@ -2236,10 +1898,6 @@ FIELDS = {
     },
     "remote_type": {
         "data_validation_type": "enum",
-        "description": (
-            '"extension" if a WebExtension, "web" or missing otherwise. This is only set for '
-            "content crashes."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "remote_type",
@@ -2252,7 +1910,6 @@ FIELDS = {
     },
     "safe_mode": {
         "data_validation_type": "bool",
-        "description": "Was the browser running in Safe mode?",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "safe_mode",
@@ -2265,7 +1922,6 @@ FIELDS = {
     },
     "shutdown_progress": {
         "data_validation_type": "str",
-        "description": "See https://bugzilla.mozilla.org/show_bug.cgi?id=1038342",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "shutdown_progress",
@@ -2278,12 +1934,6 @@ FIELDS = {
     },
     "signature": {
         "data_validation_type": "str",
-        "description": (
-            "This is the field most commonly used for aggregating individual crash reports "
-            "into a group. It usually contains one or more stack frames from the crashing "
-            "thread. The stack frames may also be augmented or replaced with other tokens such "
-            'as "OOM | small" or "shutdownhang" that further identify the crash kind.'
-        ),
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "signature",
@@ -2302,15 +1952,10 @@ FIELDS = {
     },
     "stackwalk_version": keyword_field(
         name="stackwalk_version",
-        description="binary and version for stackwalker used to process report",
         namespace="processed_crash",
     ),
     "startup_crash": {
         "data_validation_type": "bool",
-        "description": (
-            "Annotation that tells whether the crash happened before the startup phase "
-            "was finished or not."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "startup_crash",
@@ -2325,7 +1970,6 @@ FIELDS = {
     },
     "startup_time": {
         "data_validation_type": "int",
-        "description": "",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "startup_time",
@@ -2338,15 +1982,9 @@ FIELDS = {
     },
     "submitted_from": keyword_field(
         name="submitted_from",
-        description=(
-            "This annotation can hold one of the following five values depending on how "
-            "this crash was submitted by the user: Auto, Infobar, AboutCrashes, "
-            "CrashedTab, and Client."
-        ),
     ),
     "system_memory_use_percentage": {
         "data_validation_type": "int",
-        "description": "The approximate percentage of physical memory that is in use.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "system_memory_use_percentage",
@@ -2359,7 +1997,6 @@ FIELDS = {
     },
     "throttleable": {
         "data_validation_type": "bool",
-        "description": "Whether the crash report was throttleable when submitted.",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "throttleable",
@@ -2372,7 +2009,6 @@ FIELDS = {
     },
     "topmost_filenames": {
         "data_validation_type": "str",
-        "description": "Paths of the files at the top of the stack.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "topmost_filenames",
@@ -2385,7 +2021,6 @@ FIELDS = {
     },
     "total_page_file": {
         "data_validation_type": "int",
-        "description": "",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "total_page_file",
@@ -2398,7 +2033,6 @@ FIELDS = {
     },
     "total_physical_memory": {
         "data_validation_type": "int",
-        "description": "The total amount of physical memory.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "total_physical_memory",
@@ -2411,12 +2045,6 @@ FIELDS = {
     },
     "total_virtual_memory": {
         "data_validation_type": "int",
-        "description": (
-            "The size of the user-mode portion of the virtual address space of the calling "
-            "process. This value depends on the type of process, the type of processor, and "
-            "the configuration of the operating system. 32-bit processes usually have values "
-            "in the range 2--4 GiB. 64-bit processes usually have *much* larger values."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "total_virtual_memory",
@@ -2427,27 +2055,8 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
-    # FIXME(willkg): what's this here for?
-    "upload_file_minidump_browser": {
-        "data_validation_type": "enum",
-        "description": "",
-        "form_field_choices": None,
-        "has_full_version": False,
-        "in_database_name": "upload_file_minidump_browser",
-        "is_exposed": False,
-        "is_returned": True,
-        "name": "upload_file_minidump_browser",
-        "namespace": "processed_crash",
-        "query_type": "enum",
-        "storage_mapping": None,
-    },
     "uptime": {
         "data_validation_type": "int",
-        "description": (
-            "Length of time the process was running before it crashed. Small values "
-            "(from 0 to 5 or so) usually indicate start-up crashes. Calculated by "
-            "the Socorro processor using CrashTime and StartupTime."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "uptime",
@@ -2460,10 +2069,6 @@ FIELDS = {
     },
     "uptime_ts": {
         "data_validation_type": "int",
-        "description": (
-            "Uptime in seconds. This annotation uses a string instead of an integer "
-            "because it has a fractional component."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "uptime_ts",
@@ -2476,12 +2081,6 @@ FIELDS = {
     },
     "url": {
         "data_validation_type": "str",
-        "description": (
-            "The website which the user most recently visited in the browser before the crash. "
-            "Users have the option of opting in or out of sending the current URL. This "
-            "information may not always be valuable, because pages in other tabs or windows "
-            "may be responsible for a particular crash."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "url",
@@ -2494,7 +2093,6 @@ FIELDS = {
     },
     "user_comments": {
         "data_validation_type": "str",
-        "description": "Comments entered by the user when they crashed.",
         "form_field_choices": [],
         "has_full_version": True,
         "in_database_name": "user_comments",
@@ -2513,7 +2111,6 @@ FIELDS = {
     },
     "useragent_locale": {
         "data_validation_type": "enum",
-        "description": "The locale of the software installation.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "useragent_locale",
@@ -2526,12 +2123,10 @@ FIELDS = {
     },
     "utility_process_sandboxing_kind": number_field(
         name="utility_process_sandboxing_kind",
-        description="The SandboxingKind passed for this Utility process instance",
         number_type="integer",
     ),
     "uuid": {
         "data_validation_type": "enum",
-        "description": "Unique identifier of the report.",
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "uuid",
@@ -2544,7 +2139,6 @@ FIELDS = {
     },
     "vendor": {
         "data_validation_type": "enum",
-        "description": "Application vendor (e.g. Mozilla).",
         "form_field_choices": None,
         "has_full_version": False,
         "in_database_name": "vendor",
@@ -2557,12 +2151,6 @@ FIELDS = {
     },
     "version": {
         "data_validation_type": "enum",
-        "description": (
-            "The product version number. A value lacking any letters indicates a normal release; "
-            'a value with a "b" indicates a Beta release; a value with an "a" indicates an Aurora '
-            '(a.k.a. Developer Edition) release; a value with "esr" indicates an Extended Service '
-            "Release."
-        ),
         "form_field_choices": [],
         "has_full_version": False,
         "in_database_name": "version",
@@ -2575,17 +2163,9 @@ FIELDS = {
     },
     "windows_error_reporting": boolean_field(
         name="windows_error_reporting",
-        description=(
-            "Set to 1 if this crash was intercepted via the Windows Error Reporting "
-            "runtime exception module."
-        ),
     ),
     "xpcom_spin_event_loop_stack": keyword_field(
         name="xpcom_spin_event_loop_stack",
-        description=(
-            "If we crash while some code is spinning manually the event loop, we will "
-            "see the stack of nested annotations here."
-        ),
     ),
 }
 

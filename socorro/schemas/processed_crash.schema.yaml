@@ -795,7 +795,8 @@ properties:
   adapter_vendor_id:
     description: >
       The graphics adapter vendor. Sometimes a name, but often a hexidecimal
-      identifier.
+      identifier. Common identifiers include 0x8086 (Intel), 0x1002 (AMD), and
+      0x10de (NVIDIA).
     type: string
     permissions: ["public"]
     source_annotation: AdapterVendorID
@@ -1240,13 +1241,13 @@ properties:
   java_stack_trace:
     description: >
       The unstructured JavaStackTrace crash annotation without the exception
-      value which can be sensitive.
+      value which can have sensitive information in it.
     type: string
     permissions: ["public"]
   java_stack_trace_raw:
     description: >
       The unstructured JavaStackTrace crash annotation with exception value
-      which can be sensitive.
+      which can can have sensitive information in it.
     type: string
     permissions: ["protected"]
   json_dump:
@@ -1376,8 +1377,8 @@ properties:
     permissions: ["public"]
   modules_in_stack:
     description: >
-      Set of 'module/debugid' strings delimited by ';' of modules that are in
-      the stack of the crashing thread.
+      Set of ';' delimited 'module/debugid' strings of modules that are in the
+      stack of the crashing thread.
     type: string
     permissions: ["public"]
   moz_crash_reason:
@@ -1545,7 +1546,8 @@ properties:
   signature:
     description: >
       Crash signature for this crash report containing tags and the first few
-      interesting frames of the stack.
+      interesting frames of the stack. This is used for aggregating crash
+      reports into groups by kind and cause.
     type: string
     permissions: ["public"]
   signature_debug:
@@ -1612,8 +1614,8 @@ properties:
     source_annotation: SystemMemoryUsePercentage
   throttleable:
     description: >
-      Whether Socorro can selectively discard this crash report or not. If set
-      to "0" the crash report will always be processed by Socorro.
+      Whether crash ingestion can selectively discard this crash report or not.
+      If set to "0" the crash report will be accepted and processed.
     type: boolean
     permissions: ["public"]
     source_annotation: Throttleable
@@ -1705,7 +1707,11 @@ properties:
     source_annotation: UptimeTS
   url:
     description: >
-      The url the user was visiting when the crash happened.
+      The url of the website which the user most recently visited in the
+      browser before the crash. Users have the option of opting in or out of
+      sending the current URL. This information may not always be valuable
+      because pages in other tabs or windows may be responsible for a
+      particular crash.
     type: string
     permissions: ["protected"]
     source_annotation: URL
