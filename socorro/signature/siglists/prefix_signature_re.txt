@@ -105,6 +105,7 @@ mozilla::detail::nsTStringRepr<T>::
 mozilla::dom::AutoJSAPI::Init
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
+mozilla::Maybe<T>
 mozilla::MozPromise<T>::ThenCommand<T>::Track
 mozilla::MozPromise<T>::ThenInternal
 mozilla::OffTheBooksMutex::Lock
