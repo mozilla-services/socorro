@@ -8,12 +8,16 @@ import pytest
 
 from socorro.lib.libsocorrodataschema import (
     FlattenKeys,
+    get_schema,
     permissions_transform_function,
     split_path,
     transform_schema,
 )
 from socorro.schemas import get_file_content
-from socorro.schemas.validate_processed_crash import validate_and_test
+from socorro.schemas.validate_processed_crash import (
+    validate_and_test as processed_validate,
+)
+from socorro.schemas.validate_raw_crash import validate_and_test as raw_validate
 
 
 def test_validate_socorro_data_schema():
@@ -22,10 +26,17 @@ def test_validate_socorro_data_schema():
     jsonschema.Draft7Validator.check_schema(schema)
 
 
-def test_validate_processed_crash_cli_runs():
-    """Test whether the module loads and spits out help."""
+def test_validate_raw_crash_cli_runs():
+    """Test whether the script loads and spits out help."""
     runner = CliRunner()
-    result = runner.invoke(validate_and_test, ["--help"])
+    result = runner.invoke(raw_validate, ["--help"])
+    assert result.exit_code == 0
+
+
+def test_validate_processed_crash_cli_runs():
+    """Test whether the script loads and spits out help."""
+    runner = CliRunner()
+    result = runner.invoke(processed_validate, ["--help"])
     assert result.exit_code == 0
 
 
@@ -55,6 +66,15 @@ def test_validate_processed_crash_cli_runs():
 )
 def test_split_parts(path, expected):
     assert list(split_path(path)) == expected
+
+
+def test_validate_processed_crash_schema():
+    # We use the schema reducer to traverse the schema and validate the socorro metadata
+    # values
+    schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+    processed_crash_schema = get_file_content("processed_crash.schema.yaml")
+
+    jsonschema.validate(instance=processed_crash_schema, schema=schema)
 
 
 KNOWN_PUBLIC_FIELDS = {
@@ -412,13 +432,8 @@ KNOWN_PUBLIC_FIELDS = {
 }
 
 
-def test_processed_crash_schema():
-    # We use the schema reducer to traverse the schema and validate the socorro metadata
-    # values
-    schema = get_file_content("socorro-data-1-0-0.schema.yaml")
-    processed_crash_schema = get_file_content("processed_crash.schema.yaml")
-
-    jsonschema.validate(instance=processed_crash_schema, schema=schema)
+def test_processed_public_keys():
+    processed_crash_schema = get_schema("processed_crash.schema.yaml")
 
     # Reduce to the public-only parts of the schema
     public_only = permissions_transform_function(
@@ -432,9 +447,17 @@ def test_processed_crash_schema():
 
     # Flatten the public-only schema and compare the keys
     flattener = FlattenKeys()
-
     transform_schema(schema=public_schema, transform_function=flattener.flatten)
 
     # Verify that the list of public fields is what we expect. This helps to alleviate
     # inadvertently making a field public that you didn't intend to make public.
     assert set(flattener.keys) == KNOWN_PUBLIC_FIELDS
+
+
+def test_validate_raw_crash_schema():
+    # We use the schema reducer to traverse the schema and validate the socorro metadata
+    # values
+    schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+    processed_crash_schema = get_file_content("raw_crash.schema.yaml")
+
+    jsonschema.validate(instance=processed_crash_schema, schema=schema)

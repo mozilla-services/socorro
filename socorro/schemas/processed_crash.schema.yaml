@@ -1496,7 +1496,8 @@ properties:
     type: string
     permissions: ["public"]
   productid:
-    description: Identifier of the product.
+    description: >
+      Application UUID (e.g. ec8030f7-c20a-464f-9b0e-13a3a9e97384).
     type: string
     permissions: ["public"]
   proto_signature:

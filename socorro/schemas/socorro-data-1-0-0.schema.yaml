@@ -18,6 +18,7 @@ definitions:
 
   simple_types:
     enum:
+      - "any"
       - "array"
       - "boolean"
       - "integer"
