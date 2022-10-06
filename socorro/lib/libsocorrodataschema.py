@@ -307,7 +307,7 @@ def transform_schema(schema, transform_function):
             if not keep:
                 return DROP_ITEM
 
-        elif "array" in type_:
+        elif "array" in type_ and "items" in schema:
             keep = False
             new_items = _transform_schema(
                 schema=schema["items"],
@@ -427,7 +427,15 @@ class SocorroDataReducer:
 
         # If the document_part is a basic type (string, number, etc) and it matches
         # what's in the schema, then return it so it's included in the reduced document
-        if isinstance(document_part, BASIC_TYPES_KEYS):
+        if "any" in schema_part_types:
+            # This item can be anything, so we're not going to traverse it or type
+            # check it.
+            #
+            # NOTE(willkg): This means that any properties of the document at this point
+            # hold true for children including required permissions.
+            return copy.deepcopy(document_part)
+
+        elif isinstance(document_part, BASIC_TYPES_KEYS):
             valid_schema_part_type = BASIC_TYPES[type(document_part)]
             if valid_schema_part_type in schema_part_types:
                 return document_part

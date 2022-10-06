@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# Usage: python socorro/schemas/validate_processed_crash.py [DIR]
+# Usage: python socorro/schemas/validate_raw_crash.py [DIR]
 
 from itertools import zip_longest
 import json
@@ -28,7 +28,7 @@ from socorro.schemas import get_file_content
 HERE = os.path.dirname(__file__)
 
 
-PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
+RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
 
 
 class InvalidSchemaError(Exception):
@@ -121,8 +121,8 @@ def validate_and_test(ctx, crashdir):
     jsonschema.Draft7Validator.check_schema(socorro_data_schema)
     click.echo("socorro-data-1-0-0.schema.yaml is a valid jsonschema.")
 
-    jsonschema.validate(instance=PROCESSED_CRASH_SCHEMA, schema=socorro_data_schema)
-    click.echo("processed crash schema is a valid socorro data schema.")
+    jsonschema.validate(instance=RAW_CRASH_SCHEMA, schema=socorro_data_schema)
+    click.echo("raw crash schema is a valid socorro data schema.")
 
     # Fetch crash report data from a Super Search URL
     datapath = pathlib.Path(crashdir).resolve()
@@ -135,11 +135,9 @@ def validate_and_test(ctx, crashdir):
 
     # Figure out the schema keys to types mapping
     schema_key_logger = SchemaKeyLogger()
-    transform_schema(
-        schema=PROCESSED_CRASH_SCHEMA, transform_function=schema_key_logger
-    )
+    transform_schema(schema=RAW_CRASH_SCHEMA, transform_function=schema_key_logger)
 
-    schema_reducer = SocorroDataReducer(PROCESSED_CRASH_SCHEMA)
+    schema_reducer = SocorroDataReducer(RAW_CRASH_SCHEMA)
 
     document_keys = DocumentKeys()
     reduced_keys = DocumentKeys()
@@ -149,17 +147,17 @@ def validate_and_test(ctx, crashdir):
     click.echo(f"Testing {total_uuids} recent crash reports.")
     for i, uuid in enumerate(uuids):
         click.echo(f"Working on {uuid} ({i}/{total_uuids})...")
-        processed_crash = json.loads((datapath / uuid).read_text())
+        raw_crash = json.loads((datapath / uuid).read_text())
 
         # Log the keys
-        document_keys.log_keys(processed_crash)
+        document_keys.log_keys(raw_crash)
 
         # Reduce the document by the schema and remove whatever keys are in the document
         # which is what the schema knows about
-        reduced_processed_crash = schema_reducer.traverse(processed_crash)
-        reduced_keys.log_keys(reduced_processed_crash)
+        reduced_raw_crash = schema_reducer.traverse(raw_crash)
+        reduced_keys.log_keys(reduced_raw_crash)
 
-        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+        validate_instance(raw_crash, RAW_CRASH_SCHEMA)
 
     click.echo("Done testing, all crash reports passed.")
 

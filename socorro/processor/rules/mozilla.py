@@ -194,8 +194,12 @@ class ConvertModuleSignatureInfoRule(Rule):
 
     For a while, crash reports with annotations submitted as a JSON blob had
     ModuleSignatureInfo appended to the end of them as an object. This JSON-encodes that
-    object so that the value is always a JSON-encoded string. That way, the rest of the
-    processor doesn't have to handle both cases. Bug #1607806
+    object so that the value is always a JSON-encoded string.
+
+    Note: This value is used by the stackwalker. At some point, the stackwalker will
+    pull this information from the minidump and we can stop doing this conversion.
+
+    Bug #1607806
 
     """
 
