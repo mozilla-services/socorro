@@ -13,11 +13,10 @@ Socorro is a crash ingestion pipeline.
 
 The crash ingestion pipeline that we have at Mozilla looks like this:
 
-.. image:: drawio/socorro_architecture.drawio.png
+.. image:: drawio/socorro_architecture.drawio.svg
 
 
-Arrow direction represents actions and flow of information through the
-ingestion pipeline.
+Arrow direction represents connections to access services.
 
 Important services in the diagram:
 
