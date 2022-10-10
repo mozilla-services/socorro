@@ -770,7 +770,6 @@ class RawCrash(SocorroMiddleware):
         "Accessibility",
         "AdapterDeviceID",
         "AdapterDriverVersion",
-        "AdapterRendererIDs",
         "AdapterSubsysID",
         "AdapterVendorID",
         "ApplicationBuildID",

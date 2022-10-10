@@ -104,11 +104,6 @@ properties:
     type: string
     permissions: ["public"]
 
-  AdapterRendererIDs:
-    description: ''
-    type: string
-    permissions: ["public"]
-
   AdapterSubsysID:
     description: >
       Graphics adapter subsystem ID.
