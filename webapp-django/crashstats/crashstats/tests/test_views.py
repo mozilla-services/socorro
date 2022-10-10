@@ -1440,13 +1440,15 @@ class TestViews(BaseTestViews):
             assert "datatype" in params
             if params["datatype"] == "meta":
                 crash = copy.deepcopy(_SAMPLE_META)
-                crash["TelemetryEnvironment"] = {
-                    "key": ["values"],
-                    "plainstring": "I am a string",
-                    "plainint": 12345,
-                    "empty": [],
-                    "foo": {"keyA": "AAA", "keyB": "BBB"},
-                }
+                crash["TelemetryEnvironment"] = json.dumps(
+                    {
+                        "key": ["values"],
+                        "plainstring": "I am a string",
+                        "plainint": 12345,
+                        "empty": [],
+                        "foo": {"keyA": "AAA", "keyB": "BBB"},
+                    }
+                )
                 return crash
             raise NotImplementedError
 
@@ -1457,7 +1459,7 @@ class TestViews(BaseTestViews):
             if params["datatype"] == "processed":
                 return copy.deepcopy(_SAMPLE_PROCESSED)
 
-            raise NotImplementedError(params)
+            raise NotImplementedError
 
         models.ProcessedCrash.implementation().get.side_effect = (
             mocked_processed_crash_get
@@ -1469,9 +1471,8 @@ class TestViews(BaseTestViews):
         assert response.status_code == 200
 
         assert "Telemetry Environment" in smart_str(response.content)
-        # it's non-trivial to check that the dict above is serialized
-        # exactly like jinja does it so let's just check the data attribute
-        # is there.
+        # it's non-trivial to check that the dict above is serialized exactly like jinja
+        # does it so let's just check the data attribute is there.
         assert 'id="telemetryenvironment-json"' in smart_str(response.content)
 
     def test_report_index_odd_product_and_version(self):

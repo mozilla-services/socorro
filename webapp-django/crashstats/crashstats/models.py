@@ -44,6 +44,7 @@ logger = logging.getLogger("crashstats.models")
 metrics = markus.get_metrics("webapp.crashstats.models")
 
 
+RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
@@ -358,14 +359,13 @@ class SocorroCommon:
     # default cache expiration time if applicable
     cache_seconds = 60 * 60
 
-    # At the moment, we're supporting talk HTTP to the middleware AND
-    # instantiating implementation classes so this is None by default.
+    # At the moment, we're supporting talk HTTP to the middleware AND instantiating
+    # implementation classes so this is None by default.
     implementation = None
 
-    # By default, the model is not called with an API user.
-    # This is applicable when the models are used from views that
-    # originate from pure class instanciation instead of from
-    # web GET or POST requests
+    # By default, the model is not called with an API user. This is applicable when the
+    # models are used from views that originate from pure class instantiation instead of
+    # from web GET or POST requests
     api_user = None
 
     @measure_fetches
@@ -641,7 +641,32 @@ class PermissionsReducerError(Exception):
     pass
 
 
-@functools.lru_cache
+@functools.cache
+def get_raw_crash_permissions_reducer(permissions_tuple):
+    """Build a reducer with the schema for specified permissions
+
+    :arg permissions_tuple: tuple of permissions to reduce by
+
+    """
+    if "public" not in permissions_tuple:
+        raise PermissionsReducerError(
+            f"public not in permissions_tuple {permissions_tuple}"
+        )
+
+    permissioned_schema = transform_schema(
+        schema=RAW_CRASH_SCHEMA,
+        transform_function=(
+            permissions_transform_function(
+                permissions_have=permissions_tuple,
+                default_permissions=RAW_CRASH_SCHEMA["default_permissions"],
+            )
+        ),
+    )
+
+    return SocorroDataReducer(schema=permissioned_schema)
+
+
+@functools.cache
 def get_processed_crash_permissions_reducer(permissions_tuple):
     """Build a reducer with the schema for specified permissions
 
@@ -688,6 +713,8 @@ class ProcessedCrash(SocorroMiddleware):
 
     """
 
+    # NOTE(willkg): This doesn't have an explicit allow list. The allow list is
+    # determined by the processed crash schema.
     API_ALLOWLIST = None
 
     def get(self, crash_id, dont_cache=False, refresh_cache=False):
@@ -732,11 +759,12 @@ class RawCrash(SocorroMiddleware):
     implementation_config_namespace = "crashdata"
 
     required_params = ("crash_id",)
+
     possible_params = ("format", "name")
 
     defaults = {"format": "meta"}
 
-    aliases = {"crash_id": "uuid", "format": "datatype"}
+    aliases = {"crash_id": "uuid"}
 
     IS_PUBLIC = True
 
@@ -764,80 +792,33 @@ class RawCrash(SocorroMiddleware):
 
     """
 
-    API_ALLOWLIST = (
-        # Crash annotations:
-        # https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml
-        "Accessibility",
-        "AdapterDeviceID",
-        "AdapterDriverVersion",
-        "AdapterSubsysID",
-        "AdapterVendorID",
-        "ApplicationBuildID",
-        "Add-ons",
-        "Android_Board",
-        "Android_Brand",
-        "Android_CPU_ABI",
-        "Android_CPU_ABI2",
-        "Android_Device",
-        "Android_Display",
-        "Android_Fingerprint",
-        "Android_Hardware",
-        "Android_Manufacturer",
-        "Android_Model",
-        "Android_Version",
-        "AsyncShutdownTimeout",
-        "AvailablePageFile",
-        "AvailablePhysicalMemory",
-        "AvailableVirtualMemory",
-        "BuildID",
-        "CrashTime",
-        "CoUnmarshalInterfaceResult",
-        "DOMIPCEnabled",
-        "EMCheckCompatibility",
-        "InstallTime",
-        "IsGarbageCollecting",
-        "MacAvailableMemorySysctl",
-        "MacMemoryPressure",
-        "MacMemoryPressureCriticalTime",
-        "MacMemoryPressureNormalTime",
-        "MacMemoryPressureSysctl",
-        "MacMemoryPressureWarningTime",
-        "Notes",
-        "OOMAllocationSize",
-        "PluginFilename",
-        "PluginName",
-        "PluginVersion",
-        "ProcessType",
-        "ProductID",
-        "ProductName",
-        "ReleaseChannel",
-        "SecondsSinceLastCrash",
-        "ShutdownProgress",
-        "SubmittedFrom",
-        "StartupTime",
-        "SystemMemoryUsePercentage",
-        "TotalVirtualMemory",
-        "useragent_locale",
-        "Vendor",
-        "Version",
-        "WindowsErrorReporting",
-        "Winsock_LSP",
-        "XPCOMSpinEventLoopStack",
-        # Fields added by the collector
-        "submitted_timestamp",
-        "uuid",
-    )
+    # NOTE(willkg): This doesn't have an explicit allow list. The allow list is
+    # determined by the raw crash schema.
+    API_ALLOWLIST = None
 
-    # The reason we use the old list and pass it into the more dynamic wrapper
-    # for getting the complete list is because we're apparently way behind
-    # on having all of these added to the Super Search Fields.
-    API_ALLOWLIST = get_api_allowlist("raw_crash", baseline=API_ALLOWLIST)
-
-    # If this is matched in the query string parameters, then
-    # we will return the response in binary format in the API
+    # If this is matched in the query string parameters, then we will return the
+    # response from the view as is
     API_BINARY_RESPONSE = {"format": "raw"}
-    # permissions needed to download it as a binary response
+
+    # Permissions required to download binary data
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
+
+    @classmethod
+    @functools.cache
+    def public_keys(self):
+        public_schema = transform_schema(
+            schema=RAW_CRASH_SCHEMA,
+            transform_function=(
+                permissions_transform_function(
+                    permissions_have=["public"],
+                    default_permissions=RAW_CRASH_SCHEMA["default_permissions"],
+                )
+            ),
+        )
+
+        # Annotations in the raw crash are all at the top level, so we grab those
+        keys = [key for key in public_schema["properties"].keys()]
+        return keys
 
     @classmethod
     def get_binary_filename(cls, params):
@@ -851,18 +832,33 @@ class RawCrash(SocorroMiddleware):
         else:
             return f"{crash_id}.dmp"
 
-    def get(self, **kwargs):
-        format_ = kwargs.get("format", "meta")
-        if format_ == "raw_crash":
-            # legacy
-            format_ = kwargs["format"] = "raw"
-        expect_dict = format_ != "raw"
-        result = super().get(**kwargs)
-        # This 'result', will either be a binary blob or a python dict.
-        # Unless kwargs['format']==raw, this has to be a python dict.
-        if expect_dict and not isinstance(result, dict):
+    def get(self, crash_id, format="", name="", dont_cache=False, refresh_cache=False):
+        format = format or "meta"
+        # FIXME(willkg): why do we have to verify the values here? why not elsewhere?
+        if format not in ("meta", "raw"):
             raise BadArgumentError("format")
-        return result
+
+        data = self.fetch(
+            implementation=self.get_implementation(),
+            params={"uuid": crash_id, "datatype": format, "name": name},
+            dont_cache=dont_cache,
+            refresh_cache=refresh_cache,
+            expect_json=format == "meta",
+        )
+
+        if format == "meta":
+            # If the item being requested is the raw crash, then we reduce it to the
+            # data that the user has permissions to view
+            permissions = convert_permissions(user=self.api_user)
+
+            if "protected" not in permissions:
+                reducer = get_raw_crash_permissions_reducer(
+                    permissions_tuple=tuple(permissions)
+                )
+
+                return reducer.traverse(data)
+
+        return data
 
     post = None
     put = None

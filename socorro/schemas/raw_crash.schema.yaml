@@ -208,6 +208,7 @@ properties:
     description: >
       Product application's build ID.
     type: string
+    permissions: ["public"]
 
   AsyncShutdownTimeout:
     description: >
@@ -517,7 +518,7 @@ properties:
   ModuleSignatureInfo:
     description: Module signature information.
     type: string
-    permissions: ["public"]
+    permissions: ["protected"]
 
   MozCrashReason:
     description: |
@@ -529,7 +530,9 @@ properties:
     permissions: ["protected"]
 
   Notes:
-    description: ''
+    description: |
+      Miscellaneous notes that can be appended to a crash. Mostly contains
+      graphics related notes.
     type: string
     permissions: ["public"]
 
@@ -694,7 +697,7 @@ properties:
     description: >
       The telemetry environment in JSON format.
     type: string
-    permissions: ["protected"]
+    permissions: ["public"]
 
   Throttleable:
     description: >
@@ -785,7 +788,8 @@ properties:
     permissions: ["public"]
 
   Winsock_LSP:
-    description: ''
+    description: >
+      Information on winsock LSPs injected in our networking stack.
     type: string
     permissions: ["public"]
 

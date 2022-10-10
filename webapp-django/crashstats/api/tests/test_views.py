@@ -94,17 +94,6 @@ class TestDocumentationViews(BaseTestViews):
 
 
 class TestViews(BaseTestViews):
-    def setUp(self):
-        super().setUp()
-        self._middleware = settings.MIDDLEWARE
-        settings.MIDDLEWARE += (
-            "crashstats.crashstats.middleware.SetRemoteAddrFromRealIP",
-        )
-
-    def tearDown(self):
-        super().tearDown()
-        settings.MIDDLEWARE = self._middleware
-
     def test_invalid_url(self):
         url = reverse("api:model_wrapper", args=("BlaBLabla",))
         with MetricsMock() as metrics_mock:
@@ -282,7 +271,7 @@ class TestViews(BaseTestViews):
             "AdapterDeviceID": "0x  46",
             "AdapterVendorID": "0x8086",
             "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
-            "AsyncShutdownTimeout": 12345,
+            "AsyncShutdownTimeout": "12345",
             "BuildID": "20130422105838",
             "CrashTime": "1366703112",
             "EMCheckCompatibility": "true",
@@ -302,12 +291,12 @@ class TestViews(BaseTestViews):
             "URL": "http://system.gaiamobile.org:8080/",
         }
 
-        def mocked_get(**params):
+        def mocked_implementation_get(**params):
             if "uuid" in params and params["uuid"] == "abc123":
                 return dict(**public_data, **protected_data)
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_get
+        RawCrash.implementation().get.side_effect = mocked_implementation_get
 
         # No crash id yields HTTP 400
         url = reverse("api:model_wrapper", args=("RawCrash",))
@@ -347,12 +336,12 @@ class TestViews(BaseTestViews):
             assert key in dump
 
     def test_RawCrash_binary_blob(self):
-        def mocked_get(**params):
+        def mocked_implementation_get(**params):
             if "uuid" in params and params["uuid"] == "abc":
                 return "\xe0"
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_get
+        RawCrash.implementation().get.side_effect = mocked_implementation_get
 
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(url, {"crash_id": "abc", "format": "raw"})
