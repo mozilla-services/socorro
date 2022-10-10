@@ -804,7 +804,6 @@ class RawCrash(SocorroMiddleware):
         "MacMemoryPressureSysctl",
         "MacMemoryPressureWarningTime",
         "Notes",
-        "NumberOfProcessors",
         "OOMAllocationSize",
         "PluginFilename",
         "PluginName",
