@@ -258,11 +258,6 @@ properties:
     type: string
     permissions: ["public"]
 
-  BIOS_Manufacturer:
-    description: ''
-    type: string
-    permissions: ["public"]
-
   Breadcrumbs:
     description: >
       Trail of events that occurred before a report. this will consist of
@@ -281,7 +276,8 @@ properties:
     permissions: ["public"]
 
   Comments:
-    description: ''
+    description: >
+      Comments from the user at the time of the crash.
     type: string
     permissions: ["protected"]
 
@@ -520,11 +516,6 @@ properties:
     description: >
       The time when the memory pressure state last transitioned to 'Warning'
       expressed as seconds since the Epoch.
-    type: string
-    permissions: ["public"]
-
-  MemoryErrorCorrection:
-    description: ''
     type: string
     permissions: ["public"]
 

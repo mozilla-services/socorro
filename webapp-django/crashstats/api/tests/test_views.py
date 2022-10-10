@@ -283,7 +283,6 @@ class TestViews(BaseTestViews):
             "AdapterVendorID": "0x8086",
             "Add-ons": "activities%40gaiamobile.org:0.1,%40gaiam...",
             "AsyncShutdownTimeout": 12345,
-            "BIOS_Manufacturer": "abc123",
             "BuildID": "20130422105838",
             "CrashTime": "1366703112",
             "EMCheckCompatibility": "true",

@@ -230,7 +230,7 @@
         "string",
         "null"
       ],
-      "description": "The BIOS manufacturer."
+      "description": "The BIOS manufacturer. (deprecated)"
     },
     "build_id": {
       "type": [
