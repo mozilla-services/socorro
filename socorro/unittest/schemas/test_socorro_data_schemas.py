@@ -7,9 +7,8 @@ import jsonschema
 import pytest
 
 from socorro.lib.libsocorrodataschema import (
-    FlattenKeys,
     get_schema,
-    permissions_transform_function,
+    FlattenKeys,
     split_path,
     transform_schema,
 )
@@ -31,6 +30,153 @@ def test_validate_raw_crash_cli_runs():
     runner = CliRunner()
     result = runner.invoke(raw_validate, ["--help"])
     assert result.exit_code == 0
+
+
+def test_validate_raw_crash_schema():
+    # We use the schema reducer to traverse the schema and validate the socorro metadata
+    # values
+    schema = get_file_content("socorro-data-1-0-0.schema.yaml")
+    raw_crash_schema = get_file_content("raw_crash.schema.yaml")
+
+    jsonschema.validate(instance=raw_crash_schema, schema=schema)
+
+
+PUBLIC_RAW_CRASH_FIELDS = {
+    "AbortMessage",
+    "Accessibility",
+    "AccessibilityClient",
+    "AccessibilityInProcClient",
+    "AdapterDeviceID",
+    "AdapterDriverVersion",
+    "AdapterSubsysID",
+    "AdapterVendorID",
+    "Add-ons",
+    "Android_Board",
+    "Android_Brand",
+    "Android_CPU_ABI",
+    "Android_CPU_ABI2",
+    "Android_Device",
+    "Android_Display",
+    "Android_Fingerprint",
+    "Android_Hardware",
+    "Android_Manufacturer",
+    "Android_Model",
+    "Android_Version",
+    "AppInitDLLs",
+    "ApplicationBuildID",
+    "AsyncShutdownTimeout",
+    "AvailablePageFile",
+    "AvailablePhysicalMemory",
+    "AvailableVirtualMemory",
+    "BuildID",
+    "CPUMicrocodeVersion",
+    "CoMarshalInterfaceFailure",
+    "CoUnmarshalInterfaceResult",
+    "ContentSandboxCapabilities",
+    "ContentSandboxCapable",
+    "ContentSandboxEnabled",
+    "ContentSandboxLevel",
+    "CrashTime",
+    "DOMFissionEnabled",
+    "DOMIPCEnabled",
+    "DistributionID",
+    "EMCheckCompatibility",
+    "GMPPlugin",
+    "GraphicsCriticalError",
+    "GraphicsStartupTest",
+    "HasDeviceTouchScreen",
+    "IPCFatalErrorMsg",
+    "IPCFatalErrorProtocol",
+    "IPCMessageName",
+    "IPCMessageSize",
+    "IPCShutdownState",
+    "IPCSystemError",
+    "InstallTime",
+    "IsGarbageCollecting",
+    "MacAvailableMemorySysctl",
+    "MacMemoryPressure",
+    "MacMemoryPressureCriticalTime",
+    "MacMemoryPressureNormalTime",
+    "MacMemoryPressureSysctl",
+    "MacMemoryPressureWarningTime",
+    "Notes",
+    "OOMAllocationSize",
+    "PluginFilename",
+    "PluginName",
+    "PluginVersion",
+    "ProcessType",
+    "ProductID",
+    "ProductName",
+    "ReleaseChannel",
+    "SafeMode",
+    "SecondsSinceLastCrash",
+    "ShutdownProgress",
+    "StartupCrash",
+    "StartupTime",
+    "SubmittedFrom",
+    "SubmittedFromInfobar",
+    "SystemMemoryUsePercentage",
+    "TelemetryEnvironment",
+    "Throttleable",
+    "TotalPageFile",
+    "TotalPhysicalMemory",
+    "TotalVirtualMemory",
+    "UptimeTS",
+    "UtilityProcessSandboxingKind",
+    "Vendor",
+    "Version",
+    "WindowsErrorReporting",
+    "Winsock_LSP",
+    "XPCOMSpinEventLoopStack",
+    "ipc_channel_error",
+    "submitted_timestamp",
+    "useragent_locale",
+    "uuid",
+    "version",
+}
+
+
+class InvalidRawCrashField(Exception):
+    pass
+
+
+def test_raw_crash_permissions():
+    public_fields = []
+
+    def verify_permissions(path, schema_item):
+        if not path:
+            return schema_item
+
+        permissions = schema_item.get("permissions", [])
+
+        # All items should have permissions explicitly set
+        if not permissions:
+            raise InvalidRawCrashField(
+                f'{path} does not have permissions set; set to either ["public"] or '
+                + "some list of permissions"
+            )
+
+        # Permissions should be ["public"] OR some list of permissions
+        if "public" in permissions and permissions != ["public"]:
+            raise InvalidRawCrashField(
+                f'{path} permissions should be either ["public"] or some list of '
+                + "permissions"
+            )
+
+        if "array" not in schema_item["type"] and permissions == ["public"]:
+            # Add the path to the list of public fields without the initial "."
+            public_fields.append(path[1:])
+
+        return schema_item
+
+    raw_crash_schema = get_schema("raw_crash.schema.yaml")
+
+    # This will raise an exception if there are invalid permissions
+    transform_schema(schema=raw_crash_schema, transform_function=verify_permissions)
+
+    # Verify that the list of public fields is what we expect. This helps to alleviate
+    # inadvertently making a field public that you didn't intend to make public.
+    assert set(public_fields) == PUBLIC_RAW_CRASH_FIELDS
 
 
 def test_validate_processed_crash_cli_runs():
@@ -77,7 +223,7 @@ def test_validate_processed_crash_schema():
     jsonschema.validate(instance=processed_crash_schema, schema=schema)
 
 
-KNOWN_PUBLIC_FIELDS = {
+PUBLIC_PROCESSED_CRASH_FIELDS = {
     "abort_message",
     "accessibility",
     "accessibility_client",
@@ -430,32 +576,89 @@ KNOWN_PUBLIC_FIELDS = {
 }
 
 
-def test_processed_public_keys():
+class InvalidProcessedCrashField(Exception):
+    pass
+
+
+def test_processed_crash_permissions():
+    public_fields = []
+
+    def verify_permissions(path, schema_item):
+        if not path:
+            return schema_item
+
+        permissions = schema_item.get("permissions", [])
+
+        # All items should have permissions explicitly set
+        if not permissions:
+            raise InvalidProcessedCrashField(
+                f'{path} does not have permissions set; set to either ["public"] or '
+                + "some list of permissions"
+            )
+
+        # Permissions should be ["public"] OR some list of permissions
+        if "public" in permissions and permissions != ["public"]:
+            raise InvalidProcessedCrashField(
+                f'{path} permissions should be either ["public"] or some list of '
+                + "permissions"
+            )
+
+        if "array" not in schema_item["type"] and permissions == ["public"]:
+            # Add the path to the list of public fields without the initial "."
+            public_fields.append(path[1:])
+
+        return schema_item
+
     processed_crash_schema = get_schema("processed_crash.schema.yaml")
 
-    # Reduce to the public-only parts of the schema
-    public_only = permissions_transform_function(
-        permissions_have=["public"],
-        default_permissions=processed_crash_schema["default_permissions"],
+    # This will raise an exception if there are invalid permissions
+    transform_schema(
+        schema=processed_crash_schema, transform_function=verify_permissions
     )
-    public_schema = transform_schema(
-        schema=processed_crash_schema,
-        transform_function=public_only,
-    )
-
-    # Flatten the public-only schema and compare the keys
-    flattener = FlattenKeys()
-    transform_schema(schema=public_schema, transform_function=flattener.flatten)
 
     # Verify that the list of public fields is what we expect. This helps to alleviate
     # inadvertently making a field public that you didn't intend to make public.
-    assert set(flattener.keys) == KNOWN_PUBLIC_FIELDS
+    assert set(public_fields) == PUBLIC_PROCESSED_CRASH_FIELDS
 
 
-def test_validate_raw_crash_schema():
-    # We use the schema reducer to traverse the schema and validate the socorro metadata
-    # values
-    schema = get_file_content("socorro-data-1-0-0.schema.yaml")
-    processed_crash_schema = get_file_content("raw_crash.schema.yaml")
+def test_processed_crash_source_annotations():
+    # Get the list of raw crash keys
+    raw_crash_schema = get_schema("raw_crash.schema.yaml")
+    flattener = FlattenKeys()
+    transform_schema(schema=raw_crash_schema, transform_function=flattener.flatten)
+    raw_crash_keys = flattener.keys
 
-    jsonschema.validate(instance=processed_crash_schema, schema=schema)
+    def verify_source_annotations(path, schema_item):
+        if not path:
+            return schema_item
+
+        permissions = schema_item.get("permissions", [])
+
+        source = schema_item.get("source_annotation")
+        if source:
+            # If the source_annotation is not a valid field in the raw crash schema,
+            # then it's invalid
+            if source not in raw_crash_keys:
+                raise InvalidProcessedCrashField(f"{path} is not in raw the raw crash")
+
+            # If the processed crash field permissions is ["public"] and it's not an
+            # object and it has a source_annotation, then the raw crash field must also
+            # be public
+            if (
+                permissions == ["public"]
+                and schema_item["type"] != "object"
+                and source not in PUBLIC_RAW_CRASH_FIELDS
+            ):
+                raise InvalidProcessedCrashField(
+                    f"{path} is public and has source annotation {source} that is "
+                    + "not public"
+                )
+
+        return schema_item
+
+    # This will raise an exception if there are invalid permissions
+    processed_crash_schema = get_schema("processed_crash.schema.yaml")
+
+    transform_schema(
+        schema=processed_crash_schema, transform_function=verify_source_annotations
+    )
