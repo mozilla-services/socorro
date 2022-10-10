@@ -809,7 +809,6 @@ class RawCrash(SocorroMiddleware):
         "OOMAllocationSize",
         "PluginFilename",
         "PluginName",
-        "PluginUserComment",
         "PluginVersion",
         "ProcessType",
         "ProductID",

@@ -53,9 +53,7 @@ from socorro.processor.rules.mozilla import (
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PHCRule,
-    PluginContentURL,
     PluginRule,
-    PluginUserComment,
     ProductRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
@@ -182,8 +180,6 @@ class ProcessorPipeline(RequiredConfig):
                 # rules to change the internals of the raw crash
                 FenixVersionRewriteRule(),
                 ESRVersionRewrite(),
-                PluginContentURL(),
-                PluginUserComment(),
                 # rules to transform a raw crash into a processed crash
                 CopyFromRawCrashRule(schema=get_schema("processed_crash.schema.yaml")),
                 SubmittedFromRule(),
