@@ -790,7 +790,6 @@ class RawCrash(SocorroMiddleware):
         "AvailablePageFile",
         "AvailablePhysicalMemory",
         "AvailableVirtualMemory",
-        "BIOS_Manufacturer",
         "BuildID",
         "CrashTime",
         "CoUnmarshalInterfaceResult",

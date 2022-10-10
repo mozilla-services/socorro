@@ -961,11 +961,6 @@ properties:
     type: integer
     permissions: ["public"]
     source_annotation: AvailableVirtualMemory
-  bios_manufacturer:
-    description: The BIOS manufacturer.
-    type: string
-    permissions: ["public"]
-    source_annotation: BIOS_Manufacturer
   breadcrumbs:
     description: >
       Information about events and log messages that happened prior to a crash.
@@ -1336,24 +1331,6 @@ properties:
     type: string
     # This can contain paths and other things about the node
     permissions: ["protected"]
-  memory_error_correction:
-    description: >
-      Windows-only. Type of error correction used by system memory. See
-      documentation for MemoryErrorCorrection property of
-      Win32_PhysicalMemoryArray WMI class.
-    examples:
-      - Reserved
-      - Other
-      - Unknown
-      - None
-      - Parity
-      - Single-bit ECC
-      - Multi-bit ECC
-      - CRC
-      - Unexpected value
-    type: string
-    permissions: ["public"]
-    source_annotation: MemoryErrorCorrection
   memory_measures:
     description: ''
     $ref: "#/definitions/memory_measures"
