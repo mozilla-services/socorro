@@ -23,6 +23,7 @@ ___chkstk
 compiler_builtins::
 core::ops::function::FnOnce::call_once<T>
 core::panicking::
+core::sync::atomic::
 CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
 __cxa_rethrow
