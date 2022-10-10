@@ -602,28 +602,6 @@ class ESRVersionRewrite(Rule):
             status.add_note('"Version" missing from esr release raw_crash')
 
 
-class PluginContentURL(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, status):
-        try:
-            return bool(raw_crash["PluginContentURL"])
-        except KeyError:
-            return False
-
-    def action(self, raw_crash, dumps, processed_crash, status):
-        raw_crash["URL"] = raw_crash["PluginContentURL"]
-
-
-class PluginUserComment(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, status):
-        try:
-            return bool(raw_crash["PluginUserComment"])
-        except KeyError:
-            return False
-
-    def action(self, raw_crash, dumps, processed_crash, status):
-        raw_crash["Comments"] = raw_crash["PluginUserComment"]
-
-
 class TopMostFilesRule(Rule):
     """Origninating from Bug 519703, the topmost_filenames was specified as
     singular, there would be only one. The original programmer, in the

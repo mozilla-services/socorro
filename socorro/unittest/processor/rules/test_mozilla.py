@@ -32,9 +32,7 @@ from socorro.processor.rules.mozilla import (
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PHCRule,
-    PluginContentURL,
     PluginRule,
-    PluginUserComment,
     ProductRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
@@ -1373,72 +1371,6 @@ class TestESRVersionRewrite:
 
         assert "Version" not in raw_crash
         assert status.notes == ['"Version" missing from esr release raw_crash']
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-
-
-class TestPluginContentURL:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["PluginContentURL"] = "http://mozilla.com"
-        raw_crash["URL"] = "http://google.com"
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = PluginContentURL()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert raw_crash["URL"] == "http://mozilla.com"
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-
-    def test_this_is_not_the_crash_you_are_looking_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["URL"] = "http://google.com"
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = PluginContentURL()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert raw_crash["URL"] == "http://google.com"
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-
-
-class TestPluginUserComment:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["PluginUserComment"] = "I hate it when this happens"
-        raw_crash["Comments"] = "I wrote something here, too"
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = PluginUserComment()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert raw_crash["Comments"] == "I hate it when this happens"
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-
-    def test_this_is_not_the_crash_you_are_looking_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["Comments"] = "I wrote something here"
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = PluginUserComment()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert raw_crash["Comments"] == "I wrote something here"
 
         # processed_crash should be unchanged
         assert processed_crash == {}
