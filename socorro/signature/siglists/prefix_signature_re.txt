@@ -98,7 +98,6 @@ mozalloc_abort
 mozalloc_handle_oom
 moz_malloc_size_of
 mozilla::CheckCheckedUnsafePtrs<T>::Check
-mozilla::detail::ConditionVariableImpl::
 mozilla::detail::HashTable<.*>::
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
@@ -108,9 +107,9 @@ mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
 mozilla::MozPromise<T>::ThenCommand<T>::Track
 mozilla::MozPromise<T>::ThenInternal
+mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksMutex::Lock
-SleepConditionVariableCS
-SleepConditionVariableSRW
+SleepConditionVariable(CS|SRW)
 mozilla::TimeStamp::Now
 mozilla::detail::MutexImpl::
 mozilla::detail::SupportCheckedUnsafePtrImpl<T>::~SupportCheckedUnsafePtrImpl
@@ -126,8 +125,7 @@ mozilla::ipc::Shmem::OpenExisting
 mozilla::ipc::IProtocol::ChannelSend
 mozilla::ipc::IToplevelProtocol::ShmemCreated
 mozilla::layers::CompositorD3D11::Failed
-mozilla::SpinEventLoopUntil<T>
-mozilla::TaskController::GetRunnableForMTTask
+mozilla::SpinEventLoopUntil
 mozilla::WrapNotNull<
 mozilla.*FatalError
 moz_xmalloc

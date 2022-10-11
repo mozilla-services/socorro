@@ -86,10 +86,15 @@ mozalloc_handle_oom
 mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
 mozcrt19.dll@0x
+mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::gfx::Log<
 mozilla::ipc::WriteIPDLParam
 mozilla::ipc::IPDLParamTraits<T>::Write
+mozilla::Monitor::Wait
+mozilla::net::ShutdownEvent::PostAndWait
+mozilla::OffTheBooksCondVar::Wait
+mozilla::TaskController::GetRunnableForMTTask
 mozilla::ThreadEventQueue
 mozilla::widget::WlCrashHandler
 nsThread::GetEvent
