@@ -255,6 +255,25 @@ def _json_clean(value):
     return value.replace("</", "<\\/")
 
 
+def strip_leading_zeros(text):
+    """Strips leading zeros from a hex string.
+
+    Example:
+
+    >>> strip_leading_zeros("0x0000000000032ec0")
+    "0x32ec0"
+
+    :param text: the text to strip leading zeros from
+
+    :returns: hex string with leading zeros stripped
+
+    """
+    try:
+        return hex(int(text, base=16))
+    except (ValueError, TypeError):
+        return text
+
+
 def enhance_frame(frame, vcs_mappings):
     """Add additional info to a stack frame
 
@@ -274,11 +293,29 @@ def enhance_frame(frame, vcs_mappings):
     elif frame.get("file") and frame.get("line"):
         signature = "%s#%d" % (frame["file"], frame["line"])
     elif frame.get("module") and frame.get("module_offset"):
-        signature = "%s@%s" % (frame["module"], frame["module_offset"])
+        signature = "%s@%s" % (
+            frame["module"],
+            strip_leading_zeros(frame["module_offset"]),
+        )
+    elif frame.get("unloaded_modules"):
+        first_module = frame["unloaded_modules"][0]
+        if first_module.get("offsets"):
+            signature = "(unloaded %s@%s)" % (
+                first_module.get("module") or "",
+                strip_leading_zeros(first_module.get("offsets")[0]),
+            )
+        else:
+            signature = "(unloaded %s)" % first_module
     else:
         signature = "@%s" % frame["offset"]
+
     frame["signature"] = signature
-    frame["short_signature"] = re.sub(r"\(.*\)", "", signature)
+    if signature.startswith("(unloaded"):
+        # If the signature is based on an unloaded module, leave the string as is
+        frame["short_signature"] = signature
+    else:
+        # Remove arguments which are enclosed in parens
+        frame["short_signature"] = re.sub(r"\(.*\)", "", signature)
 
     if frame.get("file"):
         vcsinfo = frame["file"].split(":")

@@ -14,7 +14,127 @@ import pytest
 from crashstats.crashstats import utils
 
 
-def test_enhance_frame():
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        (
+            # Test function sanitizing and a file that uses the vcs_mapping.
+            {
+                "frame": 0,
+                "module": "bad.dll",
+                "function": "Func(A * a,B b)",
+                "file": "hg:hg.m.org/repo/name:dname/fname:rev",
+                "line": 576,
+            },
+            {
+                "function": "Func(A* a, B b)",
+                "short_signature": "Func",
+                "line": 576,
+                "source_link": "http://hg.m.org/repo/name/file/rev/dname/fname#l576",
+                "file": "dname/fname",
+                "frame": 0,
+                "signature": "Func(A* a, B b)",
+                "module": "bad.dll",
+            },
+        ),
+        (
+            # Now with a file that has VCS info but isn't in vcs_mappings.
+            {
+                "frame": 0,
+                "module": "bad.dll",
+                "function": "Func",
+                "file": "git:git.m.org/repo/name:dname/fname:rev",
+                "line": 576,
+            },
+            {
+                "function": "Func",
+                "short_signature": "Func",
+                "line": 576,
+                "file": "fname",
+                "frame": 0,
+                "signature": "Func",
+                "module": "bad.dll",
+            },
+        ),
+        (
+            # Test with no VCS info at all.
+            {
+                "frame": 0,
+                "module": "bad.dll",
+                "function": "Func",
+                "file": "/foo/bar/file.c",
+                "line": 576,
+            },
+            {
+                "function": "Func",
+                "short_signature": "Func",
+                "line": 576,
+                "file": "/foo/bar/file.c",
+                "frame": 0,
+                "signature": "Func",
+                "module": "bad.dll",
+            },
+        ),
+        (
+            # Test with no source info at all.
+            {"frame": 0, "module": "bad.dll", "function": "Func"},
+            {
+                "function": "Func",
+                "short_signature": "Func",
+                "frame": 0,
+                "signature": "Func",
+                "module": "bad.dll",
+            },
+        ),
+        (
+            # Test with no function info.
+            {"frame": 0, "module": "bad.dll", "module_offset": "0x123"},
+            {
+                "short_signature": "bad.dll@0x123",
+                "frame": 0,
+                "signature": "bad.dll@0x123",
+                "module": "bad.dll",
+                "module_offset": "0x123",
+            },
+        ),
+        (
+            # Test with no module info.
+            {"frame": 0, "offset": "0x1234"},
+            {
+                "short_signature": "@0x1234",
+                "frame": 0,
+                "signature": "@0x1234",
+                "offset": "0x1234",
+            },
+        ),
+        (
+            # Test with unloaded modules.
+            {
+                "frame": 0,
+                "offset": "0x00007ff9a9e9e4df",
+                "unloaded_modules": [
+                    {
+                        "module": "obs-virtualcam-module64.dll",
+                        "offsets": ["0x000000000000e4df"],
+                    },
+                ],
+            },
+            {
+                "short_signature": "(unloaded obs-virtualcam-module64.dll@0xe4df)",
+                "frame": 0,
+                "signature": "(unloaded obs-virtualcam-module64.dll@0xe4df)",
+                "offset": "0x00007ff9a9e9e4df",
+                "unloaded_modules": [
+                    {
+                        "module": "obs-virtualcam-module64.dll",
+                        "offsets": ["0x000000000000e4df"],
+                    },
+                ],
+            },
+        ),
+    ],
+)
+def test_enhance_frame(data, expected):
     vcs_mappings = {
         "hg": {
             "hg.m.org": (
@@ -23,102 +143,9 @@ def test_enhance_frame():
         }
     }
 
-    # Test with a file that uses a vcs_mapping.
-    # Also test function sanitizing.
-    actual = {
-        "frame": 0,
-        "module": "bad.dll",
-        "function": "Func(A * a,B b)",
-        "file": "hg:hg.m.org/repo/name:dname/fname:rev",
-        "line": 576,
-    }
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "function": "Func(A* a, B b)",
-        "short_signature": "Func",
-        "line": 576,
-        "source_link": "http://hg.m.org/repo/name/file/rev/dname/fname#l576",
-        "file": "dname/fname",
-        "frame": 0,
-        "signature": "Func(A* a, B b)",
-        "module": "bad.dll",
-    }
-    assert actual == expected
-
-    # Now with a file that has VCS info but isn't in vcs_mappings.
-    actual = {
-        "frame": 0,
-        "module": "bad.dll",
-        "function": "Func",
-        "file": "git:git.m.org/repo/name:dname/fname:rev",
-        "line": 576,
-    }
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "function": "Func",
-        "short_signature": "Func",
-        "line": 576,
-        "file": "fname",
-        "frame": 0,
-        "signature": "Func",
-        "module": "bad.dll",
-    }
-    assert actual == expected
-
-    # Test with no VCS info at all.
-    actual = {
-        "frame": 0,
-        "module": "bad.dll",
-        "function": "Func",
-        "file": "/foo/bar/file.c",
-        "line": 576,
-    }
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "function": "Func",
-        "short_signature": "Func",
-        "line": 576,
-        "file": "/foo/bar/file.c",
-        "frame": 0,
-        "signature": "Func",
-        "module": "bad.dll",
-    }
-    assert actual == expected
-
-    # Test with no source info at all.
-    actual = {"frame": 0, "module": "bad.dll", "function": "Func"}
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "function": "Func",
-        "short_signature": "Func",
-        "frame": 0,
-        "signature": "Func",
-        "module": "bad.dll",
-    }
-    assert actual == expected
-
-    # Test with no function info.
-    actual = {"frame": 0, "module": "bad.dll", "module_offset": "0x123"}
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "short_signature": "bad.dll@0x123",
-        "frame": 0,
-        "signature": "bad.dll@0x123",
-        "module": "bad.dll",
-        "module_offset": "0x123",
-    }
-    assert actual == expected
-
-    # Test with no module info.
-    actual = {"frame": 0, "offset": "0x1234"}
-    utils.enhance_frame(actual, vcs_mappings)
-    expected = {
-        "short_signature": "@0x1234",
-        "frame": 0,
-        "signature": "@0x1234",
-        "offset": "0x1234",
-    }
-    assert actual == expected
+    # NOTE(willkg): data is modified in-place
+    utils.enhance_frame(data, vcs_mappings)
+    assert data == expected
 
 
 def test_enhance_frame_s3_generated_sources():
