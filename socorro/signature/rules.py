@@ -198,6 +198,7 @@ class CSignatureTool:
         line=None,
         module_offset=None,
         offset=None,
+        unloaded_modules=None,
     ):
         """Normalizes a single frame
 
@@ -226,8 +227,22 @@ class CSignatureTool:
             return f"{file}#{line}"
 
         # If there's an offset and no module/module_offset, use that
-        if not module and not module_offset and offset:
-            return f"@{strip_leading_zeros(offset)}"
+        if not module and not module_offset:
+            if unloaded_modules:
+                # Use the first unloaded module and the offset or "0"
+                unloaded_module = unloaded_modules[0]
+                unloaded_module_module = unloaded_module.get("module")
+                unloaded_module_offsets = unloaded_module.get("offsets")
+                if unloaded_module_module and unloaded_module_offsets:
+                    return "(unloaded {}@{})".format(
+                        unloaded_module_module,
+                        strip_leading_zeros(unloaded_module_offsets[0]),
+                    )
+                elif unloaded_module_module:
+                    return "(unloaded {})".format(unloaded_module_module)
+
+            if offset:
+                return f"@{strip_leading_zeros(offset)}"
 
         # Return module/module_offset
         return "{}@{}".format(module or "", strip_leading_zeros(module_offset))
@@ -262,6 +277,8 @@ class CSignatureTool:
                 "line": frame.get("line"),
                 "module_offset": frame.get("module_offset"),
                 "offset": frame.get("offset"),
+                # NOTE(gsvelto): unloaded modules can only appear in non-inlined frames
+                "unloaded_modules": frame.get("unloaded_modules"),
             }
 
     def create_frame_list(self, thread_data, make_modules_lower_case=False):
@@ -338,7 +355,10 @@ class CSignatureTool:
                 continue
 
             # If the frame signature is a dll, remove the @xxxxx part.
-            if ".dll" in a_signature.lower():
+            if (
+                not a_signature.startswith("(unloaded")
+                and ".dll" in a_signature.lower()
+            ):
                 a_signature = a_signature.split("@")[0]
 
                 # If this trimmed DLL signature is the same as the previous frame's, skip it.

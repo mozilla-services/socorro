@@ -243,10 +243,10 @@ class TestCSignatureTool:
         # If they're the same, then there was no mutation
         assert frames == frames_copy
 
-    def test_normalize_frame(self):
-        """test_normalize: bunch of variations"""
-        s = self.setup_config_c_sig_tool()
-        a = [
+    @pytest.mark.parametrize(
+        "args, expected",
+        [
+            # module, function, file, line, module_offset, offset, unloaded_modules
             (("module", "", "source/", "23", "0xfff"), "source#23"),
             (("module", "", "source\\", "23", "0xfff"), "source#23"),
             (("module", "", "/a/b/c/source", "23", "0xfff"), "source#23"),
@@ -268,10 +268,38 @@ class TestCSignatureTool:
                 ),
                 "expect_failed",
             ),
-        ]
-        for args, e in a:
-            r = s.normalize_frame(*args)
-            assert e == r
+            # Handle normalization with unloaded modules
+            (
+                (
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    [{"module": "unmod"}],
+                ),
+                "(unloaded unmod)",
+            ),
+            (
+                (
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    [{"module": "unmod", "offsets": ["0x0000000000005387"]}],
+                ),
+                "(unloaded unmod@0x5387)",
+            ),
+        ],
+    )
+    def test_normalize_frame(self, args, expected):
+        """test_normalize: bunch of variations"""
+        s = self.setup_config_c_sig_tool()
+        ret = s.normalize_frame(*args)
+        assert expected == ret
 
     @pytest.mark.parametrize(
         "function, line, expected",
