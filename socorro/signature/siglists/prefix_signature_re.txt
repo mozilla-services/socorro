@@ -153,6 +153,7 @@ nsThread::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::
 nsINode::Slots
+nsObserverService
 nsTSubstring<.*>::
 NS_QuickSort
 nsRefPtr
