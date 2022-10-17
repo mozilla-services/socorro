@@ -149,6 +149,7 @@ NS_ABORT_OOM
 nsDataHashtable<.*>::
 NS_DebugBreak
 nsDebugImpl::Abort
+nsINode::GetParentNode
 nsThread::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
 nsInterfaceHashtable<.*>::
