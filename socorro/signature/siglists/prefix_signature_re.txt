@@ -159,7 +159,6 @@ nsINode::Slots
 nsObserverService
 nsTSubstring<.*>::
 NS_QuickSort
-nsRefPtr
 NSS
 nss
 nsTArray<
@@ -196,7 +195,6 @@ RpcpRaiseException
 RpcRaiseException
 realloc
 recv
-RefPtr
 ReleaseData
 _RTC_Terminate
 Rtl
