@@ -13,14 +13,14 @@ Java stack trace:
 MOZ_CRASH Reason: ```{{ moz_crash_reason|safe }}```
 {%- elif reason -%}
 Reason: ```{{ reason|safe }}```
-{%- endif %}
-{% if crashing_thread is none %}
+{%- endif -%}
+{%- if crashing_thread is none %}
 No crashing thread identified; using thread 0.
-{% endif %}
+{% endif -%}
 Top {{ frames|length }} frames of crashing thread:
 ```
 {% for frame in frames -%}
-{{ frame.frame|safe}} {{ frame.module|safe }} {{ frame.signature|safe }} {{ frame.source|safe }}
+{{ frame.frame|safe}}  {{ frame.module|safe }}  {{ frame.signature|safe }}  {{ frame.source|safe }}
 {% endfor -%}
 ```
 {% endif %}

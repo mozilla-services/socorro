@@ -149,15 +149,21 @@ class Test_generate_create_bug_url:
         file="fake.cpp",
         line=1,
         inlines=None,
+        unloaded_modules=None,
     ):
-        return {
+        data = {
             "frame": frame,
             "module": module,
             "signature": signature,
             "file": file,
             "line": line,
-            "inlines": inlines,
         }
+        if inlines:
+            data["inlines"] = inlines
+        if unloaded_modules:
+            data["unloaded_modules"] = unloaded_modules
+
+        return data
 
     @staticmethod
     def _create_thread(frames=None):
@@ -350,7 +356,8 @@ class Test_generate_create_bug_url:
 
         frame1 = parsed_dump["threads"][1]["frames"][1]
         assert (
-            quote_plus("1 {module} {signature} {file}:{line}".format(**frame1)) in url
+            quote_plus("1  {module}  {signature}  {file}:{line}".format(**frame1))
+            in url
         )
 
     def test_comment_no_threads(self):
@@ -402,7 +409,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("0 test_module foo::bar foo.cpp:7") in url
+        assert quote_plus("0  test_module  foo::bar  foo.cpp:7") in url
 
     def test_comment_function_inlines(self):
         """Include inlines functions."""
@@ -442,11 +449,38 @@ class Test_generate_create_bug_url:
         qs = self._extract_query_string(url)
         comment = (
             "```\n"
-            + "0 test_module _foo_inline foo_inline.cpp:100\n"
-            + "0 test_module _foo_inline_amd64 foo_inline.cpp:4\n"
-            + "0 test_module foo::bar foo.cpp:7\n"
+            + "0  test_module  _foo_inline  foo_inline.cpp:100\n"
+            + "0  test_module  _foo_inline_amd64  foo_inline.cpp:4\n"
+            + "0  test_module  foo::bar  foo.cpp:7\n"
             + "```"
         )
+        assert comment in qs["comment"][0]
+
+    def test_comment_function_unloaded_modules(self):
+        """Include unloaded modules."""
+        req = RequestFactory().get("/report/index")
+        raw_crash = {}
+        report = self._create_report()
+        parsed_dump = self._create_dump(
+            threads=[
+                self._create_thread(
+                    frames=[
+                        self._create_frame(
+                            frame=0,
+                            module=None,
+                            file=None,
+                            line=None,
+                            signature="(unloaded unmod@0xe4df)",
+                        ),
+                    ],
+                ),
+            ],
+        )
+        url = generate_create_bug_url(
+            req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
+        )
+        qs = self._extract_query_string(url)
+        comment = "```\n" + "0  ?  (unloaded unmod@0xe4df)  \n" + "```"
         assert comment in qs["comment"][0]
 
     def test_comment_missing_line(self):
@@ -472,7 +506,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("0 test_module foo::bar foo.cpp\n") in url
+        assert quote_plus("0  test_module  foo::bar  foo.cpp\n") in url
 
     def test_comment_missing_file(self):
         """If a frame is missing file info, do not include it."""
@@ -497,7 +531,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus("0 test_module foo::bar \n") in url
+        assert quote_plus("0  test_module  foo::bar  \n") in url
 
     def test_comment_missing_everything(self):
         """If a frame is missing everything, do not throw an error."""
@@ -533,7 +567,7 @@ class Test_generate_create_bug_url:
         url = generate_create_bug_url(
             req, self.TEMPLATE, raw_crash, report, parsed_dump, 0
         )
-        assert quote_plus('0 &test_module foo<char>::bar "foo".cpp:7') in url
+        assert quote_plus('0  &test_module  foo<char>::bar  "foo".cpp:7') in url
 
     def test_comment_java_stack_trace(self):
         """If there's a java stack trace, use that instead."""
@@ -618,7 +652,7 @@ class Test_generate_create_bug_url:
             req, self.TEMPLATE, raw_crash, report, parsed_dump, None
         )
         assert quote_plus("No crashing thread identified; using thread 0.") in url
-        assert quote_plus("0 test_module foo::bar") in url
+        assert quote_plus("0  test_module  foo::bar") in url
 
     @pytest.mark.parametrize("fn", productlib.get_product_files())
     def test_product_bug_links(self, fn):

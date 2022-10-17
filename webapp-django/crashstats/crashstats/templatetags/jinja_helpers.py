@@ -251,13 +251,16 @@ def bugzilla_thread_frames(thread):
         if frame.get("line"):
             source += ":{}".format(frame["line"])
 
+        signature = frame.get("signature") or ""
+
         # Remove function arguments
-        signature = re.sub(r"\(.*\)", "", frame.get("signature", ""))
+        if not signature.startswith("(unloaded"):
+            signature = re.sub(r"\(.*\)", "", signature)
 
         frames.append(
             {
                 "frame": frame.get("frame", "?"),
-                "module": frame.get("module", ""),
+                "module": frame.get("module") or "?",
                 "signature": signature,
                 "source": source,
             }
