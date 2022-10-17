@@ -28,6 +28,7 @@ from crashstats import productlib
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
 from socorro.lib.libversion import generate_semver, VersionParseError
+from socorro.signature.utils import strip_leading_zeros
 
 
 logger = logging.getLogger(__name__)
@@ -253,25 +254,6 @@ def _json_clean(value):
     # http://stackoverflow.com/questions/1580647/json-why-are-forward-slashe\
     # s-escaped
     return value.replace("</", "<\\/")
-
-
-def strip_leading_zeros(text):
-    """Strips leading zeros from a hex string.
-
-    Example:
-
-    >>> strip_leading_zeros("0x0000000000032ec0")
-    "0x32ec0"
-
-    :param text: the text to strip leading zeros from
-
-    :returns: hex string with leading zeros stripped
-
-    """
-    try:
-        return hex(int(text, base=16))
-    except (ValueError, TypeError):
-        return text
 
 
 def enhance_frame(frame, vcs_mappings):
