@@ -112,6 +112,7 @@ mozilla::ipc::WriteIPDLParam
 mozilla::Monitor::Wait
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksCondVar::Wait
+mozilla::RefPtrTraits<T>::
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::ThreadEventQueue
 mozilla::ThreadSafeAutoRefCnt
@@ -136,6 +137,7 @@ __pthread_
 _pthread_cond_wait
 RaiseException
 RealMsgWaitFor
+RefPtr<T>::
 _report_gsfailure
 __report_gsfailure
 _rust_alloc_error_handler
