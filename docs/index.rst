@@ -28,6 +28,7 @@ and Super Search is located at `<https://crash-stats.mozilla.org/documentation/>
    contributing
    service/index
    flows/index
+   crashpings
    stackwalk
    crashstorage
    crashqueue
