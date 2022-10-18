@@ -54,11 +54,20 @@ If you have any questions, please ask in
 Guidelines for crash report annotations
 =======================================
 
+Minimum crash annotations for products are these:
+
+* `ProductName`_
+* `Version`_
+* `ReleaseChannel`_
+* `Vendor`_
+* `ProductID`_
+* `BuildID`_
+
+
 ProductName
 -----------
 
-Incoming crash reports have a ``ProductName`` which specifies which product the
-crash report came from.
+``ProductName`` specifies which product the crash report came from.
 
 Incoming crash reports for Firefox desktop have a ``ProductName`` value of
 ``Firefox``. The Firefox crash reporter sets this using the value
@@ -70,12 +79,16 @@ the app name argument when setting up ``MozillaSocorroService``.  See the
 <https://github.com/mozilla-mobile/android-components/blob/master/components/lib/crash/README.md#sending-crash-reports-to-mozilla-socorro>`_
 for details.
 
+``ProductName`` is used when throttling crash reports in the collector,
+applying product-specific rules in the processor, and searching/aggregating in
+the Crash Stats webapp.
+
 
 Version
 -------
 
-The ``Version`` annotation specifies the version of the application that crashed.
-Socorro supports two version formats:
+``Version`` specifies the version of the application that crashed. Socorro
+supports two version formats:
 
 1. Firefox versioning. Examples: 90.0, 90.0.1, 90.0a1, 90.0rc2, 90.0b2
 2. Semantic versioning. Examples: 90.0.0, 90.0.0-alpha.1,
@@ -85,34 +98,73 @@ Socorro supports two version formats:
    Please use one of those formats. If you use something different, then Crash
    Stats will likely have difficulties calculating featured versions.
 
-The version is used to populate the version menu and determine featured versions
-in the Crash Stats site.
+``Version`` is used to populate the version menu and determine featured
+versions in the Crash Stats site.
+
+Firefox and Thunderbird
+    Firefox and Thunderbird use the Firefox versioning scheme.
+
+    The Socorro processor fixes the version for incoming crash reports for
+    Firefox beta release channel by adding a ``b`` and then a beta number like
+    ``X.YbN``. For example, 90.0b1.
+
+    The Socorro processor fixes the version for incoming crash reports for ESR
+    releases by adding ``esr`` to the version.
+
+Fenix
+    Fenix version numbers use semantic versioning except the nightly channel.
+
+    The Socorro processor changes the version of older Fenix nightly crash
+    reports from ``Nightly YYMMDD HH:MM``  to ``0.0a1``.
+
+    Current Fenix nightly crash reports use the same version as GeckView that
+    the build ships with. The version for that uses the Firefox versioning
+    scheme. For example ``90.0a1``.
 
 
-Firefox, Thunderbird, SeaMonkey version notes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ReleaseChannel
+--------------
 
-Firefox, Thunderbird, and SeaMonkey use the Firefox versioning scheme.
+``ReleaseChannel`` specifies the update channel the user was using when the
+product crashed.
 
-The Socorro processor fixes the version for incoming crash reports for Firefox
-beta release channel by adding a ``b`` and then a beta number like ``X.YbN``.
-For example, 90.0b1.
+Example release channels:
 
-The Socorro processor fixes the version for incoming crash reports for ESR
-releases by adding ``esr`` to the version.
+* ``release``
+* ``beta``
+* ``nightly``
+* ``esr``
+
+``ReleaseChannel`` is used when throttling crash reports in the collector and
+searching/aggregating in the Crash Stats webapp.
 
 
-Fenix version notes
-~~~~~~~~~~~~~~~~~~~
+Vendor
+------
 
-Fenix version numbers use semantic versioning except the nightly channel.
+``Vendor`` specifies the application vendor. This should be ``mozilla`` for
+builds we generated and released.
 
-The Socorro processor changes the version of older Fenix nightly crash reports
-from ``Nightly YYMMDD HH:MM``  to ``0.0a1``.
 
-Current Fenix nightly crash reports use the same version as GeckView that the
-build ships with. The version for that uses the Firefox versioning scheme. For
-example ``90.0a1``.
+ProductID
+---------
+
+``ProductID`` is the application uuid.
+
+
+BuildID
+-------
+
+``BuildID`` is the product application's build id denoting a specific build.
+It's sometimes in the form of YYYYMMDDHHMMSS.
+
+.. Note::
+
+   The Fenix BuildID is actually the BuildID of the GeckoView component. For
+   Fenix, the ApplicationBuildID is the build id for the product application.
+
+``BuildID`` is used for throttling crash reports in the collector and linking
+to build information in Buildhub in the Crash Stats webapp.
 
 
 Other annotations
