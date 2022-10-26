@@ -153,6 +153,9 @@ def show_bug_link(bug_id):
     return markupsafe.Markup(tmpl) % data
 
 
+EXTRA_NEWLINES_RE = re.compile(r"\n\n\n+")
+
+
 @library.global_function
 def generate_create_bug_url(
     request, template, raw_crash, report, parsed_dump, crashing_thread
@@ -196,6 +199,10 @@ def generate_create_bug_url(
             "crashing_thread": crashing_thread,
         },
     )
+
+    # Whitespace is a nightmare when using Jinja2 templates to render text that's not
+    # destined for HTML. So we do a pass on removing extra line endings.
+    comment = EXTRA_NEWLINES_RE.sub("\n\n", comment)
 
     kwargs = {
         "bug_type": "defect",

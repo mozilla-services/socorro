@@ -3,20 +3,20 @@
    This renders to text--not html!! Whitespace is a complete nightmare. #}
 Crash report: {{ full_url(request, "crashstats:report_index", crash_id=uuid ) }}
 
-{% if java_stack_trace -%}
+{% if java_stack_trace %}
 Java stack trace:
 ```
 {{ java_stack_trace|safe }}
 ```
-{% elif frames -%}
-{%- if moz_crash_reason -%}
+{% elif frames %}
+{% if moz_crash_reason %}
 MOZ_CRASH Reason: ```{{ moz_crash_reason|safe }}```
-{%- elif reason -%}
+{% elif reason %}
 Reason: ```{{ reason|safe }}```
-{%- endif -%}
-{%- if crashing_thread is none %}
+{% endif %}
+{% if crashing_thread is none %}
 No crashing thread identified; using thread 0.
-{% endif -%}
+{% endif %}
 Top {{ frames|length }} frames of crashing thread:
 ```
 {% for frame in frames -%}
