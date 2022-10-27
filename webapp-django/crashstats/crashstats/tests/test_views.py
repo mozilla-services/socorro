@@ -829,6 +829,62 @@ class TestViews(BaseTestViews):
             smart_str(response.content),
         )
 
+    def test_report_index_with_unloaded_modules(self):
+        json_dump = {
+            "status": "OK",
+            "threads": [],
+            "unloaded_modules": [
+                {
+                    "base_addr": "0x56ea0000",
+                    "cert_subject": None,
+                    "code_id": "206ce69b6000",
+                    "end_addr": "0x56ea6000",
+                    "filename": "KBDUS.DLL",
+                },
+                {
+                    "base_addr": "0x642c0000",
+                    "cert_subject": "Microsoft Windows",
+                    "code_id": "e00ed7eff000",
+                    "end_addr": "0x642cf000",
+                    "filename": "resourcepolicyclient.dll",
+                },
+            ],
+        }
+
+        def mocked_raw_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "meta":
+                crash = copy.deepcopy(_SAMPLE_META)
+                crash["additional_minidumps"] = "foo, bar,"
+                return crash
+            raise NotImplementedError
+
+        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
+
+        def mocked_processed_crash_get(**params):
+            assert "datatype" in params
+            if params["datatype"] == "processed":
+                crash = copy.deepcopy(_SAMPLE_PROCESSED)
+                crash["json_dump"] = json_dump
+                return crash
+
+            raise NotImplementedError(params)
+
+        models.ProcessedCrash.implementation().get.side_effect = (
+            mocked_processed_crash_get
+        )
+
+        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = self.client.get(url)
+        assert response.status_code == 200
+
+        assert 'id="unloaded-modules-list"' in smart_str(response.content)
+        # Assert the first unloaded module filename shows up
+        assert "<td>KBDUS.DLL</td>" in smart_str(response.content)
+        # Assert that the second unloaded module cert subject shows up
+        assert "<td>Microsoft Windows</td>" in smart_str(response.content)
+
     def test_report_index_with_shutdownhang_signature(self):
         json_dump = {
             "crash_info": {"crashing_thread": 2},

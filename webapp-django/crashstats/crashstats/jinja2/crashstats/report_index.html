@@ -939,6 +939,7 @@
           <!-- /bugzilla -->
 
           <div id="modules" class="ui-tabs-hide">
+            <h2>Modules</h2>
             {% if parsed_dump.modules %}
               <table class="tablesorter data-table" id="modules-list">
                 <thead>
@@ -971,6 +972,32 @@
                   {% endfor %}
                 </tbody>
               </table>
+            {% else %}
+              No modules.
+            {% endif %}
+
+            <h2>Unloaded modules</h2>
+            {% if parsed_dump.unloaded_modules %}
+              <table class="tablesorter data-table" id="unloaded-modules-list">
+                <thead>
+                  <tr>
+                    <th class="w-3/12" scope="col">Filename</th>
+                    <th class="w-7/12" scope="col">Code id</th>
+                    <th class="w-3/12" scope="col">Signed By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for module in parsed_dump.unloaded_modules %}
+                    <tr>
+                      <td>{{ module.filename }}</td>
+                      <td>{{ module.code_id}}</td>
+                      <td>{% if module.cert_subject %}{{ module.cert_subject }}{% endif %}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              No unloaded modules.
             {% endif %}
           </div>
           <!-- /modules -->
