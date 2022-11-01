@@ -88,6 +88,7 @@ mozalloc_handle_oom
 mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
 mozcrt19.dll@0x
+mozilla::detail::Atomic
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::detail::IntrinsicMemoryOps
@@ -141,11 +142,11 @@ SkyLight
 SleepConditionVariableCS
 SleepConditionVariableSRW
 __stack_chk_fail
+std::__
 std::alloc::rust_oom
 std::io::stdio::_eprint
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
-std::__terminate
 std::terminate
 __str
 system@framework@.*\.art@0x
@@ -182,7 +183,6 @@ seh_filter_exe
 
 # macOS X libc internals
 _platform
-std::__1
 
 # Windows atomics
 std::atomic
