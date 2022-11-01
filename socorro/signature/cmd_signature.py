@@ -44,7 +44,7 @@ class OutputBase:
         :arg str line: the line to print to stderr
 
         """
-        print(f"WARNING: {line}" % line, file=sys.stderr)
+        print(f"WARNING: {line}", file=sys.stderr)
 
     def separator(self):
         """Output a separator between two crash signature generations"""
