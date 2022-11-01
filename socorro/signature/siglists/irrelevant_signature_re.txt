@@ -88,6 +88,7 @@ mozglue_static::panic_hook
 mozcrt19.dll@0x
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
+mozilla::detail::IntrinsicMemoryOps
 mozilla::gfx::Log<
 mozilla::ipc::WriteIPDLParam
 mozilla::ipc::IPDLParamTraits<T>::Write
