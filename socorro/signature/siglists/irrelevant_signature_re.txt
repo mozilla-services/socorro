@@ -88,6 +88,7 @@ mozalloc_handle_oom
 mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
 mozcrt19.dll@0x
+mozilla::Atomic<T>::Atomic
 mozilla::detail::Atomic
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
