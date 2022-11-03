@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
-from pygments.lexers import get_lexer_for_filename, CppLexer
+from pygments.lexers import get_lexer_for_filename, get_lexer_by_name, CppLexer
 import requests
 
 from django.http import (
@@ -26,6 +26,9 @@ ALLOWED_SOURCE_HOSTS = ["gecko-generated-sources.s3.amazonaws.com"]
 
 # List of allowed schemes
 ALLOWED_SCHEMES = ["http", "https"]
+
+# Maximum size in bytes before we switch to the TextLexer which is the null lexer
+MAX_SIZE = 200_000
 
 
 @track_view
@@ -64,8 +67,11 @@ def highlight_url(request):
         return HttpResponseNotFound("Document at URL does not exist.")
 
     filename = parsed.path.split("/")[-1]
-    if filename.endswith(".h"):
-        # Pygments will default to C which we don't want, so override it here.
+    if len(resp.text) > MAX_SIZE:
+        # If the file is too big, use the null lexer
+        lexer = get_lexer_by_name("text")
+    elif filename.endswith(".h"):
+        # Pygments will default to C which we don't want, so override it here
         lexer = CppLexer()
     else:
         lexer = get_lexer_for_filename(filename)
