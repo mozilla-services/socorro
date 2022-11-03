@@ -9,7 +9,13 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_for_filename, CppLexer
 import requests
 
-from django import http
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotFound,
+)
+from django.utils.html import escape
 
 from crashstats.crashstats.decorators import track_view
 
@@ -42,20 +48,20 @@ def highlight_url(request):
     url = request.GET.get("url")
 
     if not url:
-        return http.HttpResponseBadRequest("No url specified.")
+        return HttpResponseBadRequest("No url specified.")
 
     parsed = urlparse(url)
 
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:
-        return http.HttpResponseForbidden("Document at disallowed host.")
+        return HttpResponseForbidden("Document at disallowed host.")
 
     if parsed.scheme not in ALLOWED_SCHEMES:
-        return http.HttpResponseForbidden("Document at disallowed scheme.")
+        return HttpResponseForbidden("Document at disallowed scheme.")
 
     resp = requests.get(url)
     if resp.status_code != 200:
-        return http.HttpResponseNotFound("Document at URL does not exist.")
+        return HttpResponseNotFound("Document at URL does not exist.")
 
     filename = parsed.path.split("/")[-1]
     if filename.endswith(".h"):
@@ -72,8 +78,12 @@ def highlight_url(request):
             pass
 
     formatter = HtmlFormatter(
-        full=True, title=parsed.path, linenos="table", lineanchors="L", hl_lines=lines
+        full=True,
+        title=escape(parsed.path),
+        linenos="table",
+        lineanchors="L",
+        hl_lines=lines,
     )
-    return http.HttpResponse(
+    return HttpResponse(
         highlight(resp.text, lexer, formatter), content_type="text/html"
     )
