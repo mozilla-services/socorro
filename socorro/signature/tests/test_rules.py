@@ -1249,6 +1249,38 @@ class TestSignatureGenerationRule:
         assert result.notes == []
 
 
+class TestStackOverflowSignature:
+    def test_predicate_no_match(self):
+        result = generator.Result()
+        result.signature = "hello"
+        rule = rules.StackOverflowSignature()
+        assert rule.predicate({}, result) is False
+
+    @pytest.mark.parametrize(
+        "reason, expected",
+        [
+            ("FOO", False),
+            ("EXCEPTION_STACK_OVERFLOW", True),
+        ],
+    )
+    def test_predicate_reason(self, reason, expected):
+        crash_data = {"reason": reason}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.StackOverflowSignature()
+        assert rule.predicate(crash_data, result) is expected
+
+    def test_action_success(self):
+        crash_data = {"reason": "EXCEPTION_STACK_OVERFLOW"}
+        result = generator.Result()
+        result.signature = "hello"
+        rule = rules.StackOverflowSignature()
+        action_result = rule.action(crash_data, result)
+
+        assert action_result is True
+        assert result.signature == "stackoverflow | hello"
+
+
 class TestOOMSignature:
     def test_predicate_no_match(self):
         result = generator.Result()
