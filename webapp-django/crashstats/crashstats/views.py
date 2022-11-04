@@ -24,6 +24,8 @@ from crashstats.crashstats import forms, models, utils
 from crashstats.crashstats.decorators import track_view, pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.signature.generator import SignatureGenerator
+from socorro.signature.utils import convert_to_crash_data
 
 
 def ratelimit_blocked(request, exception):
@@ -76,6 +78,13 @@ def build_id_to_date(build_id):
     return "{}-{}-{}".format(yyyymmdd[:4], yyyymmdd[4:6], yyyymmdd[6:8])
 
 
+def generate_signature(processed_crash):
+    """Generate a crash signature from a processed crash"""
+    generator = SignatureGenerator()
+    crash_data = convert_to_crash_data(processed_crash)
+    return generator.generate(crash_data).signature
+
+
 @track_view
 @csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
 @pass_default_context
@@ -119,6 +128,10 @@ def report_index(request, crash_id, default_context=None):
             priority_api.post(crash_ids=[crash_id])
             cache.set(cache_key, True, 60)
         return render(request, "crashstats/report_index_pending.html", context)
+
+    context["current_signature"] = context["report"]["signature"]
+    if request.user.has_perm("crashstats.view_pii"):
+        context["report"]["current_signature"] = generate_signature(context["report"])
 
     context["product_details"] = productlib.get_product_by_name(
         context["report"]["product"]

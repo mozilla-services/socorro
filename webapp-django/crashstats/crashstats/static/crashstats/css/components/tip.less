@@ -5,8 +5,22 @@
     font-size: 1.1em;
     background-color: @grey-20;
     color: @grey-90;
+
+    &::before {
+        content: "Tip! ";
+        font-weight: bold;
+    }
 }
-.tip::before {
-    content: "Tip! ";
-    font-weight: bold;
+
+.tip-note {
+    padding: 0.5em 0.8em;
+    margin: 0.5em 0;
+    font-size: 1.1em;
+    background-color: @grey-20;
+    color: @grey-90;
+
+    &::before {
+        content: "Note! ";
+        font-weight: bold;
+    }
 }

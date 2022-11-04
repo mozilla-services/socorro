@@ -20,8 +20,13 @@ html {
             align-items: center;
 
             h2 {
-                flex-grow: 1;
+                flex: auto;
+                font-size: 1.6em;
                 margin: 0;
+            }
+            nav {
+                flex: initial;
+                flex-shrink: 0;
             }
         }
         .panel {
@@ -158,16 +163,6 @@ body {
                 }
             }
         }
-    }
-}
-
-.page-heading {
-    h2 {
-        display: inline;
-        font-size: 21px;
-    }
-    p.old-new-report-link {
-        float: right;
     }
 }
 

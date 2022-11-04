@@ -50,6 +50,12 @@
   >
     <div class="page-heading">
       <h2>{{ report.product }} {{ report.version }} Crash Report [@ {{ report.signature }} ]</h2>
+      <nav>
+        <ul class="options">
+          <li><a class="button" href="https://support.mozilla.org/search?{{ make_query_string(q=report.signature) }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for this signature</a></li>
+          <li><a class="button" href="https://developer.mozilla.org/en-US/docs/Understanding_crash_reports" title="MDN documentation about crash reports">How to read this crash report</a></li>
+        </ul>
+      </nav>
     </div>
 
     <div class="protected-info">
@@ -67,13 +73,15 @@
       <div class="body">
         {# Header #}
 
-        <div id="sumo-link">
-          <a href="https://support.mozilla.org/search?{{ make_query_string(q=report.signature) }}" title="Find more answers at support.mozilla.org!">Search Mozilla Support for this signature</a>
-          <a href="https://developer.mozilla.org/en-US/docs/Understanding_crash_reports" title="MDN documentation about crash reports">How to read this crash report</a>
-        </div>
         <div id="report-header-details">
-          ID: <code>{{ report.uuid }}</code><br/>
-          Signature: <code>{{ report.signature }}</code>
+          <div>Crash ID: <code>{{ report.uuid }}</code></div>
+          <div>Signature: <code>[@ {{ report.signature }} ]</code></div>
+          {% if report.signature != report.current_signature %}
+            <div class="tip-note">
+              Signature generation has changed since this was processed. New signature would be:
+              <code>[@ {{ report.current_signature }} ]</code>
+            </div>
+          {% endif %}
         </div>
 
         {# Report-index #}
