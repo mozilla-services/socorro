@@ -879,7 +879,22 @@ class SignatureRunWatchDog(Rule):
 
 
 class SignatureShutdownTimeout(Rule):
-    """Replaces signature with async_shutdown_timeout message."""
+    """Replaces signature with async_shutdown_timeout message.
+
+    This supports AsyncShutdownTimeout annotation values with the following structure::
+
+        {
+            "phase": <str>,
+            "conditions": [
+                {
+                    "name": <str>,
+                    ...
+                }
+            ]
+        }
+
+
+    """
 
     def predicate(self, crash_data, result):
         return bool(crash_data.get("async_shutdown_timeout"))
@@ -888,14 +903,18 @@ class SignatureShutdownTimeout(Rule):
         parts = ["AsyncShutdownTimeout"]
         try:
             shutdown_data = json.loads(crash_data["async_shutdown_timeout"])
-            parts.append(shutdown_data["phase"])
+            if isinstance(shutdown_data.get("phase"), str):
+                parts.append(shutdown_data["phase"])
+            else:
+                parts.append("(unknown)")
+
             conditions = [
-                # NOTE(willkg): The AsyncShutdownTimeout notation condition can either be a string
-                # that looks like a "name" or a dict with a "name" in it.
+                # NOTE(willkg): The AsyncShutdownTimeout notation condition can either
+                # be a string that looks like a "name" or a dict with a "name" in it.
                 #
                 # This handles both variations.
                 c["name"] if isinstance(c, dict) else c
-                for c in shutdown_data["conditions"]
+                for c in shutdown_data.get("conditions") or []
             ]
             if conditions:
                 conditions.sort()

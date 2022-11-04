@@ -1748,11 +1748,11 @@ class TestSignatureShutdownTimeout:
 
         action_result = rule.action(crash_data, result)
         assert action_result is True
-        assert result.signature == "AsyncShutdownTimeout | UNKNOWN"
+        assert result.signature == "AsyncShutdownTimeout | (unknown) | (none)"
 
         assert result.notes == [
-            "SignatureShutdownTimeout: Error parsing AsyncShutdownTimeout: 'phase'",
-            'SignatureShutdownTimeout: Signature replaced with a Shutdown Timeout signature, was: "foo"',  # noqa
+            "SignatureShutdownTimeout: Signature replaced with a Shutdown "
+            + 'Timeout signature, was: "foo"',
         ]
 
     def test_action_success(self):
@@ -1770,7 +1770,8 @@ class TestSignatureShutdownTimeout:
         assert action_result is True
         assert result.signature == "AsyncShutdownTimeout | beginning | A,B"
         assert result.notes == [
-            'SignatureShutdownTimeout: Signature replaced with a Shutdown Timeout signature, was: "foo"'  # noqa
+            "SignatureShutdownTimeout: Signature replaced with a Shutdown "
+            + 'Timeout signature, was: "foo"',
         ]
 
     def test_action_success_string_conditions(self):
@@ -1788,7 +1789,8 @@ class TestSignatureShutdownTimeout:
         assert action_result is True
         assert result.signature == "AsyncShutdownTimeout | beginning | A,B,C"
         assert result.notes == [
-            'SignatureShutdownTimeout: Signature replaced with a Shutdown Timeout signature, was: "foo"'  # noqa
+            "SignatureShutdownTimeout: Signature replaced with a Shutdown "
+            + 'Timeout signature, was: "foo"',
         ]
 
     def test_action_success_empty_conditions_key(self):
@@ -1806,7 +1808,23 @@ class TestSignatureShutdownTimeout:
         assert action_result is True
         assert result.signature == "AsyncShutdownTimeout | beginning | (none)"
         assert result.notes == [
-            'SignatureShutdownTimeout: Signature replaced with a Shutdown Timeout signature, was: "foo"'  # noqa
+            "SignatureShutdownTimeout: Signature replaced with a Shutdown "
+            + 'Timeout signature, was: "foo"',
+        ]
+
+    def test_action_unsupported_structure(self):
+        rule = rules.SignatureShutdownTimeout()
+
+        crash_data = {"async_shutdown_timeout": json.dumps({})}
+        result = generator.Result()
+        result.signature = "foo"
+
+        action_result = rule.action(crash_data, result)
+        assert action_result is True
+        assert result.signature == "AsyncShutdownTimeout | (unknown) | (none)"
+        assert result.notes == [
+            "SignatureShutdownTimeout: Signature replaced with a Shutdown "
+            + 'Timeout signature, was: "foo"',
         ]
 
 
