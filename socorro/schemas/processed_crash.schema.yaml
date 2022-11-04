@@ -1062,7 +1062,6 @@ properties:
     description: Microcode version of the CPU.
     type: string
     permissions: ["public"]
-    source_annotation: CPUMicrocodeVersion
   crash_id:
     description: Unique identifier of this crash report.
     type: string

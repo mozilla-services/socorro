@@ -267,6 +267,38 @@ class TestCPUInfoRule:
         rule.act(raw_crash, dumps, processed_crash, status)
         assert processed_crash["cpu_arch"] == expected
 
+    def test_no_cpu_microcode_version(self):
+        raw_crash = {}
+        processed_crash = {}
+        dumps = {}
+        status = Status()
+
+        rule = CPUInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+        assert "cpu_microcode_version" not in processed_crash
+
+    def test_cpu_microcode_version_from_stackwalker(self):
+        raw_crash = {"CPUMicrocodeVersion": "ignored value"}
+        processed_crash = {
+            "json_dump": {"system_info": {"cpu_microcode_version": "0x42"}}
+        }
+        dumps = {}
+        status = Status()
+
+        rule = CPUInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+        assert processed_crash["cpu_microcode_version"] == "0x42"
+
+    def test_cpu_microcode_version_from_annotation(self):
+        raw_crash = {"CPUMicrocodeVersion": "0x42"}
+        processed_crash = {}
+        dumps = {}
+        status = Status()
+
+        rule = CPUInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+        assert processed_crash["cpu_microcode_version"] == "0x42"
+
 
 class TestOSInfoRule:
     def test_everything_we_hoped_for(self):
