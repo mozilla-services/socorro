@@ -6,25 +6,25 @@ nav {
     .options {
         display: inline;
         margin-left: 1em;
-        font-size: 14px;
+        font-size: 1.1em;
         vertical-align: 4px;
         li {
             display: inline;
             list-style: none;
-        }
-        a {
-            color: @primary-dark;
-            padding: .3em .7em;
-            text-decoration: none;
-            white-space: nowrap;
-            .rounded-corners(.4em);
+            a {
+                color: @primary-dark;
+                padding: 0.3em 0.7em;
+                text-decoration: none;
+                white-space: nowrap;
+                .rounded-corners(.3em);
 
-            &:hover {
-                background-color: @off-white;
-            }
-            &.selected {
-                background-color: @primary;
-                color: @white;
+                &:hover {
+                    background-color: @off-white;
+                }
+                &.selected, &.button {
+                    background-color: @primary;
+                    color: @white;
+                }
             }
         }
     }
