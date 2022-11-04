@@ -145,6 +145,10 @@ class TestProcessorApp:
         assert finished_func.call_count == 1
 
 
+# NOTE(willkg): If this changes, we should update it and look for new things that should
+# be scrubbed. Use ANY for things that change between tests like timestamps, source code
+# data (line numbers, file names, post/pre_context), event ids, build ids, versions,
+# etc.
 TRANSFORM_GET_ERROR = {
     "breadcrumbs": ANY,
     "contexts": {
@@ -230,8 +234,8 @@ TRANSFORM_GET_ERROR = {
             "threading",
         ],
         "name": "sentry.python",
-        "packages": [{"name": "pypi:sentry-sdk", "version": "1.9.10"}],
-        "version": "1.9.10",
+        "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
+        "version": ANY,
     },
     "server_name": "testhost",
     "timestamp": ANY,

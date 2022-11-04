@@ -18,7 +18,9 @@ from crashstats.wsgi import application
 
 
 # NOTE(willkg): If this changes, we should update it and look for new things that should
-# be scrubbed. Use ANY for things that change between tests.
+# be scrubbed. Use ANY for things that change between tests like timestamps, source code
+# data (line numbers, file names, post/pre_context), event ids, build ids, versions,
+# etc.
 BROKEN_EVENT = {
     "breadcrumbs": ANY,
     "contexts": {
@@ -29,7 +31,7 @@ BROKEN_EVENT = {
         },
         "trace": {
             "description": "sentry_sdk.integrations.django._got_request_exception",
-            "op": "django.signals",
+            "op": "event.django",
             "parent_span_id": ANY,
             "span_id": ANY,
             "trace_id": ANY,
@@ -114,9 +116,9 @@ BROKEN_EVENT = {
             "stdlib",
             "threading",
         ],
-        "name": "sentry.python",
-        "packages": [{"name": "pypi:sentry-sdk", "version": "1.9.10"}],
-        "version": "1.9.10",
+        "name": "sentry.python.django",
+        "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
+        "version": ANY,
     },
     "server_name": ANY,
     "timestamp": ANY,
