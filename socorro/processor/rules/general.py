@@ -129,11 +129,15 @@ class CPUInfoRule(Rule):
         cpu_microcode_version = glom(
             processed_crash, "json_dump.system_info.cpu_microcode_version", default=None
         )
-        if not cpu_microcode_version:
+        if cpu_microcode_version is not None:
+            # This is a u32, so we convert it to a hex string
+            processed_crash["cpu_microcode_version"] = hex(cpu_microcode_version)
+        else:
+            # This is a hex string
             cpu_microcode_version = raw_crash.get("CPUMicrocodeVersion")
 
-        if cpu_microcode_version:
-            processed_crash["cpu_microcode_version"] = cpu_microcode_version
+            if cpu_microcode_version:
+                processed_crash["cpu_microcode_version"] = cpu_microcode_version
 
 
 class OSInfoRule(Rule):
