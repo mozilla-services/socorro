@@ -18,6 +18,7 @@ from .rules import (
     SignatureRunWatchDog,
     SignatureShutdownTimeout,
     SigTruncate,
+    StackOverflowSignature,
     StackwalkerErrorSignatureRule,
 )
 
@@ -33,6 +34,7 @@ DEFAULT_PIPELINE = [
     SignatureIPCChannelError(),
     SignatureIPCMessageName(),
     SignatureParentIDNotEqualsChildID(),
+    StackOverflowSignature(),
     # NOTE(willkg): These should always come last and in this order
     SigFixWhitespace(),
     SigTruncate(),

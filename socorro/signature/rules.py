@@ -619,6 +619,32 @@ class SignatureGenerationRule(Rule):
         return True
 
 
+class StackOverflowSignature(Rule):
+    """Prepends ``stackoverflow``
+
+    See bug #1796389.
+
+    """
+
+    # These reason values indicate a stackoverflow
+    stackoverflow_reason = [
+        "EXCEPTION_STACK_OVERFLOW",
+    ]
+
+    def predicate(self, crash_data, result):
+        # Check the reason to see if it's one of a few values that indicate a
+        # stackoverflow
+        reason = crash_data.get("reason", None)
+        if reason in self.stackoverflow_reason:
+            return True
+
+        return False
+
+    def action(self, crash_data, result):
+        result.set_signature(self.name, f"stackoverflow | {result.signature}")
+        return True
+
+
 class OOMSignature(Rule):
     """Prepends ``OOM | <size>`` to signatures for OOM crashes.
 
