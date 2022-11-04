@@ -87,7 +87,14 @@ class IdentifierRule(Rule):
 
 
 class CPUInfoRule(Rule):
-    """Fill in cpu_arch, cpu_info, and cpu_count fields in processed crash"""
+    """Fill in cpu fields in processed crash
+
+    * cpu_arch
+    * cpu_info
+    * cpu_count
+    * cpu_microcode_version
+
+    """
 
     # Map of Android_CPU_ABI values to cpu_arch values
     ANDROID_CPU_ABI_MAP = {
@@ -116,6 +123,17 @@ class CPUInfoRule(Rule):
             cpu_arch = self.ANDROID_CPU_ABI_MAP.get(android_cpu_abi, android_cpu_abi)
 
         processed_crash["cpu_arch"] = cpu_arch
+
+        # The cpu_microcode_version is populated by stackwalker, but if it's not there,
+        # then degrade to the CPUMicrocodeVersion crash annotation value
+        cpu_microcode_version = glom(
+            processed_crash, "json_dump.system_info.cpu_microcode_version", default=None
+        )
+        if not cpu_microcode_version:
+            cpu_microcode_version = raw_crash.get("CPUMicrocodeVersion")
+
+        if cpu_microcode_version:
+            processed_crash["cpu_microcode_version"] = cpu_microcode_version
 
 
 class OSInfoRule(Rule):
