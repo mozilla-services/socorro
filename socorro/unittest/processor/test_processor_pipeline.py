@@ -43,7 +43,9 @@ def set_up_sentry():
 
 
 # NOTE(willkg): If this changes, we should update it and look for new things that should
-# be scrubbed. Use ANY for things that change between tests.
+# be scrubbed. Use ANY for things that change between tests like timestamps, source code
+# data (line numbers, file names, post/pre_context), event ids, build ids, versions,
+# etc.
 RULE_ERROR_EVENT = {
     "breadcrumbs": {"values": []},
     "contexts": {
@@ -120,8 +122,8 @@ RULE_ERROR_EVENT = {
             "threading",
         ],
         "name": "sentry.python",
-        "packages": [{"name": "pypi:sentry-sdk", "version": "1.9.10"}],
-        "version": "1.9.10",
+        "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
+        "version": ANY,
     },
     "server_name": "test_processor",
     "timestamp": ANY,
