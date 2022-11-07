@@ -3,13 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
+from pathlib import Path
 
 import yaml
-from pkg_resources import resource_stream
 
 
 def get_file_content(filename):
-    with resource_stream(__name__, filename) as fp:
+    path = Path(__file__).parent / filename
+
+    with path.open("rb") as fp:
         if filename.endswith(".json"):
             schema = json.load(fp)
 

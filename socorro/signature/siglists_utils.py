@@ -2,10 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
 import re
 
-from pkg_resources import resource_stream
+import importlib_resources
 
 
 # This is a hack because sentinels can be a tuple, with the second item being
@@ -28,17 +27,29 @@ class BadRegularExpressionLineError(Exception):
     """Raised when a file contains an invalid regular expression."""
 
 
+def build_filepath(source):
+    """Build a file path from the
+
+    :param source: the signature file name
+
+    :returns: Path to file in package
+
+    """
+    package_name = ".".join(__name__.split(".")[0:-1])
+    return importlib_resources.files(package_name).joinpath(f"siglists/{source}.txt")
+
+
 def _get_file_content(source):
     """Return a tuple, each value being a line of the source file.
 
     Remove empty lines and comments (lines starting with a '#').
 
     """
-    filepath = os.path.join("siglists", source + ".txt")
-
+    filepath = build_filepath(source)
     lines = []
-    with resource_stream(__name__, filepath) as f:
-        for i, line in enumerate(f):
+
+    with filepath.open("rb") as fp:
+        for i, line in enumerate(fp):
             line = line.decode("utf-8", "strict").strip()
             if not line or line.startswith("#"):
                 continue
