@@ -5,7 +5,7 @@
 import importlib
 from unittest import mock
 
-from pkg_resources import resource_stream
+import importlib_resources
 import pytest
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
@@ -15,8 +15,10 @@ base_module = ".".join(__name__.split(".")[:-2])
 siglists_utils = importlib.import_module(base_module + ".siglists_utils")
 
 
-def _fake_stream(pkg, filepath):
-    return resource_stream(__name__, filepath)
+def _fake_build_filepath(source):
+    # Switch the package to the test package so we can pick up test siglist files
+    package_name = ".".join(__name__.split(".")[0:-1])
+    return importlib_resources.files(package_name).joinpath(f"siglists/{source}.txt")
 
 
 class TestSigLists:
@@ -39,17 +41,17 @@ class TestSigLists:
                 if isinstance(line, str):
                     assert not line.startswith("#")
 
-    @mock.patch(base_module + ".siglists_utils.resource_stream")
-    def test_valid_entries(self, mocked_stream):
-        mocked_stream.side_effect = _fake_stream
+    @mock.patch(base_module + ".siglists_utils.build_filepath")
+    def test_valid_entries(self, mocked_filepath):
+        mocked_filepath.side_effect = _fake_build_filepath
 
         expected = ("fooBarStuff", "moz::.*", "@0x[0-9a-fA-F]{2,}")
         content = siglists_utils._get_file_content("test-valid-sig-list")
         assert content == expected
 
-    @mock.patch(base_module + ".siglists_utils.resource_stream")
-    def test_invalid_entry(self, mocked_stream):
-        mocked_stream.side_effect = _fake_stream
+    @mock.patch(base_module + ".siglists_utils.build_filepath")
+    def test_invalid_entry(self, mocked_filepath):
+        mocked_filepath.side_effect = _fake_build_filepath
 
         with pytest.raises(siglists_utils.BadRegularExpressionLineError) as exc_info:
             siglists_utils._get_file_content("test-invalid-sig-list")
