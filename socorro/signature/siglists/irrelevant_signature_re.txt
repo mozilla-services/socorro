@@ -101,6 +101,7 @@ mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksCondVar::Wait
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::ThreadEventQueue
+mozilla::UniquePtr
 mozilla::widget::WlCrashHandler
 nsThread::GetEvent
 mozilla::PrioritizedEventQueue<T>::GetEvent
