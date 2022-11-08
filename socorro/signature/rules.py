@@ -2,13 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from functools import partial
 from itertools import islice
 import json
 import re
 
 from glom import glom
 
-from . import siglists_utils
+from .siglists_utils import get_signature_list_content
 from .utils import (
     collapse,
     drop_bad_characters,
@@ -75,19 +76,27 @@ class CSignatureTool:
 
     hang_prefixes = {-1: "hang", 1: "chromehang"}
 
-    def __init__(self):
+    def __init__(self, datadir=None):
+        """
+        :param datadir: the directory holding signature lists to use or ``None`` to
+            use included signature lists
+        """
         super().__init__()
 
-        self.irrelevant_signature_re = re.compile(
-            "|".join(siglists_utils.IRRELEVANT_SIGNATURE_RE)
+        self.datadir = datadir
+        if datadir is not None:
+            get_contents = partial(get_signature_list_content, source=datadir)
+        else:
+            get_contents = get_signature_list_content
+
+        self.irrelevant_signature_re = self.build_re(
+            get_contents("irrelevant_signature_re")
         )
-        self.prefix_signature_re = re.compile(
-            "|".join(siglists_utils.PREFIX_SIGNATURE_RE)
+        self.prefix_signature_re = self.build_re(get_contents("prefix_signature_re"))
+        self.signatures_with_line_numbers_re = self.build_re(
+            get_contents("signatures_with_line_numbers_re")
         )
-        self.signatures_with_line_numbers_re = re.compile(
-            "|".join(siglists_utils.SIGNATURES_WITH_LINE_NUMBERS_RE)
-        )
-        self.signature_sentinels = siglists_utils.SIGNATURE_SENTINELS
+        self.signature_sentinels = get_contents("signature_sentinels")
 
         self.collapse_arguments = True
 
@@ -95,6 +104,9 @@ class CSignatureTool:
         self.fixup_comma = re.compile(r",(?! )")
         self.fixup_hash = re.compile(r"::h[0-9a-fA-F]+$")
         self.fixup_lambda_numbers = re.compile(r"::\$_\d+::")
+
+    def build_re(self, lines):
+        return re.compile("|".join(lines))
 
     def normalize_rust_function(self, function, line):
         """Normalizes a single Rust frame with a function."""
@@ -323,6 +335,11 @@ class CSignatureTool:
         """
         notes = []
         debug_notes = []
+
+        if self.datadir is None:
+            debug_notes.append("using included signature lists")
+        else:
+            debug_notes.append(f"using signature lists from {self.datadir}")
 
         # Shorten source_list to the first sentinel found
         sentinel_locations = []
@@ -558,12 +575,15 @@ class SignatureGenerationRule(Rule):
     * ``proto_signature``: a ``" | "`` delimited string of the normalized
       frames
 
+    :param signature_list_dir: path to the directory with the signature lists to use or
+        ``None`` if you want to use the included ones
+
     """
 
-    def __init__(self):
+    def __init__(self, signature_list_dir=None):
         super().__init__()
         self.java_signature_tool = JavaSignatureTool()
-        self.c_signature_tool = CSignatureTool()
+        self.c_signature_tool = CSignatureTool(datadir=signature_list_dir)
 
     def action(self, crash_data, result):
         # If this is a Java crash, then generate a Java signature

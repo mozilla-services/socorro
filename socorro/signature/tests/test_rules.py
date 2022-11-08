@@ -6,9 +6,9 @@ import copy
 import importlib
 import json
 import re
-from unittest import mock
 
 import pytest
+
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
@@ -49,13 +49,12 @@ class TestCSignatureTool:
         td=[r"foo32\.dll.*"],
         ss=("sentinel", ("sentinel2", lambda x: "ff" in x)),
     ):
-        with mock.patch(BASE_MODULE + ".rules.siglists_utils") as mocked_siglists:
-            mocked_siglists.IRRELEVANT_SIGNATURE_RE = ig
-            mocked_siglists.PREFIX_SIGNATURE_RE = pr
-            mocked_siglists.SIGNATURES_WITH_LINE_NUMBERS_RE = si
-            mocked_siglists.TRIM_DLL_SIGNATURE_RE = td
-            mocked_siglists.SIGNATURE_SENTINELS = ss
-            return rules.CSignatureTool()
+        tool = rules.CSignatureTool()
+        tool.irrelevant_signature_re = tool.build_re(ig)
+        tool.prefix_signature_re = tool.build_re(pr)
+        tool.signatures_with_line_numbers_re = tool.build_re(si)
+        tool.signature_sentinels = ss
+        return tool
 
     def test_c_config_tool_init(self):
         """test_C_config_tool_init: constructor test"""

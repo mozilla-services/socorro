@@ -1943,7 +1943,7 @@ class TestSignatureGeneratorRule:
             # Override the regular SigntureGenerator with one with a BadRule
             # in the pipeline
             rule.generator = SignatureGenerator(
-                pipeline=[BadRule()], error_handler=rule._error_handler
+                ruleset=[BadRule], error_handler=rule._error_handler
             )
 
             raw_crash = {}

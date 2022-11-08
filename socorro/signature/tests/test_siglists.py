@@ -3,10 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import importlib
-from unittest import mock
+from pathlib import Path
 
-import importlib_resources
 import pytest
+
 
 # NOTE(willkg): We do this so that we can extract signature generation into its
 # own namespace as an external library. This allows the tests to run if it's in
@@ -15,46 +15,41 @@ base_module = ".".join(__name__.split(".")[:-2])
 siglists_utils = importlib.import_module(base_module + ".siglists_utils")
 
 
-def _fake_build_filepath(source):
-    # Switch the package to the test package so we can pick up test siglist files
-    package_name = ".".join(__name__.split(".")[0:-1])
-    return importlib_resources.files(package_name).joinpath(f"siglists/{source}.txt")
-
-
 class TestSigLists:
     def test_loading_files(self):
-        all_lists = (
-            "IRRELEVANT_SIGNATURE_RE",
-            "PREFIX_SIGNATURE_RE",
-            "SIGNATURE_SENTINELS",
-            "SIGNATURES_WITH_LINE_NUMBERS_RE",
+        signature_lists = (
+            "irrelevant_signature_re",
+            "prefix_signature_re",
+            "signature_sentinels",
+            "signatures_with_line_numbers_re",
         )
 
-        for list_name in all_lists:
-            content = getattr(siglists_utils, list_name)
-            assert content
+        for name in signature_lists:
+            content = siglists_utils.get_signature_list_content(name)
+            assert len(content) > 0
 
             for line in content:
-                assert line
-                # Some items can be tuples; for the str lines, make sure they
-                # don't start with a #
+                assert len(line) > 0
+                # Some items can be tuples; for the str lines, make sure they don't
+                # start with a #
                 if isinstance(line, str):
                     assert not line.startswith("#")
 
-    @mock.patch(base_module + ".siglists_utils.build_filepath")
-    def test_valid_entries(self, mocked_filepath):
-        mocked_filepath.side_effect = _fake_build_filepath
-
+    def test_valid_entries(self):
+        source = Path(__file__).parent / "siglists"
         expected = ("fooBarStuff", "moz::.*", "@0x[0-9a-fA-F]{2,}")
-        content = siglists_utils._get_file_content("test-valid-sig-list")
+        content = siglists_utils.get_signature_list_content(
+            "test-valid-sig-list", source=source
+        )
         assert content == expected
 
-    @mock.patch(base_module + ".siglists_utils.build_filepath")
-    def test_invalid_entry(self, mocked_filepath):
-        mocked_filepath.side_effect = _fake_build_filepath
+    def test_invalid_entry(self):
+        source = Path(__file__).parent / "siglists"
 
         with pytest.raises(siglists_utils.BadRegularExpressionLineError) as exc_info:
-            siglists_utils._get_file_content("test-invalid-sig-list")
+            siglists_utils.get_signature_list_content(
+                "test-invalid-sig-list", source=source
+            )
 
         msg = exc_info.exconly()
         assert "BadRegularExpressionLineError: Regex error: " in msg
