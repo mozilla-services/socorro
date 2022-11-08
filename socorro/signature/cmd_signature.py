@@ -169,6 +169,14 @@ def main(argv=None):
         help="limit output to just the signatures that changed",
     )
     parser.add_argument(
+        "--signature-list-dir",
+        required=False,
+        help=(
+            "directory of signature list files to use; if not specified, uses the "
+            + "included signature list files"
+        ),
+    )
+    parser.add_argument(
         "crashids",
         metavar="crashid",
         nargs="*",
@@ -189,7 +197,13 @@ def main(argv=None):
 
     api_token = os.environ.get("SOCORRO_API_TOKEN", "")
 
-    generator = SignatureGenerator()
+    generator_kwargs = {}
+    if args.signature_list_dir:
+        generator_kwargs = {
+            "signature_list_dir": args.signature_list_dir,
+        }
+    generator = SignatureGenerator(**generator_kwargs)
+
     if args.crashids:
         crashids_iterable = args.crashids
     elif not sys.stdin.isatty():

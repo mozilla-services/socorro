@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import dataclasses
+import inspect
 import sys
 from typing import Any, Dict, List
 
@@ -23,21 +24,21 @@ from .rules import (
 )
 
 
-DEFAULT_PIPELINE = [
-    SignatureGenerationRule(),
-    StackwalkerErrorSignatureRule(),
-    BadHardware(),
-    OOMSignature(),
-    AbortSignature(),
-    SignatureShutdownTimeout(),
-    SignatureRunWatchDog(),
-    SignatureIPCChannelError(),
-    SignatureIPCMessageName(),
-    SignatureParentIDNotEqualsChildID(),
-    StackOverflowSignature(),
+DEFAULT_RULESET = [
+    SignatureGenerationRule,
+    StackwalkerErrorSignatureRule,
+    BadHardware,
+    OOMSignature,
+    AbortSignature,
+    SignatureShutdownTimeout,
+    SignatureRunWatchDog,
+    SignatureIPCChannelError,
+    SignatureIPCMessageName,
+    SignatureParentIDNotEqualsChildID,
+    StackOverflowSignature,
     # NOTE(willkg): These should always come last and in this order
-    SigFixWhitespace(),
-    SigTruncate(),
+    SigFixWhitespace,
+    SigTruncate,
 ]
 
 
@@ -72,15 +73,54 @@ class Result:
 
 
 class SignatureGenerator:
-    def __init__(self, pipeline=None, error_handler=None):
+    def __init__(self, ruleset=None, error_handler=None, **cfg):
         """
-        :arg pipeline: list of rules to use for signature generation
-        :arg error_handler: error handling function with signature
+        :param ruleset: list of rule classes to use for signature generation
+        :param error_handler: error handling function with signature
             ``fun(signature_data, exc_info, extra)``
+        :param cfg: configuration keyword arguments to pass to rules being
+            instantiated
 
         """
-        self.pipeline = pipeline or list(DEFAULT_PIPELINE)
         self.error_handler = error_handler
+        self.pipeline = self.initialize_pipeline(
+            ruleset or list(DEFAULT_RULESET), **cfg
+        )
+
+    def initialize_pipeline(self, ruleset, **cfg):
+        """Initialize a pipeline of rules
+
+        For each rule in the ruleset:
+
+        * if the rule is an instance, adds it to pipeline
+        * if the rule is a class, uses introspection to determine the configuration
+          required and instantiates the rule class with that
+
+        :param ruleset: list of rule instances and classes
+        :param cfg: configuration kwargs to pass to rules being instantiated; see each
+            rule's documentation for what configuration is supported
+
+        :returns: list of rule instances
+
+        """
+        pipeline = []
+        for rule in ruleset:
+            instance = None
+            if inspect.isclass(rule):
+                fun_signature = inspect.signature(rule)
+                kwargs = {}
+                for key, param in fun_signature.parameters.items():
+                    if (
+                        param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+                        and key in cfg
+                    ):
+                        kwargs[key] = cfg[key]
+
+                instance = rule(**kwargs)
+            else:
+                instance = rule
+            pipeline.append(instance)
+        return pipeline
 
     def generate(self, signature_data):
         """Takes data and returns a signature

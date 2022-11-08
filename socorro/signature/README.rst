@@ -17,22 +17,22 @@ signature and the newly generated one.
 This can be used for testing signature generation changes, regression testing,
 and astounding your friends at parties.
 
-You need to run this inside a Socorro environment. For example, you could
-run this in the processor Docker container. You can start a container
-like that like this::
+You need to run this inside a Socorro environment. For example, you could run
+this in the processor Docker container. You can start a container like that
+like this::
 
     $ make shell
 
 
-Once you're in your Socorro environment, you can run signature generation.
-You can pass it crash ids via the command line as arguments::
+Once you're in your Socorro environment, you can run signature generation. You
+can pass it crash ids via the command line as arguments::
 
     socorro-cmd signature CRASHID [CRASHID...]
 
 
 It can also take crash ids from stdin.
 
-Some examples:
+Examples:
 
 * getting crash ids from the file ``crashids.txt``::
 
@@ -41,6 +41,11 @@ Some examples:
 * getting crash ids from another command::
 
     $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
+
+* getting crash ids for crash reports with a specific signature and then
+  checking to see if the signatures have changed::
+
+    $ socorro-cmd fetch_crashids --signature='js::NativeGetProperty' --num=5 | socorro-cmd signature
 
 * spitting output in CSV format to more easily analyze results for generating
   signatures for multiple crashes::
@@ -56,8 +61,7 @@ For more argument help, see::
 library
 -------
 
-This code is also available as library that's updated periodically by
-Will.
+This code is also available as library that's updated periodically by WillKG.
 
 If you're interested in using it, let us know.
 

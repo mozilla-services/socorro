@@ -30,7 +30,7 @@ class TestSignatureGenerator:
         class BadRule:
             pass
 
-        generator_obj = generator.SignatureGenerator(pipeline=[BadRule()])
+        generator_obj = generator.SignatureGenerator(ruleset=[BadRule])
         ret = generator_obj.generate({})
 
         assert ret.signature == ""
@@ -48,7 +48,7 @@ class TestSignatureGenerator:
         error_handler = mock.MagicMock()
 
         generator_obj = generator.SignatureGenerator(
-            pipeline=[BadRule()], error_handler=error_handler
+            ruleset=[BadRule], error_handler=error_handler
         )
         generator_obj.generate({"uuid": "ou812"})
 
