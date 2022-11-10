@@ -129,7 +129,7 @@ def report_index(request, crash_id, default_context=None):
             cache.set(cache_key, True, 60)
         return render(request, "crashstats/report_index_pending.html", context)
 
-    context["current_signature"] = context["report"]["signature"]
+    context["report"]["current_signature"] = context["report"]["signature"]
     if request.user.has_perm("crashstats.view_pii"):
         context["report"]["current_signature"] = generate_signature(context["report"])
 
