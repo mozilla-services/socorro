@@ -64,6 +64,9 @@ _guard_dispatch_icall_nop
 guard_dispatch_icall_nop
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
+js::gc::CellWithTenuredGCPointer<T>::headerPtr
+JSObject::nonCCWRealm
+JSObject::shape
 KiFastSystemCallRet
 libandroid\.so@0x
 libandroid_runtime\.so@0x
