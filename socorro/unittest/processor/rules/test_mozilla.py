@@ -1377,35 +1377,63 @@ class TestESRVersionRewrite:
 
 
 class TestTopMostFilesRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+    def test_file_in_frame(self):
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
-        processed_crash["crashing_thread"] = 0
-        processed_crash["json_dump"] = {
-            "crash_info": {"crashing_thread": 0},
-            "crashing_thread": {
-                "frames": [
-                    {"source": "not-the-right-file.dll"},
-                    {"file": "not-the-right-file.cpp"},
-                ]
+        processed_crash = {
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {"function": "<unknown>"},
+                            {"file": "MozPromise.h", "function": "MozPromise"},
+                        ]
+                    }
+                ],
             },
-            "threads": [{"frames": [{"source": "dwight.dll"}, {"file": "wilma.cpp"}]}],
         }
-
         status = Status()
 
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, status)
 
-        assert processed_crash["topmost_filenames"] == "wilma.cpp"
+        assert processed_crash["topmost_filenames"] == "MozPromise.h"
 
-        # raw_crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+    def test_file_in_inlines(self):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {"function": "<unknown>"},
+                            {
+                                "file": "MozPromise.h",
+                                "inlines": [
+                                    {
+                                        "file": "RTCRtpTransceiver.cpp",
+                                        "function": "RTCRtpTransceiver",
+                                    },
+                                ],
+                                "function": "MozPromise",
+                            },
+                        ],
+                    },
+                ],
+            },
+        }
+        status = Status()
 
-    def test_missing_key(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        expected_raw_crash = copy.deepcopy(raw_crash)
+        rule = TopMostFilesRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+
+        assert processed_crash["topmost_filenames"] == "RTCRtpTransceiver.cpp"
+
+    def test_missing_json_dump(self):
+        raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
@@ -1413,18 +1441,28 @@ class TestTopMostFilesRule:
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, status)
 
-        assert processed_crash["topmost_filenames"] is None
+        assert "topmost_filenames" not in processed_crash
 
-        # raw_crash should be unchanged
-        assert raw_crash == expected_raw_crash
-
-    def test_missing_key_2(self):
+    def test_missing_crashing_thread(self):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {}
-        processed_crash["json_dump"] = {
-            "crashing_thread": {
-                "frames": [{"filename": "dwight.dll"}, {"filename": "wilma.cpp"}]
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {"crashing_thread": 0},
+                "crashing_thread": {
+                    "frames": [
+                        {"source": "not-the-right-file.dll"},
+                        {"file": "not-the-right-file.cpp"},
+                    ]
+                },
+                "threads": [
+                    {
+                        "frames": [
+                            {"function": "<unknown>"},
+                            {"file": "MozPromise.h", "function": "MozPromise"},
+                        ]
+                    }
+                ],
             }
         }
         status = Status()
@@ -1432,10 +1470,7 @@ class TestTopMostFilesRule:
         rule = TopMostFilesRule()
         rule.act(raw_crash, dumps, processed_crash, status)
 
-        assert processed_crash["topmost_filenames"] is None
-
-        # raw_crash should be unchanged
-        assert raw_crash == canonical_standard_raw_crash
+        assert "topmost_filenames" not in processed_crash
 
 
 class TestModulesInStackRule:

@@ -603,31 +603,37 @@ class ESRVersionRewrite(Rule):
 
 
 class TopMostFilesRule(Rule):
-    """Origninating from Bug 519703, the topmost_filenames was specified as
-    singular, there would be only one. The original programmer, in the
-    source code stated "Lets build in some flex" and allowed the field to
-    have more than one in a list. However, in all the years that this existed
-    it was never expanded to use more than just one. Meanwhile, the code
-    ambiguously would sometimes give this as as single value and other times
-    return it as a list of one item.
+    """Determines the top-most filename in the stack
 
-    This rule does not try to reproduce that imbiguity and avoids the list
-    entirely, just giving one single value. The fact that the destination
-    varible in the processed_crash is plural rather than singular is
-    unfortunate.
+    This takes into account stack frames and inline function data for Rust/C++ stacks to
+    determine the filename of the top-most thing in the stack.
 
+    If there is no stack, then this omits the field.
+
+    While the field name is "topmost_filenames" (plural), this only determines the
+    top-most filename (singular) because of historical reasons.
+
+    Bug #519703.
     """
 
     def action(self, raw_crash, dumps, processed_crash, status):
-        processed_crash["topmost_filenames"] = None
         try:
             crashing_thread = processed_crash["crashing_thread"]
             frames = processed_crash["json_dump"]["threads"][crashing_thread]["frames"]
         except (IndexError, TypeError, KeyError):
             return
 
-        for a_frame in frames:
-            source_filename = a_frame.get("file", None)
+        source_filename = ""
+
+        for frame in frames:
+            inlines = frame.get("inlines") or []
+            for inline in inlines:
+                source_filename = inline.get("file")
+                if source_filename:
+                    processed_crash["topmost_filenames"] = source_filename
+                    return
+
+            source_filename = frame.get("file")
             if source_filename:
                 processed_crash["topmost_filenames"] = source_filename
                 return
