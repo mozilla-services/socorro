@@ -13,7 +13,9 @@ import pathlib
 
 import click
 import jsonschema
+import yaml
 
+from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import (
     compile_pattern_re,
     get_schema,
@@ -29,6 +31,12 @@ HERE = os.path.dirname(__file__)
 
 
 RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
+
+
+CRASH_ANNOTATIONS_URL = (
+    "https://hg.mozilla.org/mozilla-central/raw-file/tip/toolkit/crashreporter/"
+    + "CrashAnnotations.yaml"
+)
 
 
 class InvalidSchemaError(Exception):
@@ -196,6 +204,31 @@ def validate_and_test(ctx, crashdir):
         click.echo(f"  {'KEY':90}  TYPE(S)")
         for key, val in sorted(keys_not_in_schema):
             click.echo(f"  {key:90}  {val}")
+
+    # Fetch CrashAnnotations.yaml
+    resp = session_with_retries().get(CRASH_ANNOTATIONS_URL)
+    data = yaml.load(resp.content, Loader=yaml.Loader)
+    crash_annotations_keys = set(data.keys())
+
+    schema_keys = set([key[1:] for key, type_ in schema_key_logger.keys])
+
+    keys_not_in_crash_annotations = schema_keys - crash_annotations_keys
+    if keys_not_in_crash_annotations:
+        click.echo("")
+        click.echo(
+            f"{len(keys_not_in_crash_annotations)} keys not in CrashAnnotations.yaml:"
+        )
+        click.echo(f"  {'KEY'}")
+        for key in sorted(keys_not_in_crash_annotations):
+            click.echo(f"  {key}")
+
+    keys_not_in_raw_crash_schema = crash_annotations_keys - schema_keys
+    if keys_not_in_raw_crash_schema:
+        click.echo("")
+        click.echo(f"{len(keys_not_in_raw_crash_schema)} keys not in raw_crash_schema:")
+        click.echo(f"  {'KEY'}")
+        for key in sorted(keys_not_in_raw_crash_schema):
+            click.echo(f"  {key}")
 
 
 if __name__ == "__main__":
