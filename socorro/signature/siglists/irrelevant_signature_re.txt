@@ -65,6 +65,7 @@ guard_dispatch_icall_nop
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
 js::gc::CellWithTenuredGCPointer<T>::headerPtr
+JS::loader::ScriptLoadRequest::GetWorkerLoadContext
 JSObject::nonCCWRealm
 JSObject::shape
 KiFastSystemCallRet
@@ -99,9 +100,10 @@ mozilla::detail::Atomic
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::detail::IntrinsicMemoryOps
+mozilla::dom::ThreadSafeRequestHandle::GetContext
 mozilla::gfx::Log<
-mozilla::ipc::WriteIPDLParam
 mozilla::ipc::IPDLParamTraits<T>::Write
+mozilla::ipc::WriteIPDLParam
 mozilla::Monitor::Wait
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksCondVar::Wait
