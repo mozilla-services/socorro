@@ -102,7 +102,7 @@ mozilla::detail::HashTable<.*>::
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
 mozilla::dom::AutoJSAPI::Init
-mozilla::dom::Promise::.*
+mozilla::dom::Promise::
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
