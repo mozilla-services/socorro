@@ -25,6 +25,7 @@ from socorro.processor.rules.breakpad import (
     MinidumpStackwalkRule,
 )
 from socorro.processor.rules.general import (
+    CollectorMetadataRule,
     CPUInfoRule,
     CrashReportKeysRule,
     DeNoneRule,
@@ -172,9 +173,11 @@ class ProcessorPipeline(RequiredConfig):
             # The default processing pipeline
             "default": [
                 # fix the raw crash removing null characters and Nones
-                CrashReportKeysRule(),
                 DeNullRule(),
                 DeNoneRule(),
+                # capture collector things
+                CrashReportKeysRule(),
+                CollectorMetadataRule(),
                 # fix ModuleSignatureInfo if it needs fixing
                 ConvertModuleSignatureInfoRule(),
                 # rules to change the internals of the raw crash

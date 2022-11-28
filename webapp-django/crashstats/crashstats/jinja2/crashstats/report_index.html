@@ -1179,7 +1179,7 @@
                     <th scope="row">SubmittedFromInfobar</th>
                     <td>{{ raw.SubmittedFromInfobar|default("--") }}</td>
                   </tr>
-                  {% for key, val in raw.metadata | dictsort %}
+                  {% for key, val in report.collector_metadata | dictsort %}
                     <tr>
                       <th scope="row">{{ key }}</th>
                       <td>
