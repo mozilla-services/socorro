@@ -183,3 +183,10 @@ class CrashReportKeysRule(Rule):
         diff = all_keys.symmetric_difference(sanitized_keys)
         if diff:
             status.add_note("invalidkeys: Crash report contains invalid keys")
+
+
+class CollectorMetadataRule(Rule):
+    """Copies collector metadata to processed crash"""
+
+    def action(self, raw_crash, dumps, processed_crash, status):
+        processed_crash["collector_metadata"] = raw_crash.get("metadata", {})

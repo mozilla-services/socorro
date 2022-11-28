@@ -274,6 +274,13 @@ def report_index(request, crash_id, default_context=None):
     context["fields_desc"] = descriptions
     context["empty_desc"] = "No description for this field. Search: unknown"
 
+    # FIXME(willkg): bug 1784558 added collector_metadata to the processed crash, but
+    # it takes 6 months for the processed crashes that predate that change to expire.
+    # In the meantime, we "migrate" with this. Remove in 5/2023.
+    if "collector_metadata" not in context["report"]:
+        context["report"]["collector_metadata"] = context["raw"].get("metadata", {})
+        context["report"]["collector_metadata"]["pulled_from_raw"] = "1"
+
     content = loader.render_to_string("crashstats/report_index.html", context, request)
     utf8_content = content.encode("utf-8", errors="backslashreplace")
     return HttpResponse(utf8_content, charset="utf-8")

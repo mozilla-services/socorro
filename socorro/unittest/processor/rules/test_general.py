@@ -6,6 +6,7 @@ from configman.dotdict import DotDict
 import pytest
 
 from socorro.processor.rules.general import (
+    CollectorMetadataRule,
     CPUInfoRule,
     CrashReportKeysRule,
     DeNoneRule,
@@ -402,3 +403,28 @@ class TestCrashReportKeysRule:
         rule = CrashReportKeysRule()
 
         assert rule.sanitize(key) is None
+
+
+class TestCollectorMetadataRule:
+    def test_no_metadata(self):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule = CollectorMetadataRule()
+        rule.action(raw_crash, dumps, processed_crash, status)
+        print(processed_crash)
+        assert processed_crash["collector_metadata"] == {}
+
+    def test_metadata(self):
+        raw_crash = {
+            "metadata": {
+                "collector_notes": ["some notes"],
+            },
+        }
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule = CollectorMetadataRule()
+        rule.action(raw_crash, dumps, processed_crash, status)
+        assert processed_crash["collector_metadata"] == raw_crash["metadata"]
