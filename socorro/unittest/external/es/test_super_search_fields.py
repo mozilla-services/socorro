@@ -206,8 +206,13 @@ def test_validate_super_search_fields(name, properties):
     # If the field has "json_dump" in the source_key, then it's another special case
     # where we're moving it from a nested location in the processed_crash to a top-level
     # location.
-    if not properties["name"].endswith("_future") and "json_dump" not in properties.get(
-        "source_key", ""
+    #
+    # If the field has "collector_metadata" in the source key, then we want to pull a
+    # value from a nested place--this isn't a migration kind of thing.
+    if (
+        not properties["name"].endswith("_future")
+        and "json_dump" not in properties.get("source_key", "")
+        and "collector_metadata" not in properties.get("source_key", "")
     ):
         if properties["is_exposed"] is False:
             assert properties["storage_mapping"] is None

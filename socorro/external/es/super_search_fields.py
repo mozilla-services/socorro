@@ -422,6 +422,10 @@ def apply_schema_properties(fields, schema):
         # NOTE(willkg): if the path doesn't point to something in the schema, that's
         # an error and we should fix the field
         for part in path:
+            if "pattern_properties" in schema_node:
+                # If "pattern_properties" is in the schema node, then we use the
+                # permissions of the root for all children
+                break
             schema_node = schema_node["properties"][part]
 
         val["permissions_needed"] = schema_node.get("permissions", default_permissions)
@@ -901,6 +905,7 @@ FIELDS = {
         "name": "collector_notes",
         "namespace": "processed_crash",
         "query_type": "string",
+        "source_key": "processed_crash.collector_metadata.collector_notes",
         "storage_mapping": {
             "fields": {"full": {"index": "not_analyzed", "type": "string"}},
             "index": "analyzed",
