@@ -776,6 +776,1153 @@ definitions:
     type: object
     # END: memory_report
 
+  telemetry_environment:
+    description: >
+      Telemetry environment data.
+    properties:
+      addons:
+        description: ''
+        properties:
+          activeAddons:
+            description: ''
+            pattern_properties:
+              ^.+$:
+                description: ''
+                properties:
+                  appDisabled:
+                    description: >
+                      True if this add-on cannot be used in the application
+                      based on version compatibility, dependencies, and
+                      blocklisting. This field is only available after the
+                      'sessionstore-windows-restored' topic is notified.
+                    permissions: ["public"]
+                    type: boolean
+                  blocklisted:
+                    description: >
+                      Whether or not the add-on appears in the blocklist. This
+                      field is only available after the
+                      'sessionstore-windows-restored' topic is notified.
+                    permissions: ["public"]
+                    type: boolean
+                  description:
+                    description: >
+                      Description of the addon.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  foreignInstall:
+                    description: >
+                      True or false depending on whether the add-on is a third
+                      party add-on installation or not. This field is only
+                      available after the 'sessionstore-windows-restored' topic
+                      is notified.
+                    permissions: ["public"]
+                    type: ["integer", "boolean"]
+                  hasBinaryComponents:
+                    description: >
+                      True or false depending on whether the add-on has binary
+                      components. This is always false since Firefox 60. This
+                      field is only available after the
+                      'sessionstore-windows-restored' topic is notified.
+                    permissions: ["public"]
+                    type: boolean
+                  installDay:
+                    description: >
+                      The days since epoch that the add-on was first installed.
+                      This field is only available after the
+                      'sessionstore-windows-restored' topic is notified.
+                    permissions: ["public"]
+                    type: ["integer", "null"]
+                  isSystem:
+                    description: >
+                      Whether or not the add-on is a system add-on. This field
+                      is available at startup.
+                    permissions: ["public"]
+                    type: boolean
+                  isWebExtension:
+                    description: >
+                      Whether or not the add-on is a WebExtension add-on. This
+                      field is available at startup.
+                    permissions: ["public"]
+                    type: boolean
+                  multiprocessCompatible:
+                    description: >
+                      Whether or not the add-on is a compatible with e10s.
+                      Since Firefox 61, this is always true. This field is
+                      available at startup.
+                    permissions: ["public"]
+                    type: boolean
+                  name:
+                    description: >
+                      The add-on name, limited to 100 characters. This field is
+                      only available after the 'sessionstore-windows-restored'
+                      topic is notified.
+                    permissions: ["public"]
+                    type: string
+                  scope:
+                    description: >
+                      Indicates what scope the add-on is installed in, per
+                      profile, user, system, or application. This field is
+                      available at startup.
+                    permissions: ["public"]
+                    type: ["integer", "null"]
+                  signedState:
+                    description: >
+                      The state of the signature of the add-on. This field is
+                      only available after the 'sessionstore-windows-restored'
+                      topic is notified.
+                    permissions: ["public"]
+                    type: integer
+                  type:
+                    description: ''
+                    permissions: ["public"]
+                    type: string
+                  updateDay:
+                    description: >
+                      The day the add-on was last updated. This field is
+                      optional, but available at startup if present.
+                    permissions: ["public"]
+                    type: ["integer", "null"]
+                  userDisabled:
+                    description: >
+                      Whether or not the user disabled the add-on. This field
+                      is only available after the
+                      'sessionstore-windows-restored' topic is notified.
+                    permissions: ["public"]
+                    type: ["boolean", "integer"]
+                  version:
+                    description: >
+                      The version of the add-on. This field is available at
+                      startup.
+                    permissions: ["public"]
+                    type: ["string", "number"]
+                permissions: ["public"]
+                type: object
+            permissions: ["public"]
+            type: object
+          activeGMPlugins:
+            description: ''
+            pattern_properties:
+              ^.+$:
+                properties:
+                  applyBackgroundUpdates:
+                    description: ''
+                    permissions: ["public"]
+                    type: ["integer", "boolean"]
+                  userDisabled:
+                    description: ''
+                    permissions: ["public"]
+                    type: boolean
+                  version:
+                    description: ''
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                permissions: ["public"]
+                type: object
+            permissions: ["public"]
+            type: object
+          activePlugins:
+            description: ''
+            items:
+              properties:
+                blocklisted:
+                  description: ''
+                  permissions: ["public"]
+                  type: boolean
+                clicktoplay:
+                  description: ''
+                  permissions: ["public"]
+                  type: boolean
+                description:
+                  description: ''
+                  permissions: ["public"]
+                  type: ["string", "null"]
+                disabled:
+                  description: ''
+                  permissions: ["public"]
+                  type: boolean
+                mimeTypes:
+                  description: ''
+                  items:
+                    description: ''
+                    permissions: ["public"]
+                    type: string
+                  permissions: ["public"]
+                  type: array
+                name:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                updateDay:
+                  description: ''
+                  permissions: ["public"]
+                  type: ["integer", "null"]
+                version:
+                  description: ''
+                  permissions: ["public"]
+                  type: ["string", "number"]
+              permissions: ["public"]
+              type: object
+            permissions: ["public"]
+            type: array
+          theme:
+            description: ''
+            properties:
+              appDisabled:
+                description: >
+                  True if this theme cannot be used in the application based on
+                  version compatibility, dependencies, and blocklisting.
+                permissions: ["public"]
+                type: boolean
+              blocklisted:
+                description: >
+                  Whether or not the theme appears in the blocklist.
+                permissions: ["public"]
+                type: boolean
+              description:
+                description: >
+                  The theme description.
+                permissions: ["public"]
+                type: ["string", "null"]
+              foreignInstall:
+                description: >
+                  True or false depending on whether the theme is a third party
+                  theme installation or not.
+                permissions: ["public"]
+                type: ["boolean", "integer"]
+              hasBinaryComponents:
+                description: >
+                  True or false depending on whether the theme has binary
+                  components. This is always false since Firefox 60.
+                permissions: ["public"]
+                type: boolean
+              id:
+                description: >
+                  The id of the theme.
+                permissions: ["public"]
+                type: string
+              installDay:
+                description: >
+                  The days since epoch that the theme was first installed.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              name:
+                description: >
+                  The theme name, limited to 100 characters.
+                permissions: ["public"]
+                type: string
+              scope:
+                description: >
+                  Indicates what scope the theme is installed in, per profile,
+                  user, system, or application.
+                permissions: ["public"]
+                type: integer
+              updateDay:
+                description: >
+                  The day the theme was last updated.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              userDisabled:
+                description: >
+                  Whether or not the user disabled the theme.
+                permissions: ["public"]
+                type: boolean
+              version:
+                description: >
+                  The version of the theme.
+                permissions: ["public"]
+                type: string
+            permissions: ["public"]
+            type: object
+        permissions: ["public"]
+        type: object
+      build:
+        description: ''
+        properties:
+          applicationId:
+            description: >
+              The application UUID.
+            permissions: ["public"]
+            type: string
+          applicationName:
+            description: >
+              The application name.
+            permissions: ["public"]
+            type: string
+          architecture:
+            description: >
+              The build architecture for the active build.
+            permissions: ["public"]
+            type: string
+          buildId:
+            description: >
+              The build ID/date of the application.
+            permissions: ["public"]
+            type: string
+          version:
+            description: >
+              The version of the application.
+            permissions: ["public"]
+            type: string
+          vendor:
+            description: >
+              The application vendor.
+            permissions: ["public"]
+            type: string
+          displayVersion:
+            description: >
+              The display version of the application.
+            permissions: ["public"]
+            type: string
+          platformVersion:
+            description: >
+              The version of the XULRunner platform.
+            permissions: ["public"]
+            type: string
+          xpcomAbi:
+            description: >
+              A string tag identifying the binary ABI of the current processor
+              and compiler vtable. This is taken from the TARGET_XPCOM_ABI
+              configure variable. It may not be available on all platforms,
+              especially unusual processor or compiler combinations. The result
+              takes the form '<processor>-<compilerABI>'. For example x86-msvc,
+              ppc-gcc3, etc. This value should almost always be used in
+              combination with  the 'OS'."
+            permissions: ["public"]
+            type: string
+          updaterAvailable:
+            description: >
+              True if the application was built with the support for the
+              updater component.
+            permissions: ["public"]
+            type: ["boolean"]
+        permissions: ["public"]
+        type: object
+      experiments:
+        description: ''
+        pattern_properties:
+          ^.+$:
+            description: ''
+            properties:
+              branch:
+                description: ''
+                permissions: ["public"]
+                type: string
+              enrollmentId:
+                description: ''
+                permissions: ["public"]
+                type: string
+              type:
+                description: ''
+                permissions: ["public"]
+                type: string
+            permissions: ["public"]
+            type: object
+        permissions: ["public"]
+        type: object
+      partner:
+        description: ''
+        properties:
+          distributionId:
+            description: >
+              The value of the `distribution.id` pref that identifies the
+              Firefox distribution.
+            permissions: ["public"]
+            type: ["string", "null"]
+          distributionVersion:
+            description: >
+              The value of the `distribution.version` pref.
+            permissions: ["public"]
+            type: ["string", "null"]
+          distributor:
+            description: >
+              The value of the `app.distributor` pref.
+            permissions: ["public"]
+            type: ["string", "null"]
+          distributorChannel:
+            description: >
+              The value of the `app.distributor.channel` pref.
+            permissions: ["public"]
+            type: ["string", "null"]
+          partnerId:
+            description: >
+              The value of the `mozilla.partner.id` pref.
+            permissions: ["public"]
+            type: ["string", "null"]
+          partnerNames:
+            description: >
+              The list of names from the `app.partner` children prefs, as
+              `app.partner.<name>=<name>`.
+            items:
+              permissions: ["public"]
+              type: string
+            permissions: ["public"]
+            type: array
+        permissions: ["public"]
+        type: object
+      profile:
+        description: ''
+        properties:
+          creationDate:
+            description: >
+              The creation date of the user profile as the integer number of
+              days since UNIX epoch.
+            permissions: ["public"]
+            type: integer
+          firstUseDate:
+            description: ''
+            permissions: ["public"]
+            type: integer
+          resetDate:
+            description: >
+              The date the user profile was reset, as the integer number of
+              days since UNIX epoch. This is optional.
+            permissions: ["public"]
+            type: integer
+        permissions: ["public"]
+        type: object
+      services:
+        description: ''
+        properties:
+          accountEnabled:
+            description: ''
+            permissions: ["public"]
+            type: boolean
+          syncEnabled:
+            description: ''
+            permissions: ["public"]
+            type: boolean
+        permissions: ["public"]
+        type: object
+      settings:
+        description: ''
+        properties:
+          addonCompatibilityCheckEnabled:
+            description: >
+              Whether application compatibility is respected for add-ons.
+            permissions: ["public"]
+            type: boolean
+          blocklistEnabled:
+            description: >
+              True if the blocklist is enabled.
+            permissions: ["public"]
+            type: boolean
+          defaultSearchEngine:
+            # NOTE(willkg): The event.4.schema.json says this is deprecated, so
+            # at some point it should stop showing up and we can remove it.
+            description: >
+              Contains the string identifier or name of the default search
+              engine provider. Deprecated.
+            permissions: ["public"]
+            type: "string"
+          defaultSearchEngineData:
+            properties:
+              loadPath:
+                description: >
+                  The anonymized path of the engine xml file. For example,
+                  'jar:[app]/omni.ja!browser/engine.xml' (where ‘browser’ is the
+                  name of the chrome package, not a folder),
+                  '[profile]/searchplugins/engine.xml',
+                  '[distribution]/searchplugins/common/engine.xml',
+                  '[other]/engine.xml' '[other]/addEngineWithDetails',
+                  '[other]/addEngineWithDetails:extensionID',
+                  '[http/https]example.com/engine-name.xml', and
+                  '[http/https]example.com/engine-name.xml:extensionID'.
+                permissions: ["public"]
+                type: ["string", "null"]
+              name:
+                description: >
+                  The name of the default search engine.
+                permissions: ["public"]
+                type: string
+              origin:
+                description: >
+                  The origin of the search engine. The value will be default
+                  for engines that are built-in or from distribution
+                  partners, verified for user-installed engines with valid
+                  verification hashes, unverified for non-default engines
+                  without verification hash, and invalid for engines with
+                  broken verification hashes.
+                permissions: ["public"]
+                type: string
+              submissionURL:
+                description: >
+                  The HTTP url we would use to search. For privacy, we don’t
+                  record this for user-installed engines.
+                permissions: ["public"]
+                type: string
+            permissions: ["public"]
+            type: object
+          e10sEnabled:
+            description: >
+              True if the E10S is enabled.
+            permissions: ["public"]
+            type: boolean
+          e10sMultiProcesses:
+            description: >
+              Maximum number of processes that will be launched for regular web
+              content.
+            permissions: ["public"]
+            type: integer
+          fissionEnabled:
+            description: >
+              Whether fission is enabled this session, and subframes can load
+              in a different process.
+            permissions: ["public"]
+            type: boolean
+          intl:
+            description: ''
+            properties:
+              acceptLanguages:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: array
+              appLocales:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: array
+              availableLocales:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: array
+              regionalPrefsLocales:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: ["array", "null"]
+              requestedLocales:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: array
+              systemLocales:
+                description: ''
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: ["array", "null"]
+            permissions: ["public"]
+            type: object
+          isDefaultBrowser:
+            description: >
+              Identifier to indicate the particular link within a campaign.
+            permissions: ["public"]
+            type: ["boolean", "null"]
+          launcherProcessState:
+            description: ''
+            permissions: ["public"]
+            type: integer
+          locale:
+            description: >
+              The best locale that the application should be localized to.
+            permissions: ["public"]
+            type: string
+          sandbox:
+            properties:
+              contentWin32kLockdownState:
+                description: >
+                  The status of Win32k Lockdown for Content process.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              effectiveContentProcessLevel:
+                description: >
+                  The effective sandbox. The values are OS dependent.
+                permissions: ["public"]
+                type: ["integer", "null"]
+            permissions: ["public"]
+            type: object
+          searchCohort:
+            description: ''
+            permissions: ["public"]
+            type: ["string", "null"]
+          telemetryEnabled:
+            description: >
+              The state of the 'toolkit.telemetry.enabled' pref.
+            permissions: ["public"]
+            type: boolean
+          update:
+            properties:
+              autoDownload:
+                description: >
+                  The state of the 'app.update.auto' pref.
+                permissions: ["public"]
+                type: boolean
+              background:
+                description: >
+                  Indicates whether updates may be installed when Firefox is
+                  not running.
+                permissions: ["public"]
+                type: boolean
+              channel:
+                description: >
+                  The update channel from the defaults only. Does not include
+                  the partner bits.
+                permissions: ["public"]
+                type: string
+              enabled:
+                description: >
+                  The state of the `app.update.enabled` pref.
+                permissions: ["public"]
+                type: boolean
+            permissions: ["public"]
+            type: object
+          userPrefs:
+            description: ''
+            pattern_properties:
+              ^.+$:
+                description: ''
+                permissions: ["public"]
+                type: ["boolean", "string", "integer", "null"]
+            permissions: ["public"]
+            type: object
+        permissions: ["public"]
+        type: object
+      system:
+        description: ''
+        properties:
+          appleModelId:
+            description: >
+              The model IDs for Apple desktop devices. This is Mac only.
+            permissions: ["public"]
+            type: ["string", "null"]
+          cpu:
+            description: ''
+            properties:
+              cores:
+                description: >
+                  The number of physical CPU cores. Desktop only. For example,
+                  4. 'null' on failure.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              count:
+                description: >
+                  The number of logical CPUs. Desktop only. For example, 8.
+                  'null' on failure.
+                permissions: ["public"]
+                type: ["integer"]
+              extensions:
+                description: >
+                  This lists the avaible CPU extensions as strings. For
+                  example, 'hasMMX', 'hasSSE', 'hasSSE2', 'hasSSE3',
+                  'hasSSSE3', 'hasSSE4A', 'hasSSE4_1', 'hasSSE4_2', 'hasAVX',
+                  'hasAVX2', 'hasAES', 'hasEDSP', 'hasARMv6', 'hasARMv7',
+                  'hasNEON'.
+                items:
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: array
+              family:
+                description: >
+                  The CPU family. 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              isWindowsSMode:
+                description: >
+                  Whether or not the system is Windows 10 or 11 in S Mode. S
+                  Mode existed prior to us being able to query it, so this is
+                  unreliable on Windows versions prior to 1810.
+                permissions: ["public"]
+                type: ["boolean"]
+              l2cacheKB:
+                description: >
+                  The CPU L2 cache size in KB. 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              l3cacheKB:
+                description: >
+                  The CPU L3 cache size in KB. 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              model:
+                description: >
+                  The CPU model, 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              name:
+                description: >
+                  The CPU name. For example, 'Intel(R) Core(TM) i9-8950HK CPU @
+                  2.90GHz'. 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["string", "null"]
+              speedMHz:
+                description: >
+                  Only available on Firefox desktop. The CPU clock speed in MHz.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              stepping:
+                description: >
+                  The CPU stepping. 'null' on failure. Desktop only.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              vendor:
+                description: >
+                  The CPU vendor. For example, 'GenuineIntel'. 'null' on
+                  failure. Desktop only.
+                permissions: ["public"]
+                type: ["string", "null"]
+            permissions: ["public"]
+            type: object
+          gfx:
+            description: ''
+            properties:
+              ContentBackend:
+                description: >
+                  The name of the content backend.
+                permissions: ["public"]
+                type: string
+              D2DEnabled:
+                description: >
+                  Whether or not Direct2D is enabled. This is Windows only.
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              DWriteEnabled:
+                description: >
+                  Whether or not DirectWrite is enabled. This is Windows only.
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              EmbeddedInFirefoxReality:
+                description: >
+                  Whether or not Firefox desktop is embedded by Firefox
+                  Reality. This is Windows only.
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              Headless:
+                description: ''
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              adapters:
+                description: ''
+                items:
+                  properties:
+                    GPUActive:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["boolean", "null"]
+                    RAM:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["integer", "null"]
+                    description:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    deviceID:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    driver:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    driverDate:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    driverVendor:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    driverVersion:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    subsysID:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                    vendorID:
+                      description: ''
+                      permissions: ["public"]
+                      type: ["string", "null"]
+                  permissions: ["public"]
+                  type: object
+                permissions: ["public"]
+                type: array
+              features:
+                properties:
+                  advancedLayers:
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  compositor:
+                    description: >
+                      The name of the compositor. This is one of 'd3d9',
+                      'd3d11', 'opengl', 'basic', or 'none' ('none' indicates
+                      no compositors have been created).
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  d2d:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                      version:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  d3d11:
+                    description: ''
+                    properties:
+                      blocklisted:
+                        description: >
+                          Indicates whether the d3d11 compositor was
+                          blocklisted due to driver bugs. (This field was
+                          renamed to blocklisted in bug 1647225).
+                        permissions: ["public"]
+                        type: ["boolean", "null"]
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                      textureSharing:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["boolean", "null"]
+                      version:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["integer", "null"]
+                      warp:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["boolean", "null"]
+                    permissions: ["public"]
+                    type: object
+                  gpuProcess:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  hwCompositing:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  omtp:
+                    description: >
+                      Indicates whether the off-main-thread painting is enabled.
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  openglCompositing:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  webrender:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  wrCompositor:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  wrQualified:
+                    description: ''
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                  wrSoftware:
+                    description: >
+                      Indicates whether the software backend to WebRender is
+                      enabled.
+                    properties:
+                      status:
+                        description: ''
+                        permissions: ["public"]
+                        type: ["string", "null"]
+                    permissions: ["public"]
+                    type: object
+                permissions: ["public"]
+                type: object
+              monitors:
+                description: ''
+                items:
+                  properties:
+                    scale:
+                      description: ''
+                      permissions: ["public"]
+                      type: integer
+                    screenWidth:
+                      description: ''
+                      permissions: ["public"]
+                      type: integer
+                    screenHeight:
+                      description: ''
+                      permissions: ["public"]
+                      type: integer
+                    refreshRate:
+                      description: ''
+                      permissions: ["public"]
+                      type: integer
+                    pseudoDisplay:
+                      description: ''
+                      permissions: ["public"]
+                      type: boolean
+                  permissions: ["public"]
+                  type: object
+                permissions: ["public"]
+                type: array
+            permissions: ["public"]
+            type: object
+          hasWinPackageId:
+            description: >
+              Is the process running with a package identity (e.g. from an MSIX
+              install)? See bug 1709892. This is Windows only.
+            permissions: ["public"]
+            type: ["boolean", "null"]
+          hdd:
+            description: ''
+            properties:
+              binary:
+                description: ''
+                properties:
+                  model:
+                    description: >
+                      The model of the hdd where the application binaries are
+                      located. This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  revision:
+                    description: >
+                      The revision of the hdd where the application binaries
+                      are located. This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  type:
+                    description: >
+                      SSD, HDD, or null.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                permissions: ["public"]
+                type: object
+              profile:
+                description: ''
+                properties:
+                  model:
+                    description: >
+                      The model of the hdd where the profile directory is
+                      located. This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  revision:
+                    description: >
+                      The revision of the hdd where the profile directory is
+                      located. This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  type:
+                    description: >
+                      SSD, HDD, or null.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                permissions: ["public"]
+                type: object
+              system:
+                description: ''
+                properties:
+                  model:
+                    description: >
+                      The model of the hdd where the system files are located.
+                      This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  revision:
+                    description: >
+                      The revision of the hdd where the system files are
+                      located. This is Windows only.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                  type:
+                    description: >
+                      SSD, HDD, or null.
+                    permissions: ["public"]
+                    type: ["string", "null"]
+                permissions: ["public"]
+                type: object
+            permissions: ["public"]
+            type: object
+          isWow64:
+            description: >
+              The availability of the WoW64 subsystem. This is Windows only.
+            permissions: ["public"]
+            type: boolean
+          isWowARM64:
+            description: ''
+            permissions: ["public"]
+            type: ["boolean", "null"]
+          memoryMB:
+            description: >
+              The machines amount of RAM.
+            permissions: ["public"]
+            type: integer
+          os:
+            description: ''
+            properties:
+              hasPrefetch:
+                description: >
+                  Whether or not the OS-based prefetch application start-up
+                  optimization is set. This is Windows-only. 'null' on failure.
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              hasSuperfetch:
+                description: >
+                  Whether or not the OS-based superfetch application start-up
+                  optimization service is running and using the default
+                  settings. This is Windows-only. 'null' on failure.
+                permissions: ["public"]
+                type: ["boolean", "null"]
+              installYear:
+                description: >
+                  The year Windows was installed. This is Windows only. 'null'
+                  on failure.
+                permissions: ["public"]
+                type: ["integer", "null"]
+              locale:
+                description: >
+                  The locale of the operating system. For example, 'en'. This
+                  is `null` on failure.
+                permissions: ["public"]
+                type: string
+              name:
+                description: >
+                  The name of the operating system. For example, 'Windows_NT'.
+                  This is 'null' on failure.
+                permissions: ["public"]
+                type: string
+              servicePackMajor:
+                description: >
+                  The Windows service pack major version. This is Windows only.
+                  'null' on failure.
+                permissions: ["public"]
+                type: integer
+              servicePackMinor:
+                description: >
+                  The Windows service pack minor version. This is Windows only.
+                  'null' on failure.
+                permissions: ["public"]
+                type: integer
+              version:
+                description: >
+                  The version of the operating system. For example, '6.1'. This
+                  is 'null' on failure.
+                permissions: ["public"]
+                type: string
+              windowsBuildNumber:
+                description: >
+                  The Windows build number. This is Windows only. 'null' on
+                  failure.
+                permissions: ["public"]
+                type: integer
+              windowsUBR:
+                description: >
+                  The Windows UBR. This is Windows 10 only. 'null' on failure.
+                permissions: ["public"]
+                type: integer
+            permissions: ["public"]
+            type: object
+          sec:
+            description: ''
+            properties:
+              antivirus:
+                description: >
+                  The name of the registered antivirus software. Windows only.
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: ["array", "null"]
+              antispyware:
+                description: >
+                  The name of the registered antispyware software. Windows only.
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: ["array", "null"]
+              firewall:
+                description: >
+                  The name of the registered firewall software. Windows only.
+                items:
+                  description: ''
+                  permissions: ["public"]
+                  type: string
+                permissions: ["public"]
+                type: ["array", "null"]
+            permissions: ["public"]
+            type: object
+          virtualMaxMB:
+            description: >
+              Total virtual memory size in MB. This is Windows only. `null` on
+              failure.
+            permissions: ["public"]
+            type: ["integer", "null"]
+        permissions: ["public"]
+        type: object
+    permissions: ["public"]
+    type: object
+    # END: telemetry_environment
+
 properties:
   adapter_device_id:
     description: The graphics adapter device identifier.
@@ -1590,6 +2737,11 @@ properties:
     type: integer
     permissions: ["public"]
     source_annotation: SystemMemoryUsePercentage
+  telemetry_environment:
+    description: Telemetry Environment data.
+    $ref: "#/definitions/telemetry_environment"
+    permissions: ["public"]
+    source_annotation: TelemetryEnvironment
   throttleable:
     description: >
       Whether crash ingestion can selectively discard this crash report or not.

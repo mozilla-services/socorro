@@ -270,6 +270,8 @@ def transform_schema(schema, transform_function):
     """
 
     def _transform_schema(schema, path, transform_function):
+        if "type" not in schema:
+            raise KeyError(f"'type' not in schema at {path}")
         type_ = schema["type"]
 
         new_schema = transform_function(path, schema)
@@ -341,11 +343,11 @@ PATTERN_CACHE = {}
 
 
 def compile_pattern_re(pattern):
-    """Compile a patternProperties regex pattern
+    """Compile a pattern_properties regex pattern
 
     Note that uses a module-level cache to reduce repeated pattern compiling.
 
-    :arg string pattern: a patternProperties regex pattern
+    :arg string pattern: a pattern_properties regex pattern
 
     :returns: re.Pattern
 
