@@ -6,16 +6,16 @@
 
 # Usage: python socorro/schemas/validate_processed_crash.py [DIR]
 
-from itertools import zip_longest
 import json
 import os
 import pathlib
+import re
+import textwrap
 
 import click
 import jsonschema
 
 from socorro.lib.libsocorrodataschema import (
-    compile_pattern_re,
     get_schema,
     SocorroDataReducer,
     split_path,
@@ -29,6 +29,11 @@ HERE = os.path.dirname(__file__)
 
 
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
+
+
+def wrapped(ctx, text):
+    width = min(ctx.terminal_width or 78, 78)
+    return "\n".join(textwrap.wrap(text, width=width))
 
 
 class InvalidSchemaError(Exception):
@@ -85,7 +90,7 @@ class DocumentKeys:
 
 
 def match_key(schema_key, document_key):
-    """Determines whether a key matches
+    """Determines whether a schema key matches a document key
 
     The schema_key can contain regex parts. This accounts for that.
 
@@ -95,22 +100,42 @@ def match_key(schema_key, document_key):
     :returns: boolean
 
     """
+    # This is the easy case where the two keys match
     if "(re:" not in schema_key:
         return schema_key == document_key
 
-    schema_parts = split_path(schema_key)
-    doc_parts = split_path(document_key)
+    # This case is hard because one of the parts of the key can be a regex. So what we
+    # do is convert the entire schema key into a regex by doing some sleight-of-hand
+    # with the pattern_properties regexes particularly with the ^ and $. Then we use
+    # that regex to match the document_key. That handles schema keys like:
+    #
+    # .telemetry_environment.settings.userPrefs.(re:^.+$)
+    #
+    # which needs to match something like this:
+    #
+    # .telemetry_environment.settings.userPrefs.browser.startup.homepage
+    #
+    # because the keys have dots, too.
+    #
+    # Another way to do this matching thing is to store the path as a list of string
+    # parts rather than a .-delimited string, but that involves rewriting a bunch of
+    # stuff about paths and traversals and such.
+    schema_parts = []
+    for part in split_path(schema_key):
+        if part.startswith("(re:"):
+            part = part[4:-1]
+            if part.startswith("^"):
+                part = part[1:]
+            else:
+                part = ".*?" + part
+            if part.endswith("$"):
+                part = part[:-1]
+            else:
+                part = part + ".*?"
 
-    for schema_part, doc_part in zip_longest(schema_parts, doc_parts, fillvalue=""):
-        if "(re:" in schema_part:
-            pattern_re = compile_pattern_re(schema_part[4:-1])
-            if not pattern_re.match(doc_part):
-                return False
-
-        elif schema_part != doc_part:
-            return False
-
-    return True
+    # Now that we have a re, we can match it and move along.
+    schema_re = re.compile(r"\.".join(schema_parts))
+    return bool(schema_re.match(document_key))
 
 
 @click.command()
@@ -146,7 +171,14 @@ def validate_and_test(ctx, crashdir):
 
     total_uuids = len(uuids)
     click.echo("")
-    click.echo(f"Testing {total_uuids} recent crash reports.")
+    click.echo(
+        wrapped(
+            ctx,
+            f"Validating processed crash schema against {total_uuids} crash reports. "
+            + "Validation errors usually indicate a problem with the schema.",
+        )
+    )
+    click.echo("")
     for i, uuid in enumerate(uuids):
         click.echo(f"Working on {uuid} ({i}/{total_uuids})...")
         processed_crash = json.loads((datapath / uuid).read_text())
@@ -161,16 +193,15 @@ def validate_and_test(ctx, crashdir):
 
         validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
 
-    click.echo("Done testing, all crash reports passed.")
-
-    reduced_keys_keys = set([key for key, type_ in reduced_keys.keys])
+    click.echo("")
+    click.echo("Done checking schema against crash reports.")
 
     # Figure out which schema keys weren't in documents taking into account
     # pattern_property regexes
     keys_not_in_doc = set()
     for key, type_ in schema_key_logger.keys:
         is_in_reduced_keys = False
-        for reduced_key in reduced_keys_keys:
+        for reduced_key, reduced_type_ in reduced_keys.keys:
             if match_key(key, reduced_key):
                 is_in_reduced_keys = True
                 break
@@ -179,25 +210,40 @@ def validate_and_test(ctx, crashdir):
             keys_not_in_doc.add((key, type_))
 
     if keys_not_in_doc:
+        click.echo("")
         click.echo(
-            f"{len(keys_not_in_doc)} (out of {len(schema_key_logger.keys)}) "
-            + "keys in JSON Schema, but never in any of the tested crashes:"
+            wrapped(
+                ctx,
+                f"{len(keys_not_in_doc)} (out of {len(schema_key_logger.keys)}) "
+                + "keys in JSON Schema, but never in any of the tested crashes. "
+                + "Sometimes fields are no longer in crash reports, so you can remove "
+                + "them from the schema and where they're used in the codebase. "
+                + "If you're adding a new field and the new field pops up in this list, "
+                + "it might indicate there's a typo or an error in the bit you added.",
+            )
         )
-        click.echo(f"  {'KEY':90}  TYPE(S)")
+        click.echo("")
+        click.echo(f"{'KEY':90}  TYPE(S)")
         for key, val in sorted(keys_not_in_doc):
-            click.echo(f"  {key:90}  {val}")
+            click.echo(f"{key[1:]:90}  {val}")
 
     # Figure out which doc keys aren't in the schema; this also handles cases where the
     # key is in the schema, but is missing a type
     keys_not_in_schema = document_keys.keys - reduced_keys.keys
+
     if keys_not_in_schema:
         click.echo("")
         click.echo(
-            f"{len(keys_not_in_schema)} keys in crash reports but not in schema:"
+            wrapped(
+                ctx,
+                f"{len(keys_not_in_schema)} keys in crash reports but not in schema. "
+                + "Fields that we haven't added support for show up in this list.",
+            )
         )
-        click.echo(f"  {'KEY':90}  TYPE(S)")
+        click.echo("")
+        click.echo(f"{'KEY':90}  TYPE(S)")
         for key, val in sorted(keys_not_in_schema):
-            click.echo(f"  {key:90}  {val}")
+            click.echo(f"{key[1:]:90}  {val}")
 
 
 if __name__ == "__main__":
