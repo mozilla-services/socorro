@@ -137,6 +137,7 @@ moz_xrealloc
 MOZ_CrashPrintf
 msvcr120\.dll@0x
 \<name omitted\>
+new\[\]
 NP_Shutdown
 (NS_)?(Lossy)?(Copy|Append|Convert).*UTF
 NS_CycleCollectorSuspect3
