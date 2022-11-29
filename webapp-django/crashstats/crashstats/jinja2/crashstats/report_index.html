@@ -1114,11 +1114,11 @@
           <!-- /extensions -->
 
           <div id="telemetryenvironment" class="ui-tabs-hide">
-            {% if raw.TelemetryEnvironment %}
-              {# Remember, raw.TelemetryEnvironment is a string.
-                 jQuery will automatically convert it to a map upon accessing it.
-                 Safe to include because jinja will escape anything in it. #}
-              <div id="telemetryenvironment-json" data-telemetryenvironment="{{ raw.TelemetryEnvironment }}"></div>
+            {% if raw_telemetry_environment %}
+              {# raw_telemetry_environment is a json-encoded string. jQuery
+                 will automatically convert it to a map upon accessing it.
+                 Safe to include here because Jinja will escape anything in it. #}
+              <div id="telemetryenvironment-json" data-telemetryenvironment="{{ raw_telemetry_environment }}"></div>
             {% else %}
               <p>No telemetry environment data available.</p>
             {% endif %}

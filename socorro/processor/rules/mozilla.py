@@ -430,7 +430,7 @@ class JavaProcessRule(Rule):
 
 
 class BreadcrumbsRule(Rule):
-    """Validate and move over breadcrumbs."""
+    """Validate and copy over Breadcrumbs data."""
 
     def __init__(self, schema):
         super().__init__()
