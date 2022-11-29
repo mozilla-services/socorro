@@ -2091,6 +2091,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
+    "utility_actors_name": keyword_field(name="utility_actors_name"),
     "utility_process_sandboxing_kind": number_field(
         name="utility_process_sandboxing_kind",
         number_type="integer",

@@ -1096,3 +1096,24 @@ class DistributionIdRule(Rule):
             distribution_id = "mozilla"
 
         processed_crash["distribution_id"] = distribution_id
+
+
+class UtilityActorsNameRule(Rule):
+    """Parses the UtilityActorsName annotation value.
+
+    The value is a comma-separated list of actors names. This splits it into a list of
+    strings.
+
+    Bug #1788681
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, status):
+        utility_actors_name = raw_crash.get("UtilityActorsName")
+        if utility_actors_name is None:
+            return
+
+        names = [
+            item.strip() for item in utility_actors_name.split(",") if item.strip()
+        ]
+        processed_crash["utility_actors_name"] = names

@@ -2864,6 +2864,17 @@ properties:
     permissions: ["public"]
     # NOTE(willkg): This isn't a typo--that's the crash annotation
     source_annotation: useragent_locale
+  utility_actors_name:
+    description: >
+      Comma-separated list of IPC actors name running on this Utility process
+      instance.
+    items:
+      description: >
+        IPC actor names.
+      permissions: ["public"]
+      type: string
+    permissions: ["public"]
+    type: array
   utility_process_sandboxing_kind:
     description: >
       The SandboxingKind passed for this Utility process instance.
