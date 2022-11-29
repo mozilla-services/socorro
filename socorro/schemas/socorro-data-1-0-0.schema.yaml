@@ -124,16 +124,16 @@ definitions:
           type: string
           format: uri
 
-        data_reviews:
-          description: |
-            Highly encouraged for new fields.
+      data_reviews:
+        description: |
+          Required for new raw crash fields.
 
-            A list of URIs to any data collection reviews relevant to the field.
-          type: array
-          items:
-            type: string
-            format: uri
-          uniqueItems: true
+          A list of URIs to any data collection reviews relevant to the field.
+        type: array
+        items:
+          type: string
+          format: uri
+        uniqueItems: true
     additionalProperties: false
     type: object
 

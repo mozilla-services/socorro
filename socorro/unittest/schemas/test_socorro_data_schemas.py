@@ -179,6 +179,28 @@ def test_raw_crash_permissions():
     assert set(public_fields) == PUBLIC_RAW_CRASH_FIELDS
 
 
+def test_raw_crash_data_reviews():
+    def verify_data_reviews(path, schema_item):
+        if not path:
+            return schema_item
+
+        data_reviews = schema_item.get("data_reviews", [])
+
+        # All items should have data_reviews set
+        if not data_reviews:
+            raise InvalidRawCrashField(
+                f'{path} does not have data_reviews set; set to either "unknown" '
+                + "or provide list of data review uris"
+            )
+
+        return schema_item
+
+    raw_crash_schema = get_schema("raw_crash.schema.yaml")
+
+    # This will raise an exception if there are invalid permissions
+    transform_schema(schema=raw_crash_schema, transform_function=verify_data_reviews)
+
+
 def test_validate_processed_crash_cli_runs():
     """Test whether the script loads and spits out help."""
     runner = CliRunner()
