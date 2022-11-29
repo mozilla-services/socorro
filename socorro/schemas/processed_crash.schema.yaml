@@ -2108,6 +2108,13 @@ properties:
     type: integer
     permissions: ["public"]
     source_annotation: AvailableVirtualMemory
+  background_task_name:
+    description: >
+      If the app was invoked in background task mode via '--backgroundtask
+      <task name>', the string "task name".
+    type: string
+    permissions: ["public"]
+    source_annotation: BackgroundTaskName
   breadcrumbs:
     description: >
       Information about events and log messages that happened prior to a crash.

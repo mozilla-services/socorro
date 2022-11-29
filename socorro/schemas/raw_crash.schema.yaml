@@ -320,6 +320,15 @@ properties:
     type: string
     permissions: ["public"]
 
+  BackgroundTaskName:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1697875#c8
+    description: >
+      If the app was invoked in background task mode via '--backgroundtask
+      <task name>', the string "task name".
+    permissions: ["public"]
+    type: string
+
   Breadcrumbs:
     data_reviews:
       - unknown
