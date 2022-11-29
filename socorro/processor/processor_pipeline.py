@@ -60,6 +60,7 @@ from socorro.processor.rules.mozilla import (
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
+    UtilityActorsNameRule,
 )
 
 
@@ -212,6 +213,7 @@ class ProcessorPipeline(RequiredConfig):
                 JavaProcessRule(),
                 MacCrashInfoRule(),
                 MozCrashReasonRule(),
+                UtilityActorsNameRule(),
                 # post processing of the processed crash
                 CPUInfoRule(),
                 DistributionIdRule(),

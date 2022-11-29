@@ -38,6 +38,7 @@ from socorro.processor.rules.mozilla import (
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
+    UtilityActorsNameRule,
 )
 from socorro.processor.processor_pipeline import Status
 from socorro.signature.generator import SignatureGenerator
@@ -2108,3 +2109,34 @@ class TestDistributionIdRule:
         rule = DistributionIdRule()
         rule.action(raw_crash, {}, processed_crash, Status())
         assert processed_crash["distribution_id"] == "mint"
+
+
+class TestUtilityActorsNameRule:
+    def test_no_data(self):
+        raw_crash = {}
+        processed_crash = {}
+
+        rule = UtilityActorsNameRule()
+        rule.action(raw_crash, {}, processed_crash, Status())
+        assert processed_crash == {}
+
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            ("", []),
+            ("abc", ["abc"]),
+            ("abc,def", ["abc", "def"]),
+            ("abc,,def", ["abc", "def"]),
+            ("  abc, def", ["abc", "def"]),
+        ],
+    )
+    def test_data(self, value, expected):
+        raw_crash = {
+            "UtilityActorsName": value,
+        }
+        processed_crash = {}
+
+        rule = UtilityActorsNameRule()
+        rule.action(raw_crash, {}, processed_crash, Status())
+        print(processed_crash)
+        assert processed_crash["utility_actors_name"] == expected

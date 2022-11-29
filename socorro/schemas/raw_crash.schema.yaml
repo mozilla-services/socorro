@@ -976,6 +976,15 @@ properties:
     type: string
     permissions: ["public"]
 
+  UtilityActorsName:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1788596#c13
+    description: >
+      Comma-separated list of IPC actors name running on this Utility process
+      instance.
+    type: string
+    permissions: ["public"]
+
   UtilityProcessSandboxingKind:
     data_reviews:
       - unknown
