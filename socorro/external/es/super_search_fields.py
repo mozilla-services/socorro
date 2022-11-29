@@ -448,9 +448,7 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
-    "crash_report_keys": keyword_field(
-        name="crash_report_keys",
-    ),
+    "crash_report_keys": keyword_field(name="crash_report_keys"),
     "phc_kind": {
         "data_validation_type": "str",
         "form_field_choices": None,
@@ -871,6 +869,7 @@ FIELDS = {
         "query_type": "number",
         "storage_mapping": {"type": "long"},
     },
+    "background_task_name": keyword_field(name="background_task_name"),
     "build_id": {
         "data_validation_type": "int",
         "form_field_choices": [],
