@@ -742,7 +742,6 @@ class BetaVersionRule(Rule):
             product = "DevEdition"
 
         key = "%s:%s:%s" % (product, channel, build_id)
-        print(key)
         if key in self.cache:
             self.metrics.incr("cache", tags=["result:hit"])
             return self.cache[key]
