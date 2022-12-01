@@ -15,6 +15,7 @@ from crashstats.supersearch.libsupersearch import (
 )
 from socorro.external.es import query
 from socorro.external.es import supersearch
+from socorro.external.es.super_search_fields import get_source_key
 from socorro.lib import BadArgumentError
 
 
@@ -254,6 +255,11 @@ class SuperSearchFields(ESSocorroMiddleware):
 
     def get(self, **kwargs):
         return copy.deepcopy(self._fields)
+
+    def get_by_source_key(self, key):
+        for field in self.get().values():
+            if get_source_key(field) == key:
+                return field
 
 
 class SuperSearchStatus(ESSocorroMiddleware):

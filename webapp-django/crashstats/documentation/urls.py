@@ -10,6 +10,12 @@ from crashstats.documentation import views
 
 app_name = "documentation"
 urlpatterns = [
+    path("datadictionary/", views.datadictionary_index, name="datadictionary_index"),
+    path(
+        "datadictionary/dataset/<str:dataset>/field/<str:field>",
+        views.datadictionary_field_doc,
+        name="datadictionary_field_doc",
+    ),
     path("supersearch/", views.supersearch_home, name="supersearch_home"),
     path(
         "supersearch/examples/",
