@@ -78,6 +78,18 @@
                 </ul>
               </td>
             </tr>
+            <tr>
+              <th scope="row">related processed field</th>
+              <td>
+                {% if processed_field %}
+                  <code>
+                    <a href="{{ url('documentation:datadictionary_field_doc', 'processed', processed_field) }}">
+                      {{ processed_field }}
+                    </a>
+                  </code>
+                {% endif %}
+              </td>
+            </tr>
           {% endif %}
           <tr>
             <th scope="row">permissions</th>

@@ -123,6 +123,14 @@ def datadictionary_index(request, default_context=None):
     return render(request, "docs/datadictionary/index.html", context)
 
 
+def get_processed_field_for_annotation(field):
+    field_data = get_processed_schema_data()
+    for key, value in field_data.items():
+        if value.get("source_annotation") == field:
+            return key
+    return ""
+
+
 @track_view
 @pass_default_context
 def datadictionary_field_doc(request, dataset, field, default_context=None):
@@ -136,7 +144,6 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
         return http.HttpResponseNotFound("Dataset not found")
 
     if field not in field_data:
-        print(field_data.keys())
         return http.HttpResponseNotFound("Field not found")
 
     field_item = field_data[field]
@@ -166,6 +173,11 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
                 if field in resp["facets"]:
                     example_data = [item["term"] for item in resp["facets"][field]]
 
+    if dataset == "annotation":
+        processed_field = get_processed_field_for_annotation(field)
+    else:
+        processed_field = ""
+
     context.update(
         {
             "dataset": dataset,
@@ -176,6 +188,7 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
             "search_field": search_field,
             "search_field_query_type": search_field_query_type,
             "source_annotation": field_item.get("source_annotation") or "",
+            "processed_field": processed_field,
             "type": field_item["type"],
             "permissions": ", ".join(field_item["permissions"]),
         }
