@@ -4,6 +4,15 @@
 
 {% block doc_content %}
   <div class="body">
+    <div id="release-information" class="docuemnt">
+      <h1 class="title">Release information</h1>
+      <div>
+        Current release: {{ release }}
+        {% if release_url %}
+          (<a href="{{ release_url }}">release url</a>)
+        {% endif %}
+      </div>
+    </div>
     <div class="rst">
       {{ whatsnew | safe }}
     </div>
