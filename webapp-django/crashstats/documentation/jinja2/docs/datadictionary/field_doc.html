@@ -52,7 +52,15 @@
             {% endif %}
             <tr>
               <th scope="row">source annotation</th>
-              <td>{% if source_annotation %}<code>{{ source_annotation }}</code>{% endif %}</td>
+              <td>
+                {% if source_annotation %}
+                  <code>
+                    <a href="{{ url('documentation:datadictionary_field_doc', 'annotation', source_annotation) }}">
+                      {{ source_annotation }}
+                    </a>
+                  </code>
+                {% endif %}
+              </td>
             </tr>
           {% endif %}
           {% if dataset == "annotation" %}
