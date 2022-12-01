@@ -36,7 +36,7 @@ OPERATORS_MAP = {
 def home(request, default_context=None):
     context = default_context or {}
 
-    return render(request, "documentation/home.html", context)
+    return render(request, "docs/home.html", context)
 
 
 @cache
@@ -60,14 +60,14 @@ def read_whatsnew():
 def whatsnew(request, default_context=None):
     context = default_context or {}
     context["whatsnew"] = read_whatsnew()
-    return render(request, "documentation/whatsnew.html", context)
+    return render(request, "docs/whatsnew.html", context)
 
 
 @track_view
 @pass_default_context
 def protected_data_access(request, default_context=None):
     context = default_context or {}
-    return render(request, "documentation/protected_data_access.html", context)
+    return render(request, "docs/protected_data_access.html", context)
 
 
 def get_valid_version(active_versions, product_name):
@@ -99,7 +99,7 @@ def supersearch_home(request, default_context=None):
     context["product_name"] = product_name
     context["version"] = get_valid_version(context["active_versions"], product_name)
 
-    return render(request, "documentation/supersearch/home.html", context)
+    return render(request, "docs/supersearch/home.html", context)
 
 
 @track_view
@@ -114,7 +114,7 @@ def supersearch_examples(request, default_context=None):
     context["yesterday"] = context["today"] - datetime.timedelta(days=1)
     context["three_days_ago"] = context["today"] - datetime.timedelta(days=3)
 
-    return render(request, "documentation/supersearch/examples.html", context)
+    return render(request, "docs/supersearch/examples.html", context)
 
 
 @track_view
@@ -147,11 +147,11 @@ def supersearch_api(request, default_context=None):
 
     context["operators"] = OPERATORS_MAP
 
-    return render(request, "documentation/supersearch/api.html", context)
+    return render(request, "docs/supersearch/api.html", context)
 
 
 @track_view
 @pass_default_context
 def signup(request, default_context=None):
     context = default_context or {}
-    return render(request, "documentation/signup.html", context)
+    return render(request, "docs/signup.html", context)
