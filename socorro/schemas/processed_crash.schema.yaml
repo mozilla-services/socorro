@@ -2411,7 +2411,7 @@ properties:
     permissions: ["public"]
   mac_available_memory_sysctl:
     description: >
-      The value of the available memory sysctl 'kern.memorystatus_level'.
+      The value of the available memory sysctl `kern.memorystatus_level`.
       Expected to be a percentage integer value.
     type: integer
     permissions: ["public"]
@@ -2447,11 +2447,15 @@ properties:
     permissions: ["public"]
     source_annotation: MacMemoryPressureNormalTime
   mac_memory_pressure_sysctl:
-    description: >
+    description: |
       The value of the memory pressure sysctl
-      'kern.memorystatus_vm_pressure_level'. Indicates which memory pressure
+      `kern.memorystatus_vm_pressure_level`. Indicates which memory pressure
       level the system is in at the time of the crash. The expected values are
-      one of 4 (Critical), 2 (Warning), or 0 (Normal).
+      one of:
+
+      - 4 (Critical)
+      - 2 (Warning)
+      - 0 (Normal)
     type: integer
     permissions: ["public"]
     source_annotation: MacMemoryPressureSysctl

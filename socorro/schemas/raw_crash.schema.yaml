@@ -14,7 +14,8 @@ default_permissions: ["public", "protected"]
 properties:
   metadata:
     description: >
-      Collector meta data.
+      Meta data added by the collector capturing information about the crash
+      report submission and payload.
     data_reviews:
       - added by collector
     pattern_properties:
@@ -83,7 +84,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Message passed to NS_DebugBreak().
+      Message passed to `NS_DebugBreak()`.
     type: string
     permissions: ["public"]
 
@@ -91,7 +92,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Set to "Active" by the accessibility service when it is active.
+      Set to `Active` by the accessibility service when it is active.
     type: string
     permissions: ["public"]
 
@@ -108,7 +109,7 @@ properties:
       - unknown
     description: >
       Hexadecimal mask of in-process accessibility consumers, see
-      accessible/windows/msaa/Compatibility.h for the mappings.
+      `accessible/windows/msaa/Compatibility.h` for the mappings.
     type: string
     permissions: ["public"]
 
@@ -157,9 +158,10 @@ properties:
       - unknown
     description: >
       Comma separated list of additional minidumps for this crash, each element
-      in the list represent the suffix used in the dump filename. E.g. the
-      "browser" entry for crash fa909194-737b-4b93-b8da-da110ac785e0 implies the
-      existence of the fa909194-737b-4b93-b8da-da110ac785e0-browser.dmp file.
+      in the list represent the suffix used in the dump filename. For example,
+      the `browser` entry for crash `fa909194-737b-4b93-b8da-da110ac785e0`
+      implies the existence of the
+      `fa909194-737b-4b93-b8da-da110ac785e0-browser.dmp` file.
     type: string
     permissions: ["protected"]
 
@@ -256,7 +258,7 @@ properties:
       - unknown
     description: >
       List of DLLs loaded when launching any application on Windows. This
-      reflects the contents of the AppInit_DLLs registry key.
+      reflects the contents of the `AppInit_DLLs` registry key.
     type: string
     permissions: ["public"]
 
@@ -283,12 +285,12 @@ properties:
       - unknown
     description: |
       Available commit-space in bytes.
-      - Under Windows, computed from the PERFORMANCE_INFORMATION structure by
-        substracting the CommitTotal field from the CommitLimit field.
-      - Under Linux, computed from /proc/meminfo's CommitLimit - Committed_AS.
-        Note that the kernel is not guaranteed to enforce that CommittedLimit
-        >= Committed_AS. If Committed_AS > CommittedLimit, this value is set to
-        0.
+      - Under Windows, computed from the `PERFORMANCE_INFORMATION` structure by
+        substracting the `CommitTotal` field from the `CommitLimit` field.
+      - Under Linux, computed from `/proc/meminfo` `CommitLimit - Committed_AS`.
+        Note that the kernel is not guaranteed to enforce that
+        `CommittedLimit >= Committed_AS`. If `Committed_AS > CommittedLimit`,
+        this value is set to 0.
       - Not available on other platforms.
     type: string
     permissions: ["public"]
@@ -298,10 +300,10 @@ properties:
       - unknown
     description: |
       Amount of free physical memory in bytes.
-      - Under Windows, populated with the contents of the MEMORYSTATUSEX's
-        structure ullAvailPhys field.
-      - Under macOS, populated with vm_statistics64_data_t::free_count.
-      - Under Linux, populated with /proc/meminfo's MemFree.
+      - Under Windows, populated with the contents of the `MEMORYSTATUSEX`
+        structure `ullAvailPhys` field.
+      - Under macOS, populated with `vm_statistics64_data_t::free_count`.
+      - Under Linux, populated with `/proc/meminfo` `xMemFree`.
       - Not available on other platforms.
     type: string
     permissions: ["public"]
@@ -311,12 +313,12 @@ properties:
       - unknown
     description: |
       Amount of free virtual memory in bytes
-      - Under Windows, populated with the contents of the MEMORYSTATUSEX's
-        structure ullAvailVirtual field.
-      - Under Linux, populated with /proc/meminfo's MemAvailable.
+      - Under Windows, populated with the contents of the `MEMORYSTATUSEX`
+        structure `ullAvailVirtual` field.
+      - Under Linux, populated with `/proc/meminfo` `MemAvailable`.
       - Not available on other platforms.
-      - For macOS, see AvailableSwapMemory, AvailablePhysicalMemory and
-        PurgeablePhysicalMemory.
+      - For macOS, see `AvailableSwapMemory`, `AvailablePhysicalMemory`,
+        and `PurgeablePhysicalMemory`.
     type: string
     permissions: ["public"]
 
@@ -324,8 +326,8 @@ properties:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1697875#c8
     description: >
-      If the app was invoked in background task mode via '--backgroundtask
-      <task name>', the string "task name".
+      If the app was invoked in background task mode via
+      `--backgroundtask <task name>`, the string "task name".
     permissions: ["public"]
     type: string
 
@@ -346,7 +348,7 @@ properties:
       - unknown
     description: >
       The unique build identifier of this version which is typically a
-      timestamp of the form YYYYMMDDHHMMSS.
+      timestamp of the form `YYYYMMDDHHMMSS`.
     type: string
     permissions: ["public"]
 
@@ -363,7 +365,7 @@ properties:
       - unknown
     description: >
       Annotation describing the error returned by trying to marshal an object
-      via CoMarshalInterface during the creation of an IPC proxy stream.
+      via `CoMarshalInterface` during the creation of an IPC proxy stream.
     type: string
     permissions: ["public"]
 
@@ -372,7 +374,7 @@ properties:
       - unknown
     description: >
       Annotation describing the error returned by trying to unmarshal an object
-      via CoUnmarshalInterface during the creation of an IPC proxy stream.
+      via `CoUnmarshalInterface` during the creation of an IPC proxy stream.
     type: string
     permissions: ["public"]
 
@@ -560,8 +562,8 @@ properties:
     data_reviews:
       - unknown
     description: >
-      IPC shutdown state, can be set to either 'RecvShutdown' or
-      'SendFinishShutdown' by a content process while it's shutting down.
+      IPC shutdown state, can be set to either `RecvShutdown` or
+      `SendFinishShutdown` by a content process while it`s shutting down.
     type: string
     permissions: ["public"]
 
@@ -610,7 +612,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The value of the available memory sysctl 'kern.memorystatus_level'.
+      The value of the available memory sysctl `kern.memorystatus_level`.
       Expected to be a percentage integer value.
     type: string
     permissions: ["public"]
@@ -618,13 +620,14 @@ properties:
   MacMemoryPressure:
     data_reviews:
       - unknown
-    description: >
+    description: |
       The current memory pressure state as provided by the macOS memory
-      pressure dispatch source. The annotation value is one of 'Normal' for no
-      memory pressure, 'Unset' indicating a memory pressure event has not been
-      received, 'Warning' or 'Critical' mapping to the system memory pressure
-      levels, or 'Unexpected' for an unexpected level. This is a Mac-specific
-      annotation.
+      pressure dispatch source. The annotation value is one of `Normal` for no
+      memory pressure, `Unset` indicating a memory pressure event has not been
+      received, `Warning` or `Critical` mapping to the system memory pressure
+      levels, or `Unexpected` for an unexpected level.
+
+      This is a Mac-specific annotation.
     type: string
     permissions: ["public"]
 
@@ -632,7 +635,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The time when the memory pressure state last transitioned to 'Critical'
+      The time when the memory pressure state last transitioned to `Critical`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
@@ -641,7 +644,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The time when the memory pressure state last transitioned to 'Normal'
+      The time when the memory pressure state last transitioned to `Normal`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
@@ -649,11 +652,15 @@ properties:
   MacMemoryPressureSysctl:
     data_reviews:
       - unknown
-    description: >
+    description: |
       The value of the memory pressure sysctl
-      'kern.memorystatus_vm_pressure_level'. Indicates which memory pressure
+      `kern.memorystatus_vm_pressure_level`. Indicates which memory pressure
       level the system is in at the time of the crash. The expected values are
-      one of 4 (Critical), 2 (Warning), or 1 (Normal).
+      one of:
+
+      * 4 (Critical)
+      * 2 (Warning)
+      * 1 (Normal)
     type: string
     permissions: ["public"]
 
@@ -661,7 +668,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The time when the memory pressure state last transitioned to 'Warning'
+      The time when the memory pressure state last transitioned to `Warning`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
@@ -779,7 +786,7 @@ properties:
       - unknown
     description: >
       Type of the process that crashed, the possible values are defined in
-      GeckoProcessTypes.h.
+      `GeckoProcessTypes.h`.
     type: string
     permissions: ["public"]
 
@@ -787,7 +794,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Application UUID (e.g. ec8030f7-c20a-464f-9b0e-13a3a9e97384).
+      Application UUID. For example, `ec8030f7-c20a-464f-9b0e-13a3a9e97384`.
     type: string
     permissions: ["public"]
 
@@ -795,7 +802,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Application name (e.g. Firefox).
+      Application name. For example, `Firefox`.
     type: string
     permissions: ["public"]
 
@@ -803,9 +810,9 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The update channel that the product is on. Typically 'nightly', 'aurora',
-      'beta', 'release', or 'esr'. This may also be other values like
-      'release-cck-partner'.
+      The update channel that the product is on. Typically `nightly`, `aurora`,
+      `beta`, `release`, or `esr`. This may also be other values like
+      `release-cck-partner`.
     type: string
     permissions: ["public"]
 
@@ -813,7 +820,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Type of the content process, can be set to "web", "file" or "extension".
+      Type of the content process, can be set to `web`, `file` or `extension`.
     type: string
     permissions: ["protected"]
 
@@ -838,8 +845,8 @@ properties:
       - unknown
     description: >
       Shutdown step at which the browser crashed, can be set to
-      'quit-application', 'profile-change-teardown', 'profile-before-change',
-      'xpcom-will-shutdown' or 'xpcom-shutdown'.
+      `quit-application`, `profile-change-teardown`, `profile-before-change`,
+      `xpcom-will-shutdown` or `xpcom-shutdown`.
     type: string
     permissions: ["public"]
 
@@ -865,6 +872,7 @@ properties:
     description: |
       This annotation can hold one of the following five values depending on how
       this crash was submitted by the user:
+
       - Auto: the user had opted-in to auto-submission
       - Infobar: the user clicked on the infobar to submit the crash
       - AboutCrashes: the user sent the crash from the about:crashes page
@@ -888,9 +896,10 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Windows-only, percentage of physical memory in use. This annotation is
-      populated with the contents of the MEMORYSTATUSEX's structure
-      dwMemoryLoad field.
+      Percentage of physical memory in use. This annotation is populated with
+      the contents of the `MEMORYSTATUSEX` structure `dwMemoryLoad` field.
+
+      This is Windows-only.
     type: string
     permissions: ["public"]
 
@@ -907,7 +916,7 @@ properties:
       - unknown
     description: >
       Whether Socorro can selectively discard this crash report or not. If set
-      to "0" the crash report will always be processed by Socorro. Do not set
+      to `0` the crash report will always be processed by Socorro. Do not set
       this annotation within Gecko code, it's only supposed to be used by the
       crash reporting machinery.
     type: string
@@ -919,9 +928,10 @@ properties:
     description: |
       Maximum amount of memory that can be committed without extending the
       swap/page file.
+
       - Under Windows, populated with the contents of the
-        PERFORMANCE_INFORMATION's structure CommitLimit field.
-      - Under Linux, populated with /proc/meminfo MemTotal + SwapTotal. The
+        `PERFORMANCE_INFORMATION` structure `CommitLimit` field.
+      - Under Linux, populated with `/proc/meminfo` `MemTotal + SwapTotal`. The
         swap file typically cannot be extended, so that's a hard limit.
       - Not available on other systems.
     type: string
@@ -932,10 +942,11 @@ properties:
       - unknown
     description: |
       Amount of physical memory in bytes.
-      - Under Windows, populated with the contents of the MEMORYSTATUSEX's
-        structure ullTotalPhys field.
-      - Under macOS, populated with sysctl "hw.memsize".
-      - Under Linux, populated with /proc/meminfo's "MemTotal".
+
+      - Under Windows, populated with the contents of the `MEMORYSTATUSEX`
+        structure `ullTotalPhys` field.
+      - Under macOS, populated with sysctl `hw.memsize`.
+      - Under Linux, populated with `/proc/meminfo` `MemTotal`.
       - Not available on other systems.
     type: string
     permissions: ["public"]
@@ -945,8 +956,9 @@ properties:
       - unknown
     description: |
       Size of the virtual address space.
-      - Under Windows, populated with the contents of the MEMORYSTATUSEX's
-        structure ullTotalVirtual field.
+
+      - Under Windows, populated with the contents of the `MEMORYSTATUSEX`
+        structure `ullTotalVirtual` field.
       - Not available on other platforms.
     type: string
     permissions: ["public"]
@@ -989,7 +1001,7 @@ properties:
     data_reviews:
       - unknown
     description: >
-      The SandboxingKind passed for this Utility process instance
+      The `SandboxingKind` passed for this Utility process instance
     type: string
     permissions: ["public"]
 
@@ -997,18 +1009,20 @@ properties:
     data_reviews:
       - unknown
     description: >
-      Application vendor (e.g. Mozilla).
+      Application vendor. For example, `mozilla`.
     type: string
     permissions: ["public"]
 
   Version:
     data_reviews:
       - unknown
-    description: >
-      The product version number. For Firefox versions, a value lacking letters
-      indicates a normal release; a value with 'b' indicates a beta release; a
-      value with 'a' indicates aurora release; and a value with 'esr' indicates
-      an Extended Service Release.
+    description: |
+      The product version number.
+
+      For Firefox versions, a value lacking letters indicates a normal release;
+      a value with `b` indicates a beta release; a value with `a` indicates
+      aurora release; and a value with `esr` indicates an Extended Service
+      Release.
     type: string
     permissions: ["public"]
 
@@ -1033,9 +1047,10 @@ properties:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1678330#c15
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1735129#c3
-    description: >
+    description: |
       If we crash while some code is spinning manually the event loop on the
       main thread, we will see the stack of nested annotations here.
+
       If the crashing process was killed (e.g. due to an IPC error), this
       annotation may refer to the parent process that killed it, look out for
       the prefix ("default" means parent) and see bug 1741131 for details.

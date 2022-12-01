@@ -6,6 +6,7 @@ from click.testing import CliRunner
 import jsonschema
 import pytest
 
+from socorro.lib.libmarkdown import get_markdown
 from socorro.lib.libsocorrodataschema import (
     get_schema,
     FlattenKeys,
@@ -179,6 +180,21 @@ def test_raw_crash_permissions():
     # Verify that the list of public fields is what we expect. This helps to alleviate
     # inadvertently making a field public that you didn't intend to make public.
     assert set(public_fields) == PUBLIC_RAW_CRASH_FIELDS
+
+
+def test_raw_crash_descriptions_is_valid_markdown():
+    def verify_description(path, schema_item):
+        if not path:
+            return schema_item
+
+        description = schema_item.get("description", "")
+        get_markdown().render(description)
+        return schema_item
+
+    raw_crash_schema = get_schema("raw_crash.schema.yaml")
+
+    # This will raise an exception if there are invalid permissions
+    transform_schema(schema=raw_crash_schema, transform_function=verify_description)
 
 
 def test_raw_crash_data_reviews():
@@ -856,6 +872,23 @@ def test_processed_crash_permissions():
     # Verify that the list of public fields is what we expect. This helps to alleviate
     # inadvertently making a field public that you didn't intend to make public.
     assert set(public_fields) == PUBLIC_PROCESSED_CRASH_FIELDS
+
+
+def test_processed_crash_descriptions_is_valid_markdown():
+    def verify_description(path, schema_item):
+        if not path:
+            return schema_item
+
+        description = schema_item.get("description", "")
+        get_markdown().render(description)
+        return schema_item
+
+    processed_crash_schema = get_schema("processed_crash.schema.yaml")
+
+    # This will raise an exception if there are invalid permissions
+    transform_schema(
+        schema=processed_crash_schema, transform_function=verify_description
+    )
 
 
 def test_processed_crash_source_annotations():
