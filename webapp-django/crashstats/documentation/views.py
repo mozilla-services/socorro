@@ -92,6 +92,7 @@ def protected_data_access(request, default_context=None):
     return render(request, "docs/protected_data_access.html", context)
 
 
+@cache
 def get_annotation_schema_data():
     annotation_schema = get_schema("raw_crash.schema.yaml")
 
@@ -101,6 +102,7 @@ def get_annotation_schema_data():
     return annotation_fields
 
 
+@cache
 def get_processed_schema_data():
     processed_schema = get_schema("processed_crash.schema.yaml")
 
