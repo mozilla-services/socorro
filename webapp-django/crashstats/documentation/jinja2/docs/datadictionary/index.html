@@ -1,0 +1,36 @@
+{% extends "docs/docs_base.html" %}
+
+{% macro table_content(fields, columns_number, dataset) %}
+  <table>
+  {% for row in fields | batch(columns_number, "") %}
+    <tr>
+      {% for field in row %}
+        {% if field == "" %}
+          <td></td>
+        {% else %}
+          <td><a href="{{ url('documentation:datadictionary_field_doc', dataset, field) }}">{{ field }}</a></td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </table>
+{%- endmacro %}
+
+{% block doc_title %}Crash Reporting Data Dictionary{% endblock %}
+
+{% block doc_content %}
+  <div class="body">
+    <p>
+      <a href="{{ url('documentation:datadictionary_index') }}">Crash Reporting Data Dictionary</a>
+    </p>
+    <h1>Crash Reporting Data Dictionary</h1>
+    <div id="annotation-fields" class="document">
+      <h1 class="title">Crash annotations and raw crash fields</h1>
+      {{ table_content(annotation_fields, 4, 'annotation') }}
+    </div>
+    <div id="processed-fields" class="document">
+      <h1 class="title">Processed crash fields</h1>
+      {{ table_content(processed_fields, 4, 'processed') }}
+    </div>
+  </div>
+{% endblock %}

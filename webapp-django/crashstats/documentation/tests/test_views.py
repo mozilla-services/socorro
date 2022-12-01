@@ -120,3 +120,23 @@ def test_signup_renders(client, db):
             "status:200",
         ],
     )
+
+
+def test_datadictionary_index(client, db):
+    url = reverse("documentation:datadictionary_index")
+    response = client.get(url)
+    assert response.status_code == 200
+
+
+def test_datadictionary_field_doc(client, db):
+    url = reverse(
+        "documentation:datadictionary_field_doc", args=("annotation", "ProductName")
+    )
+    response = client.get(url)
+    assert response.status_code == 200
+
+    url = reverse(
+        "documentation:datadictionary_field_doc", args=("processed", "product")
+    )
+    response = client.get(url)
+    assert response.status_code == 200

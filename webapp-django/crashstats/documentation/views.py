@@ -9,12 +9,15 @@ from pathlib import Path
 import docutils.core
 
 from django.conf import settings
+from django import http
 from django.shortcuts import render
 
 from crashstats import productlib
 from crashstats.crashstats.decorators import pass_default_context, track_view
-from crashstats.supersearch.models import SuperSearchFields
+from crashstats.supersearch.models import SuperSearch, SuperSearchFields
 from socorro.lib.libdockerflow import get_version_info, get_release_name
+from socorro.lib.libmarkdown import get_markdown
+from socorro.lib.libsocorrodataschema import get_schema
 
 
 OPERATORS_BASE = [""]
@@ -65,7 +68,9 @@ def whatsnew(request, default_context=None):
     commit = version_info.get("commit", "")
     if version:
         # This will show in prod
-        release_url = f"https://github.com/mozilla-services/socorro/releases/tag/{version}"
+        release_url = (
+            f"https://github.com/mozilla-services/socorro/releases/tag/{version}"
+        )
     elif commit:
         # This will show on stage
         release_url = f"https://github.com/mozilla-services/socorro/commit/{commit}"
@@ -85,6 +90,96 @@ def whatsnew(request, default_context=None):
 def protected_data_access(request, default_context=None):
     context = default_context or {}
     return render(request, "docs/protected_data_access.html", context)
+
+
+def get_annotation_schema_data():
+    annotation_schema = get_schema("raw_crash.schema.yaml")
+
+    annotation_fields = {
+        key: schema_item for key, schema_item in annotation_schema["properties"].items()
+    }
+    return annotation_fields
+
+
+def get_processed_schema_data():
+    processed_schema = get_schema("processed_crash.schema.yaml")
+
+    processed_fields = {
+        key: schema_item for key, schema_item in processed_schema["properties"].items()
+    }
+    return processed_fields
+
+
+@track_view
+@pass_default_context
+def datadictionary_index(request, default_context=None):
+    context = default_context or {}
+
+    context["annotation_fields"] = get_annotation_schema_data()
+    context["processed_fields"] = get_processed_schema_data()
+
+    return render(request, "docs/datadictionary/index.html", context)
+
+
+@track_view
+@pass_default_context
+def datadictionary_field_doc(request, dataset, field, default_context=None):
+    context = default_context or {}
+
+    if dataset == "annotation":
+        field_data = get_annotation_schema_data()
+    elif dataset == "processed":
+        field_data = get_processed_schema_data()
+    else:
+        return http.HttpResponseNotFound("Dataset not found")
+
+    if field not in field_data:
+        print(field_data.keys())
+        return http.HttpResponseNotFound("Field not found")
+
+    field_item = field_data[field]
+
+    description = field_item.get("description") or "no description"
+    description = get_markdown().render(description)
+
+    search_field = ""
+    search_field_query_type = ""
+    example_data = []
+    if dataset == "processed":
+        super_search_field = SuperSearchFields().get_by_source_key(
+            f"processed_crash.{field}"
+        )
+        if super_search_field:
+            search_field = super_search_field["name"]
+            search_field_query_type = super_search_field["query_type"]
+
+            # FIXME(willkg): we're only doing this for public fields, but we could do
+            # this for whatever fields the user can see
+            if field_item["permissions"] == ["public"]:
+                resp = SuperSearch().get(
+                    _results_number=0,
+                    _facets=[field],
+                    _facets_size=5,
+                )
+                if field in resp["facets"]:
+                    example_data = [item["term"] for item in resp["facets"][field]]
+
+    context.update(
+        {
+            "dataset": dataset,
+            "field_name": field,
+            "description": description,
+            "data_reviews": field_item.get("data_reviews") or [],
+            "example_data": example_data,
+            "search_field": search_field,
+            "search_field_query_type": search_field_query_type,
+            "source_annotation": field_item.get("source_annotation") or "",
+            "type": field_item["type"],
+            "permissions": ", ".join(field_item["permissions"]),
+        }
+    )
+
+    return render(request, "docs/datadictionary/field_doc.html", context)
 
 
 def get_valid_version(active_versions, product_name):

@@ -1,0 +1,96 @@
+{% extends "docs/docs_base.html" %}
+
+{% block doc_title %}Crash Reporting Dictionary / {{ dataset }} / {{ field_name }}{% endblock %}
+
+{% block main_content %}
+  <div class="panel">
+    <div class="body">
+      <p>
+        <a href="{{ url('documentation:datadictionary_index') }}">Crash Reporting Data Dictionary</a>
+        / {{ dataset }}
+        / <a href="{{ url('documentation:datadictionary_field_doc', dataset, field_name) }}">{{ field_name }}</a>
+      </p>
+      <h1>{{ field_name }}</h1>
+      <table class="record data-table hard-wrapped">
+        <tbody>
+          <tr>
+            <th class="w-2/12" scope="row">dataset</th>
+            <td class="w-10/12">{{ dataset }}</td>
+          </tr>
+          <tr>
+            <th scope="row">description</th>
+            <td>{{ description | safe }}</td>
+          </tr>
+          <tr>
+            <th scope="row">type</th>
+            <td>{{ type }}</td>
+          </tr>
+          {% if dataset == "processed" %}
+            {% if search_field %}
+              <tr>
+                <th scope="row">super search field</th>
+                <td>
+                  <code>{{ search_field }}</code>
+                  ({{ search_field_query_type }})
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">example data from last 7 days</th>
+                <td>
+                  <ul>
+                    {% for item in example_data %}
+                      <li><code>{{ item }}</code></li>
+                    {% endfor %}
+                  </ul>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <th scope="row">super search field</th>
+                <td><i>This field is not indexed.</i></td>
+              </tr>
+            {% endif %}
+            <tr>
+              <th scope="row">source annotation</th>
+              <td>{% if source_annotation %}<code>{{ source_annotation }}</code>{% endif %}</td>
+            </tr>
+          {% endif %}
+          {% if dataset == "annotation" %}
+            <tr>
+              <th scope="row">data reviews</th>
+              <td>
+                <ul>
+                  {% for thing in data_reviews %}
+                    {% if thing.startswith("http") %}
+                      <li><a href="{{ thing }}">{{ thing }}</a></li>
+                    {% else %}
+                      <li>{{ thing }}</li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% endif %}
+          <tr>
+            <th scope="row">permissions</th>
+            <td>{{ permissions }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Do you see errors in this documentation?
+        <a href="https://bugzilla.mozilla.org/enter_bug.cgi?bug_type=task&component=General&form_name=enter_bug&op_sys=Unspecified&product=Socorro&rep_platform=Unspecified&short_desc=improve%20documentation%20for%20field%20FIELD&version=unspecified">Please tell us by filing a bug</a>
+        or
+        {% if dataset == "annotation" %}
+          <a href="https://github.com/mozilla-services/socorro/blob/main/socorro/schemas/raw_crash.schema.yaml">
+            fix the field data in the raw crash schema
+          </a>.
+        {% elif dataset == "processed" %}
+          <a href="https://github.com/mozilla-services/socorro/blob/main/socorro/schemas/processed_crash.schema.yaml">
+            fix the field data in the processed crash schema
+          </a>.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+{% endblock %}
