@@ -14,6 +14,7 @@ from django.shortcuts import render
 from crashstats import productlib
 from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.supersearch.models import SuperSearchFields
+from socorro.lib.libdockerflow import get_version_info, get_release_name
 
 
 OPERATORS_BASE = [""]
@@ -58,8 +59,24 @@ def read_whatsnew():
 @track_view
 @pass_default_context
 def whatsnew(request, default_context=None):
+    version_info = get_version_info(settings.SOCORRO_ROOT)
+    release = get_release_name(settings.SOCORRO_ROOT)
+    version = version_info.get("version", "")
+    commit = version_info.get("commit", "")
+    if version:
+        # This will show in prod
+        release_url = f"https://github.com/mozilla-services/socorro/releases/tag/{version}"
+    elif commit:
+        # This will show on stage
+        release_url = f"https://github.com/mozilla-services/socorro/commit/{commit}"
+    else:
+        release_url = ""
+
     context = default_context or {}
     context["whatsnew"] = read_whatsnew()
+    context["release"] = release
+    context["release_url"] = release_url
+
     return render(request, "docs/whatsnew.html", context)
 
 
