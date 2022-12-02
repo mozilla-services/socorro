@@ -148,7 +148,12 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
 
     field_item = field_data[field]
 
+    # Get description and examples and render it as markdown
     description = field_item.get("description") or "no description"
+    examples = field_item.get("examples") or []
+    if examples:
+        description = description + "\n- " + "\n- ".join(examples)
+
     description = get_markdown().render(description)
 
     search_field = ""
@@ -190,7 +195,7 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
             "source_annotation": field_item.get("source_annotation") or "",
             "processed_field": processed_field,
             "type": field_item["type"],
-            "permissions": ", ".join(field_item["permissions"]),
+            "permissions": field_item["permissions"],
         }
     )
 
