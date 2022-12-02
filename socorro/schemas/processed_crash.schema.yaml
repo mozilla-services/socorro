@@ -170,7 +170,7 @@ definitions:
         permissions: ["public"]
       crashing_thread:
         description: >
-          The thread that crashed. This is copied from "threads" with some
+          The thread that crashed. This is copied from `threads` with some
           additional details.
         properties:
           frame_count:
@@ -187,7 +187,7 @@ definitions:
             type: ["array", "null"]
             permissions: ["public"]
           last_error_value:
-            description: The windows GetLastError() value for this thread.
+            description: The windows `GetLastError()` value for this thread.
             type: ["string", "null"]
             permissions: ["public"]
           thread_name:
@@ -195,7 +195,7 @@ definitions:
             type: ["string", "null"]
             permissions: ["public"]
           threads_index:
-            description: Index into the 'threads' array.
+            description: Index into the `threads` array.
             type: ["integer", "null"]
             permissions: ["public"]
         type: ["object", "null"]
@@ -204,34 +204,38 @@ definitions:
         description: Linnux Standard Base information.
         properties:
           codename:
-            description: DISTRIB_CODENAME or VERSION_CODENAME
+            description: >
+              `DISTRIB_CODENAME` or `VERSION_CODENAME`
             type: ["string", "null"]
             permissions: ["public"]
           description:
-            description: DISTRIB_DESCRIPTION or PRETTY_NAME
+            description: >
+              `DISTRIB_DESCRIPTION` or `PRETTY_NAME`
             type: ["string", "null"]
             permissions: ["public"]
           id:
-            description: DISTRIB_ID or ID
+            description: >
+              `DISTRIB_ID` or `ID`
             type: ["string", "null"]
             permissions: ["public"]
           release:
-            description: DISTRIB_RELEASE or VERSION_ID
+            description: >
+              `DISTRIB_RELEASE` or `VERSION_ID`
             type: ["string", "null"]
             permissions: ["public"]
         type: ["object", "null"]
         permissions: ["public"]
       mac_crash_info:
-        description: MacOS-specific extended crash_info.
+        description: MacOS-specific extended `crash_info`.
         properties:
           num_records:
-            description: The number of entries in 'records'.
+            description: The number of entries in `records`.
             type: ["integer", "null"]
             permissions: ["public"]
           records:
-            description: The mac_crash_info records.
+            description: The `mac_crash_info` records.
             items:
-              description: An individual mac_crash_info record.
+              description: An individual `mac_crash_info` record.
               properties:
                 abort_cause:
                   description: ''
@@ -272,7 +276,7 @@ definitions:
         type: ["object", "null"]
         permissions: ["public"]
       main_module:
-        description: The index of the 'main' module.
+        description: The index of the `main` module.
         type: ["integer", "null"]
         permissions: ["public"]
       modules:
@@ -288,7 +292,7 @@ definitions:
               permissions: ["public"]
             cert_subject:
               description: >
-                If not null, indicates that this module is known to be signed
+                If not `null`, indicates that this module is known to be signed
                 by the given party. Useful for detecting unofficial DLL
                 injection.
               type: ["string", "null"]
@@ -316,7 +320,7 @@ definitions:
               type: ["string", "null"]
               permissions: ["public"]
             filename:
-              description: The 'name' of the module.
+              description: The `name` of the module.
               type: ["string", "null"]
               permissions: ["public"]
             loaded_symbols:
@@ -355,7 +359,7 @@ definitions:
       status:
         description: >
           Status of the output of the stackwalker. Currently, this is always
-          'OK'.
+          `OK`.
         type: ["string", "null"]
         permissions: ["public"]
       system_info:
@@ -400,13 +404,13 @@ definitions:
               - Android
               - PS3
               - NaCL
-              - <hexstring>
+              - "`<hexstring>`"
             type: ["string", "null"]
             permissions: ["public"]
           os_ver:
             description: >
               Version of the operating system. Generally in the form of
-              '<major>.<minor>.<build_number>'.
+              `<major>.<minor>.<build_number>`.
             type: ["string", "null"]
             permissions: ["public"]
         type: ["object", "null"]
@@ -417,7 +421,7 @@ definitions:
           minidump was generated.
 
           Because modules can be loaded and unloaded repeatedly,
-          'unloaded_modules' is more of a *log* of unload *events* and not a
+          `unloaded_modules` is more of a *log* of unload *events* and not a
           clean mapping of addresses to modules. This means:
 
           * Entries may have overlapping address ranges
@@ -443,14 +447,14 @@ definitions:
               permissions: ["public"]
             filename:
               description: >
-                The 'name' of the module.
+                The `name` of the module.
               type: ["string", "null"]
               permissions: ["public"]
             cert_subject:
               description: >
-                If not null, indicates that this unloaded module is known to be
-                signed by the given party. Useful for detecting unofficial DLL
-                injection.
+                If not `null`, indicates that this unloaded module is known to
+                be signed by the given party. Useful for detecting unofficial
+                DLL injection.
               type: ["string", "null"]
               permissions: ["public"]
           permissions: ["public"]
@@ -478,7 +482,8 @@ definitions:
               type: ["array", "null"]
               permissions: ["public"]
             last_error_value:
-              description: The windows GetLastError() value for this thread.
+              description: >
+                The windows `GetLastError()` value for this thread.
               type: ["string", "null"]
               permissions: ["public"]
             thread_name:
@@ -515,11 +520,11 @@ definitions:
         type: ["string", "null"]
         permissions: ["public"]
       inlines:
-        description: >
+        description: |
           Pseudo-frames for functions that were inlined into this one.
 
           Inlined frames are in the same ordering that normal frames are, and
-          logically come 'before' the real frame in the backtrace.
+          logically come *before* the real frame in the backtrace.
         items:
           properties:
             function:
@@ -587,7 +592,7 @@ definitions:
       unloaded_modules:
         description: >
           All of the unloaded modules that overlapped with this frame's
-          'offset'.
+          `offset`.
         items:
           properties:
             module:
@@ -630,13 +635,13 @@ definitions:
       ghost_windows:
         description: >
           The number of ghost windows present (the number of nodes underneath
-          explicit/window-objects/top(none)/ghost, modulo race conditions). A
+          `explicit/window-objects/top(none)/ghost`, modulo race conditions). A
           ghost window is not shown in any tab, is not in a browsing context
           group with any non-detached windows, and has met these criteria for
-          at least memory.ghost_window_timeout_seconds, or has survived a round
-          of about:memory's minimize memory usage button. Ghost windows can
-          happen legitimately, but they are often indicative of leaks in the
-          browser or add-ons.
+          at least `memory.ghost_window_timeout_seconds`, or has survived a
+          round of `about:memory` minimize memory usage button. Ghost windows
+          can happen legitimately, but they are often indicative of leaks in
+          the browser or add-ons.
         type: integer
         permissions: ["public"]
       heap_allocated:
@@ -706,7 +711,7 @@ definitions:
         permissions: ["public"]
       top_none_detached:
         description: >
-          The top(none)/detached measurement from the memory report.
+          The `top(none)/detached` measurement from the memory report.
         type: integer
         permissions: ["public"]
       vsize:
@@ -714,16 +719,16 @@ definitions:
           Memory mapped by the process, including code and data segments, the
           heap, thread stacks, memory explicitly mapped by the process via mmap
           and similar operations, and memory shared with other processes. This
-          is the vsize figure as reported by 'top' and 'ps'. This figure is of
+          is the vsize figure as reported by `top` and `ps`. This figure is of
           limited use on Mac OS X where processes share huge amounts of memory
-          with one another. But even on other operating systems 'resident' is a
+          with one another. But even on other operating systems `resident` is a
           much better measure of the memory resources used by the process.
         type: integer
         permissions: ["public"]
       vsize_max_contiguous:
         description: >
-          The vsize-max-contiguous measurement from the memory report. See
-          about:memory for a fuller description.
+          The `vsize-max-contiguous` measurement from the memory report. See
+          `about:memory` for a fuller description.
         type: integer
         permissions: ["public"]
     type: ["object", "null"]
@@ -791,17 +796,17 @@ definitions:
                 properties:
                   appDisabled:
                     description: >
-                      True if this add-on cannot be used in the application
+                      `true` if this add-on cannot be used in the application
                       based on version compatibility, dependencies, and
                       blocklisting. This field is only available after the
-                      'sessionstore-windows-restored' topic is notified.
+                      `sessionstore-windows-restored1 topic is notified.
                     permissions: ["public"]
                     type: boolean
                   blocklisted:
                     description: >
                       Whether or not the add-on appears in the blocklist. This
                       field is only available after the
-                      'sessionstore-windows-restored' topic is notified.
+                      `sessionstore-windows-restored1 topic is notified.
                     permissions: ["public"]
                     type: boolean
                   description:
@@ -811,25 +816,25 @@ definitions:
                     type: ["string", "null"]
                   foreignInstall:
                     description: >
-                      True or false depending on whether the add-on is a third
-                      party add-on installation or not. This field is only
-                      available after the 'sessionstore-windows-restored' topic
-                      is notified.
+                      `true` or `false` depending on whether the add-on is a
+                      third party add-on installation or not. This field is
+                      only available after the `sessionstore-windows-restored`
+                      topic is notified.
                     permissions: ["public"]
                     type: ["integer", "boolean"]
                   hasBinaryComponents:
                     description: >
-                      True or false depending on whether the add-on has binary
-                      components. This is always false since Firefox 60. This
-                      field is only available after the
-                      'sessionstore-windows-restored' topic is notified.
+                      `true` or `false` depending on whether the add-on has
+                      binary components. This is always `false` since Firefox
+                      60. This field is only available after the
+                      `sessionstore-windows-restored` topic is notified.
                     permissions: ["public"]
                     type: boolean
                   installDay:
                     description: >
                       The days since epoch that the add-on was first installed.
                       This field is only available after the
-                      'sessionstore-windows-restored' topic is notified.
+                      `sessionstore-windows-restored` topic is notified.
                     permissions: ["public"]
                     type: ["integer", "null"]
                   isSystem:
@@ -847,14 +852,14 @@ definitions:
                   multiprocessCompatible:
                     description: >
                       Whether or not the add-on is a compatible with e10s.
-                      Since Firefox 61, this is always true. This field is
+                      Since Firefox 61, this is always `true`. This field is
                       available at startup.
                     permissions: ["public"]
                     type: boolean
                   name:
                     description: >
                       The add-on name, limited to 100 characters. This field is
-                      only available after the 'sessionstore-windows-restored'
+                      only available after the `sessionstore-windows-restored`
                       topic is notified.
                     permissions: ["public"]
                     type: string
@@ -868,7 +873,7 @@ definitions:
                   signedState:
                     description: >
                       The state of the signature of the add-on. This field is
-                      only available after the 'sessionstore-windows-restored'
+                      only available after the `sessionstore-windows-restored`
                       topic is notified.
                     permissions: ["public"]
                     type: integer
@@ -886,7 +891,7 @@ definitions:
                     description: >
                       Whether or not the user disabled the add-on. This field
                       is only available after the
-                      'sessionstore-windows-restored' topic is notified.
+                      `sessionstore-windows-restored` topic is notified.
                     permissions: ["public"]
                     type: ["boolean", "integer"]
                   version:
@@ -969,8 +974,8 @@ definitions:
             properties:
               appDisabled:
                 description: >
-                  True if this theme cannot be used in the application based on
-                  version compatibility, dependencies, and blocklisting.
+                  `true` if this theme cannot be used in the application based
+                  on version compatibility, dependencies, and blocklisting.
                 permissions: ["public"]
                 type: boolean
               blocklisted:
@@ -985,14 +990,14 @@ definitions:
                 type: ["string", "null"]
               foreignInstall:
                 description: >
-                  True or false depending on whether the theme is a third party
-                  theme installation or not.
+                  `true` or `false` depending on whether the theme is a third
+                  party theme installation or not.
                 permissions: ["public"]
                 type: ["boolean", "integer"]
               hasBinaryComponents:
                 description: >
-                  True or false depending on whether the theme has binary
-                  components. This is always false since Firefox 60.
+                  `true` or `false` depending on whether the theme has binary
+                  components. This is always `false` since Firefox 60.
                 permissions: ["public"]
                 type: boolean
               id:
@@ -1084,14 +1089,14 @@ definitions:
               and compiler vtable. This is taken from the TARGET_XPCOM_ABI
               configure variable. It may not be available on all platforms,
               especially unusual processor or compiler combinations. The result
-              takes the form '<processor>-<compilerABI>'. For example x86-msvc,
+              takes the form `<processor>-<compilerABI>`. For example x86-msvc,
               ppc-gcc3, etc. This value should almost always be used in
               combination with  the 'OS'."
             permissions: ["public"]
             type: string
           updaterAvailable:
             description: >
-              True if the application was built with the support for the
+              `true` if the application was built with the support for the
               updater component.
             permissions: ["public"]
             type: ["boolean"]
@@ -1203,7 +1208,7 @@ definitions:
             type: boolean
           blocklistEnabled:
             description: >
-              True if the blocklist is enabled.
+              `true` if the blocklist is enabled.
             permissions: ["public"]
             type: boolean
           defaultSearchEngine:
@@ -1219,14 +1224,14 @@ definitions:
               loadPath:
                 description: >
                   The anonymized path of the engine xml file. For example,
-                  'jar:[app]/omni.ja!browser/engine.xml' (where ‘browser’ is the
+                  `jar:[app]/omni.ja!browser/engine.xml` (where ‘browser’ is the
                   name of the chrome package, not a folder),
-                  '[profile]/searchplugins/engine.xml',
-                  '[distribution]/searchplugins/common/engine.xml',
-                  '[other]/engine.xml' '[other]/addEngineWithDetails',
-                  '[other]/addEngineWithDetails:extensionID',
-                  '[http/https]example.com/engine-name.xml', and
-                  '[http/https]example.com/engine-name.xml:extensionID'.
+                  `[profile]/searchplugins/engine.xml`,
+                  `[distribution]/searchplugins/common/engine.xml`,
+                  `[other]/engine.xml` `[other]/addEngineWithDetails`,
+                  `[other]/addEngineWithDetails:extensionID`,
+                  `[http/https]example.com/engine-name.xml`, and
+                  `[http/https]example.com/engine-name.xml:extensionID`.
                 permissions: ["public"]
                 type: ["string", "null"]
               name:
@@ -1254,7 +1259,7 @@ definitions:
             type: object
           e10sEnabled:
             description: >
-              True if the E10S is enabled.
+              `true` if the E10S is enabled.
             permissions: ["public"]
             type: boolean
           e10sMultiProcesses:
@@ -1356,14 +1361,14 @@ definitions:
             type: ["string", "null"]
           telemetryEnabled:
             description: >
-              The state of the 'toolkit.telemetry.enabled' pref.
+              The state of the `toolkit.telemetry.enabled` pref.
             permissions: ["public"]
             type: boolean
           update:
             properties:
               autoDownload:
                 description: >
-                  The state of the 'app.update.auto' pref.
+                  The state of the `app.update.auto` pref.
                 permissions: ["public"]
                 type: boolean
               background:
@@ -1410,22 +1415,34 @@ definitions:
               cores:
                 description: >
                   The number of physical CPU cores. Desktop only. For example,
-                  4. 'null' on failure.
+                  4. `null` on failure.
                 permissions: ["public"]
                 type: ["integer", "null"]
               count:
                 description: >
                   The number of logical CPUs. Desktop only. For example, 8.
-                  'null' on failure.
+                  `null` on failure.
                 permissions: ["public"]
                 type: ["integer"]
               extensions:
                 description: >
-                  This lists the avaible CPU extensions as strings. For
-                  example, 'hasMMX', 'hasSSE', 'hasSSE2', 'hasSSE3',
-                  'hasSSSE3', 'hasSSE4A', 'hasSSE4_1', 'hasSSE4_2', 'hasAVX',
-                  'hasAVX2', 'hasAES', 'hasEDSP', 'hasARMv6', 'hasARMv7',
-                  'hasNEON'.
+                  This lists the avaible CPU extensions as strings.
+                examples:
+                  - "`hasMMX`"
+                  - "`hasSSE`"
+                  - "`hasSSE2`"
+                  - "`hasSSE3`"
+                  - "`hasSSSE3`"
+                  - "`hasSSE4A`"
+                  - "`hasSSE4_1`"
+                  - "`hasSSE4_2`"
+                  - "`hasAVX`"
+                  - "`hasAVX2`"
+                  - "`hasAES`"
+                  - "`hasEDSP`"
+                  - "`hasARMv6`"
+                  - "`hasARMv7`"
+                  - "`hasNEON`"
                 items:
                   permissions: ["public"]
                   type: string
@@ -1433,7 +1450,7 @@ definitions:
                 type: array
               family:
                 description: >
-                  The CPU family. 'null' on failure. Desktop only.
+                  The CPU family. `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["integer", "null"]
               isWindowsSMode:
@@ -1445,23 +1462,23 @@ definitions:
                 type: ["boolean"]
               l2cacheKB:
                 description: >
-                  The CPU L2 cache size in KB. 'null' on failure. Desktop only.
+                  The CPU L2 cache size in KB. `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["integer", "null"]
               l3cacheKB:
                 description: >
-                  The CPU L3 cache size in KB. 'null' on failure. Desktop only.
+                  The CPU L3 cache size in KB. `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["integer", "null"]
               model:
                 description: >
-                  The CPU model, 'null' on failure. Desktop only.
+                  The CPU model, `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["integer", "null"]
               name:
                 description: >
-                  The CPU name. For example, 'Intel(R) Core(TM) i9-8950HK CPU @
-                  2.90GHz'. 'null' on failure. Desktop only.
+                  The CPU name. For example, `Intel(R) Core(TM) i9-8950HK CPU @
+                  2.90GHz`. `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["string", "null"]
               speedMHz:
@@ -1471,12 +1488,12 @@ definitions:
                 type: ["integer", "null"]
               stepping:
                 description: >
-                  The CPU stepping. 'null' on failure. Desktop only.
+                  The CPU stepping. `null` on failure. Desktop only.
                 permissions: ["public"]
                 type: ["integer", "null"]
               vendor:
                 description: >
-                  The CPU vendor. For example, 'GenuineIntel'. 'null' on
+                  The CPU vendor. For example, `GenuineIntel`. `null` on
                   failure. Desktop only.
                 permissions: ["public"]
                 type: ["string", "null"]
@@ -1570,8 +1587,8 @@ definitions:
                     type: object
                   compositor:
                     description: >
-                      The name of the compositor. This is one of 'd3d9',
-                      'd3d11', 'opengl', 'basic', or 'none' ('none' indicates
+                      The name of the compositor. This is one of `d3d9`,
+                      `d3d11`, `opengl`, `basic`, or `none` (`none` indicates
                       no compositors have been created).
                     permissions: ["public"]
                     type: ["string", "null"]
@@ -1725,8 +1742,8 @@ definitions:
             type: object
           hasWinPackageId:
             description: >
-              Is the process running with a package identity (e.g. from an MSIX
-              install)? See bug 1709892. This is Windows only.
+              Is the process running with a package identity--for example, from
+              an MSIX install? See bug 1709892. This is Windows only.
             permissions: ["public"]
             type: ["boolean", "null"]
           hdd:
@@ -1749,7 +1766,7 @@ definitions:
                     type: ["string", "null"]
                   type:
                     description: >
-                      SSD, HDD, or null.
+                      `SSD`, `HDD`, or `null`.
                     permissions: ["public"]
                     type: ["string", "null"]
                 permissions: ["public"]
@@ -1820,61 +1837,61 @@ definitions:
               hasPrefetch:
                 description: >
                   Whether or not the OS-based prefetch application start-up
-                  optimization is set. This is Windows-only. 'null' on failure.
+                  optimization is set. This is Windows-only. `null` on failure.
                 permissions: ["public"]
                 type: ["boolean", "null"]
               hasSuperfetch:
                 description: >
                   Whether or not the OS-based superfetch application start-up
                   optimization service is running and using the default
-                  settings. This is Windows-only. 'null' on failure.
+                  settings. This is Windows-only. `null` on failure.
                 permissions: ["public"]
                 type: ["boolean", "null"]
               installYear:
                 description: >
-                  The year Windows was installed. This is Windows only. 'null'
+                  The year Windows was installed. This is Windows only. `null`
                   on failure.
                 permissions: ["public"]
                 type: ["integer", "null"]
               locale:
                 description: >
-                  The locale of the operating system. For example, 'en'. This
+                  The locale of the operating system. For example, `en`. This
                   is `null` on failure.
                 permissions: ["public"]
                 type: string
               name:
                 description: >
-                  The name of the operating system. For example, 'Windows_NT'.
-                  This is 'null' on failure.
+                  The name of the operating system. For example, `Windows_NT`.
+                  This is `null` on failure.
                 permissions: ["public"]
                 type: string
               servicePackMajor:
                 description: >
                   The Windows service pack major version. This is Windows only.
-                  'null' on failure.
+                  `null` on failure.
                 permissions: ["public"]
                 type: integer
               servicePackMinor:
                 description: >
                   The Windows service pack minor version. This is Windows only.
-                  'null' on failure.
+                  `null` on failure.
                 permissions: ["public"]
                 type: integer
               version:
                 description: >
-                  The version of the operating system. For example, '6.1'. This
-                  is 'null' on failure.
+                  The version of the operating system. For example, `6.1`. This
+                  is `null` on failure.
                 permissions: ["public"]
                 type: string
               windowsBuildNumber:
                 description: >
-                  The Windows build number. This is Windows only. 'null' on
+                  The Windows build number. This is Windows only. `null` on
                   failure.
                 permissions: ["public"]
                 type: integer
               windowsUBR:
                 description: >
-                  The Windows UBR. This is Windows 10 only. 'null' on failure.
+                  The Windows UBR. This is Windows 10 only. `null` on failure.
                 permissions: ["public"]
                 type: integer
             permissions: ["public"]
@@ -1942,21 +1959,21 @@ properties:
   adapter_vendor_id:
     description: >
       The graphics adapter vendor. Sometimes a name, but often a hexidecimal
-      identifier. Common identifiers include 0x8086 (Intel), 0x1002 (AMD), and
-      0x10de (NVIDIA).
+      identifier. Common identifiers include `0x8086` (Intel), `0x1002` (AMD),
+      and `0x10de` (NVIDIA).
     type: string
     permissions: ["public"]
     source_annotation: AdapterVendorID
   abort_message:
     description: >
-      Message passed to NS_DebugBreak().
+      Message passed to `NS_DebugBreak()`.
     type: string
     permissions: ["public"]
     source_annotation: AbortMessage
   accessibility:
     description: >
-      Set to True in the processed crash if the annotation exists and is set to
-      'Active' by the accessibility service when it is active.
+      Set to `true` in the processed crash if the annotation exists and is set
+      to `Active` by the accessibility service when it is active.
     type: boolean
     permissions: ["public"]
   accessibility_client:
@@ -1974,7 +1991,7 @@ properties:
   additional_minidumps:
     description: >
       List of additional minidump files attached to crash report other than
-      'upload_file_minidump'.
+      `upload_file_minidump`.
     items:
       type: string
       permissions: ["public"]
@@ -1983,7 +2000,7 @@ properties:
   addons:
     description: >
       A list of the addons currently enabled at the time of the crash. This
-      takes the form of a list of 'addonid:version'. This value could be empty
+      takes the form of a list of `addonid:version`. This value could be empty
       if the crash happens during startup before the addon manager is enabled
       and on products/platforms for which we do not support addons.
     items:
@@ -1993,8 +2010,8 @@ properties:
     permissions: ["public"]
   addons_checked:
     description: >
-      Set to True if add-on compatibility checking is enabled. False or null
-      otherwise.
+      Set to `true` if add-on compatibility checking is enabled. `false` or
+      `null` otherwise.
     type: ["boolean", "null"]
     permissions: ["public"]
   address:
@@ -2072,7 +2089,7 @@ properties:
     source_annotation: Notes
   application_build_id:
     description: >
-      Application build id when the build_id field contains the GeckoView
+      Application build id when the `BuildID` field contains the GeckoView
       library build id.
     type: string
     permissions: ["public"]
@@ -2110,8 +2127,8 @@ properties:
     source_annotation: AvailableVirtualMemory
   background_task_name:
     description: >
-      If the app was invoked in background task mode via '--backgroundtask
-      <task name>', the string "task name".
+      If the app was invoked in background task mode via `--backgroundtask
+      <task name>`, the string `task name`.
     type: string
     permissions: ["public"]
     source_annotation: BackgroundTaskName
@@ -2123,7 +2140,7 @@ properties:
   build:
     description: >
       The unique build identifier of this version which is typically a
-      timestamp of the form YYYYMMDDHHMMSS.
+      timestamp of the form `YYYYMMDDHHMMSS`.
     type: string
     permissions: ["public"]
   client_crash_date:
@@ -2154,14 +2171,14 @@ properties:
   co_marshal_interface_failure:
     description: >
       Annotation describing the error returned by trying to marshal an object
-      via CoMarshalInterface during the creation of an IPC proxy stream.
+      via `CoMarshalInterface` during the creation of an IPC proxy stream.
     type: string
     permissions: ["public"]
     source_annotation: CoMarshalInterfaceFailure
   co_unmarshal_interface_result:
     description: >
       Contains the hexadecimal value of the return code from Windows
-      CoMarshalInterfaceFailure API when invoked by IPDL serialization and
+      `CoMarshalInterfaceFailure` API when invoked by IPDL serialization and
       deserialization code.
     type: string
     permissions: ["public"]
@@ -2192,8 +2209,8 @@ properties:
     source_annotation: ContentSandboxLevel
   cpu_arch:
     description:
-      The build architecture. Usually one of 'x86', 'amd64' (also known as
-      x86-64), 'arm', or 'arm64'.
+      The build architecture. Usually one of `x86`, `amd64` (also known as
+      x86-64), `arm`, or `arm64`.
     examples: ["x86", "amd64", "arm", "arm64"]
     type: string
     permissions: ["public"]
@@ -2228,7 +2245,7 @@ properties:
     description: |
       Crash time in seconds since the Epoch.
 
-      Set to the submitted_timestamp if CrashTime annotation is missing.
+      Set to the `submitted_timestamp` if `CrashTime` annotation is missing.
     type: integer
     permissions: ["public"]
   crashing_thread:
@@ -2245,7 +2262,7 @@ properties:
     description: |
       Date when the crash report was submitted to Socorro.
 
-      This is the submitted_timestamp from the collector.
+      This is the `submitted_timestamp` from the collector.
     type: string
     permissions: ["public"]
   distribution_id:
@@ -2253,8 +2270,8 @@ properties:
       Product application's distribution ID.
 
       This is either the DistributionID annotation or the
-      'TelemetryEnvironment.partner.distributionId' value. If there isn't a
-      value in either place, this defaults to 'mozilla'.
+      `TelemetryEnvironment.partner.distributionId` value. If there isn't a
+      value in either place, this defaults to `mozilla`.
     type: string
     permissions: ["public"]
   dom_fission_enabled:
@@ -2360,8 +2377,8 @@ properties:
     source_annotation: IPCMessageSize
   ipc_shutdown_state:
     description: >
-      IPC shutdown state, can be set to either 'RecvShutdown' or
-      'SendFinishShutdown' by a content process while it's shutting down.
+      IPC shutdown state, can be set to either `RecvShutdown` or
+      `SendFinishShutdown` by a content process while it's shutting down.
     type: string
     permissions: ["public"]
     source_annotation: IPCShutdownState
@@ -2376,7 +2393,7 @@ properties:
     source_annotation: IPCSystemError
   is_garbage_collecting:
     description: >
-      If true then the JavaScript garbage collector was running when the crash
+      If `true` then the JavaScript garbage collector was running when the crash
       occurred.
     type: boolean
     permissions: ["public"]
@@ -2389,13 +2406,13 @@ properties:
     source_annotation: JavaException
   java_stack_trace:
     description: >
-      The unstructured JavaStackTrace crash annotation without the exception
-      value which can have sensitive information in it.
+      The unstructured `JavaStackTrace` crash annotation without the exception
+      value.
     type: string
     permissions: ["public"]
   java_stack_trace_raw:
     description: >
-      The unstructured JavaStackTrace crash annotation with exception value
+      The unstructured `JavaStackTrace` crash annotation with exception value
       which can can have sensitive information in it.
     type: string
     permissions: ["protected"]
@@ -2418,30 +2435,30 @@ properties:
     source_annotation: MacAvailableMemorySysctl
   mac_crash_info:
     description: >
-      JSON-encoded Mac OS X __crash_info data.
+      JSON-encoded Mac OS X `__crash_info` data.
     type: string
     permissions: ["public"]
   mac_memory_pressure:
     description: >
       The current memory pressure state as provided by the macOS memory
-      pressure dispatch source. The annotation value is one of 'Normal' for no
-      memory pressure, 'Unset' indicating a memory pressure event has not been
-      received, 'Warning' or 'Critical' mapping to the system memory pressure
-      levels, or 'Unexpected' for an unexpected level. This is a Mac OS
+      pressure dispatch source. The annotation value is one of `Normal` for no
+      memory pressure, `Unset` indicating a memory pressure event has not been
+      received, `Warning` or `Critical` mapping to the system memory pressure
+      levels, or `Unexpected` for an unexpected level. This is a Mac OS
       X-specific annotation.
     type: string
     permissions: ["public"]
     source_annotation: MacMemoryPressure
   mac_memory_pressure_critical_time:
     description: >
-      The time when the memory pressure state last transitioned to 'Critical'
+      The time when the memory pressure state last transitioned to `Critical`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
     source_annotation: MacMemoryPressureCriticalTime
   mac_memory_pressure_normal_time:
     description: >
-      The time when the memory pressure state last transitioned to 'Normal'
+      The time when the memory pressure state last transitioned to `Normal`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
@@ -2461,7 +2478,7 @@ properties:
     source_annotation: MacMemoryPressureSysctl
   mac_memory_pressure_warning_time:
     description: >
-      The time when the memory pressure state last transitioned to 'Warning'
+      The time when the memory pressure state last transitioned to `Warning`
       expressed as seconds since the Epoch.
     type: string
     permissions: ["public"]
@@ -2469,24 +2486,24 @@ properties:
   major_version:
     description: >
       The major part of the version string as an integer. If there is no
-      major_version, this is 0.
+      `major_version`, this is 0.
     type: integer
     permissions: ["public"]
   mdsw_return_code:
     description: >
       Exit code of the stackwalker process when processing
-      'upload_file_minidump'. Non-0 indicates there was an error.
+      `upload_file_minidump`. Non-0 indicates there was an error.
     type: integer
     permissions: ["protected"]
   mdsw_status_string:
     description: >
       Status of the output of the stackwalker when processing
-      'upload_file_minidump'. Currently, this is always 'OK'.
+      `upload_file_minidump`. Currently, this is always `OK`.
     type: string
     permissions: ["public"]
   mdsw_stderr:
     description: >
-      stderr output from the stackwalker when processing 'upload_file_minidump'.
+      stderr output from the stackwalker when processing `upload_file_minidump`.
     type: string
     # This can contain paths and other things about the node
     permissions: ["protected"]
@@ -2506,28 +2523,28 @@ properties:
     permissions: ["protected"]
   minidump_sha256_hash:
     description: >
-      SHA256 hash generated by the collector of the 'upload_file_minidump' file
+      SHA256 hash generated by the collector of the `upload_file_minidump` file
       if there was one.
     type: ["string", "null"]
     permissions: ["public"]
   modules_in_stack:
     description: >
-      Set of ';' delimited 'module/debugid' strings of modules that are in the
+      Set of `;` delimited `module/debugid` strings of modules that are in the
       stack of the crashing thread.
     type: string
     permissions: ["public"]
   moz_crash_reason:
     description: |
-      For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
-      this is the accompanying description.
+      For aborts caused by `MOZ_CRASH`, `MOZ_RELEASE_ASSERT`, and related
+      macros, this is the accompanying description.
 
       This is the redacted value from the crash report annotation.
     type: string
     permissions: ["public"]
   moz_crash_reason_raw:
     description: |
-      For aborts caused by MOZ_CRASH, MOZ_RELEASE_ASSERT, and related macros,
-      this is the accompanying description.
+      For aborts caused by `MOZ_CRASH`, `MOZ_RELEASE_ASSERT`, and related
+      macros, this is the accompanying description.
 
       This is the raw value from the crash report annotation which can contain
       sensitive data.
@@ -2545,10 +2562,12 @@ properties:
     source_annotation: OOMAllocationSize
   os_name:
     description: >
-      The basic name of the operating system. Can be 'Windows NT', 'Mac OS X',
-      or 'Linux'. Use platform_pretty_version for a more precise operating
-      system name including the version.
-    examples: ["Windows NT", "Mac OS X", "Linux"]
+      The basic name of the operating system. Use `platform_pretty_version` for
+      a more precise operating system name including the version.
+    examples:
+      - "`Windows NT`"
+      - "`Mac OS X`"
+      - "`Linux`"
     type: string
     permissions: ["public"]
   os_pretty_version:
@@ -2612,10 +2631,10 @@ properties:
     permissions: ["public"]
   process_type:
     description: >
-      Type of the process that crashed. This will be 'parent' if the crash
+      Type of the process that crashed. This will be `parent` if the crash
       report has no ProcessType annotation.
     default: "parent"
-    examples: ["any", "parent", "plugin", "content", "gpu"]
+    examples: ["`any`", "`parent`", "`plugin`", "`content`", "`gpu`"]
     type: string
     permissions: ["public"]
     source_annotation: ProcessType
@@ -2638,7 +2657,7 @@ properties:
     permissions: ["public"]
   proto_signature:
     description: >
-      Generated by signature generation in the processor, this is a '|'
+      Generated by signature generation in the processor, this is a ` | `
       delimited string of the normalized symbols of the frames of the crashing
       thread.
     type: string
@@ -2647,21 +2666,21 @@ properties:
     description: |
       The crash exception kind for the crashing thread crash. Different
       operating systems have different exception kinds. Example values
-      'EXCEPTION_ACCESS_VIOLATION_READ', 'EXCEPTION_BREAKPOINT', 'SIGSEGV'.
+      `EXCEPTION_ACCESS_VIOLATION_READ`, `EXCEPTION_BREAKPOINT`, `SIGSEGV`.
 
       Comes from crash_info.type in the stackwalker output.
     type: ["string", "null"]
     permissions: ["public"]
   release_channel:
     description: >
-      The update channel that the product is on. Typically 'nightly', 'aurora',
-      'beta', 'release', or 'esr'. This may also be other values like
-      'release-cck-partner'.
+      The update channel that the product is on. Typically `nightly`, `aurora`,
+      `beta`, `release`, or `esr`. This may also be other values like
+      `release-cck-partner`.
     type: string
     permissions: ["public"]
   remote_type:
     description: >
-      Type of the content process, can be set to "web", "file" or "extension".
+      Type of the content process, can be set to `web`, `file`, or `extension`.
     type: string
     permissions: ["protected"]
     source_annotation: RemoteType
@@ -2674,8 +2693,8 @@ properties:
   shutdown_progress:
     description: |
       Shutdown step at which the browser crashed, can be set to
-      'quit-application', 'profile-change-teardown', 'profile-before-change',
-      'xpcom-will-shutdown' or 'xpcom-shutdown'.
+      `quit-application`, `profile-change-teardown`, `profile-before-change`,
+      `xpcom-will-shutdown` or `xpcom-shutdown`.
     type: string
     permissions: ["public"]
     source_annotation: ShutdownProgress
@@ -2728,18 +2747,24 @@ properties:
   submitted_from:
     description: >
       Indicates how the crash was submitted by the user.
-    examples: ["Auto", "Infobar", "AboutCrashes", "CrashedTab", "Client"]
+    examples:
+      - "`Auto`"
+      - "`Infobar`"
+      - "`AboutCrashes`"
+      - "`CrashedTab`"
+      - "`Client`"
     type: string
     permissions: ["public"]
   submitted_from_infobar:
     description: >
-      DEPRECATED. True if submitted_from is 'Infobar' and False otherwise.
+      DEPRECATED. `true` if `submitted_from` is `Infobar` and `false`
+      otherwise.
     deprecated: true
     type: boolean
     permissions: ["protected"]
   submitted_timestamp:
     description: >
-      The submitted_timestamp from the collector.
+      The `submitted_timestamp` from the collector.
     type: string
     permissions: ["public"]
   system_memory_use_percentage:
@@ -2756,7 +2781,7 @@ properties:
   throttleable:
     description: >
       Whether crash ingestion can selectively discard this crash report or not.
-      If set to "0" the crash report will be accepted and processed.
+      If set to `0` the crash report will be accepted and processed.
     type: boolean
     permissions: ["public"]
     source_annotation: Throttleable
@@ -2774,8 +2799,8 @@ properties:
       swap/page file.
 
       * Under Windows, populated with the contents of the
-        PERFORMANCE_INFORMATION's structure CommitLimit field.
-      * Under Linux, populated with /proc/meminfo MemTotal + SwapTotal. The
+        `PERFORMANCE_INFORMATION` structure `CommitLimit` field.
+      * Under Linux, populated with `/proc/meminfo` `MemTotal + SwapTotal`. The
         swap file typically cannot be extended, so that's a hard limit.
       * Not available on other systems.
     type: integer
@@ -2802,7 +2827,7 @@ properties:
       json_dump:
         $ref: "#/definitions/json_dump"
         description: >
-          Output of rust-minidump stackwalker on upload_file_minidump_browser
+          Output of rust-minidump stackwalker on `upload_file_minidump_browser`
           minidump.
         permissions: ["public"]
       mdsw_return_code:
@@ -2814,7 +2839,7 @@ properties:
       mdsw_status_string:
         description: >
           Status of the output of the stackwalker when processing this
-          minidump. Currently, this is always 'OK'.
+          minidump. Currently, this is always `OK`.
         type: string
         permissions: ["public"]
       mdsw_stderr:
@@ -2829,7 +2854,7 @@ properties:
         permissions: ["public"]
       success:
         description: >
-          Whether or not the status field in the stackwalker output was 'OK'.
+          Whether or not the status field in the stackwalker output was `OK`.
         type: boolean
         permissions: ["public"]
     type: ["object", "null"]
@@ -2881,7 +2906,7 @@ properties:
     type: array
   utility_process_sandboxing_kind:
     description: >
-      The SandboxingKind passed for this Utility process instance.
+      The `SandboxingKind` passed for this Utility process instance.
     type: integer
     permissions: ["public"]
     source_annotation: UtilityProcessSandboxingKind
@@ -2890,15 +2915,15 @@ properties:
     type: string
     permissions: ["public"]
   vendor:
-    description: Application vendor (e.g. Mozilla).
+    description: Application vendor. For example, `mozilla`.
     type: string
     permissions: ["public"]
     source_annotation: Vendor
   version:
     description: >
       The product version number. For Firefox versions, a value lacking letters
-      indicates a normal release; a value with 'b' indicates a beta release; a
-      value with 'a' indicates aurora release; and a value with 'esr' indicates
+      indicates a normal release; a value with `b` indicates a beta release; a
+      value with `a` indicates aurora release; and a value with `esr` indicates
       an Extended Service Release.
     type: string
     permissions: ["public"]
@@ -2916,7 +2941,7 @@ properties:
 
       If the crashing process was killed (e.g. due to an IPC error), this
       annotation may refer to the parent process that killed it, look out for
-      the prefix ('default' means parent) and see bug 1741131 for details.
+      the prefix (`default` means parent) and see bug 1741131 for details.
     type: string
     permissions: ["public"]
     source_annotation: XPCOMSpinEventLoopStack

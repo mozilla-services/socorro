@@ -37,11 +37,19 @@
               <tr>
                 <th scope="row">example data from last 7 days</th>
                 <td>
-                  <ul>
-                    {% for item in example_data %}
-                      <li><code>{{ item }}</code></li>
-                    {% endfor %}
-                  </ul>
+                  {% if example_data %}
+                    <ul>
+                      {% for item in example_data %}
+                        <li><code>{{ item }}</code></li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <i>
+                      No examples available. Either this field is new and has
+                      no data, is rarely emitted and has no data this week, or
+                      this field isn't public.
+                    </i>
+                  {% endif %}
                 </td>
               </tr>
             {% else %}
@@ -50,18 +58,18 @@
                 <td><i>This field is not indexed.</i></td>
               </tr>
             {% endif %}
-            <tr>
-              <th scope="row">source annotation</th>
-              <td>
-                {% if source_annotation %}
+            {% if source_annotation %}
+              <tr>
+                <th scope="row">source annotation</th>
+                <td>
                   <code>
                     <a href="{{ url('documentation:datadictionary_field_doc', 'annotation', source_annotation) }}">
                       {{ source_annotation }}
                     </a>
                   </code>
-                {% endif %}
-              </td>
-            </tr>
+                </td>
+              </tr>
+            {% endif %}
           {% endif %}
           {% if dataset == "annotation" %}
             <tr>
@@ -93,7 +101,16 @@
           {% endif %}
           <tr>
             <th scope="row">permissions</th>
-            <td>{{ permissions }}</td>
+            <td>
+              <p>{{ permissions|join(', ') }}</p>
+              {% if "protected" in permissions %}
+              <p>
+                <i>
+                  This field is protected data. See <a href="{{ url('documentation:protected_data_access') }}">Protected Data Access</a> for details.
+                </i>
+              </p>
+              {% endif %}
+            </td>
           </tr>
         </tbody>
       </table>
