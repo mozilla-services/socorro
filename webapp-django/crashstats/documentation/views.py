@@ -123,12 +123,34 @@ def datadictionary_index(request, default_context=None):
     return render(request, "docs/datadictionary/index.html", context)
 
 
+@cache
 def get_processed_field_for_annotation(field):
     field_data = get_processed_schema_data()
     for key, value in field_data.items():
         if value.get("source_annotation") == field:
             return key
     return ""
+
+
+def get_products_for_annotation(field):
+    resp = SuperSearch().get(
+        crash_report_keys=f"~{field}",
+        _results_number=0,
+        _facets=["product"],
+        _facets_size=5,
+    )
+    if "product" in resp["facets"]:
+        return [item["term"] for item in resp["facets"]["product"]]
+
+
+def get_indexed_example_data(field):
+    resp = SuperSearch().get(
+        _results_number=0,
+        _facets=[field],
+        _facets_size=5,
+    )
+    if field in resp["facets"]:
+        return [item["term"] for item in resp["facets"][field]]
 
 
 @track_view
@@ -166,22 +188,16 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
         if super_search_field:
             search_field = super_search_field["name"]
             search_field_query_type = super_search_field["query_type"]
-
             # FIXME(willkg): we're only doing this for public fields, but we could do
             # this for whatever fields the user can see
             if field_item["permissions"] == ["public"]:
-                resp = SuperSearch().get(
-                    _results_number=0,
-                    _facets=[field],
-                    _facets_size=5,
-                )
-                if field in resp["facets"]:
-                    example_data = [item["term"] for item in resp["facets"][field]]
+                example_data = get_indexed_example_data(field)
 
+    products = []
+    processed_field = ""
     if dataset == "annotation":
+        products = get_products_for_annotation(field)
         processed_field = get_processed_field_for_annotation(field)
-    else:
-        processed_field = ""
 
     context.update(
         {
@@ -190,6 +206,7 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
             "description": description,
             "data_reviews": field_item.get("data_reviews") or [],
             "example_data": example_data,
+            "products_for_field": products,
             "search_field": search_field,
             "search_field_query_type": search_field_query_type,
             "source_annotation": field_item.get("source_annotation") or "",

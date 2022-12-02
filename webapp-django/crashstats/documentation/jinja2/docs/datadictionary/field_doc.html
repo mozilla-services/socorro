@@ -98,6 +98,16 @@
                 {% endif %}
               </td>
             </tr>
+            <tr>
+              <th scope="row">products that emitted this field in last 7 days</th>
+              <td>
+                {% if products_for_field %}
+                  {{ products_for_field|join(', ') }}
+                {% else %}
+                  <i>None.</i>
+                {% endif %}
+              </td>
+            </tr>
           {% endif %}
           <tr>
             <th scope="row">permissions</th>
