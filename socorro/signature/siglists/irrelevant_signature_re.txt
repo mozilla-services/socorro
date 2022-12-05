@@ -11,6 +11,7 @@ __aeabi_
 alloc::alloc::__alloc_error_handler::__rg_oom
 alloc::alloc::handle_alloc_error
 alloc::vec::impl
+\(anonymous namespace\)::WriteFatalLogAndAbort
 ashmem
 __ascii_stricmp
 __assert
@@ -38,6 +39,7 @@ _CxxThrowException
 dalvik-jit-code-cache
 dalvik-LinearAlloc
 data@app@org\.mozilla\.f.*\.apk@classes\.dex@0x
+DebugBreak
 __entry_from_strcat_in_strcpy
 <env_logger::Logger as log::Log>::log::{{closure}}
 <env_logger::Logger as log::Log>::log
@@ -139,7 +141,7 @@ __report_gsfailure
 _rust_alloc_error_handler
 __rust_alloc_error_handler
 rust_oom
-rtc::FatalMessage
+rtc::webrtc_checks_impl
 RtlReportCriticalFailure
 RtlReportFatalFailure
 RtlSleepConditionVariableCS
@@ -166,6 +168,7 @@ __str
 system@framework@.*\.art@0x
 _Unwind_Resume
 {virtual override thunk}
+wil::details::DebugBreak
 
 # These frames have platform variants and bucket poorly so we nix them
 # from the signature
