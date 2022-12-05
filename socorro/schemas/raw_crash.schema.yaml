@@ -627,6 +627,19 @@ properties:
     type: string
     permissions: ["protected"]
 
+  JSLargeAllocationFailure:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1804095#c3
+    description: >
+      A large allocation couldn't be satisfied. The annotation may contain the
+      `Reporting`, `Reported` or `Recovered` value. The first one means that we
+      crashed while responding to the OOM condition (possibly while running a
+      memory-pressure observers), the second that we crashed after having tried
+      to free some memory, and the last that the GC had managed to free enough
+      memory to satisfy the allocation.
+    type: string
+    permissions: ["public"]
+
   MacAvailableMemorySysctl:
     data_reviews:
       - unknown

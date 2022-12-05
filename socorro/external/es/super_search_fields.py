@@ -1336,6 +1336,7 @@ FIELDS = {
             "type": "string",
         },
     },
+    "js_large_allocation_failure": keyword_field(name="js_large_allocation_failure"),
     "last_crash": {
         "data_validation_type": "int",
         "form_field_choices": [],
