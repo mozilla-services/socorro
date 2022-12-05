@@ -84,6 +84,12 @@ def convert_to_crash_data(processed_crash):
         "oom_allocation_size": int_or_none(
             glom(processed_crash, "oom_allocation_size", default=None)
         ),
+        # str or None
+        "js_large_allocation_failure": glom(
+            processed_crash,
+            "js_large_allocation_failure",
+            default=None,
+        ),
         # text or None
         "abort_message": glom(processed_crash, "abort_message", default=None),
         # text or None

@@ -1376,6 +1376,21 @@ class TestOOMSignature:
         rule = rules.OOMSignature()
         assert rule.predicate(crash_data, result) is expected
 
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            (None, False),
+            ("Reported", True),
+            ("Reporting", False),
+        ],
+    )
+    def test_predicate_js_large_allocation_failure(self, value, expected):
+        crash_data = {"js_large_allocation_failure": value}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.OOMSignature()
+        assert rule.predicate(crash_data, result) is expected
+
     def test_action_success(self):
         crash_data = {}
         result = generator.Result()
@@ -1398,6 +1413,17 @@ class TestOOMSignature:
 
     def test_action_large(self):
         crash_data = {"oom_allocation_size": 17000000}
+        result = generator.Result()
+        result.signature = "hello"
+
+        rule = rules.OOMSignature()
+        action_result = rule.action(crash_data, result)
+
+        assert action_result is True
+        assert result.signature == "OOM | large | hello"
+
+    def test_action_js_large_allocation_failure(self):
+        crash_data = {"js_large_allocation_failure": "Reported"}
         result = generator.Result()
         result.signature = "hello"
 
