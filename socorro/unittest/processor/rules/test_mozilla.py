@@ -33,7 +33,6 @@ from socorro.processor.rules.mozilla import (
     OutOfMemoryBinaryRule,
     PHCRule,
     PluginRule,
-    ProductRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
@@ -475,43 +474,6 @@ class TestSubmittedFromRule:
             "submitted_from": expected_submitted_from,
             "submitted_from_infobar": expected_submitted_from_infobar,
         }
-
-
-class TestProductRule:
-    def test_everything_we_hoped_for(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = ProductRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert processed_crash["product"] == "Firefox"
-        assert processed_crash["version"] == "12.0"
-        assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash["release_channel"] == "release"
-        assert processed_crash["build"] == "20120420145725"
-
-    def test_stuff_missing(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        del raw_crash["Version"]
-        del raw_crash["Distributor"]
-        del raw_crash["Distributor_version"]
-        del raw_crash["ReleaseChannel"]
-
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = ProductRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
-
-        assert processed_crash["product"] == "Firefox"
-        assert processed_crash["version"] == ""
-        assert processed_crash["productid"] == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-        assert processed_crash["release_channel"] == ""
-        assert processed_crash["build"] == "20120420145725"
 
 
 class TestPluginRule:

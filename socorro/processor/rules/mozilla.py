@@ -253,23 +253,6 @@ class SubmittedFromInfobarFixRule(Rule):
         raw_crash["SubmittedFromInfobar"] = "1"
 
 
-class ProductRule(Rule):
-    """Copy product data from raw crash to processed crash."""
-
-    def action(self, raw_crash, dumps, processed_crash, status):
-        processed_crash["product"] = raw_crash.get("ProductName", "")
-        processed_crash["version"] = raw_crash.get("Version", "")
-        processed_crash["productid"] = raw_crash.get("ProductID", "")
-        processed_crash["release_channel"] = raw_crash.get("ReleaseChannel", "")
-        processed_crash["build"] = raw_crash.get("BuildID", "")
-
-        # NOTE(willkg): ApplicationBuildID is for Fenix which sends the GeckoView build
-        # id in BuildID.
-        processed_crash["application_build_id"] = raw_crash.get(
-            "ApplicationBuildID", ""
-        )
-
-
 class MajorVersionRule(Rule):
     """Sets "version" to the major version number of the Version annotation or 0"""
 

@@ -361,9 +361,13 @@ properties:
   BuildID:
     data_reviews:
       - unknown
-    description: >
+    description: |
       The unique build identifier of this version which is typically a
       timestamp of the form `YYYYMMDDHHMMSS`.
+
+      **For Focus, Fenix:**
+
+      This is the build id for the `GeckoView` library used.
     type: string
     permissions: ["public"]
 
