@@ -2088,9 +2088,23 @@ properties:
     permissions: ["public"]
     source_annotation: Notes
   application_build_id:
-    description: >
-      Application build id when the `BuildID` field contains the GeckoView
-      library build id.
+    description: |
+      The unique build identifier for this version.
+
+      **Fenix notes:**
+
+      `BuildID` contains the build id for the GeckoView library used and
+      `ApplicationBuildID` contains the build id for Fenix.
+
+      Unlike other build ids, this is a number like `2015895489` which is not
+      in the typical `YYYYMMDDHHMMSS` structure and you can't derive the build
+      date from it.
+
+      **Focus notes:**
+
+      Unlike other build ids, this is a number like ` 363142253` which is not
+      in the typical `YYYYMMDDHHMMSS` structure and you can't derive the build
+      date from it.
     type: string
     permissions: ["public"]
   async_shutdown_timeout:
@@ -2138,9 +2152,11 @@ properties:
     $ref: "#/definitions/breadcrumbs"
     permissions: ["protected"]
   build:
-    description: >
+    description: |
       The unique build identifier of this version which is typically a
       timestamp of the form `YYYYMMDDHHMMSS`.
+
+      For Fenix: This is the build id for the `GeckoView` library used.
     type: string
     permissions: ["public"]
   client_crash_date:
