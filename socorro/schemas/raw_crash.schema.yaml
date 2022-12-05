@@ -265,8 +265,23 @@ properties:
   ApplicationBuildID:
     data_reviews:
       - unknown
-    description: >
-      Product application's build ID.
+    description: |
+      The unique build identifier for this version.
+
+      **Fenix notes:**
+
+      `BuildID` contains the build id for the GeckoView library used and
+      `ApplicationBuildID` contains the build id for Fenix.
+
+      Unlike other build ids, this is a number like `2015895489` which is not
+      in the typical `YYYYMMDDHHMMSS` structure and you can't derive the build
+      date from it.
+
+      **Focus notes:**
+
+      Unlike other build ids, this is a number like ` 363142253` which is not
+      in the typical `YYYYMMDDHHMMSS` structure and you can't derive the build
+      date from it.
     type: string
     permissions: ["public"]
 
