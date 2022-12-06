@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from contextlib import contextmanager, closing
+from contextlib import contextmanager, closing, suppress
 import gzip
 import json
 from io import BytesIO
@@ -159,11 +159,8 @@ class FSPermanentStorage(CrashStorageBase):
         parent_dir = self._get_radixed_parent_directory(crash_id)
 
         with using_umask(self.config.umask):
-            try:
+            with suppress(OSError):
                 os.makedirs(parent_dir)
-            except OSError:
-                # probably already created, ignore
-                pass
 
             for fn, contents in files.items():
                 with open(os.sep.join([parent_dir, fn]), "wb") as f:

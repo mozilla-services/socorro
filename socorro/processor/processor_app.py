@@ -5,6 +5,7 @@
 
 """The processor app converts raw crashes into processed crashes."""
 
+from contextlib import suppress
 import os
 import sys
 import time
@@ -276,18 +277,14 @@ class ProcessorApp(FetchTransformSaveApp):
     def close(self):
         """Clean up the processor on shutdown."""
         super().close()
-        try:
+        # There is either no companion or it doesn't have a close method we can skip on
+        with suppress(AttributeError):
             self.companion_process.close()
-        except AttributeError:
-            # There is either no companion or it doesn't have a close method
-            # we can skip on
-            pass
-        try:
+
+        # The processor implementation does not have a close method we can blithely skip
+        # on
+        with suppress(AttributeError):
             self.processor.close()
-        except AttributeError:
-            # The processor implementation does not have a close method
-            # we can blithely skip on
-            pass
 
 
 if __name__ == "__main__":

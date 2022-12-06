@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import suppress
+
 import semver
 
 
@@ -26,15 +28,13 @@ def generate_semver(version):
         raise VersionParseError("version is not a str.")
 
     # Try to parse it as a semver. This covers versions that are valid semver already.
-    try:
+    with suppress(ValueError):
         semver_version = semver.VersionInfo.parse(version)
         if semver_version.prerelease is None:
             # Need to add this so that 68.0.0 (release) sorts correctly with
             # 68.0.0esr--ESR versions sort after release versions
             semver_version = semver_version.replace(prerelease="release.rc.999")
         return semver_version
-    except ValueError:
-        pass
 
     # If it's not semver, then it's probably a Firefox version number, so parse that and
     # convert it to a semver VersionInfo

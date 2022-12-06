@@ -4,6 +4,8 @@
 
 """common library code for socorro modules"""
 
+from contextlib import suppress
+
 
 class DatabaseError(Exception):
     """When querying a storage system failed."""
@@ -18,11 +20,9 @@ class MissingArgumentError(Exception):
         self.arg = arg
 
     def __str__(self):
-        try:
+        with suppress(Exception):
             msg = "Mandatory parameter(s) '%s' is missing or empty." % self.arg
             return msg
-        except Exception:
-            pass
 
 
 class BadArgumentError(Exception):
@@ -38,15 +38,13 @@ class BadArgumentError(Exception):
         if self.msg is not None:
             return self.msg
 
-        try:
+        with suppress(Exception):
             msg = "Bad value for parameter(s) '%s'" % self.param
             if self.received is not None:
                 msg = msg + " got '%s'" % self.received
             if self.expected is not None:
                 msg = msg + " expected '%s'" % self.expected
             return msg
-        except Exception:
-            pass
 
 
 class ResourceNotFound(Exception):

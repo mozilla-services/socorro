@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import suppress
 from dataclasses import dataclass
 import datetime
 from functools import lru_cache
@@ -258,11 +259,9 @@ class MajorVersionRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, status):
         major_version = None
-        try:
+        with suppress(ValueError, IndexError):
             version = raw_crash.get("Version", "")
             major_version = int(version.split(".")[0])
-        except (ValueError, IndexError):
-            pass
 
         major_version = major_version if major_version is not None else 0
         processed_crash["major_version"] = major_version
@@ -978,18 +977,14 @@ class PHCRule(Rule):
 
         # Convert PHCBaseAddress from decimal to hex and add to processed crash
         if "PHCBaseAddress" in raw_crash:
-            try:
+            with suppress(ValueError):
                 phc_base_address = hex(int(raw_crash["PHCBaseAddress"]))
                 processed_crash["phc_base_address"] = phc_base_address
-            except ValueError:
-                pass
 
         # Add PHCUsableSize which is an integer
         if "PHCUsableSize" in raw_crash:
-            try:
+            with suppress(ValueError):
                 processed_crash["phc_usable_size"] = int(raw_crash["PHCUsableSize"])
-            except ValueError:
-                pass
 
         # FIXME(willkg): We should symbolicate PHCAllocStack and PHCFreeStack and
         # put the symbolicated stacks in a new field.
