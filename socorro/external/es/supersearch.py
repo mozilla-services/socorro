@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+from contextlib import suppress
 import datetime
 import re
 
@@ -466,7 +467,8 @@ class SuperSearch(RequiredConfig, SearchBase):
             except RequestError as exception:
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
-                try:
+                # Not an ElasticsearchParseException exception
+                with suppress(IndexError):
                     bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
                         exception.error
                     )[-1]
@@ -475,9 +477,6 @@ class SuperSearch(RequiredConfig, SearchBase):
                     for key, value in kwargs.items():
                         if value == bad_input:
                             raise BadArgumentError(key)
-                except IndexError:
-                    # Not an ElasticsearchParseException exception
-                    pass
 
                 # If it's a search parse exception, but we don't know what key is the
                 # problem, raise a general BadArgumentError

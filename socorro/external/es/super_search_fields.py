@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import suppress
 import logging
 
 from socorro.lib.libsocorrodataschema import get_schema
@@ -264,10 +265,8 @@ def get_fields_by_item(fields, key, val):
 
     """
     map_key = (id(fields), key, val)
-    try:
+    with suppress(KeyError):
         return _FIELDS_CACHE[map_key]
-    except KeyError:
-        pass
 
     def has_key_val(key, val, data):
         for this_key, this_val in data.items():

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from contextlib import suppress
 from functools import partial
 from itertools import islice
 import json
@@ -348,10 +349,8 @@ class CSignatureTool:
                 a_sentinel, condition_fn = a_sentinel
                 if not condition_fn(source_list):
                     continue
-            try:
+            with suppress(ValueError):
                 sentinel_locations.append(source_list.index(a_sentinel))
-            except ValueError:
-                pass
 
         if sentinel_locations:
             min_index = min(sentinel_locations)

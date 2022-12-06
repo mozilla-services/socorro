@@ -6,6 +6,7 @@
 Common functions for search-related external modules.
 """
 
+from contextlib import suppress
 from dataclasses import dataclass
 import datetime
 from typing import Any, Optional
@@ -487,12 +488,10 @@ def restrict_fields(fields, authorized_fields):
 
     secured_fields = []
 
-    try:
+    with suppress(TypeError):
         for field in fields:
             if field in authorized_fields and field not in secured_fields:
                 secured_fields.append(field)
-    except TypeError:
-        pass
 
     if len(secured_fields) == 0:
         # If none of the fields were allowed, use the first authorized field
