@@ -719,17 +719,17 @@ class OOMSignature(Rule):
         if reason in self.oom_reason:
             return True
 
-        # Check js_large_allocation_failure to see if it's Reported
+        # Check js_large_allocation_failure to see if it's Reporting
         js_large_allocation_failure = crash_data.get(
             "js_large_allocation_failure", None
         )
-        if js_large_allocation_failure == "Reported":
+        if js_large_allocation_failure == "Reporting":
             return True
         return False
 
     def action(self, crash_data, result):
-        if crash_data.get("js_large_allocation_failure") == "Reported":
-            # If a JSLargeAllocationFailure was Reported, then it's an OOM | large
+        if crash_data.get("js_large_allocation_failure") == "Reporting":
+            # If a JSLargeAllocationFailure was Reporting, then it's an OOM | large
             result.set_signature(self.name, f"OOM | large | {result.signature}")
             return True
 
