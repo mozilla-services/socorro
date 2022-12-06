@@ -1380,8 +1380,8 @@ class TestOOMSignature:
         "value, expected",
         [
             (None, False),
-            ("Reported", True),
-            ("Reporting", False),
+            ("Reporting", True),
+            ("Reported", False),
         ],
     )
     def test_predicate_js_large_allocation_failure(self, value, expected):
@@ -1423,7 +1423,7 @@ class TestOOMSignature:
         assert result.signature == "OOM | large | hello"
 
     def test_action_js_large_allocation_failure(self):
-        crash_data = {"js_large_allocation_failure": "Reported"}
+        crash_data = {"js_large_allocation_failure": "Reporting"}
         result = generator.Result()
         result.signature = "hello"
 
