@@ -46,6 +46,7 @@ __entry_from_strcat_in_strcpy
 exp2
 __fdelt_chk
 __fdelt_warn
+__futex_abstimed_wait_common
 _fini
 __fixunsdfsi
 __fortify_fail
@@ -113,6 +114,7 @@ mozilla::Monitor::Wait
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksCondVar::Wait
 mozilla::RefPtrTraits<T>::
+mozilla::TaskQueue::
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::ThreadEventQueue
 mozilla::ThreadSafeAutoRefCnt
@@ -133,8 +135,10 @@ org\.mozilla\.f.*\.apk@0x
 panic_abort::
 PR_WaitCondVar
 __psynch_cvwait
+_pthread_
 __pthread_
-_pthread_cond_wait
+___pthread_
+pthread_cond_wait
 RaiseException
 RealMsgWaitFor
 RefPtr<T>::
