@@ -44,7 +44,7 @@ Running in a local dev environment
 
 To run the processor in the local dev environment, do::
 
-  $ docker-compose up processor
+  $ docker compose up processor
 
 That will bring up all the services the processor requires to run and start the
 processor using the ``/app/bin/run_processor.sh`` script and the processor
