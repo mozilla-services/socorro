@@ -8,7 +8,7 @@ version: 2.1
 jobs:
   main:
     docker:
-      - image: cimg/python:3.10.2
+      - image: cimg/python:3.10.9
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
@@ -17,7 +17,7 @@ jobs:
       - checkout
 
       - setup_remote_docker:
-          version: 20.10.11
+          version: 20.10.18
           docker_layer_caching: true
 
       - run:
