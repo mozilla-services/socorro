@@ -68,7 +68,7 @@ Running in a local dev environment
 
 To run the processor in the local dev environment, do::
 
-  $ docker-compose up crontabber
+  $ docker compose up crontabber
 
 
 Running in a server environment

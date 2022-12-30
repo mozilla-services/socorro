@@ -21,25 +21,10 @@ jobs:
           docker_layer_caching: true
 
       - run:
-          # We need docker-compose < v2 because of the configman environment
-          # variables. Version 1.29.2 is in PyPI and installable via pip. v2 is
-          # a rewrite in Go. So we can install the version from PyPI here.
-          name: install docker-compose
-          # yamllint disable rule:line-length
-          command: |
-            # This installs docker-compose 1.29.2 and makes sure that docker-compose
-            # shows up in PATH before /usr/local/bin/docker-compose which is v2.
-            python -m pip install -r requirements-compose.txt
-            ln -s $(pyenv which docker-compose) ~/.local/bin/docker-compose
-          # yamllint enable rule:line-length
-
-      - run:
           name: Get info
           command: |
             uname -v
             docker info
-            which docker-compose
-            docker-compose --version
 
       - run:
           name: Create version.json
@@ -70,7 +55,7 @@ jobs:
           name: Build Docker images
           command: |
             make build
-            docker-compose images
+            docker compose images
 
       - run:
           name: Verify requirements.txt file
@@ -87,8 +72,8 @@ jobs:
           # yamllint disable rule:line-length
           command: |
             make my.env
-            docker-compose up -d localstack elasticsearch postgresql statsd fakesentry
-            docker-compose run --rm test-ci shell ./bin/test.sh
+            docker compose up -d localstack elasticsearch postgresql statsd fakesentry
+            docker compose run --rm test-ci shell ./bin/test.sh
           # yamllint enable rule:line-length
 
       - run:
