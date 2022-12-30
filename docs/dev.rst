@@ -15,7 +15,7 @@ development environment.
 Setup quickstart
 ================
 
-1. Install required software: Docker, docker-compose (1.10+), make, and git.
+1. Install required software: Docker, make, and git.
 
    **Linux**:
 
@@ -24,7 +24,7 @@ Setup quickstart
    **OSX**:
 
        Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
-       will install Docker and docker-compose.
+       will install Docker.
 
        Use `homebrew <https://brew.sh>`_ to install make and git:
 
@@ -35,9 +35,6 @@ Setup quickstart
    **Other**:
 
        Install `Docker <https://docs.docker.com/engine/installation/>`_.
-
-       Install `docker-compose <https://docs.docker.com/compose/install/>`_.
-       You need something higher than 1.10, but less than 2.0.0.
 
        Install `make <https://www.gnu.org/software/make/>`_.
 
@@ -849,7 +846,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   app@socorro:/app$ exit
 
   # Run the processor to process all those crashes
-  $ docker-compose up processor
+  $ docker compose up processor
 
 
 Processing crashes from the collector
@@ -864,7 +861,7 @@ Antenna deployments are based on images pushed to Docker Hub.
 
 To run Antenna in the Socorro local dev environment, do::
 
-  $ docker-compose up collector
+  $ docker compose up collector
 
 
 It will listen on ``http://localhost:8888/`` for incoming crashes from a
@@ -877,7 +874,7 @@ Connect to PostgreSQL database
 ==============================
 
 The local development environment's PostgreSQL database exposes itself on a
-non-standard port when run with docker-compose. You can connect to it with the
+non-standard port when run with docker compose. You can connect to it with the
 client of your choice using the following connection settings:
 
 * Username: ``postgres``

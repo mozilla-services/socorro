@@ -1,7 +1,4 @@
 ---
-# docker-compose for Socorro development.
-#
-# Note: Requires docker-comopse 1.10+.
 version: "2"
 services:
   # Socorro app image

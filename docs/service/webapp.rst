@@ -20,11 +20,11 @@ Running in a local dev environment
 
 To run the webapp, do::
 
-  $ docker-compose up webapp
+  $ docker compose up webapp
 
 To ease debugging, you can run a shell in the container::
 
-  $ docker-compose run --service-ports webapp shell
+  $ docker compose run --service-ports webapp shell
 
 Then you can start and stop the webapp, adjust files, and debug.
 
@@ -40,13 +40,13 @@ Let's use these credentials:
 
 This creates an account in the oidcprovider service container::
 
-  $ docker-compose up -d oidcprovider
-  $ docker-compose exec oidcprovider /code/manage.py createuser willkg foo willkg@example.com
+  $ docker compose up -d oidcprovider
+  $ docker compose exec oidcprovider /code/manage.py createuser willkg foo willkg@example.com
 
 This creates a superuser account in the Crash Stats webapp corresponding to the
 account we created in the oidcprovider service container::
 
-  $ docker-compose run app shell ./webapp-django/manage.py makesuperuser willkg@example.com
+  $ docker compose run app shell ./webapp-django/manage.py makesuperuser willkg@example.com
 
 Feel free to use different credentials.
 
@@ -107,7 +107,7 @@ can override ``STATIC_ROOT`` in ``my.env`` to return it to the ``app`` folder::
     STATIC_ROOT=/app/static
 
 Alternatively, you can mount ``/tmp/crashstats-static/`` using ``volumes``
-in a ``docker-compose.override.yml`` file:
+in a ``docker compose.override.yml`` file:
 
 .. code-block:: yaml
 
@@ -122,7 +122,7 @@ in a ``docker-compose.override.yml`` file:
 Production-style Assets
 =======================
 
-When you run ``docker-compose up webapp`` in the local development environment,
+When you run ``docker compose up webapp`` in the local development environment,
 it starts the web app using Django's ``runserver`` command. ``DEBUG=True`` is
 set in the ``docker/config/local_dev.env`` file, so static assets are
 automatically served from within the individual Django apps rather than serving
@@ -134,7 +134,7 @@ webapp using ``gunicorn`` and with ``DEBUG=False``. Here's how you do that.
 
 First start a ``bash`` shell with service ports::
 
-  $ docker-compose run --service-ports webapp shell
+  $ docker compose run --service-ports webapp shell
 
 Then compile the static assets::
 

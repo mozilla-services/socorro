@@ -19,7 +19,8 @@ ifeq (1, ${NOCACHE})
 DOCKER_BUILD_OPTS := --no-cache
 endif
 
-DC := $(shell which docker-compose)
+DOCKER := $(shell which docker)
+DC=${DOCKER} compose
 
 .DEFAULT_GOAL := help
 .PHONY: help
@@ -114,8 +115,8 @@ testshell: my.env .docker-build  ## | Open a shell in the test environment.
 
 .PHONY: rebuildreqs
 rebuildreqs: .env .docker-build  ## | Rebuild requirements.txt file after requirements.in changes.
-	docker-compose run --rm --no-deps app shell pip-compile --generate-hashes
+	${DC} run --rm --no-deps app shell pip-compile --generate-hashes
 
 .PHONY: updatereqs
 updatereqs: .env .docker-build  ## | Update deps in requirements.txt file.
-	docker-compose run --rm --no-deps app shell pip-compile --generate-hashes -U
+	${DC} run --rm --no-deps app shell pip-compile --generate-hashes -U
