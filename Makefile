@@ -46,8 +46,9 @@ my.env:
 
 .PHONY: build
 build: my.env  ## | Build docker images.
-	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} app
-	${DC} build oidcprovider fakesentry
+	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} --progress plain app
+	${DC} build --progress plain oidcprovider fakesentry
+	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch
 	touch .docker-build
 
 .PHONY: setup
