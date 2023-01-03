@@ -4,7 +4,6 @@
 
 import copy
 import datetime
-from functools import cache
 import json
 import re
 import time
@@ -288,29 +287,35 @@ class ESCrashStorage(CrashStorageBase):
         )
         self.metrics = markus.get_metrics(namespace)
 
+        # Cached answers for things that don't change
+        self._keys_for_indexable_fields_cache = None
+        self._keys_for_mapping_cache = {}
+
     def get_keys_for_indexable_fields(self):
         """Return keys for FIELDS in "namespace.key" format
 
-        NOTE(willkg): Answer is cached on the ESCrashStorage instance. If you change
-        FIELDS (like in tests), you should get a new ESCrashStorage instance.
+        NOTE(willkg): Results are cached on this ESCrashStorage instance. If you change
+        FIELDS (like in tests), create a new ESCrashStorage instance.
 
         :returns: set of "namespace.key" strings
 
         """
-        keys = set()
-        for field in FIELDS.values():
-            if not is_indexable(field):
-                continue
+        keys = self._keys_for_indexable_fields_cache
+        if keys is None:
+            keys = set()
+            for field in FIELDS.values():
+                if not is_indexable(field):
+                    continue
 
-            keys = keys | set(get_destination_keys(field))
+                keys = keys | set(get_destination_keys(field))
+            self._keys_for_indexable_fields_cache = keys
 
         return keys
 
     def get_keys_for_mapping(self, index_name, es_doctype):
         """Get the keys in "namespace.key" format for a given mapping
 
-        NOTE(willkg): If the index exists, the keys for the mapping are cached on
-        the ESCrashStorage instance.
+        NOTE(willkg): Results are cached on this ESCrashStorage instance.
 
         :arg str index_name: the name of the index
         :arg str es_doctype: the doctype for the index
@@ -320,10 +325,14 @@ class ESCrashStorage(CrashStorageBase):
         :raise elasticsearch.exceptions.NotFoundError: if the index doesn't exist
 
         """
-        mapping = self.es_context.get_mapping(index_name, es_doctype, reraise=True)
-        return parse_mapping(mapping, None)
+        cache_key = f"{index_name}::{es_doctype}"
+        keys = self._keys_for_mapping_cache.get(cache_key)
+        if keys is None:
+            mapping = self.es_context.get_mapping(index_name, es_doctype, reraise=True)
+            keys = parse_mapping(mapping, None)
+            self._keys_for_mapping_cache[cache_key] = keys
+        return keys
 
-    @cache
     def get_keys(self, index_name, es_doctype):
         supersearch_fields_keys = self.get_keys_for_indexable_fields()
         try:
