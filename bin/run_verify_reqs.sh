@@ -12,5 +12,5 @@
 set -euo pipefail
 
 cp requirements.txt requirements.txt.orig
-pip-compile --quiet --generate-hashes
+pip-compile --quiet --generate-hashes --strip-extras
 diff requirements.txt requirements.txt.orig
