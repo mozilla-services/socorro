@@ -5,7 +5,6 @@
 from contextlib import suppress
 from dataclasses import dataclass
 import datetime
-from functools import lru_cache
 import gzip
 import json
 import re
@@ -74,6 +73,8 @@ class CopyFromRawCrashRule(Rule):
         self.schema = schema
         self.fields = self.build_fields(schema)
 
+        self._reducer_cache = {}
+
     def build_fields(self, schema):
         fields = []
 
@@ -106,9 +107,10 @@ class CopyFromRawCrashRule(Rule):
                 )
         return fields
 
-    @lru_cache
     def get_reducer(self, schema_key):
         """Return the SocorroDataReducer for this subschema
+
+        NOTE(willkg): results are cached on the CopyFromRawCrashRule instance.
 
         :arg schema_key: the property key in the processed crash schema to return the
             value of
@@ -116,7 +118,12 @@ class CopyFromRawCrashRule(Rule):
         :returns: schema
 
         """
-        return SocorroDataReducer(self.schema["properties"][schema_key])
+        cache_key = schema_key
+        reducer = self._reducer_cache.get(cache_key)
+        if reducer is None:
+            reducer = SocorroDataReducer(self.schema["properties"][schema_key])
+            self._reducer_cache[cache_key] = reducer
+        return reducer
 
     def action(self, raw_crash, dumps, processed_crash, status):
         for copy_item in self.fields:
