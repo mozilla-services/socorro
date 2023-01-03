@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 
 from crashstats import productlib
 from crashstats.crashstats import models, utils
