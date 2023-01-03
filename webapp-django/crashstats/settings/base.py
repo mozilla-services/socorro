@@ -118,7 +118,7 @@ MIDDLEWARE = [
     "crashstats.crashstats.middleware.SetRemoteAddrFromRealIP",
     "csp.middleware.CSPMiddleware",
     "waffle.middleware.WaffleMiddleware",
-    "ratelimit.middleware.RatelimitMiddleware",
+    "django_ratelimit.middleware.RatelimitMiddleware",
     "crashstats.crashstats.middleware.Pretty400Errors",
 ]
 

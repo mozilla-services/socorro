@@ -7,7 +7,8 @@ from functools import wraps
 import inspect
 import re
 
-from ratelimit.exceptions import Ratelimited
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 from rest_framework.exceptions import Throttled
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -15,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.views import APIView
-from ratelimit.decorators import ratelimit
 from session_csrf import anonymous_csrf_exempt
 
 from django import http
