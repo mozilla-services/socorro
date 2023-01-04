@@ -616,6 +616,9 @@ def get_processed_crash_permissions_reducer(permissions_tuple):
 
 
 class ProcessedCrash(SocorroMiddleware):
+    # Prevent caching processed crash data from storage
+    cache_seconds = 0
+
     # FIXME(willkg): change this to BotoS3CrashStorage
     implementation = SimplifiedCrashData
     implementation_config_namespace = "crashdata"
@@ -696,6 +699,9 @@ class RawCrash(SocorroMiddleware):
     To access any of the raw dumps (e.g. format=raw) you need an API
     token that carries the "View Raw Dumps" permission.
     """
+
+    # Prevent caching raw crash data from storage
+    cache_seconds = 0
 
     implementation = SimplifiedCrashData
     implementation_config_namespace = "crashdata"

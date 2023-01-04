@@ -56,5 +56,5 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 # Print urls to make it easier to look at them
 for crashid in "$@"
 do
-    echo "Check webapp: http://localhost:8000/report/index/${crashid}?refresh=cache"
+    echo "Check webapp: http://localhost:8000/report/index/${crashid}"
 done
