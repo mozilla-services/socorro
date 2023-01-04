@@ -4,7 +4,6 @@
 
 import contextlib
 import datetime
-from functools import cache
 import re
 
 from configman import Namespace, RequiredConfig
@@ -90,6 +89,9 @@ class ConnectionContext(RequiredConfig):
         super().__init__()
         self.config = config
 
+        # Cached answers for things that don't change
+        self._mapping_cache = {}
+
     def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
         encapsulated by the Connection class above.
@@ -164,7 +166,6 @@ class ConnectionContext(RequiredConfig):
             "mappings": mappings,
         }
 
-    @cache
     def get_mapping(self, index_name, es_doctype, reraise=False):
         """Retrieves the mapping for a given index and doctype
 
@@ -180,13 +181,17 @@ class ConnectionContext(RequiredConfig):
         :returns: mapping as a dict or None
 
         """
-        try:
-            resp = self.indices_client().get_mapping(index=index_name)
-            return resp[index_name]["mappings"][es_doctype]["properties"]
-        except elasticsearch.exceptions.NotFoundError:
-            if reraise:
-                raise
-        return None
+        cache_key = f"{index_name}::{es_doctype}"
+        mapping = self._mapping_cache.get(cache_key)
+        if mapping is None:
+            try:
+                resp = self.indices_client().get_mapping(index=index_name)
+                mapping = resp[index_name]["mappings"][es_doctype]["properties"]
+                self._mapping_cache[cache_key] = mapping
+            except elasticsearch.exceptions.NotFoundError:
+                if reraise:
+                    raise
+        return mapping
 
     def create_index(self, index_name, mappings=None):
         """Create an index that will receive crash reports.
