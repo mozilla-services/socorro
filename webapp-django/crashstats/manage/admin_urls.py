@@ -9,11 +9,6 @@ from crashstats.manage import admin
 
 app_name = "manage"
 urlpatterns = [
-    path(
-        "analyze-model-fetches/",
-        admin.analyze_model_fetches,
-        name="analyze_model_fetches",
-    ),
     path("crash-me-now/", admin.crash_me_now, name="crash_me_now"),
     path("sitestatus/", admin.site_status, name="site_status"),
     path(

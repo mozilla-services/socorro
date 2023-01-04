@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import hashlib
 import json
 from urllib.parse import urlparse
 
@@ -10,7 +9,6 @@ import requests
 
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.core.cache import cache
 from django.db import connection
 from django.shortcuts import render
 
@@ -58,35 +56,6 @@ def site_status(request):
     context["title"] = "Site status"
 
     return render(request, "admin/site_status.html", context)
-
-
-@superuser_required
-def analyze_model_fetches(request):
-    context = {}
-    all_ = cache.get("all_classes") or []
-    records = []
-    for item in all_:
-        itemkey = hashlib.md5(item.encode("utf-8")).hexdigest()
-
-        data = {}
-        data["times"] = {}
-        data["times"]["hits"] = cache.get("times_HIT_%s" % itemkey, 0)
-        data["times"]["misses"] = cache.get("times_MISS_%s" % itemkey, 0)
-        data["times"]["both"] = data["times"]["hits"] + data["times"]["misses"]
-        data["uses"] = {}
-        data["uses"]["hits"] = cache.get("uses_HIT_%s" % itemkey, 0)
-        data["uses"]["misses"] = cache.get("uses_MISS_%s" % itemkey, 0)
-        data["uses"]["both"] = data["uses"]["hits"] + data["uses"]["misses"]
-        data["uses"]["hits_percentage"] = (
-            data["uses"]["both"]
-            and round(100.0 * data["uses"]["hits"] / data["uses"]["both"], 1)
-            or "n/a"
-        )
-        records.append((item, data))
-    context["records"] = records
-    context["title"] = "Analyze model fetches"
-
-    return render(request, "admin/analyze-model-fetches.html", context)
 
 
 @superuser_required
