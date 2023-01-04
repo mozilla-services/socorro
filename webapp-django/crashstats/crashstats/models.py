@@ -281,8 +281,8 @@ class SocorroCommon:
     # http_host
     http_host = None
 
-    # default cache expiration time if applicable
-    cache_seconds = 60 * 60
+    # Default cache expiration time if applicable (5 minutes)
+    cache_seconds = 5 * 60
 
     # At the moment, we're supporting talk HTTP to the middleware AND instantiating
     # implementation classes so this is None by default.
@@ -311,7 +311,7 @@ class SocorroCommon:
         if (
             settings.CACHE_IMPLEMENTATION_FETCHES
             and not dont_cache
-            and self.cache_seconds
+            and self.cache_seconds > 0
         ):
             name = implementation.__class__.__name__
             key_string = name + repr(params)
@@ -327,7 +327,7 @@ class SocorroCommon:
         result = implementation_method(**params)
         if cache_key:
             try:
-                cache.set(cache_key, result, self.cache_seconds)
+                cache.set(cache_key, result, timeout=self.cache_seconds)
             except MemcacheServerError:
                 metrics.incr("cache_set_error")
 
@@ -902,16 +902,6 @@ class SignaturesByBugs(SocorroMiddleware):
 class SignatureFirstDate(SocorroMiddleware):
     # NOTE(willkg): This is implemented with a Django model.
 
-    # Set to a short cache time because, the only real user of this
-    # model is the Top Crasher page and that one uses the highly
-    # optimized method `.get_dates()` which internally uses caching
-    # for each individual signature and does so with a very long
-    # cache time.
-    #
-    # Making it non-0 is to prevent the stampeding herd on this endpoint
-    # alone when exposed in the API.
-    cache_seconds = 5 * 60  # 5 minutes only
-
     required_params = (("signatures", list),)
 
     IS_PUBLIC = True
@@ -958,11 +948,6 @@ class SignatureFirstDate(SocorroMiddleware):
 
 class VersionString(SocorroMiddleware):
     # NOTE(willkg): This is implemented with a Django model.
-
-    # Set to a short cache time because it's just a db lookup. Making it non-0
-    # is to prevent the stampeding herd on this endpoint alone when exposed in
-    # the API.
-    cache_seconds = 2 * 60  # 2 minutes only
 
     required_params = ("product", "channel", "build_id")
 
