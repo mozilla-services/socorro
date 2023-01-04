@@ -103,12 +103,10 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context["crash_id"] = crash_id
 
-    refresh_cache = request.GET.get("refresh") == "cache"
-
     raw_api = models.RawCrash()
     raw_api.api_user = request.user
     try:
-        context["raw"] = raw_api.get(crash_id=crash_id, refresh_cache=refresh_cache)
+        context["raw"] = raw_api.get(crash_id=crash_id)
     except CrashIDNotFound:
         # If the raw crash can't be found, we can't do much.
         return render(
@@ -119,7 +117,7 @@ def report_index(request, crash_id, default_context=None):
     api = models.ProcessedCrash()
     api.api_user = request.user
     try:
-        context["report"] = api.get(crash_id=crash_id, refresh_cache=refresh_cache)
+        context["report"] = api.get(crash_id=crash_id)
     except CrashIDNotFound:
         # ...if we haven't already done so.
         cache_key = f"priority_job:{crash_id}"
