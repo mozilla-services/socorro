@@ -11,7 +11,6 @@ import datetime
 import functools
 import hashlib
 import logging
-import time
 
 from django.conf import settings
 from django.core.cache import cache
@@ -276,45 +275,6 @@ def _clean_query(query, max_length=30):
     return cleaned
 
 
-def measure_fetches(method):
-    @functools.wraps(method)
-    def inner(*args, **kwargs):
-        t0 = time.time()
-        result = method(*args, **kwargs)
-        if not (isinstance(result, tuple) and len(result) == 2):
-            # happens when fetch() is used recursively
-            return result
-        result, hit_or_miss = result
-        if not getattr(settings, "ANALYZE_MODEL_FETCHES", False):
-            return result
-        t1 = time.time()
-        self = args[0]
-        msecs = int((t1 - t0) * 1000)
-        hit_or_miss = "HIT" if hit_or_miss else "MISS"
-
-        try:
-            value = self.__class__.__name__
-            key = "all_classes"
-            all_ = cache.get(key) or []
-            if value not in all_:
-                all_.append(value)
-                cache.set(key, all_, 60 * 60 * 24)
-
-            valuekey = hashlib.md5(value.encode("utf-8")).hexdigest()
-            for prefix, incr in (("times", msecs), ("uses", 1)):
-                key = "%s_%s_%s" % (prefix, hit_or_miss, valuekey)
-                try:
-                    cache.incr(key, incr)
-                except ValueError:
-                    cache.set(key, incr, 60 * 60 * 24)
-        except Exception:
-            logger.error("Unable to collect model fetches data", exc_info=True)
-        finally:
-            return result
-
-    return inner
-
-
 class SocorroCommon:
     # by default, we don't need username and password
     username = password = None
@@ -333,7 +293,6 @@ class SocorroCommon:
     # from web GET or POST requests
     api_user = None
 
-    @measure_fetches
     def fetch(
         self,
         implementation,
@@ -362,7 +321,7 @@ class SocorroCommon:
                 result = cache.get(cache_key)
                 if result is not None:
                     logger.debug("CACHE HIT %s" % implementation.__class__.__name__)
-                    return result, True
+                    return result
 
         implementation_method = getattr(implementation, method)
         result = implementation_method(**params)
@@ -372,7 +331,7 @@ class SocorroCommon:
             except MemcacheServerError:
                 metrics.incr("cache_set_error")
 
-        return result, False
+        return result
 
     def _complete_url(self, url):
         if url.startswith("/"):

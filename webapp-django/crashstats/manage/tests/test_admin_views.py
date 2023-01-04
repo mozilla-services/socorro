@@ -43,15 +43,3 @@ class TestSiteStatus(SiteAdminTestViews):
         self._login()
         response = self.client.get(url)
         assert response.status_code == 200
-
-
-class TestAnalyzeModelFetches(SiteAdminTestViews):
-    def test_analyze_model_fetches(self):
-        """Basic test to make sure the page loads at all"""
-        url = reverse("siteadmin:analyze_model_fetches")
-        response = self.client.get(url)
-        assert response.status_code == 302
-
-        self._login()
-        response = self.client.get(url)
-        assert response.status_code == 200
