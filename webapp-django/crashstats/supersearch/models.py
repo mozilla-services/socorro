@@ -3,9 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
-import functools
-
-from django.core.cache import cache
 
 from crashstats import productlib
 from crashstats.crashstats import models
@@ -43,26 +40,19 @@ PARAMETERS_LISTING_FIELDS = (
 
 
 def get_api_allowlist(include_all_fields=False):
-    def get_from_es(include_all_fields):
-        cache_key = "api_supersearch_fields"
-        fields = cache.get(cache_key)
-        if fields is None:
-            all_fields = SUPERSEARCH_FIELDS
-            fields = []
-            for meta in all_fields.values():
-                if (
-                    meta["name"] not in fields
-                    and meta["is_returned"]
-                    and (include_all_fields or not meta["permissions_needed"])
-                ):
-                    fields.append(meta["name"])
-            fields = tuple(fields)
+    """Returns an API_ALLOWLIST value based on SUPERSEARCH_FIELDS"""
 
-            # Cache for 1 hour.
-            cache.set(cache_key, fields, 60 * 60)
-        return {"hits": fields}
+    all_fields = SUPERSEARCH_FIELDS
+    fields = []
+    for meta in all_fields.values():
+        if (
+            meta["name"] not in fields
+            and meta["is_returned"]
+            and (include_all_fields or not meta["permissions_needed"])
+        ):
+            fields.append(meta["name"])
 
-    return functools.partial(get_from_es, include_all_fields)
+    return {"hits": fields}
 
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
