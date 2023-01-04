@@ -184,7 +184,7 @@ def report_index(request, crash_id, default_context=None):
         )
         context["report"]["mac_crash_info"] = mac_crash_info
 
-    all_public_raw_keys = models.RawCrash.public_keys()
+    all_public_raw_keys = raw_api.public_keys()
     context["public_raw_keys"] = [x for x in context["raw"] if x in all_public_raw_keys]
     if request.user.has_perm("crashstats.view_pii"):
         # If the user can see PII or this is their crash report, include everything
