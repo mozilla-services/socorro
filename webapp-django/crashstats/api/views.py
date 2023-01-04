@@ -342,7 +342,7 @@ def model_wrapper(request, model_name, model):
             result["DEPRECATION_WARNING"] = model.deprecation_warning
         headers["DEPRECATION-WARNING"] = model.deprecation_warning.replace("\n", " ")
 
-    if model.cache_seconds:
+    if model.cache_seconds > 0:
         # We can set a Cache-Control header.
         # We say 'private' because the content can depend on the user
         # and we don't want the response to be collected in HTTP proxies
