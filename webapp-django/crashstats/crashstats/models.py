@@ -749,6 +749,24 @@ class ProcessedCrash(SocorroMiddleware):
     delete = None
 
 
+@functools.cache
+def _raw_crash_public_keys():
+    """Return list of public annotations."""
+    public_schema = transform_schema(
+        schema=RAW_CRASH_SCHEMA,
+        transform_function=(
+            permissions_transform_function(
+                permissions_have=["public"],
+                default_permissions=RAW_CRASH_SCHEMA["default_permissions"],
+            )
+        ),
+    )
+
+    # Annotations in the raw crash are all at the top level, so we grab those
+    keys = list(public_schema["properties"].keys())
+    return keys
+
+
 class RawCrash(SocorroMiddleware):
     """
     To access any of the raw dumps (e.g. format=raw) you need an API
@@ -803,22 +821,9 @@ class RawCrash(SocorroMiddleware):
     # Permissions required to download binary data
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
 
-    @classmethod
-    @functools.cache
     def public_keys(self):
-        public_schema = transform_schema(
-            schema=RAW_CRASH_SCHEMA,
-            transform_function=(
-                permissions_transform_function(
-                    permissions_have=["public"],
-                    default_permissions=RAW_CRASH_SCHEMA["default_permissions"],
-                )
-            ),
-        )
-
-        # Annotations in the raw crash are all at the top level, so we grab those
-        keys = [key for key in public_schema["properties"].keys()]
-        return keys
+        """Return list of public annotations."""
+        return _raw_crash_public_keys()
 
     @classmethod
     def get_binary_filename(cls, params):
