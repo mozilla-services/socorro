@@ -60,6 +60,21 @@
         }
     }
 
+    div.field-example {
+        background-color: @off-white;
+        border: 1px solid @light-grey;
+        border-radius: 3px;
+        margin: 0.5em;
+        word-break: break-all;
+
+        code {
+            // Undo the css values for general <code>
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+    }
+
     ul {
         margin-top: 0;
         margin-bottom: 10px;
@@ -74,6 +89,7 @@
                 margin-left: 15px;
                 margin-bottom: 0;
             }
+
         }
     }
 
@@ -85,6 +101,7 @@
         padding: 1px 5px;
         white-space: nowrap;
     }
+
     pre {
         display: block;
         padding: 9.5px;
