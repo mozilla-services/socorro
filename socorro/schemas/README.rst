@@ -158,6 +158,9 @@ Second, run ``validate_raw_crash.py`` against that crash directory.
 
 Then run the tests which will test several invariants for the schemas.
 
+Then look at the field in the data dictionary in the webapp to make
+sure the description and other parts are formatted well.
+
 
 processed_crash.schema.yaml schema
 ==================================
@@ -491,6 +494,9 @@ Second, run ``validate_processed_crash.py`` against that crash directory.
    $ python socorro/schemas/validate_processed_crash.py [CRASHDIR]
 
 Then run the tests which will test several invariants for the schemas.
+
+Then look at the field in the data dictionary in the webapp to make
+sure the description and other parts are formatted well.
 
 
 socorro-data-1-0-0.schema.yaml
