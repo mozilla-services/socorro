@@ -120,6 +120,7 @@ mozilla::ThreadEventQueue
 mozilla::ThreadSafeAutoRefCnt
 mozilla::UniquePtr
 mozilla::widget::WlCrashHandler
+nsQueryObject<T>::operator
 nsThread::GetEvent
 mozilla::PrioritizedEventQueue<T>::GetEvent
 nsThread::ProcessNextEvent
