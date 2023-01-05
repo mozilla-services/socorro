@@ -38,17 +38,19 @@
                 <th scope="row">example data from last 7 days</th>
                 <td>
                   {% if example_data %}
-                    <ul>
-                      {% for item in example_data %}
-                        <li><code>{{ item }}</code></li>
-                      {% endfor %}
-                    </ul>
+                    {% for item in example_data %}
+                      <div class="field-example"><code>{{ item|string|truncate(100, killwords=True, end="...") }}</code></div>
+                    {% endfor %}
                   {% else %}
-                    <i>
-                      No examples available. Either this field is new and has
-                      no data, is rarely emitted and has no data this week, or
-                      this field isn't public.
-                    </i>
+                    {% if "protected" in permissions %}
+                      <i>This field is not public. No examples will be shown.</i>
+                    {% else %}
+                      <i>
+                        No examples available. Either this field is new and has
+                        no data or this field is rarely emitted and has no data
+                        this week.
+                      </i>
+                    {% endif %}
                   {% endif %}
                 </td>
               </tr>
