@@ -2,8 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Adding a new crash annotation to the raw crash schema?
-# https://github.com/mozilla-services/socorro/tree/main/socorro/schemas
+# This schema defines crash annotations that Socorro knows about and details
+# about them.
+#
+# Directions for adding support for new annotations is at:
+# https://socorro.readthedocs.io/en/latest/annotations.html
+#
+# Crash annotations being emitted by crash reporters should additionally be
+# documented in:
+#
+# https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml
+#
+# See README.rst for details on how to add annotations to this file, the
+# template to use, and how to test them afterwards.
 
 ---
 $schema: moz://mozilla.org/schemas/socorro/socorro-data/1-0-0
@@ -60,25 +71,7 @@ properties:
     type: integer
     permissions: ["public"]
 
-  # This lists crash annotations that Socorro knows about and details about
-  # them.
-  #
-  # Crash annotations being emitted by crash reporters should be documented in:
-  #
-  # https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml
-  #
-  # This file additionally specifies permissions required to see the data,
-  # data_review urls, related bugs, and example data.
-
-  # AnnotationName:
-  #   description: some description here
-  #   type: string
-  #   permissions: ["protected"]
-  #   data_review:
-  #     - url
-  #   bugs:
-  #     - url
-  #   examples: ["xxx", "yyy"]
+  # Add new annotations from products below this line.
 
   AbortMessage:
     data_reviews:
@@ -846,6 +839,12 @@ properties:
       `beta`, `release`, or `esr`. This may also be other values like
       `release-cck-partner`.
     type: string
+    examples:
+      - "`nightly`"
+      - "`aurora`"
+      - "`beta`"
+      - "`release`"
+      - "`esr`"
     permissions: ["public"]
 
   RemoteType:
