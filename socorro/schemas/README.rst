@@ -33,7 +33,9 @@ should be after the line::
 
    # Add new annotations from products below this line.
 
-The template for adding an annotation looks like this::
+The template for adding an annotation looks like this:
+
+.. code-block:: yaml
 
    AnnotationName:
      description: |
@@ -64,7 +66,9 @@ Field details:
    descriptions which don't have empty lines and ``|`` to denote multiline
    descriptions that do have empty lines. If in doubt, use ``|``.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       description: |
         Amount of free physical memory in bytes.
@@ -81,7 +85,9 @@ Field details:
    always be ``string`` because crash annotation values are encoded as strings
    in the submitted crash report.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       type: string
 
@@ -94,18 +100,24 @@ Field details:
    * the list of permissions required to view this field; currently the only
      supported permission is "protected"
 
-   If the field can be public, do this::
+   If the field can be public, do this:
 
-       permissions: ["public"]
+       .. code-block:: yaml
 
-   Otherwise, the field is protected, so do this::
+          permissions: ["public"]
 
-       permissions: ["protected"]
+   Otherwise, the field is protected, so do this:
+
+       .. code-block:: yaml
+
+          permissions: ["protected"]
 
 **data_reviews**
    This is a list of one or more urls to data reviews for this annotation.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       data_reviews:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1697875#c8
@@ -113,7 +125,9 @@ Field details:
 **bugs** (optional)
    List of bugs related to adding this field to Socorro.
 
-   Examples::
+   Examples:
+
+   .. code-block:: yaml
 
       bugs:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1741131
@@ -121,7 +135,9 @@ Field details:
 **examples** (optional)
    Array of examples values for this field.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       examples:
         - "`Auto`"
@@ -171,7 +187,9 @@ Supporting new fields
 When adding new fields, add them to the top-level ``properties`` section of the
 schema.
 
-The template for adding a field looks like this::
+The template for adding a field looks like this:
+
+.. code-block:: yaml
 
    field_name:
      description: |
@@ -206,7 +224,9 @@ The template for adding a field looks like this::
    descriptions which don't have empty lines and ``|`` to denote multiline
    descriptions that do have empty lines. If in doubt, use ``|``.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       description: |
         If Firefox crashes while some code is spinning manually the event loop on
@@ -229,11 +249,15 @@ The template for adding a field looks like this::
    * ``array``
    * ``object``
 
-   Example of a field that can only be a string::
+   Example of a field that can only be a string:
+
+   .. code-block:: yaml
 
       type: string
 
-   Example of a field that can be a string or null::
+   Example of a field that can be a string or null:
+
+   .. code-block:: yaml
 
       type: ["string", "null"]
 
@@ -248,18 +272,24 @@ The template for adding a field looks like this::
    * the list of permissions required to view this field; currently the only
      supported permission is "protected"
 
-   If the field can be public, do this::
+   If the field can be public, do this:
 
-       permissions: ["public"]
+   .. code-block:: yaml
 
-   Otherwise, the field is protected, so do this::
+      permissions: ["public"]
 
-       permissions: ["protected"]
+   Otherwise, the field is protected, so do this:
+
+   .. code-block:: yaml
+
+      permissions: ["protected"]
 
 **bugs** (optional)
    List of bugs related to adding this field to Socorro.
 
-   Examples::
+   Examples:
+
+   .. code-block:: yaml
 
       bugs:
         - https://bugzilla.mozilla.org/show_bug.cgi?id=1741131
@@ -268,14 +298,18 @@ The template for adding a field looks like this::
    If this field is deprecated and slated to be removed, mark it
    as such in the schema.
 
-   Example::
+   Example:
 
-       deprecated: true
+   .. code-block:: yaml
+
+      deprecated: true
 
 **examples** (optional)
    Array of examples values for this field.
 
-   Example::
+   Example:
+
+   .. code-block:: yaml
 
       examples:
         - "`Auto`"
@@ -325,7 +359,9 @@ null
 If a field can be something or ``null``, then that needs to be noted in the
 type.
 
-For example, this field can be an ``integer`` or a ``null``::
+For example, this field can be an ``integer`` or a ``null``:
+
+.. code-block:: yaml
 
    crashing_thread:
      description: >
@@ -333,17 +369,21 @@ For example, this field can be an ``integer`` or a ``null``::
      type: ["integer", "null"]
      permissions: ["public"]
 
-This is valid::
+This is valid:
 
-    {
-        "crashing_thread": 100
-    }
+.. code-block:: json
 
-As is this::
+   {
+     "crashing_thread": 100
+   }
 
-    {
-        "crashing_thread": null
-    }
+As is this:
+
+.. code-block:: json
+
+   {
+      "crashing_thread": null
+   }
 
 If the ``type`` doesn't specify ``null``, then the value cannot be ``null``.
 
@@ -354,23 +394,27 @@ Arrays
 For arrays, you need to specify what's it an array of using ``items``.
 
 For example, this defines a field ``crash_report_keys`` which has a value that
-is an array of strings::
+is an array of strings:
 
-    crash_report_keys:
-      description: >
-        The keys in the crash report
-      type: array
-      items:
-        type: string
-        permissions: ["public"]
-      permissions: ["public"]
+.. code-block:: yaml
+
+   crash_report_keys:
+     description: >
+       The keys in the crash report
+     type: array
+     items:
+       type: string
+       permissions: ["public"]
+     permissions: ["public"]
 
 
-Example JSON for that field::
+Example JSON for that field:
 
-    {
-        "crash_report_keys": ["Product", "ReleaseChannel", "Version"]
-    }
+.. code-block:: json
+
+   {
+     "crash_report_keys": ["Product", "ReleaseChannel", "Version"]
+   }
 
 
 Objects
@@ -383,7 +427,9 @@ You use ``properties`` when you know the keys. For example, ``threads`` is an
 ``array`` of ``object`` with keys ``frame_count``, ``frames``,
 ``last_error_value``, and ``thread_name``.
 
-Example::
+Example:
+
+.. code-block:: yaml
 
    threads:
      items:
@@ -430,7 +476,9 @@ the key names. ``pattern_properties`` has a set of key matches with a field
 value.
 
 For example, ``registers`` is an ``object`` which has keys that are at least
-one character long and each value is a field specifying a single register::
+one character long and each value is a field specifying a single register:
+
+.. code-block:: yaml
 
    registers:
      description: |
