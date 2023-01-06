@@ -841,11 +841,11 @@ properties:
       `release-cck-partner`.
     type: string
     examples:
-      - "`nightly`"
-      - "`aurora`"
-      - "`beta`"
-      - "`release`"
-      - "`esr`"
+      - "nightly"
+      - "aurora"
+      - "beta"
+      - "release"
+      - "esr"
     permissions: ["public"]
 
   RemoteType:
