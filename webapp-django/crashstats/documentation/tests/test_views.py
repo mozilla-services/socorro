@@ -132,10 +132,8 @@ def test_datadictionary_index(client, db):
 @pytest.mark.parametrize(
     "dataset, fieldpath",
     [
-        # Raw crash schema fields
         ("annotation", "ProductName"),
         ("annotation", "metadata/METADATA"),
-        # Processed crash schema fields
         ("processed", "adapter_device_id"),
         ("processed", "breadcrumbs/[]/data/CRUMB"),
         ("processed", "json_dump/crashing_thread/frames/[]/file"),
