@@ -51,8 +51,8 @@
               <th scope="row">object contents</th>
               <td>
                 <ul>
-                  {% for objectfield in field_data.get("properties", {}).keys() %}
-                    <li><a href="{{ url("documentation:datadictionary_field_doc", dataset, field_path + "/" + objectfield ) }}">{{ objectfield }}</a></li>
+                  {% for objectname in field_data.get("properties", {}).keys() %}
+                    <li><a href="{{ url("documentation:datadictionary_field_doc", dataset, field_path + "/" + objectname) }}">{{ objectname }}</a></li>
 
                   {% endfor %}
                   {% for objectfield in field_data.get("pattern_properties", {}).values() %}
