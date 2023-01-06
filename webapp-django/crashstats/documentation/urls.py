@@ -12,7 +12,7 @@ app_name = "documentation"
 urlpatterns = [
     path("datadictionary/", views.datadictionary_index, name="datadictionary_index"),
     path(
-        "datadictionary/dataset/<str:dataset>/field/<str:field>",
+        "datadictionary/dataset/<str:dataset>/field/<path:field>",
         views.datadictionary_field_doc,
         name="datadictionary_field_doc",
     ),

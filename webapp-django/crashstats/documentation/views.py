@@ -156,28 +156,56 @@ def get_indexed_example_data(field):
 @track_view
 @pass_default_context
 def datadictionary_field_doc(request, dataset, field, default_context=None):
+    field_path = field.split("/")
+    field_name = field_path[-1]
+
     context = default_context or {}
 
     if dataset == "annotation":
-        field_data = get_annotation_schema_data()
+        schema = get_schema("raw_crash.schema.yaml")
     elif dataset == "processed":
-        field_data = get_processed_schema_data()
+        schema = get_schema("processed_crash.schema.yaml")
     else:
         return http.HttpResponseNotFound("Dataset not found")
 
-    if field not in field_data:
+    # Find the field item they want to view documentation for
+    field_data = schema
+    for path_item in field_path:
+        if path_item == "[]":
+            field_data = field_data.get("items")
+            if field_data is None:
+                return http.HttpResponseNotFound("Field not found")
+
+            continue
+
+        elif path_item in field_data.get("properties", {}):
+            field_data = field_data["properties"][path_item]
+            continue
+
+        elif field_data.get("pattern_properties", {}):
+            nicknamed_fields = {
+                field_data_field["nickname"]: field_data_field
+                for field_data_field in field_data["pattern_properties"].values()
+            }
+            field_data = nicknamed_fields.get(path_item)
+            if field_data is None:
+                return http.HttpResponseNotFound("Field not found")
+            continue
+
         return http.HttpResponseNotFound("Field not found")
 
-    field_item = field_data[field]
+    if field_data is None:
+        return http.HttpResponseNotFound("Field not found")
 
     # Get description and examples and render it as markdown
-    description = field_item.get("description") or "no description"
-    examples = field_item.get("examples") or []
+    description = field_data.get("description") or "no description"
+    examples = field_data.get("examples") or []
     if examples:
-        description = description + "\n- " + "\n- ".join(examples)
+        description = description + "\n- `" + "`\n- `".join(examples) + "`"
 
     description = get_markdown().render(description)
 
+    # For processed crash fields, add super search information
     search_field = ""
     search_field_query_type = ""
     example_data = []
@@ -190,29 +218,39 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
             search_field_query_type = super_search_field["query_type"]
             # FIXME(willkg): we're only doing this for public fields, but we could do
             # this for whatever fields the user can see
-            if field_item["permissions"] == ["public"]:
+            if field_data["permissions"] == ["public"]:
                 example_data = get_indexed_example_data(field)
 
+    # For annotations, add the list of products that have emitted this annotation
+    # recently
     products = []
     processed_field = ""
     if dataset == "annotation":
-        products = get_products_for_annotation(field)
-        processed_field = get_processed_field_for_annotation(field)
+        products = get_products_for_annotation(field_name)
+        processed_field = get_processed_field_for_annotation(field_name)
+
+    # Determine the breadcrumbs links for parents of this field
+    field_path_breadcrumbs = [
+        ("/".join(field_path[0 : i + 1]), field_path[i]) for i in range(len(field_path))
+    ]
 
     context.update(
         {
             "dataset": dataset,
-            "field_name": field,
+            "field_name": field_name,
+            "field_path_breadcrumbs": field_path_breadcrumbs,
+            "field_path": field,
+            "field_data": field_data,
             "description": description,
-            "data_reviews": field_item.get("data_reviews") or [],
+            "data_reviews": field_data.get("data_reviews") or [],
             "example_data": example_data,
             "products_for_field": products,
             "search_field": search_field,
             "search_field_query_type": search_field_query_type,
-            "source_annotation": field_item.get("source_annotation") or "",
+            "source_annotation": field_data.get("source_annotation") or "",
             "processed_field": processed_field,
-            "type": field_item["type"],
-            "permissions": field_item["permissions"],
+            "type": field_data["type"],
+            "permissions": field_data["permissions"],
         }
     )
 

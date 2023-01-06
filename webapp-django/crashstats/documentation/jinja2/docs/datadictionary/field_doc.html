@@ -8,7 +8,13 @@
       <p>
         <a href="{{ url('documentation:datadictionary_index') }}">Crash Reporting Data Dictionary</a>
         / {{ dataset }}
-        / <a href="{{ url('documentation:datadictionary_field_doc', dataset, field_name) }}">{{ field_name }}</a>
+        {% for breadcrumb in field_path_breadcrumbs %}
+          {% if breadcrumb[1] == "[]" %}
+            / []
+          {% else %}
+            / <a href="{{ url('documentation:datadictionary_field_doc', dataset, breadcrumb[0]) }}">{{ breadcrumb[1] }}</a>
+          {% endif %}
+        {% endfor %}
       </p>
       <h1>{{ field_name }}</h1>
       <table class="record data-table hard-wrapped">
@@ -25,6 +31,37 @@
             <th scope="row">type</th>
             <td>{{ type }}</td>
           </tr>
+          {% if "array" in type %}
+            <tr>
+              <th scope="row">array contents</th>
+              <td>
+                {% if "object" not in field_data.get("items", {}).get("type", "") %}
+                  {{ field_data.get("items", {}).get("type") }}
+                {% else %}
+                  <ul>
+                    {% for arrayfield in field_data["items"].get("properties", []) %}
+                      <li><a href="{{ url("documentation:datadictionary_field_doc", dataset, field_path + "/[]/" + arrayfield) }}">{{ arrayfield }}</a></li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </td>
+            </tr>
+          {% elif "object" in type %}
+            <tr>
+              <th scope="row">object contents</th>
+              <td>
+                <ul>
+                  {% for objectfield in field_data.get("properties", {}).keys() %}
+                    <li><a href="{{ url("documentation:datadictionary_field_doc", dataset, field_path + "/" + objectfield ) }}">{{ objectfield }}</a></li>
+
+                  {% endfor %}
+                  {% for objectfield in field_data.get("pattern_properties", {}).values() %}
+                    <li><a href="{{ url("documentation:datadictionary_field_doc", dataset, field_path + "/" + objectfield["nickname"] ) }}">{{ objectfield["nickname"] }}</a></li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% endif %}
           {% if dataset == "processed" %}
             {% if search_field %}
               <tr>
