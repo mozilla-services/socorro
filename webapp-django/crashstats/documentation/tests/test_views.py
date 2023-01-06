@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from markus.testing import MetricsMock
+import pytest
 
 from django.urls import reverse
 from django.utils.encoding import smart_str
@@ -128,15 +129,33 @@ def test_datadictionary_index(client, db):
     assert response.status_code == 200
 
 
-def test_datadictionary_field_doc(client, db):
-    url = reverse(
-        "documentation:datadictionary_field_doc", args=("annotation", "ProductName")
-    )
+@pytest.mark.parametrize(
+    "dataset, fieldpath",
+    [
+        # Raw crash schema fields
+        ("annotation", "ProductName"),
+        ("annotation", "metadata/METADATA"),
+        # Processed crash schema fields
+        ("processed", "adapter_device_id"),
+        ("processed", "breadcrumbs/[]/data/CRUMB"),
+        ("processed", "json_dump/crashing_thread/frames/[]/file"),
+    ],
+)
+def test_datadictionary_field_doc(dataset, fieldpath, client, db):
+    url = reverse("documentation:datadictionary_field_doc", args=(dataset, fieldpath))
     response = client.get(url)
     assert response.status_code == 200
 
-    url = reverse(
-        "documentation:datadictionary_field_doc", args=("processed", "product")
-    )
+
+@pytest.mark.parametrize(
+    "dataset, fieldpath",
+    [
+        ("annotation", "foo"),
+        ("processed", "foo"),
+        ("processed", "json_dump/crashing_thread/frames/[]/foo"),
+    ],
+)
+def test_datadictionary_field_doc_not_found(dataset, fieldpath, client, db):
+    url = reverse("documentation:datadictionary_field_doc", args=(dataset, fieldpath))
     response = client.get(url)
-    assert response.status_code == 200
+    assert response.status_code == 404
