@@ -11,6 +11,7 @@ description: >
 
 definitions:
   simple_permissions:
+    # This is the list of permissions that are currently supported
     enum:
       - "public"
       - "protected"
@@ -28,12 +29,27 @@ definitions:
       - "string"
     type: string
 
+  upper_snake_case:
+    # One or more capital letters and underscores
+    pattern: "^[A-Z_]+$"
+    type: string
+
   medium_id:
+    maxLength: 40
+
+  upper_case_id:
     allOf:
+      - $ref: "#/definitions/upper_snake_case"
       - maxLength: 40
 
   node:
     properties:
+      nickname:
+        $ref: "#/definitions/upper_case_id"
+        description: >
+          For pattern_property fields, this gives us a name to refer to them
+          with.
+
       default:
         description: >
           Default value for this field if it's not in the source_annotation.
@@ -74,14 +90,13 @@ definitions:
       pattern_properties:
         type: object
         additionalProperties:
-          $ref": "#/definitions/node"
+          $ref: "#/definitions/node"
         default: {}
 
       properties:
         type: object
         propertyNames:
-          anyOf:
-            - $ref: "#/definitions/medium_id"
+          $ref: "#/definitions/medium_id"
         additionalProperties:
           $ref: "#/definitions/node"
         default: {}
@@ -155,8 +170,7 @@ properties:
   definitions:
     type: object
     propertyNames:
-      anyOf:
-        - $ref: "#/definitions/medium_id"
+      $ref: "#/definitions/medium_id"
     additionalProperties:
       $ref: "#/definitions/node"
     default: {}
@@ -164,8 +178,7 @@ properties:
   properties:
     type: object
     propertyNames:
-      anyOf:
-        - $ref: "#/definitions/medium_id"
+      $ref: "#/definitions/medium_id"
     additionalProperties:
       $ref: "#/definitions/node"
     default: {}

@@ -194,7 +194,7 @@ def test_raw_crash_descriptions_is_valid_markdown():
 
     raw_crash_schema = get_schema("raw_crash.schema.yaml")
 
-    # This will raise an exception if there are invalid permissions
+    # This will raise an exception if there are missing descriptions
     transform_schema(schema=raw_crash_schema, transform_function=verify_description)
 
 
@@ -216,8 +216,33 @@ def test_raw_crash_data_reviews():
 
     raw_crash_schema = get_schema("raw_crash.schema.yaml")
 
-    # This will raise an exception if there are invalid permissions
+    # This will raise an exception if there are missing data reviews
     transform_schema(schema=raw_crash_schema, transform_function=verify_data_reviews)
+
+
+def test_raw_crash_pattern_properties_nicknames():
+    def verify_nicknames(path, schema_item):
+        if not path:
+            return schema_item
+
+        pattern_properties = schema_item.get("pattern_properties", {})
+        if not pattern_properties:
+            return schema_item
+
+        # All pattern_property fields need to have a nickname
+        for key, field_data in pattern_properties.items():
+            if "nickname" not in field_data:
+                raise InvalidRawCrashField(
+                    f"{key} in {path} does not have a nickname; add a nickname"
+                )
+
+        return schema_item
+
+    raw_crash_schema = get_schema("raw_crash.schema.yaml")
+
+    # This will raise an exception if there are pattern_properties fields that
+    # don't have a nickname
+    transform_schema(schema=raw_crash_schema, transform_function=verify_nicknames)
 
 
 def test_validate_processed_crash_cli_runs():
@@ -887,7 +912,7 @@ def test_processed_crash_descriptions_is_valid_markdown():
 
     processed_crash_schema = get_schema("processed_crash.schema.yaml")
 
-    # This will raise an exception if there are invalid permissions
+    # This will raise an exception if there are missing descriptions
     transform_schema(
         schema=processed_crash_schema, transform_function=verify_description
     )
@@ -928,9 +953,34 @@ def test_processed_crash_source_annotations():
 
         return schema_item
 
-    # This will raise an exception if there are invalid permissions
     processed_crash_schema = get_schema("processed_crash.schema.yaml")
 
+    # This will raise an exception if there are invalid source annotations
     transform_schema(
         schema=processed_crash_schema, transform_function=verify_source_annotations
     )
+
+
+def test_processed_crash_pattern_properties_nicknames():
+    def verify_nicknames(path, schema_item):
+        if not path:
+            return schema_item
+
+        pattern_properties = schema_item.get("pattern_properties", {})
+        if not pattern_properties:
+            return schema_item
+
+        # All pattern_property fields need to have a nickname
+        for key, field_data in pattern_properties.items():
+            if "nickname" not in field_data:
+                raise InvalidProcessedCrashField(
+                    f"{key} in {path} does not have a nickname; add a nickname"
+                )
+
+        return schema_item
+
+    processed_crash_schema = get_schema("processed_crash.schema.yaml")
+
+    # This will raise an exception if there are pattern_properties fields that
+    # don't have a nickname
+    transform_schema(schema=processed_crash_schema, transform_function=verify_nicknames)
