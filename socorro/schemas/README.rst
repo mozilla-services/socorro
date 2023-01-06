@@ -488,12 +488,17 @@ one character long and each value is a field specifying a single register:
 
      pattern_properties:
        ^.+$:
+         nickname: REGISTER
          description: Register contents as a hexstring.
          type: ["string", "null"]
          permissions: ["protected"]
 
      type: ["object", "null"]
      permissions: ["protected"]
+
+When you use ``pattern_properties``, the field must define a ``nickname``. In
+this case, we nicknamed the field ``register``. This will show up in the data
+dictionary. ``nickname`` has an uppercase value.
 
 
 Supporting changes in stackwalker output
