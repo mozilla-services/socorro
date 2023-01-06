@@ -335,6 +335,31 @@ The template for adding a field looks like this:
    normalization, then a note is added to the ``processor_notes`` and the
    field is skipped.
 
+**default** (optional)
+   If ``source_annotation`` is set, then ``default`` lets you have a default
+   value for the processed crash field if the crash report doesn't contain
+   the annotation at all.
+
+   For example, if the crash report doesn't contain a ``ProcessType``
+   annotation, then the ``CopyFromRawCrashRule`` will assign ``process_type``
+   to ``parent`` because that's the default:
+
+   .. code-block:: yaml
+
+      process_type:
+        description: >
+          Type of the process that crashed. This will be `parent` if the crash
+          report has no ProcessType annotation.
+        default: "parent"
+        examples:
+          - "any"
+          - "content"
+          - "gpu"
+          - "parent"
+          - "plugin"
+        type: string
+        permissions: ["public"]
+        source_annotation: ProcessType
 
 Types
 -----
