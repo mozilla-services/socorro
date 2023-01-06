@@ -45,7 +45,12 @@ definitions:
         level:
           description:
             Level of the crash breadcrumb.
-          examples: ["Debug", "Info", "Warning", "Error", "Critical"]
+          examples:
+            - "Debug"
+            - "Info"
+            - "Warning"
+            - "Error"
+            - "Critical"
           type: string
           permissions: ["protected"]
 
@@ -64,7 +69,11 @@ definitions:
         type:
           description: >
             Type of the crash breadcrumb.
-          examples: ["Default", "Http", "Navigation", "User"]
+          examples:
+            - "Default"
+            - "Http"
+            - "Navigation"
+            - "User"
           type: string
           permissions: ["protected"]
 
@@ -377,14 +386,14 @@ definitions:
           cpu_arch:
             description: The flavor of CPU.
             examples:
-              - x86
-              - amd64
-              - pcc
-              - ppc64
-              - sparc
-              - arm
-              - arm64
-              - unknown
+              - "x86"
+              - "amd64"
+              - "pcc"
+              - "ppc64"
+              - "sparc"
+              - "arm"
+              - "arm64"
+              - "unknown"
             type: ["string", "null"]
             permissions: ["public"]
           cpu_count:
@@ -403,15 +412,15 @@ definitions:
           os:
             description: The flavor of operating system.
             examples:
-              - Windows NT
-              - Mac OS X
-              - iOS
-              - Linux
-              - Solaris
-              - Android
-              - PS3
-              - NaCL
-              - "`<hexstring>`"
+              - "Windows NT"
+              - "Mac OS X"
+              - "iOS"
+              - "Linux"
+              - "Solaris"
+              - "Android"
+              - "PS3"
+              - "NaCL"
+              - "<hexstring>"
             type: ["string", "null"]
             permissions: ["public"]
           os_ver:
@@ -592,10 +601,10 @@ definitions:
       trust:
         description: The technique used to recover this stack frame.
         examples:
-          - context
-          - cfi
-          - frame_pointer
-          - scan
+          - "context"
+          - "cfi"
+          - "frame_pointer"
+          - "scan"
         type: ["string", "null"]
         permissions: ["public"]
       unloaded_modules:
@@ -1441,21 +1450,21 @@ definitions:
                 description: >
                   This lists the avaible CPU extensions as strings.
                 examples:
-                  - "`hasMMX`"
-                  - "`hasSSE`"
-                  - "`hasSSE2`"
-                  - "`hasSSE3`"
-                  - "`hasSSSE3`"
-                  - "`hasSSE4A`"
-                  - "`hasSSE4_1`"
-                  - "`hasSSE4_2`"
-                  - "`hasAVX`"
-                  - "`hasAVX2`"
-                  - "`hasAES`"
-                  - "`hasEDSP`"
-                  - "`hasARMv6`"
-                  - "`hasARMv7`"
-                  - "`hasNEON`"
+                  - "hasMMX"
+                  - "hasSSE"
+                  - "hasSSE2"
+                  - "hasSSE3"
+                  - "hasSSSE3"
+                  - "hasSSE4A"
+                  - "hasSSE4_1"
+                  - "hasSSE4_2"
+                  - "hasAVX"
+                  - "hasAVX2"
+                  - "hasAES"
+                  - "hasEDSP"
+                  - "hasARMv6"
+                  - "hasARMv7"
+                  - "hasNEON"
                 items:
                   permissions: ["public"]
                   type: string
@@ -2247,7 +2256,11 @@ properties:
     description:
       The build architecture. Usually one of `x86`, `amd64` (also known as
       x86-64), `arm`, or `arm64`.
-    examples: ["x86", "amd64", "arm", "arm64"]
+    examples:
+      - "x86"
+      - "amd64"
+      - "arm"
+      - "arm64"
     type: string
     permissions: ["public"]
   cpu_count:
@@ -2615,9 +2628,9 @@ properties:
       The basic name of the operating system. Use `platform_pretty_version` for
       a more precise operating system name including the version.
     examples:
-      - "`Windows NT`"
-      - "`Mac OS X`"
-      - "`Linux`"
+      - "Windows NT"
+      - "Mac OS X"
+      - "Linux"
     type: string
     permissions: ["public"]
   os_pretty_version:
@@ -2684,7 +2697,12 @@ properties:
       Type of the process that crashed. This will be `parent` if the crash
       report has no ProcessType annotation.
     default: "parent"
-    examples: ["`any`", "`parent`", "`plugin`", "`content`", "`gpu`"]
+    examples:
+      - "any"
+      - "content"
+      - "gpu"
+      - "parent"
+      - "plugin"
     type: string
     permissions: ["public"]
     source_annotation: ProcessType
@@ -2801,11 +2819,11 @@ properties:
     description: >
       Indicates how the crash was submitted by the user.
     examples:
-      - "`Auto`"
-      - "`Infobar`"
-      - "`AboutCrashes`"
-      - "`CrashedTab`"
-      - "`Client`"
+      - "AboutCrashes"
+      - "Auto"
+      - "Client"
+      - "CrashedTab"
+      - "Infobar"
     type: string
     permissions: ["public"]
   submitted_from_infobar:

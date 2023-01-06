@@ -140,11 +140,11 @@ Field details:
    .. code-block:: yaml
 
       examples:
-        - "`Auto`"
-        - "`Infobar`"
-        - "`AboutCrashes`"
-        - "`CrashedTab`"
-        - "`Client`"
+        - "Auto"
+        - "Infobar"
+        - "AboutCrashes"
+        - "CrashedTab"
+        - "Client"
 
 
 Removing annotations
