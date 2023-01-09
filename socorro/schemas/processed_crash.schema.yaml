@@ -178,6 +178,31 @@ definitions:
               the minidump.
             type: ["integer", "null"]
             permissions: ["public"]
+          instruction:
+            description: >
+              A string representing the crashing instruction (if available).
+            type: ["string", "null"]
+            permissions: ["public"]
+          memory_accesses:
+            description: >
+              A list of memory accesses performed by crashing instruction (if
+              available).
+            type: ["array", "null"]
+            items:
+              properties:
+                address:
+                  description: >
+                    Memory access performed by crashing instruction.
+                  type: ["string", "null"]
+                  permissions: ["public"]
+                size:
+                  description: >
+                    Size of memory access.
+                  type: ["integer", "null"]
+                  permissions: ["public"]
+              type: ["object"]
+              permissions: ["public"]
+            permissions: ["public"]
           type:
             description: Platform-specific error type that caused the crash.
             type: ["string", "null"]
