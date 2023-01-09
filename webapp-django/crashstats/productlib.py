@@ -103,7 +103,7 @@ def get_product_by_name(name):
     try:
         return [prod for prod in get_products() if prod.name == name][0]
     except IndexError:
-        raise ProductDoesNotExist("%s does not exist" % name)
+        raise ProductDoesNotExist(f"{name} does not exist")
 
 
 def get_default_product():
@@ -152,11 +152,11 @@ def validate_product_file(fn):
             for item in json_data["bug_links"]:
                 if len(item) != 2:
                     raise ProductValidationError(
-                        "product file %s has invalid bug_links: %s" % (fn, repr(item))
+                        f"product file {fn} has invalid bug_links: {item!r}"
                     )
                 if not isinstance(item[0], str) or not isinstance(item[1], str):
                     raise ProductValidationError(
-                        "product file %s has invalid bug_links: %s" % (fn, repr(item))
+                        f"product file {fn} has invalid bug_links: {item!r}"
                     )
 
                 # NOTE(willkg): This doesn't verify templates are well formed. That's
@@ -165,27 +165,23 @@ def validate_product_file(fn):
             for item in json_data["product_home_links"]:
                 if len(item) != 2:
                     raise ProductValidationError(
-                        "product file %s has invalid product_home_links: %s"
-                        % (fn, repr(item))
+                        f"product file {fn} has invalid product_home_links: {item!r}"
                     )
                 if not isinstance(item[0], str) or not isinstance(item[1], str):
                     raise ProductValidationError(
-                        "product file %s has invalid product_home_links: %s"
-                        % (fn, repr(item))
+                        f"product file {fn} has invalid product_home_links: {item!r}"
                     )
 
             # Try to build a Product out of it
             Product(**json_data)
 
     except json.decoder.JSONDecodeError as jde:
-        raise ProductValidationError(
-            "product file %s can not be decoded: %s" % (fn, jde)
-        )
+        raise ProductValidationError(f"product file {fn} can not be decoded: {jde}")
 
     except PermissionError as exc:
-        raise ProductValidationError("product file %s cannot be opened: %s" % (fn, exc))
+        raise ProductValidationError(f"product file {fn} cannot be opened: {exc}")
 
     except TypeError as exc:
         raise ProductValidationError(
-            "product file %s has invalid fields/values: %s" % (fn, exc)
+            f"product file {fn} has invalid fields/values: {exc}"
         )
