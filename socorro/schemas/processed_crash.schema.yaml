@@ -158,7 +158,6 @@ definitions:
       The output of rust-minidump stackwalker.
     properties:
       crash_info:
-        # FIXME(willkg): add unloaded_modules
         description: >
           Top-level information about what caused the crash.
         properties:
@@ -215,13 +214,19 @@ definitions:
           additional details.
         properties:
           frame_count:
-            description: How many stack frames therea re.
+            description: >
+              How many stack frames there are. This is the original number of
+              stack frames before truncation.
             type: ["integer", "null"]
             permissions: ["public"]
           frames:
-            description: >
+            description: |
               Stack frames of the thread from top (the code that was currently
               executing) to bottom (start of the thread's execution).
+
+              The crash ingestion processor may truncate this list of frames.
+              If so, there will be a truncation frame marking where frames were
+              removed.
             items:
               $ref: "#/definitions/json_dump_frame"
               permissions: ["public"]
@@ -238,6 +243,19 @@ definitions:
           threads_index:
             description: Index into the `threads` array.
             type: ["integer", "null"]
+            permissions: ["public"]
+          truncated:
+            description: |
+              If the stack is larger than `MAX_FRAMES`, then this will be
+              `true` and the stack is truncated in the middle leaving:
+
+              - the first `MAX_FRAMES / 2` frames in the stack
+              - a truncation frame
+              - the last `(MAX_FRAMES / 2) - 1` frames
+
+              If the stack is not larger than `MAX_FRAMES`, then this field is
+              omitted.
+            type: ["boolean", "null"]
             permissions: ["public"]
         type: ["object", "null"]
         permissions: ["public"]
@@ -532,6 +550,19 @@ definitions:
               description: The name of the thread.
               type: ["string", "null"]
               permissions: ["public"]
+            truncated:
+              description: |
+                If the stack is larger than `MAX_FRAMES`, then this will be
+                `true` and the stack is truncated in the middle leaving:
+
+                - the first `MAX_FRAMES / 2` frames in the stack
+                - a truncation frame
+                - the last `(MAX_FRAMES / 2) - 1` frames
+
+                If the stack is not larger than `MAX_FRAMES`, then this field is
+                omitted.
+              type: ["boolean", "null"]
+              permissions: ["public"]
           type: object
           permissions: ["public"]
         type: ["array", "null"]
@@ -540,7 +571,6 @@ definitions:
     # END: json_dump
 
   json_dump_frame:
-    # FIXME(willkg): add unloaded_modules
     description: Information for a single frame.
     properties:
       file:
@@ -623,6 +653,18 @@ definitions:
             permissions: ["protected"]
         type: ["object", "null"]
         permissions: ["protected"]
+      truncated:
+        description: |
+          If this stack was truncated by the crash ingestion processor, then
+          this truncation frame will mark the point in the stack where frames
+          were removed.
+        properties:
+          msg:
+            description: Text description of what was truncated.
+            type: ["string", "null"]
+            permissions: ["public"]
+        type: ["object", "null"]
+        permissions: ["public"]
       trust:
         description: The technique used to recover this stack frame.
         examples:

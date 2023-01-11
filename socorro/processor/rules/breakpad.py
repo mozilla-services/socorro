@@ -70,6 +70,70 @@ class MinidumpSha256HashRule(Rule):
         )
 
 
+class TruncateStacksRule(Rule):
+    """Truncate stacks that are too large
+
+    This rule truncates stacks that are greater than MAX_FRAMES. It truncates the stacks
+    in the middle with the thinking that the beginning and end of the stack are the most
+    interesting.
+
+    """
+
+    MAX_FRAMES = 500
+    HALF_MAX_FRAMES = int(MAX_FRAMES / 2)
+
+    def __init__(self):
+        super().__init__()
+        self.metrics = markus.get_metrics("processor.truncatestacksrule")
+
+    def truncation_frame(self, truncated_frames):
+        return {"truncated": {"msg": f"{len(truncated_frames)} frames truncated"}}
+
+    def truncate(self, frames):
+        """Truncates a single stack if it's too big
+
+        :arg frames: the list of frame structures to truncate
+
+        :returns: truncated list of frame structures with a truncation
+            frame in the middle
+
+        """
+        self.metrics.gauge("stack_size", len(frames))
+        self.metrics.incr("truncated")
+
+        first_frames = frames[: self.HALF_MAX_FRAMES]
+        truncated_frames = frames[self.HALF_MAX_FRAMES : -self.HALF_MAX_FRAMES]
+        last_frames = frames[-self.HALF_MAX_FRAMES + 1 :]
+
+        return first_frames + [self.truncation_frame(truncated_frames)] + last_frames
+
+    def truncate_stacks(self, json_dump):
+        """Truncate all the stacks found in stackwalker output"""
+        thread = json_dump.get("crashing_thread")
+        if thread:
+            frames = thread.get("frames", [])
+            if len(frames) > self.MAX_FRAMES:
+                thread["frames"] = self.truncate(frames)
+                thread["truncated"] = True
+
+        for thread in json_dump.get("threads", []):
+            frames = thread.get("frames", [])
+            if len(frames) > self.MAX_FRAMES:
+                thread["frames"] = self.truncate(frames)
+                thread["truncated"] = True
+
+    def action(self, raw_crash, dumps, processed_crash, status):
+        # Traverse processed_crash for "json_dump" sections. Each one of these has
+        # multiple stacks in it.
+        for key, value in processed_crash.items():
+            if key == "json_dump":
+                self.truncate_stacks(value)
+
+            elif isinstance(value, dict):
+                if "json_dump" in value:
+                    self.truncate_stacks(value["json_dump"])
+
+
 @contextmanager
 def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
     """Saves JSON data to file, returns path, and deletes file when done.

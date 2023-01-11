@@ -14,6 +14,7 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
+    TruncateStacksRule,
 )
 
 
@@ -220,6 +221,202 @@ class TestCrashingThreadInfoRule:
         assert processed_crash["crashing_thread_name"] is None
         assert processed_crash["address"] is None
         assert processed_crash["reason"] == ""
+
+
+class TestTruncateStacksRule:
+    def test_truncate_json_dump(self):
+        frames = [
+            {
+                "frame": 0,
+                "file": "hg:hg.mozilla.org/000",
+                "function": "js::something",
+                "function_offset": "0x00",
+                "line": 1000,
+                "module": "xul.dll",
+                "module_offset": "0x000000",
+                "offset": "0x00000000",
+                "registers": {
+                    "eax": "0x00000001",
+                    "ebp": "0x00000002",
+                    "ebx": "0x00000003",
+                    "ecx": "0x00000004",
+                    "edi": "0x00000005",
+                    "edx": "0x00000006",
+                    "efl": "0x00000007",
+                    "eip": "0x00000008",
+                    "esi": "0x00000009",
+                    "esp": "0x0000000a",
+                },
+                "trust": "context",
+            },
+            {
+                "frame": 1,
+                "file": "hg:hg.mozilla.org/bbb",
+                "function": "js::somethingelse",
+                "function_offset": "0xbb",
+                "line": 1001,
+                "module": "xul.dll",
+                "module_offset": "0xbbbbbb",
+                "offset": "0xbbbbbbbb",
+                "trust": "frame_pointer",
+            },
+        ]
+
+        # Now we make the stack 1,002 frames long
+        frame_template = frames[-1]
+        for i in range(1000):
+            new_frame = copy.deepcopy(frame_template)
+            new_frame["frame"] = i + 2
+            frames.append(new_frame)
+
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "crashing_thread": {
+                    "threads_index": 0,
+                    "frame_count": len(frames),
+                    "frames": copy.deepcopy(frames),
+                },
+                "threads": [
+                    {
+                        "frame_count": len(frames),
+                        "frames": copy.deepcopy(frames),
+                    },
+                    {
+                        "frame_count": 100,
+                        "frames": copy.deepcopy(frames)[0:100],
+                    },
+                ],
+                "modules": [],
+            }
+        }
+
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+        status = Status()
+
+        rule = TruncateStacksRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+
+        json_dump = processed_crash["json_dump"]
+
+        # Check crashing thread is truncated
+        assert len(json_dump["crashing_thread"]["frames"]) == 500
+        assert json_dump["crashing_thread"]["truncated"] is True
+        assert json_dump["threads"][0]["frames"][250] == {
+            "truncated": {"msg": "502 frames truncated"}
+        }
+
+        # Check thread 0 is truncated
+        assert len(json_dump["threads"][0]["frames"]) == 500
+        assert json_dump["threads"][0]["truncated"] is True
+        assert json_dump["threads"][0]["frames"][250] == {
+            "truncated": {"msg": "502 frames truncated"}
+        }
+
+        # Check thread 1 is not truncated
+        assert len(json_dump["threads"][1]["frames"]) == 100
+        assert "truncated" not in json_dump["threads"][1]
+
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+
+    def test_truncate_upload_file_minidump_browser(self):
+        frames = [
+            {
+                "frame": 0,
+                "file": "hg:hg.mozilla.org/000",
+                "function": "js::something",
+                "function_offset": "0x00",
+                "line": 1000,
+                "module": "xul.dll",
+                "module_offset": "0x000000",
+                "offset": "0x00000000",
+                "registers": {
+                    "eax": "0x00000001",
+                    "ebp": "0x00000002",
+                    "ebx": "0x00000003",
+                    "ecx": "0x00000004",
+                    "edi": "0x00000005",
+                    "edx": "0x00000006",
+                    "efl": "0x00000007",
+                    "eip": "0x00000008",
+                    "esi": "0x00000009",
+                    "esp": "0x0000000a",
+                },
+                "trust": "context",
+            },
+            {
+                "frame": 1,
+                "file": "hg:hg.mozilla.org/bbb",
+                "function": "js::somethingelse",
+                "function_offset": "0xbb",
+                "line": 1001,
+                "module": "xul.dll",
+                "module_offset": "0xbbbbbb",
+                "offset": "0xbbbbbbbb",
+                "trust": "frame_pointer",
+            },
+        ]
+
+        # Now we make the stack 1,002 frames long
+        frame_template = frames[-1]
+        for i in range(1000):
+            new_frame = copy.deepcopy(frame_template)
+            new_frame["frame"] = i + 2
+            frames.append(new_frame)
+
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "upload_file_minidump_browser": {
+                "json_dump": {
+                    "crashing_thread": {
+                        "threads_index": 0,
+                        "frame_count": len(frames),
+                        "frames": copy.deepcopy(frames),
+                    },
+                    "threads": [
+                        {
+                            "frame_count": len(frames),
+                            "frames": copy.deepcopy(frames),
+                        },
+                        {
+                            "frame_count": 100,
+                            "frames": copy.deepcopy(frames)[0:100],
+                        },
+                    ],
+                    "modules": [],
+                }
+            }
+        }
+
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+        status = Status()
+
+        rule = TruncateStacksRule()
+        rule.act(raw_crash, dumps, processed_crash, status)
+
+        json_dump = processed_crash["upload_file_minidump_browser"]["json_dump"]
+
+        # Check crashing thread is truncated
+        assert len(json_dump["crashing_thread"]["frames"]) == 500
+        assert json_dump["crashing_thread"]["truncated"] is True
+        assert json_dump["threads"][0]["frames"][250] == {
+            "truncated": {"msg": "502 frames truncated"}
+        }
+
+        # Check thread 0 is truncated
+        assert len(json_dump["threads"][0]["frames"]) == 500
+        assert json_dump["threads"][0]["truncated"] is True
+        assert json_dump["threads"][0]["frames"][250] == {
+            "truncated": {"msg": "502 frames truncated"}
+        }
+
+        # Check thread 1 is not truncated
+        assert len(json_dump["threads"][1]["frames"]) == 100
+        assert "truncated" not in json_dump["threads"][1]
+
+        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
 
 
 class TestMinidumpSha256HashRule:
