@@ -87,7 +87,7 @@ class TruncateStacksRule(Rule):
         self.metrics = markus.get_metrics("processor.truncatestacksrule")
 
     def truncation_frame(self, truncated_frames):
-        return {"truncated": {"msg": f"{len(truncated_frames)} frames truncated"}}
+        return {"truncated": {"msg": f"{len(truncated_frames):,} frames truncated"}}
 
     def truncate(self, frames):
         """Truncates a single stack if it's too big

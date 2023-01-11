@@ -262,7 +262,8 @@ def enhance_frame(frame, vcs_mappings):
     This adds signature and source links from vcs_mappings.
 
     """
-    if frame.get("truncated", None) is not None:
+    # If this is a truncation frame, then we don't need to enhance it in any way
+    if frame.get("truncated") is not None:
         return
 
     if frame.get("function"):
@@ -339,13 +340,6 @@ def enhance_frame(frame, vcs_mappings):
                 frame["file"] = path_parts.pop()
 
 
-def special_frame(num_truncated):
-    return {"truncated": num_truncated}
-
-
-MAX_FRAMES = 100
-
-
 def enhance_json_dump(dump, vcs_mappings):
     """
     Add some information to the stackwalker's json_dump output
@@ -355,17 +349,7 @@ def enhance_json_dump(dump, vcs_mappings):
         if "thread" not in thread:
             thread["thread"] = thread_index
 
-        # We're only going to show 100 frames. If there are more than that in the stack,
-        # we're going to truncate in the middle with a "special" frame
         frames = thread["frames"]
-        if len(frames) > MAX_FRAMES:
-            HALF_MAX_FRAMES = int(MAX_FRAMES / 2)
-            frames = (
-                frames[:HALF_MAX_FRAMES]
-                + [special_frame(len(frames) - MAX_FRAMES)]
-                + frames[-HALF_MAX_FRAMES:]
-            )
-
         for frame in frames:
             enhance_frame(frame, vcs_mappings)
             for inline in frame.get("inlines") or []:

@@ -717,8 +717,8 @@
                     </thead>
                     <tbody>
                       {% for frame in parsed_dump.threads[crashing_thread].frames %}
-                        {% if frame.truncated %}
-                          <tr><td colspan="5">truncated {{ frame.truncated|digitgroupseparator }} frames...</td></tr>
+                        {% if "truncated" in frame %}
+                          <tr><td colspan="5">{{ frame.truncated.msg }}</td></tr>
                         {% else %}
                           {% if frame.inlines %}
                             {% for inline in frame.inlines %}
