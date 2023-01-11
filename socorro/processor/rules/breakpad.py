@@ -107,31 +107,43 @@ class TruncateStacksRule(Rule):
 
         return first_frames + [self.truncation_frame(truncated_frames)] + last_frames
 
-    def truncate_stacks(self, json_dump):
+    def truncate_stacks(self, json_dump, path, status):
         """Truncate all the stacks found in stackwalker output"""
         thread = json_dump.get("crashing_thread")
         if thread:
             frames = thread.get("frames", [])
             if len(frames) > self.MAX_FRAMES:
-                thread["frames"] = self.truncate(frames)
+                frames_path = f"{path}.crashing_thread.frames"
+                truncated_frames = self.truncate(frames)
+                thread["frames"] = truncated_frames
                 thread["truncated"] = True
+                status.add_note(
+                    f"TruncateStacksRule: truncated {frames_path}: "
+                    + f"{len(frames)} -> {len(truncated_frames)}"
+                )
 
-        for thread in json_dump.get("threads", []):
+        for i, thread in enumerate(json_dump.get("threads", [])):
             frames = thread.get("frames", [])
             if len(frames) > self.MAX_FRAMES:
-                thread["frames"] = self.truncate(frames)
+                frames_path = f"{path}.threads[{i}].frames"
+                truncated_frames = self.truncate(frames)
+                thread["frames"] = truncated_frames
                 thread["truncated"] = True
+                status.add_note(
+                    f"TruncateStacksRule: truncated {frames_path}: "
+                    + f"{len(frames)} > {len(truncated_frames)}"
+                )
 
     def action(self, raw_crash, dumps, processed_crash, status):
         # Traverse processed_crash for "json_dump" sections. Each one of these has
         # multiple stacks in it.
         for key, value in processed_crash.items():
             if key == "json_dump":
-                self.truncate_stacks(value)
+                self.truncate_stacks(value, "json_dump", status)
 
             elif isinstance(value, dict):
                 if "json_dump" in value:
-                    self.truncate_stacks(value["json_dump"])
+                    self.truncate_stacks(value["json_dump"], f"{key}.json_dump", status)
 
 
 @contextmanager
