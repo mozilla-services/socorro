@@ -23,6 +23,7 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
+    TruncateStacksRule,
 )
 from socorro.processor.rules.general import (
     CollectorMetadataRule,
@@ -200,6 +201,7 @@ class ProcessorPipeline(RequiredConfig):
                 ),
                 ModuleURLRewriteRule(),
                 CrashingThreadInfoRule(),
+                TruncateStacksRule(),
                 MajorVersionRule(),
                 PluginRule(),
                 AccessibilityRule(),
