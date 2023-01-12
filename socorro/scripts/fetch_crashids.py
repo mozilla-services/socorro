@@ -7,7 +7,6 @@ import datetime
 from functools import total_ordering
 from urllib.parse import urlparse, parse_qs
 
-
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.librequests import session_with_retries
 from socorro.scripts import WrappedTextHelpFormatter
@@ -33,8 +32,9 @@ MAX_PAGE = 1000
 class Infinity:
     """Infinity is greater than anything else except other Infinities
 
-    NOTE(willkg): There are multiple infinities and not all infinities are equal, so what we're
-    doing here is wrong, but it's helpful. We can rename it if someone gets really annoyed.
+    NOTE(willkg): There are multiple infinities and not all infinities are equal, so
+    what we're doing here is wrong, but it's helpful. We can rename it if someone gets
+    really annoyed.
 
     """
 
@@ -84,7 +84,7 @@ def fetch_crashids(host, params, num_results):
     while True:
         resp = session.get(url, params=params)
         if resp.status_code != 200:
-            raise Exception("Bad response: %s %s" % (resp.status_code, resp.content))
+            raise Exception(f"Bad response: {resp.status_code} {resp.content}")
 
         hits = resp.json()["hits"]
 
@@ -137,8 +137,8 @@ def main(argv=None):
         "--date",
         default="",
         help=(
-            'date to pull crash ids from as YYYY-MM-DD, "yesterday", "today", or "now"; '
-            'defaults to "yesterday"'
+            'date to pull crash ids from as YYYY-MM-DD, "thisweek", "yesterday", '
+            + '"today", or "now"; defaults to "yesterday"'
         ),
     )
     parser.add_argument(
@@ -200,6 +200,10 @@ def main(argv=None):
             enddate = enddate.strftime("%Y-%m-%dT%H:%M:%S.000Z")
             params["_sort"] = "-date"
 
+        elif datestamp == "thisweek":
+            startdate = utc_now() - datetime.timedelta(days=7)
+            enddate = utc_now() + datetime.timedelta(days=1)
+
         else:
             if datestamp == "today":
                 startdate = utc_now()
@@ -234,7 +238,7 @@ def main(argv=None):
             return 1
 
     if args.verbose:
-        print("Params: %s" % params)
+        print(f"Params: {params!r}")
 
     for crashid in fetch_crashids(host, params, num_results):
         print(crashid)
