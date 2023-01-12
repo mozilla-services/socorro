@@ -24,15 +24,18 @@ ___chkstk
 # Covers memcpy, memset, __udiv and others
 compiler_builtins::
 core::intrinsics
+core::mem::drop
 core::mem::replace
 core::ops::function::FnOnce::call_once<T>
 core::option::Option<T>
 core::panicking::
 core::ptr::write
+core::ptr::mut_ptr
 core::slice::index
 core::sync::atomic::
 CrashReporter::TerminateHandler
 CrashStatsLogForwarder::CrashAction
+crossbeam_utils::atomic::atomic_cell::impl
 __cxa_rethrow
 __cxa_throw
 _CxxThrowException
@@ -41,6 +44,8 @@ dalvik-LinearAlloc
 data@app@org\.mozilla\.f.*\.apk@classes\.dex@0x
 DebugBreak
 __entry_from_strcat_in_strcpy
+enum\$<T>::
+enum2\$<T>::
 <env_logger::Logger as log::Log>::log::{{closure}}
 <env_logger::Logger as log::Log>::log
 exp2
@@ -143,6 +148,7 @@ pthread_cond_wait
 RaiseException
 RealMsgWaitFor
 RefPtr<T>::
+regex::pool::impl
 _report_gsfailure
 __report_gsfailure
 _rust_alloc_error_handler
@@ -183,6 +189,7 @@ wil::details::DebugBreak
 WaitForSingleObjectExImplementation
 WaitForMultipleObjectsExImplementation
 _XError
+xpcom::refptr::impl
 _XReply
 zero
 
