@@ -297,19 +297,21 @@ class ProcessorPipeline(RequiredConfig):
                         f"{exc.__class__.__name__}"
                     )
 
-        # The crash made it through the processor rules with no exceptions
-        # raised, call it a success
+        # The crash made it through the processor rules with no exceptions raised, call
+        # it a success
         processed_crash["success"] = True
 
-        notes = status.notes
-
-        # Join notes into a single string
+        # Add previous notes to processor history
+        processor_history = processed_crash.get("processor_history", [])
         if processed_crash.get("processor_notes"):
             previous_notes = processed_crash["processor_notes"]
-            previous_notes = [line.strip() for line in previous_notes.split("\n")]
-            notes.extend(previous_notes)
+            processor_history.insert(0, previous_notes)
+        processed_crash["processor_history"] = processor_history
 
-        processed_crash["processor_notes"] = "\n".join(notes)
+        # Set notes to this processing pass' notes
+        processed_crash["processor_notes"] = "\n".join(status.notes)
+
+        # Set completed_datetime
         completed_datetime = utc_now()
         processed_crash["completed_datetime"] = date_to_string(completed_datetime)
 

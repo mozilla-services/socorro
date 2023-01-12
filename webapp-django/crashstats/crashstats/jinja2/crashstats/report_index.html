@@ -1224,11 +1224,7 @@
                   <tr>
                     <th scope="row"># of times processed</th>
                     <td>
-                      {% if report.processor_notes %}
-                        {{ report.processor_notes.count(">>> ") }}
-                      {% else %}
-                        Unknown.
-                      {% endif %}
+                      {{ report.processor_history|length + 1 }}
                     </td>
                   </tr>
                   <tr>
@@ -1285,7 +1281,19 @@
                   </tr>
                   <tr>
                     <th scope="row">Processor notes</th>
-                    <td><pre>{{ report.processor_notes }}</pre></td>
+                    <td>
+                      <pre class="mx-4 my-2">{{ report.processor_notes }}</pre>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Processor history</th>
+                    <td>
+                      {% if report.processor_history %}
+                        {% for item in report.processor_history %}
+                          <pre class="mx-4 my-2">{{ item }}</pre>
+                        {% endfor %}
+                      {% endif %}
+                    </td>
                   </tr>
                 </tbody>
               </table>

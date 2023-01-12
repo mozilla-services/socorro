@@ -2773,12 +2773,21 @@ properties:
     type: string
     permissions: ["public"]
     source_annotation: ProcessType
-  processor_notes:
+  processor_history:
     description: |
-      Notes from all processing this crash report.
+      Notes from past processing.
 
-      Reprocessing crash reports will append processing notes to the previous
-      rounds.
+      Every time we reprocess a crash report, the `processor_notes` get added
+      to the `processor_history`.
+    items:
+      description: Notes for a single round of processing.
+      type: string
+      permissions: ["public"]
+    type: array
+    permissions: ["public"]
+  processor_notes:
+    description: >
+      Notes from the most recent round of processing for this crash report.
     type: string
     permissions: ["public"]
   product:

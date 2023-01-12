@@ -518,6 +518,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "plugin_name",
     "plugin_version",
     "process_type",
+    "processor_history.[]",
     "processor_notes",
     "product",
     "productid",
