@@ -196,6 +196,6 @@ class TestProcessorPipeline:
         assert processed_crash["success"] is True
         assert processed_crash["started_datetime"] == date_to_string(now)
         assert processed_crash["completed_datetime"] == date_to_string(now)
-        notes = processed_crash["processor_notes"].split("\n")
-        assert ">>> Start processing" in notes[0]
-        assert "previousnotes" in notes
+        assert "previousnotes" not in processed_crash["processor_notes"]
+        processor_history = "".join(processed_crash["processor_history"])
+        assert "previousnotes" in processor_history
