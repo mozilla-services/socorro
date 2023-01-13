@@ -1,5 +1,5 @@
 {
-  "name": "socorro-webapp-django",
+  "name": "socorro-webapp",
   "version": "0.0.0",
   "description": "webapp for crash-stats",
   "repository": {

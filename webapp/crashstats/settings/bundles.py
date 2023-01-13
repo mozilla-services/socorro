@@ -5,7 +5,7 @@
 
 # This determines what files are copied from npm libraries into the
 # static root when collectstatic runs.
-# The keys are library names (from webapp-django/package.json) and the
+# The keys are library names (from webapp/package.json) and the
 # values are a list of fnmatch patterns to match files to copy.
 NPM_FILE_PATTERNS = {
     "jquery-ui": [

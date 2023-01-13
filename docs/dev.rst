@@ -296,8 +296,8 @@ Do this:
 .. code-block:: shell
 
    $ make shell
-   app@socorro:/app$ cd webapp-django
-   app@socorro:/app/webapp-django$ ./manage.py makemigration --name "BUGID_desc" APP
+   app@socorro:/app$ cd webapp
+   app@socorro:/app/webapp$ ./manage.py makemigration --name "BUGID_desc" APP
 
 
 Elasticsearch migrations (Elasticsearch)
@@ -348,7 +348,7 @@ dependencies. To do this, run:
 JavaScript Dependencies
 -----------------------
 
-Frontend dependencies for the webapp are in ``webapp-django/package.json``. They
+Frontend dependencies for the webapp are in ``webapp/package.json``. They
 must be pinned and included in
 `package-lock.json <https://docs.npmjs.com/files/package-locks>`_.
 
@@ -389,7 +389,7 @@ Running tests
 
 The Socorro tests are in ``socorro/unittests/``.
 
-The webapp tests are in ``webapp-django/``.
+The webapp tests are in ``webapp/``.
 
 Both sets of tests use `pytest <https://pytest.org/>`_.
 
@@ -421,9 +421,9 @@ Running the webapp tests (make sure you run ``./manage.py collectstatic`` first)
 
 .. code-block:: shell
 
-   app@socorro:/app$ cd webapp-django
-   app@socorro:/app/webapp-django$ ./manage.py collectstatic
-   app@socorro:/app/webapp-django$ ./manage.py test
+   app@socorro:/app$ cd webapp
+   app@socorro:/app/webapp$ ./manage.py collectstatic
+   app@socorro:/app/webapp$ ./manage.py test
 
 .. Note::
 
@@ -438,7 +438,7 @@ For Socorro tests, put them in ``socorro/unittest/`` in a subdirectory parallel
 to the thing you're testing.
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in
-``webapp-django/`` directory tree.
+``webapp/`` directory tree.
 
 
 Repository structure
@@ -463,7 +463,7 @@ Here is what each of them contains:
 **socorro/**
     The bulk of the Socorro source code.
 
-**webapp-django/**
+**webapp/**
     The webapp source code.
 
 
@@ -541,7 +541,7 @@ Configuration is pulled from three sources:
 3. Defaults for the processor are in ``socorro/processor/processor_app.py``
    in ``CONFIG_DEFAULTS``.
 
-   Defaults for the webapp are in ``webapp-django/crashstats/settings/``.
+   Defaults for the webapp are in ``webapp/crashstats/settings/``.
 
 The sources above are ordered by precedence, i.e. configuration values defined
 by environment variables will override values from ENV files or defaults.

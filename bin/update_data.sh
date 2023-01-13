@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # Fetch release data (verbosely)
-webapp-django/manage.py archivescraper
+webapp/manage.py archivescraper
 
 # Insert data that's no longer on archive.mozilla.org
 python ./bin/insert_missing_versions.py

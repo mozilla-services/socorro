@@ -48,7 +48,7 @@ If there are missing builds, it will pick them up the next time it runs.
 
 You can run this in a local development environment like this::
 
-    $ ./webapp-django/manage.py archivescraper
+    $ ./webapp/manage.py archivescraper
 
 See ``--help`` for arguments.
 

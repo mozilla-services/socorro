@@ -69,7 +69,7 @@ BROKEN_EVENT = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/app/webapp-django/crashstats/monitoring/views.py",
+                            "abs_path": "/app/webapp/crashstats/monitoring/views.py",
                             "context_line": ANY,
                             "filename": "crashstats/monitoring/views.py",
                             "function": "broken",

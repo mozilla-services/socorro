@@ -7,9 +7,9 @@ Crontabber
 Socorro requires that certain upkeep jobs run periodically. For this, we have
 a ``cronrun`` Django command that runs Django commands at scheduled times.
 
-Job configuration is in ``webapp-django/crashstats/cron/__init__.py``.
+Job configuration is in ``webapp/crashstats/cron/__init__.py``.
 
-Code is in ``webapp-django/crashstats/cron/``.
+Code is in ``webapp/crashstats/cron/``.
 
 Run script is ``/app/bin/run_crontabber.sh``. This is an infinite loop that
 runs the ``manage.py cronrun`` command every 5 minutes.
@@ -41,7 +41,7 @@ manage.py cronrun helper commands
 All commands are accessed in a shell in the app container. For example::
 
     $ make shell
-    app@socorro:/app$ webapp-django/manage.py cronrun --help
+    app@socorro:/app$ webapp/manage.py cronrun --help
 
 **cronrun**
     Runs any scheduled jobs that need to be run.

@@ -25,7 +25,7 @@ RUN /tmp/set_up_stackwalker.sh && \
     rm /tmp/set_up_stackwalker.sh
 
 # Install frontend JS deps
-COPY ./webapp-django/package*.json /webapp-frontend-deps/
+COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
 COPY --chown=app:app requirements.txt /app/
@@ -50,7 +50,7 @@ COPY --chown=app:app . /app/
 
 # Run collectstatic in container which puts files in the default place for
 # static files
-RUN cd /app/webapp-django/ && SECRET_KEY=fakekey python manage.py collectstatic --noinput
+RUN cd /app/webapp/ && SECRET_KEY=fakekey python manage.py collectstatic --noinput
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.

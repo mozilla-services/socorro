@@ -31,7 +31,7 @@ echo "Dropping and creating db..."
 
 # Run Django migrations
 echo "Setting up tables..."
-cd /app/webapp-django
+cd /app/webapp
 python manage.py migrate auth
 python manage.py migrate
 

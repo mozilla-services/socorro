@@ -27,7 +27,7 @@ fi
 echo "starting run_migrations.sh: $(date)"
 
 # Run Django migrations
-${PRECMD} python webapp-django/manage.py migrate --no-input
+${PRECMD} python webapp/manage.py migrate --no-input
 
 # Insert missing versions
 ${PRECMD} python bin/insert_missing_versions.py
