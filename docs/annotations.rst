@@ -8,7 +8,7 @@ A crash report contains a set of *crash annotations*. For example, a crash
 report may contain the following annotations:
 
 ==================  =======
-name                value
+annotation name     value
 ==================  =======
 ``ProductName``     Firefox
 ``Version``         77.0a1
@@ -166,10 +166,17 @@ Follow these steps:
    ``Will Kahn-Greene [:willkg]`` with the data review requests for crash
    annotations.
 
+   **If the annotation is category 3 or 4, it will need to undergo Sensitive Data
+   Review. See `Sensitive Data Review
+   <https://wiki.mozilla.org/index.php?title=Data_Collection#Step_3:_Sensitive_Data_Collection_Review_Process>`__
+   for more details.**
+
 If you need any help with filing a data review request, ask on `#crashreporting
 on Matrix <https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`__.
 
-Template::
+Template for data review for crash annotations:
+
+::
 
     Request for data collection review form
     =======================================
