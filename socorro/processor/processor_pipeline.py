@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""this file defines the method of converting a raw crash into a processed
-crash.  In this latest version, all transformations have been reimplemented
-as sets of loadable rules.  The rules are applied one at a time, each doing
-some small part of the transformation process."""
+"""
+This file defines the method of converting a raw crash into a processed crash. In this
+latest version, all transformations have been reimplemented as sets of loadable rules.
+The rules are applied one at a time, each doing some small part of the transformation
+process.
+"""
 
 import logging
 import os
@@ -167,9 +169,9 @@ class ProcessorPipeline(RequiredConfig):
         :returns: dict of rulesets
 
         """
-        # NOTE(willkg): the rulesets defined in here must match the set of
-        # rulesets in webapp-django/crashstats/settings/base.py VALID_RULESETS
-        # for them to be available to the Reprocessing API
+        # NOTE(willkg): the rulesets defined in here must match the set of rulesets in
+        # webapp/crashstats/settings/base.py VALID_RULESETS for them to be available to
+        # the Reprocessing API
         rulesets = {
             # The default processing pipeline
             "default": [

@@ -4,7 +4,7 @@
 Crash Stats Webapp
 ==================
 
-Code is in ``webapp-django/``.
+Code is in ``webapp/``.
 
 Run script is ``/app/bin/run_webapp.sh``.
 
@@ -46,7 +46,7 @@ This creates an account in the oidcprovider service container::
 This creates a superuser account in the Crash Stats webapp corresponding to the
 account we created in the oidcprovider service container::
 
-  $ docker compose run app shell ./webapp-django/manage.py makesuperuser willkg@example.com
+  $ docker compose run app shell ./webapp/manage.py makesuperuser willkg@example.com
 
 Feel free to use different credentials.
 
@@ -79,7 +79,7 @@ A logged-in user can view their detailed permissions on the
 `Your Permissions <https://crash-stats.mozilla.org/permissions/>`_ page.
 
 The groups and their permissions are defined in
-``webapp-django/crashstats/crashstats/signals.py``. These are applied to
+``webapp/crashstats/crashstats/signals.py``. These are applied to
 the database in a "post-migrate" signal handler.
 
 
@@ -87,7 +87,7 @@ Static Assets
 =============
 
 In the development environment, the ``STATIC_ROOT`` is set to
-``/tmp/crashstats-static/`` rather than ``/app/webapp-django/static``.
+``/tmp/crashstats-static/`` rather than ``/app/webapp/static``.
 The process in the container creates files with the uid 10001, and Linux users
 will have permissions-related problems if these are mounted on the host
 computer.
@@ -138,9 +138,9 @@ First start a ``bash`` shell with service ports::
 
 Then compile the static assets::
 
-  app@socorro:/app$ cd webapp-django/
-  app@socorro:/app/webapp-django$ ./manage.py collectstatic --noinput
-  app@socorro:/app/webapp-django$ cd ..
+  app@socorro:/app$ cd webapp/
+  app@socorro:/app/webapp$ ./manage.py collectstatic --noinput
+  app@socorro:/app/webapp$ cd ..
 
 Now run the webapp with ``gunicorn`` and ``DEBUG=False``::
 

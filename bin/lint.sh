@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp-django bin)
+BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp bin)
 
 if [[ "${1:-}" == "--fix" ]]; then
     echo ">>> black fix"
@@ -38,6 +38,6 @@ else
     fi
 
     echo ">>> eslint (js)"
-    cd /app/webapp-django
+    cd /app/webapp
     /webapp-frontend-deps/node_modules/.bin/eslint .
 fi

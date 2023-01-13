@@ -48,7 +48,7 @@ echo ">>> build sqs things and db things"
 # Set up socorro_test db
 ./socorro-cmd db drop || true
 ./socorro-cmd db create
-pushd webapp-django
+pushd webapp
 ${PYTHON} manage.py migrate
 popd
 
@@ -59,7 +59,7 @@ echo ">>> run tests"
 "${PYTEST}"
 
 # Collect static and then run pytest in the webapp
-pushd webapp-django
+pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
 popd

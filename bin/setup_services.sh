@@ -29,4 +29,4 @@ set -euo pipefail
 /app/socorro-cmd sqs create-all
 
 # Initialize the cronrun bookkeeping for all configured jobs to success
-/app/webapp-django/manage.py cronmarksuccess all
+/app/webapp/manage.py cronmarksuccess all

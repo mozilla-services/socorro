@@ -26,11 +26,11 @@ if [ "${1:-}" == "--dev" ]; then
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
     echo "******************************************************************"
-    cd /app/webapp-django/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
+    cd /app/webapp/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
     ${CMDPREFIX} gunicorn \
-        --pythonpath /app/webapp-django/ \
+        --pythonpath /app/webapp/ \
         --workers="${GUNICORN_WORKERS}" \
         --worker-class="${GUNICORN_WORKER_CLASS}" \
         --max-requests="${GUNICORN_MAX_REQUESTS}" \

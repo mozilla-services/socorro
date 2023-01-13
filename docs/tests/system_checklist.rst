@@ -59,7 +59,7 @@ Checklist
       Local dev environment:
 
       1. "make shell"
-      2. "cd webapp-django/"
+      2. "cd webapp/"
       3. "./manage.py showmigrations"
 
       -stage/-prod:

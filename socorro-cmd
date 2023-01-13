@@ -55,7 +55,7 @@ def django_cmd(cmd):
     """Run a Django command."""
     def _django_cmd(argv):
         argv = ['socorro-cmd', cmd] + argv
-        sys.path.insert(0, 'webapp-django')
+        sys.path.insert(0, 'webapp')
         import manage
         manage.main(argv)
     return _django_cmd

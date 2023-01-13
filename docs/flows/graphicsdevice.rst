@@ -48,7 +48,7 @@ Data is added to the table automatically using the ``update_graphics_pci`` cron
 job. This job runs once a week to pick up new device ids.
 
 The function for parsing that file is `pci_ids__parse_graphics_device_iterable`
-in ``webapp-django/crashstats/crashstats/utils.py``.
+in ``webapp/crashstats/crashstats/utils.py``.
 
 If you need to, you can edit the table data directly using the Django admin.
 
