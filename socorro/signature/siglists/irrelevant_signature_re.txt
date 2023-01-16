@@ -118,6 +118,7 @@ mozilla::detail::Atomic
 mozilla::detail::BaseAutoLock
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
+mozilla::detail::HashTable
 mozilla::detail::IntrinsicMemoryOps
 mozilla::detail::MemoryOperations
 mozilla::detail::MutexImpl
@@ -129,6 +130,8 @@ mozilla::dom::ThreadSafeRequestHandle::GetContext
 mozilla::gfx::Log<
 mozilla::ipc::IPDLParamTraits<T>::Write
 mozilla::ipc::WriteIPDLParam
+mozilla::HashMap
+mozilla::HashSet
 mozilla::MediaRawData::Data
 mozilla::Monitor::Wait
 mozilla::MozPromiseHolderBase
@@ -147,6 +150,7 @@ mozilla::OffTheBooksMutex::Lock
 mozilla::PodAssign
 mozilla::PodCopy
 mozilla::PodZero
+mozilla::PrioritizedEventQueue<T>::GetEvent
 mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
 mozilla::TaskController::GetRunnableForMTTask
@@ -158,8 +162,8 @@ mozilla::widget::WlCrashHandler
 mozilla::wr::RenderThread::AddRef
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
+ns.*Hashtable
 nsThread::GetEvent
-mozilla::PrioritizedEventQueue<T>::GetEvent
 nsThread::ProcessNextEvent
 NS_ProcessNextEvent
 (Nt|Zw)?WaitForKeyedEvent
@@ -172,6 +176,7 @@ objc_terminate
 org\.mozilla\.f.*\.apk@0x
 operator==
 panic_abort::
+PLDHashTable
 PR_WaitCondVar
 __psynch_cvwait
 _pthread_
@@ -205,12 +210,16 @@ SleepConditionVariableSRW
 __stack_chk_fail
 std::__
 std::alloc::_::__rg_oom
+std::_Hash
+std::_Tree
 std::alloc::rust_oom
 std::all_of
+std::collections
 std::io::stdio::_eprint
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
 std::terminate
+stdext::_?(h|H)ash
 __str
 system@framework@.*\.art@0x
 _Unwind_Resume
