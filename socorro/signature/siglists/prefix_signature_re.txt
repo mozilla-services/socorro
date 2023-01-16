@@ -95,7 +95,6 @@ mozalloc_abort
 mozalloc_handle_oom
 moz_malloc_size_of
 mozilla::CheckCheckedUnsafePtrs<T>::Check
-mozilla::detail::HashTable<.*>::
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
 mozilla::dom::AutoJSAPI::Init
@@ -139,17 +138,13 @@ nsCRT::strcmp
 nsTArrayInfallibleAllocator
 NS_strcmp
 NS_strlen
-nsBaseHashtable<.*>::
-nsClassHashtable<.*>::
 nsCOMPtr
 NS_ABORT_OOM
-nsDataHashtable<.*>::
 NS_DebugBreak
 nsDebugImpl::Abort
 nsINode::GetParentNode
 nsThread::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
-nsInterfaceHashtable<.*>::
 nsINode::Slots
 nsObserverService
 nsTSubstring<.*>::
@@ -159,7 +154,6 @@ nss
 nsTArray<
 nsTArray_base<
 nsTArray_Impl<
-nsTHashtable<.*>::
 nsThread::Shutdown
 NtUser
 objc_exception_rethrow
@@ -172,7 +166,6 @@ operator new
 o_strcat_s
 <.*>::operator()
 pages_commit
-PLDHashTable::
 PL_
 port_
 PORT_
@@ -214,11 +207,8 @@ std::_Func_impl_no_alloc<T>::
 std::_Func_impl<T>::
 std::_Function_base::_Base_manager<T>::
 std::_Function_handler<T>::
-std::_Hash<T>::
 std::list<.*>::
-std::collections::hash::map::
 std::vector<T>::_Emplace_reallocate<T>
-stdext::hash_map<T>::
 strcat
 strncmp
 ssl3_
