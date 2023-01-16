@@ -51,7 +51,7 @@ enum2\$<T>::
 exp2
 __fdelt_chk
 __fdelt_warn
-__futex_abstimed_wait_common
+__futex_abstimed_wait
 _fini
 __fixunsdfsi
 __fortify_fail
