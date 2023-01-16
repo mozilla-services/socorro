@@ -75,6 +75,7 @@ _guard_dispatch_icall_nop
 guard_dispatch_icall_nop
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
+.*Hash(T|t)able(<.+>)?::.*
 js::gc::CellWithTenuredGCPointer<T>::headerPtr
 JS::loader::ScriptLoadRequest::GetWorkerLoadContext
 JSObject::nonCCWRealm
@@ -174,6 +175,7 @@ __stack_chk_fail
 std::__
 std::alloc::rust_oom
 std::io::stdio::_eprint
+std.*hash.*::
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
 std::terminate
