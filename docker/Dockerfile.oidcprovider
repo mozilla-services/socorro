@@ -1,4 +1,10 @@
 FROM mozilla/oidc-testprovider:oidc_testprovider-v0.9.4
 
+RUN apt-get update && \
+    apt install tini && \
+    rm -rf /var/lib/apt/lists/*
+
 # Modify redirect_urls specified in "fixtures.json" to fit our needs.
 COPY ./docker/config/oidcprovider-fixtures.json /code/fixtures.json
+
+CMD ["/usr/bin/tini", "--", "./bin/run.sh"]
