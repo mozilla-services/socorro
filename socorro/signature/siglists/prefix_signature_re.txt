@@ -103,8 +103,6 @@ mozilla::dom::Promise::
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
-mozilla::MozPromise<T>::ThenCommand<T>::Track
-mozilla::MozPromise<T>::ThenInternal
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksMutex::Lock
 SleepConditionVariable(CS|SRW)
