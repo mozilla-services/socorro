@@ -33,7 +33,7 @@
     "pkg.json": "2.0.8",
     "photon-colors": "3.3.2",
     "prop-types": "^15.6.2",
-    "qs": "6.9.4",
+    "qs": "6.9.7",
     "tablesorter": "2.31.3"
   }
 }
