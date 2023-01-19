@@ -111,6 +111,8 @@ mozilla::detail::Atomic
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::detail::IntrinsicMemoryOps
+mozilla::detail::ThreadLocalNativeStorage<T>::get
+mozilla::detail::ThreadLocal<T>::get
 mozilla::dom::ThreadSafeRequestHandle::GetContext
 mozilla::gfx::Log<
 mozilla::ipc::IPDLParamTraits<T>::Write
