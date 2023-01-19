@@ -14,7 +14,7 @@ from socorro.external.es.super_search_fields import (
     is_doc_values_friendly,
     get_fields_by_item,
 )
-from socorro.unittest.external.es.base import ElasticsearchTestCase
+from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

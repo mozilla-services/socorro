@@ -22,7 +22,7 @@ from socorro.external.es.crashstorage import (
 from socorro.lib.libdatetime import date_to_string, utc_now, string_to_datetime
 from socorro.lib.libooid import create_new_ooid
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.unittest.external.es.base import ElasticsearchTestCase
+from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

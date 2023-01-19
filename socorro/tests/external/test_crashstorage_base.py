@@ -207,9 +207,9 @@ class TestCrashStorageBase:
         n.add_option("logger", default=mock.Mock())
         value = {
             "storage_namespaces": "A,A2,B",
-            "A.crashstorage_class": "socorro.unittest.external.test_crashstorage_base.A",
-            "A2.crashstorage_class": "socorro.unittest.external.test_crashstorage_base.A",
-            "B.crashstorage_class": "socorro.unittest.external.test_crashstorage_base.B",
+            "A.crashstorage_class": "socorro.tests.external.test_crashstorage_base.A",
+            "A2.crashstorage_class": "socorro.tests.external.test_crashstorage_base.A",
+            "B.crashstorage_class": "socorro.tests.external.test_crashstorage_base.B",
             "A2.y": 37,
         }
         cm = ConfigurationManager(n, values_source_list=[value])

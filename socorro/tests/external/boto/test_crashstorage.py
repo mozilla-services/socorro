@@ -14,7 +14,7 @@ from socorro.external.boto.crashstorage import (
     TelemetryBotoS3CrashStorage,
 )
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
-from socorro.unittest.external.boto import get_config
+from socorro.tests.external.boto import get_config
 
 
 @pytest.mark.parametrize(

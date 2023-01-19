@@ -11,7 +11,7 @@ import pytest
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib import BadArgumentError, libdatetime, search_common
-from socorro.unittest.external.es.base import ElasticsearchTestCase
+from socorro.tests.external.es.base import ElasticsearchTestCase
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library
 # while running unit tests.

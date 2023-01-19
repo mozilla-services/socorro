@@ -4,7 +4,7 @@
 
 import pytest
 
-from socorro.unittest.external.sqs import get_sqs_config, SQSHelper
+from socorro.tests.external.sqs import get_sqs_config, SQSHelper
 
 
 @pytest.fixture
