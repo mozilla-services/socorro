@@ -87,13 +87,13 @@ RULE_ERROR_EVENT = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/app/socorro/unittest/processor/test_processor_pipeline.py",
+                            "abs_path": "/app/socorro/tests/processor/test_processor_pipeline.py",
                             "context_line": ANY,
-                            "filename": "socorro/unittest/processor/test_processor_pipeline.py",
+                            "filename": "socorro/tests/processor/test_processor_pipeline.py",
                             "function": "action",
                             "in_app": True,
                             "lineno": ANY,
-                            "module": "socorro.unittest.processor.test_processor_pipeline",
+                            "module": "socorro.tests.processor.test_processor_pipeline",
                             "post_context": ANY,
                             "pre_context": ANY,
                         },
@@ -105,7 +105,7 @@ RULE_ERROR_EVENT = {
         ]
     },
     "extra": {
-        "rule": "socorro.unittest.processor.test_processor_pipeline.BadRule",
+        "rule": "socorro.tests.processor.test_processor_pipeline.BadRule",
     },
     "level": "error",
     "modules": ANY,
@@ -158,7 +158,7 @@ class TestProcessorPipeline:
             notes = processed_crash["processor_notes"].split("\n")
             assert notes[1] == (
                 "ruleset 'default' "
-                + "rule 'socorro.unittest.processor.test_processor_pipeline.BadRule' "
+                + "rule 'socorro.tests.processor.test_processor_pipeline.BadRule' "
                 + "failed: KeyError"
             )
 

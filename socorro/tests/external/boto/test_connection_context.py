@@ -5,7 +5,7 @@
 import pytest
 
 from socorro.external.boto.connection_context import S3Connection, KeyNotFound
-from socorro.unittest.external.boto import get_config
+from socorro.tests.external.boto import get_config
 
 
 class TestS3ConnectionContext:

@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from socorro.external.boto.upload_telemetry_schema import UploadTelemetrySchema
-from socorro.unittest.external.boto import get_config
+from socorro.tests.external.boto import get_config
 
 
 class TestUploadTelemetrySchema:

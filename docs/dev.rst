@@ -387,7 +387,7 @@ Testing
 Running tests
 -------------
 
-The Socorro tests are in ``socorro/unittests/``.
+The Socorro tests are in ``socorro/tests/``.
 
 The webapp tests are in ``webapp/``.
 
@@ -434,7 +434,7 @@ Running the webapp tests (make sure you run ``./manage.py collectstatic`` first)
 Writing tests
 -------------
 
-For Socorro tests, put them in ``socorro/unittest/`` in a subdirectory parallel
+For Socorro tests, put them in ``socorro/tests/`` in a subdirectory parallel
 to the thing you're testing.
 
 For webapp tests, put them in the ``tests/`` directory of the appropriate app in

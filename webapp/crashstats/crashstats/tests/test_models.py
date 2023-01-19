@@ -17,7 +17,7 @@ from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro.lib import BadArgumentError
 from socorro.lib.libooid import create_new_ooid
-from socorro.unittest.external.sqs import get_sqs_config, SQSHelper
+from socorro.tests.external.sqs import get_sqs_config, SQSHelper
 
 
 class TestGraphicsDevices(DjangoTestCase):

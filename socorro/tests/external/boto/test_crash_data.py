@@ -9,7 +9,7 @@ import pytest
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import MissingArgumentError, BadArgumentError
-from socorro.unittest.external.boto import get_config
+from socorro.tests.external.boto import get_config
 
 
 class TestSimplifiedCrashData:

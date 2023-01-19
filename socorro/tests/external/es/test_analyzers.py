@@ -5,7 +5,7 @@
 from socorro.lib import libdatetime
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.external.es.supersearch import SuperSearch
-from socorro.unittest.external.es.base import ElasticsearchTestCase
+from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
 # Uncomment these lines to decrease verbosity of the elasticsearch library

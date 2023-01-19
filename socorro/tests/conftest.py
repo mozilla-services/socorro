@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-pytest plugins for socorro/unittest/ and webapp/ test suites.
+pytest plugins for socorro/tests/ and webapp/ test suites.
 """
 
 import datetime
