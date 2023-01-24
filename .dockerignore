@@ -6,3 +6,4 @@ __pycache__
 .cache
 webapp-django/node_modules
 webapp-django/static
+symbols/

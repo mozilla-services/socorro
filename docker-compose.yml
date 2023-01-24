@@ -53,6 +53,7 @@ services:
       - statsd
       - localstack
       - elasticsearch
+      - symbolsserver
     command: ["processor"]
     volumes:
       - .:/app

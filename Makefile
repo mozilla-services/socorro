@@ -48,7 +48,7 @@ my.env:
 build: my.env  ## | Build docker images.
 	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} --progress plain app
 	${DC} build --progress plain oidcprovider fakesentry
-	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch
+	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch symbolsserver
 	touch .docker-build
 
 .PHONY: setup
@@ -60,12 +60,12 @@ updatedata: my.env  ## | Add/update necessary database data.
 	${DC} run --rm app shell /app/bin/update_data.sh
 
 .PHONY: run
-run: my.env  ## | Run processor, webapp, fakesentry, and all required services.
-	${DC} up processor webapp fakesentry
+run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and all required services.
+	${DC} up processor webapp fakesentry symbolsserver
 
 .PHONY: runservices
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
-	${DC} up -d statsd postgresql memcached localstack elasticsearch
+	${DC} up -d statsd postgresql memcached localstack elasticsearch symbolsserver
 
 .PHONY: stop
 stop: my.env  ## | Stop all service containers.
@@ -79,6 +79,7 @@ shell: my.env .docker-build  ## | Open a shell in the app container.
 clean:  ## | Remove all build, test, coverage, and Python artifacts.
 	-rm .docker-build*
 	-rm -rf .cache
+	@echo "Skipping deletion of symbols/ in case you have data in there."
 
 .PHONY: docs
 docs: my.env .docker-build  ## | Generate Sphinx HTML documetation.

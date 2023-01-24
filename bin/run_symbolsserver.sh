@@ -16,5 +16,10 @@ set -euxo pipefail
 SYMBOLS_PATH=/app/symbols
 PORT=8070
 
+if [ ! -d "${SYMBOLS_PATH}" ]
+then
+    mkdir -p "${SYMBOLS_PATH}"
+fi
+
 echo "Running local symbols server at ${SYMBOLS_PATH} ..."
 python -m http.server --directory "${SYMBOLS_PATH}" --bind 0.0.0.0 "${PORT}"
