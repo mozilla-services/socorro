@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0013_1507916_major_version_data_migration")]
 
     operations = [

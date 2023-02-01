@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0007_1498441-platform")]
 
     operations = [

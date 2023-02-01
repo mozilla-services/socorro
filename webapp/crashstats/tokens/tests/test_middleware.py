@@ -26,7 +26,6 @@ def get_response(req):
 
 
 class TestMiddleware(DjangoTestCase):
-
     django_session_middleware = SessionMiddleware(get_response)
     django_auth_middleware = AuthenticationMiddleware(get_response)
     middleware = APIAuthenticationMiddleware(get_response)

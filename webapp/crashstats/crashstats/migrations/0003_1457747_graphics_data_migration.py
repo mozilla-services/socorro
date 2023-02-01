@@ -66,7 +66,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0002_1457747_graphics_devices")]
 
     operations = [migrations.RunPython(copy_graphics_devices_data, noop)]

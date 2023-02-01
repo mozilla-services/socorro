@@ -20,7 +20,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("crashstats", "0021_bug_1657668_product_support"),
     ]

@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("status", "0002_auto_20180522_1545")]
 
     operations = [

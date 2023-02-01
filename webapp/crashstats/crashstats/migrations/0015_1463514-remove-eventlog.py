@@ -19,7 +19,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0014_auto_20181214_1951")]
 
     operations = [migrations.RunPython(remove_eventlog_tables, noop)]

@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0006_1493768-bug-associations")]
 
     operations = [

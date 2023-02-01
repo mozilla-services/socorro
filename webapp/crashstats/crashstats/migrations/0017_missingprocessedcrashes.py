@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0016_1523284_fenix")]
 
     operations = [
