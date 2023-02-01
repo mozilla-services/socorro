@@ -879,7 +879,6 @@ def test_api_model_names():
 
 @pytest.mark.parametrize("name", API_MODEL_NAMES)
 class TestAPIModels:
-
     MODEL = {}
 
     def setup_class(cls):

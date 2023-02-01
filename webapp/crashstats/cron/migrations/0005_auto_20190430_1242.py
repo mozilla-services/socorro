@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("cron", "0004_auto_20181214_1951")]
 
     operations = [

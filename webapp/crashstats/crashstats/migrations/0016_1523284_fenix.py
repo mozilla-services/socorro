@@ -25,7 +25,6 @@ def delete_product(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("crashstats", "0015_1463514-remove-eventlog")]
 
     operations = [migrations.RunPython(create_product, delete_product)]
