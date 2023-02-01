@@ -20,7 +20,7 @@ enforce-typing==1.0.0.post1
 fillmore==1.0.0
 flake8==6.0.0
 freezegun==1.2.2
-glom==22.1.0
+glom==23.1.1
 gunicorn==20.1.0
 humanfriendly==10.0
 isodate==0.6.1
