@@ -42,7 +42,7 @@ pyquery==2.0.0
 pytest==7.2.0
 pytest-django==4.5.2
 pytest-env==0.8.1
-python-decouple==3.6
+python-decouple==3.7
 requests==2.28.1
 requests-mock==1.10.0
 semver==2.13.0
