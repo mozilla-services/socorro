@@ -140,12 +140,6 @@ class BotoS3CrashStorage(CrashStorageBase):
         reference_value_from="resource.boto",
     )
     required_config.add_option(
-        "temporary_file_system_storage_path",
-        doc="a local filesystem path where dumps temporarily during processing",
-        default="/home/socorro/temp",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
         "dump_file_suffix",
         doc="the suffix used to identify a dump file (for use in temp files)",
         default=".dump",
@@ -250,7 +244,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         except self.conn.KeyNotFound as x:
             raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
 
-    def get_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id, tmpdir):
         """Get the dump files for given crash id and save them to tmp.
 
         :returns: dict of dumpname -> file path
@@ -262,7 +256,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         # convert our native memory dump mapping into a file dump mapping.
         return in_memory_dumps.as_file_dumps_mapping(
             crash_id,
-            self.config.temporary_file_system_storage_path,
+            tmpdir,
             self.config.dump_file_suffix,
         )
 

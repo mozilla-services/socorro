@@ -214,7 +214,9 @@ class FSPermanentStorage(CrashStorageBase):
         ) as f:
             return f.read()
 
-    def get_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id, tmpdir):
+        # NOTE(willkg): We don't need to use tmpdir here because the files are already
+        # on the file system.
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
@@ -232,7 +234,7 @@ class FSPermanentStorage(CrashStorageBase):
         )
 
     def get_dumps(self, crash_id):
-        file_dump_mapping = self.get_dumps_as_files(crash_id)
+        file_dump_mapping = self.get_dumps_as_files(crash_id, None)
         # ensure that we return a name/blob mapping
         return file_dump_mapping.as_memory_dumps_mapping()
 
@@ -258,7 +260,7 @@ class FSPermanentStorage(CrashStorageBase):
             raise CrashIDNotFound
 
         removal_candidates = [os.sep.join([parent_dir, crash_id + ".json"])] + list(
-            self.get_dumps_as_files(crash_id).values()
+            self.get_dumps_as_files(crash_id, None).values()
         )
 
         # Remove all the files related to the crash

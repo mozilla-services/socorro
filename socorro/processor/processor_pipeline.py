@@ -136,11 +136,6 @@ class ProcessorPipeline(RequiredConfig):
         doc="absolute path to symbol cache",
         default=os.path.join(tempfile.gettempdir(), "symbols"),
     )
-    required_config.minidumpstackwalk.add_option(
-        "tmp_path",
-        doc="a path where temporary files may be written",
-        default=tempfile.gettempdir(),
-    )
 
     # BetaVersionRule configuration
     required_config.betaversion = Namespace()
@@ -199,7 +194,6 @@ class ProcessorPipeline(RequiredConfig):
                     kill_timeout=config.minidumpstackwalk.kill_timeout,
                     symbol_tmp_path=config.minidumpstackwalk.symbol_tmp_path,
                     symbol_cache_path=config.minidumpstackwalk.symbol_cache_path,
-                    tmp_path=config.minidumpstackwalk.tmp_path,
                 ),
                 ModuleURLRewriteRule(),
                 CrashingThreadInfoRule(),
@@ -239,7 +233,7 @@ class ProcessorPipeline(RequiredConfig):
 
         return rulesets
 
-    def process_crash(self, ruleset_name, raw_crash, dumps, processed_crash):
+    def process_crash(self, ruleset_name, raw_crash, dumps, processed_crash, tmpdir):
         """Process a crash
 
         This takes a raw_crash, associated minidump files, and a pre-existing
@@ -267,7 +261,7 @@ class ProcessorPipeline(RequiredConfig):
             status.add_note(f"error: no ruleset: {ruleset_name}")
             return processed_crash
 
-        self.logger.info(f"starting transform {ruleset_name} for crash: {crash_id}")
+        self.logger.info(f"processing with {ruleset_name} for crash {crash_id}")
 
         # Apply rules; if a rule fails, capture the error and continue onward
         for rule in ruleset:
@@ -279,6 +273,7 @@ class ProcessorPipeline(RequiredConfig):
                         raw_crash=raw_crash,
                         dumps=dumps,
                         processed_crash=processed_crash,
+                        tmpdir=tmpdir,
                         status=status,
                     )
 

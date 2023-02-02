@@ -223,10 +223,11 @@ class CrashStorageBase(RequiredConfig):
         """
         raise NotImplementedError("get_dumps is not implemented")
 
-    def get_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id, tmpdir):
         """Fetch all dumps for a crash report and save as files.
 
         :param crash_id: crash report id
+        :param tmpdir: the path to store the dump files in
 
         :returns: dict of dumpname -> file path
 
@@ -527,9 +528,9 @@ class BenchmarkingCrashStorage(CrashStorageBase):
         self.logger.debug("%s get_dumps %s", self.tag, end_time - start_time)
         return result
 
-    def get_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id, tmpdir):
         start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_dumps_as_files(crash_id)
+        result = self.wrapped_crashstore.get_dumps_as_files(crash_id, tmpdir)
         end_time = self.end_timer()
         self.logger.debug("%s get_dumps_as_files %s", self.tag, end_time - start_time)
         return result

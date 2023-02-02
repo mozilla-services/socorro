@@ -5,6 +5,7 @@
 import json
 import os
 from pathlib import Path
+import tempfile
 from unittest import mock
 from unittest.mock import ANY
 
@@ -54,6 +55,7 @@ def get_standard_config():
     mocked_processor = mock.Mock()
     mocked_processor.id = "mocked_processor"
     config.processor.processor_class = mock.Mock(return_value=mocked_processor)
+    config.processor.temporary_path = tempfile.gettempdir()
 
     config.queue = DotDict()
     config.queue.crashqueue_class = FakeCrashQueue
@@ -99,15 +101,20 @@ class TestProcessorApp:
         pa.processor.process_crash = mocked_process_crash
         pa.destination.save_processed_crash = mock.Mock()
         finished_func = mock.Mock()
-        patch_path = "socorro.processor.processor_app.os.unlink"
-        with mock.patch(patch_path) as mocked_unlink:
-            # the call being tested
-            pa.transform("17", finished_func)
+
+        # the call being tested
+        pa.transform("17", finished_func)
+
         # test results
-        mocked_unlink.assert_called_with("fake_dump_TEMPORARY.dump")
         pa.source.get_raw_crash.assert_called_with("17")
         pa.processor.process_crash.assert_called_with(
-            "default", fake_raw_crash, fake_dumps, fake_processed_crash
+            ruleset_name="default",
+            raw_crash=fake_raw_crash,
+            dumps=fake_dumps,
+            processed_crash=fake_processed_crash,
+            # FIXME(willkg): testing this is tricky--we'd have to mock
+            # TemporaryDirectory
+            tmpdir=ANY,
         )
         pa.destination.save_processed_crash.assert_called_with(
             {"raw": "1"}, {"processed": "1"}
@@ -386,4 +393,5 @@ def test_transform_save_error(sentry_helper, caplogpp):
         # Assert that the exception was not sent to Sentry and not logged at this
         # point--it gets caught and logged  by the processor
         assert len(sentry_client.events) == 0
-        assert len(caplogpp.records) == 0
+        # "starting {crashid}" and "using tmpdir {tmpdir}"
+        assert len(caplogpp.records) == 2

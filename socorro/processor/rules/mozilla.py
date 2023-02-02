@@ -125,7 +125,7 @@ class CopyFromRawCrashRule(Rule):
             self._reducer_cache[cache_key] = reducer
         return reducer
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         for copy_item in self.fields:
             annotation = copy_item.annotation
             if annotation not in raw_crash:
@@ -192,7 +192,7 @@ class AccessibilityRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         value = raw_crash.get("Accessibility", "")
         processed_crash["accessibility"] = value == "Active"
 
@@ -211,10 +211,10 @@ class ConvertModuleSignatureInfoRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return not isinstance(raw_crash.get("ModuleSignatureInfo", ""), str)
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         info = raw_crash["ModuleSignatureInfo"]
         raw_crash["ModuleSignatureInfo"] = json.dumps(info)
 
@@ -234,7 +234,7 @@ class SubmittedFromRule(Rule):
 
     TRUE_VALUES = ("1", "true", True)
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         if "SubmittedFromInfobar" in raw_crash:
             submitted_from_infobar = (
                 raw_crash["SubmittedFromInfobar"] in self.TRUE_VALUES
@@ -252,19 +252,19 @@ class SubmittedFromRule(Rule):
 class SubmittedFromInfobarFixRule(Rule):
     """Fix SubmittedFromInfobar annotation values to "1" """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return "SubmittedFromInfobar" in raw_crash and raw_crash[
             "SubmittedFromInfobar"
         ] in ("true", True)
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         raw_crash["SubmittedFromInfobar"] = "1"
 
 
 class MajorVersionRule(Rule):
     """Sets "version" to the major version number of the Version annotation or 0"""
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         major_version = None
         with suppress(ValueError, IndexError):
             version = raw_crash.get("Version", "")
@@ -277,7 +277,7 @@ class MajorVersionRule(Rule):
 class PluginRule(Rule):
     """Handle plugin-related fields."""
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         process_type = raw_crash.get("ProcessType", "parent")
         if process_type == "plugin":
             processed_crash["plugin_filename"] = raw_crash.get("PluginFilename", "")
@@ -297,7 +297,7 @@ class AddonsRule(Rule):
         """
         return addon if ":" in addon else addon + ":NO_VERSION"
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         processed_crash["addons_checked"] = None
 
         # it's okay to not have EMCheckCompatibility
@@ -332,7 +332,7 @@ class DatesAndTimesRule(Rule):
             )
             return default
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # NOTE(willkg): The submitted_timestamp comes from the collector when the crash
         # report is accepted. It should always be there and should always be
         # an isoformat string.
@@ -394,12 +394,12 @@ class DatesAndTimesRule(Rule):
 class JavaProcessRule(Rule):
     """Move Java-crash-related bits over."""
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return bool(raw_crash.get("JavaStackTrace", None)) or bool(
             raw_crash.get("JavaException", None)
         )
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         if "JavaStackTrace" in raw_crash:
             # The java_stack_trace_raw version can contain PII in the exception message
             # and should be treated as protected data
@@ -429,10 +429,10 @@ class BreadcrumbsRule(Rule):
         # crash schema, we'll need to update this
         self.breadcrumbs_schema = schema["properties"]["breadcrumbs"]
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return bool(raw_crash.get("Breadcrumbs", None))
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         breadcrumbs = raw_crash["Breadcrumbs"]
 
         try:
@@ -460,7 +460,7 @@ class MacCrashInfoRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         if "mac_crash_info" in processed_crash:
             del processed_crash["mac_crash_info"]
 
@@ -500,10 +500,10 @@ class MozCrashReasonRule(Rule):
             return "sanitized--see moz_crash_reason_raw"
         return reason
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return bool(raw_crash.get("MozCrashReason", None))
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         crash_reason = raw_crash["MozCrashReason"]
 
         # This can contain PII in the exception message
@@ -515,7 +515,7 @@ class OutOfMemoryBinaryRule(Rule):
     # Number of bytes, max, that we accept memory_report value as JSON.
     MAX_SIZE_UNCOMPRESSED = 20 * 1024 * 1024  # ~20Mb
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return "memory_report" in dumps
 
     def _extract_memory_info(self, dump_pathname, status):
@@ -552,7 +552,7 @@ class OutOfMemoryBinaryRule(Rule):
 
         return memory_info
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         pathname = dumps["memory_report"]
         with temp_file_context(pathname):
             memory_report = self._extract_memory_info(
@@ -575,20 +575,20 @@ class FenixVersionRewriteRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         is_nightly = (raw_crash.get("Version") or "").startswith("Nightly ")
         return raw_crash.get("ProductName") == "Fenix" and is_nightly
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         status.add_note("Changed version from %r to 0.0a1" % raw_crash.get("Version"))
         raw_crash["Version"] = "0.0a1"
 
 
 class ESRVersionRewrite(Rule):
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return raw_crash.get("ReleaseChannel", "") == "esr"
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         try:
             raw_crash["Version"] += "esr"
         except KeyError:
@@ -609,7 +609,7 @@ class TopMostFilesRule(Rule):
     Bug #519703.
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         try:
             crashing_thread = processed_crash["crashing_thread"]
             frames = processed_crash["json_dump"]["threads"][crashing_thread]["frames"]
@@ -653,10 +653,10 @@ class ModulesInStackRule(Rule):
 
         return f"{filename}/{debugid}"
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return "json_dump" in processed_crash
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         json_dump = processed_crash["json_dump"]
         crashing_thread = processed_crash["crashing_thread"]
 
@@ -763,7 +763,7 @@ class BetaVersionRule(Rule):
         self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL)
         return real_version
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # Beta and aurora versions send the wrong version in the crash report for
         # certain products
         product = processed_crash.get("product", "")
@@ -773,7 +773,7 @@ class BetaVersionRule(Rule):
             "aurora",
         )
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         product = processed_crash["product"]
         build_id = processed_crash.get("build", "").strip()
         release_channel = processed_crash["release_channel"].lower()
@@ -840,7 +840,7 @@ class OSPrettyVersionRule(Rule):
         # NOTE(willkg): Windows 11 is 10.0.21996 and higher, so it's not in this map
     }
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # we will overwrite this field with the current best option
         # in stages, as we divine a better name
         processed_crash["os_pretty_version"] = None
@@ -916,7 +916,7 @@ class ThemePrettyNameRule(Rule):
             )
         }
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         """addons is expected to be a list of strings like 'extension:version',
         but we are being overly cautious and consider the case where they
         lack the ':version' part, because user inputs are never reliable.
@@ -929,7 +929,7 @@ class ThemePrettyNameRule(Rule):
                 return True
         return False
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         addons = processed_crash["addons"]
 
         for index, addon in enumerate(addons):
@@ -954,7 +954,7 @@ class SignatureGeneratorRule(Rule):
             scope.set_extra("signature_rule", extra["rule"])
             sentry_sdk.capture_exception(exc_info)
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # Generate a crash signature and capture the signature and notes
         crash_data = convert_to_crash_data(processed_crash)
         result = self.generator.generate(crash_data)
@@ -975,10 +975,10 @@ class PHCRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return "PHCKind" in raw_crash
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # Add PHCKind which is a string
         processed_crash["phc_kind"] = raw_crash["PHCKind"]
 
@@ -1017,10 +1017,10 @@ class ModuleURLRewriteRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return bool(glom(processed_crash, "json_dump.modules", default=None))
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         modules = processed_crash["json_dump"]["modules"]
         for module in modules:
             if not module.get("symbol_url"):
@@ -1055,7 +1055,7 @@ class DistributionIdRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         distribution_id = None
 
         if "DistributionID" in raw_crash:
@@ -1092,7 +1092,7 @@ class UtilityActorsNameRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         utility_actors_name = raw_crash.get("UtilityActorsName")
         if utility_actors_name is None:
             return

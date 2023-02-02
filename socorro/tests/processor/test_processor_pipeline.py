@@ -141,7 +141,7 @@ class TestProcessorPipeline:
         config = cm.get_config()
         return config
 
-    def test_rule_error(self, sentry_helper):
+    def test_rule_error(self, tmp_path, sentry_helper):
         set_up_sentry()
 
         with sentry_helper.reuse() as sentry_client:
@@ -152,7 +152,7 @@ class TestProcessorPipeline:
             processed_crash = DotDict()
 
             processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
-            processor.process_crash("default", raw_crash, {}, processed_crash)
+            processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
             notes = processed_crash["processor_notes"].split("\n")
@@ -171,7 +171,7 @@ class TestProcessorPipeline:
             # Assert that there are no frame-local variables
             assert event == RULE_ERROR_EVENT
 
-    def test_process_crash_existing_processed_crash(self):
+    def test_process_crash_existing_processed_crash(self, tmp_path):
         raw_crash = DotDict({"uuid": "1"})
         dumps = {}
         processed_crash = DotDict(
@@ -191,6 +191,7 @@ class TestProcessorPipeline:
                 raw_crash=raw_crash,
                 dumps=dumps,
                 processed_crash=processed_crash,
+                tmpdir=str(tmp_path),
             )
 
         assert processed_crash["success"] is True

@@ -25,12 +25,13 @@ class Rule:
     def name(self):
         return self.__class__.__module__ + "." + self.__class__.__name__
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         """Determines whether to run the action for this crash
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
+        :arg tmpdir: a temporary directory to use
         :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
@@ -39,24 +40,26 @@ class Rule:
         """
         return True
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         """Executes the rule transforming the crash data
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
+        :arg tmpdir: a temporary directory to use
         :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
         """
         return
 
-    def act(self, raw_crash, dumps, processed_crash, status):
+    def act(self, raw_crash, dumps, processed_crash, tmpdir, status):
         """Runs predicate and action for a rule
 
         :arg raw_crash: the raw crash data
         :arg dumps: any minidumps associated with this crash
         :arg processed_crash: the processed crash
+        :arg tmpdir: a temporary directory to use
         :arg status: any notes or bookkeeping we need to keep about
             processing as we process
 
@@ -67,6 +70,7 @@ class Rule:
                 raw_crash=raw_crash,
                 dumps=dumps,
                 processed_crash=processed_crash,
+                tmpdir=tmpdir,
                 status=status,
             )
             if ret:
@@ -74,6 +78,7 @@ class Rule:
                     raw_crash=raw_crash,
                     dumps=dumps,
                     processed_crash=processed_crash,
+                    tmpdir=tmpdir,
                     status=status,
                 )
 

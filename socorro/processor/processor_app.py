@@ -8,6 +8,7 @@
 from contextlib import suppress
 import os
 import sys
+import tempfile
 import time
 
 from configman import Namespace
@@ -110,6 +111,14 @@ class ProcessorApp(FetchTransformSaveApp):
         default="socorro.processor.processor_pipeline.ProcessorPipeline",
         from_string_converter=class_converter,
     )
+    required_config.processor.add_option(
+        "temporary_path",
+        doc=(
+            "a local filesystem path that can be used as a workspace for processing "
+            + "rules"
+        ),
+        default=os.path.join(tempfile.gettempdir(), "workspace"),
+    )
 
     # The companion_process runs alongside the processor and cleans up
     # the symbol lru cache.
@@ -188,63 +197,67 @@ class ProcessorApp(FetchTransformSaveApp):
         ``destination``.
 
         """
+        self.logger.info("starting %s", crash_id)
         with sentry_sdk.push_scope() as scope:
             scope.set_extra("crash_id", crash_id)
             scope.set_extra("ruleset", ruleset_name)
 
-            # Fetch the raw crash data
-            try:
-                raw_crash = self.source.get_raw_crash(crash_id)
-                dumps = self.source.get_dumps_as_files(crash_id)
-            except CrashIDNotFound:
-                # If the crash isn't found, we just reject it--no need to capture
-                # errors here
-                self.processor.reject_raw_crash(
-                    crash_id, "crash cannot be found in raw crash storage"
-                )
-                return
-            except Exception as exc:
-                sentry_sdk.capture_exception(exc)
-                self.logger.exception("error: crash id %s: %r", crash_id, exc)
-                self.processor.reject_raw_crash(crash_id, f"error in loading: {exc}")
-                return
+            with tempfile.TemporaryDirectory(dir=self.temporary_path) as tmpdir:
+                self.logger.info("using tmpdir %s", tmpdir)
+                # Fetch the raw crash data
+                try:
+                    raw_crash = self.source.get_raw_crash(crash_id)
+                    dumps = self.source.get_dumps_as_files(crash_id, tmpdir)
+                except CrashIDNotFound:
+                    # If the crash isn't found, we just reject it--no need to capture
+                    # errors here
+                    self.processor.reject_raw_crash(
+                        crash_id, "crash cannot be found in raw crash storage"
+                    )
+                    return
+                except Exception as exc:
+                    sentry_sdk.capture_exception(exc)
+                    self.logger.exception("error: crash id %s: %r", crash_id, exc)
+                    self.processor.reject_raw_crash(
+                        crash_id, f"error in loading: {exc}"
+                    )
+                    return
 
-            # Fetch processed crash data--there won't be any if this crash hasn't
-            # been processed, yet
-            try:
-                processed_crash = self.source.get_processed(crash_id)
-                new_crash = False
-            except CrashIDNotFound:
-                new_crash = True
-                processed_crash = {}
+                # Fetch processed crash data--there won't be any if this crash hasn't
+                # been processed, yet
+                try:
+                    processed_crash = self.source.get_processed(crash_id)
+                    new_crash = False
+                except CrashIDNotFound:
+                    new_crash = True
+                    processed_crash = {}
 
-            # Process the crash and remove any temporary artifacts from disk
-            try:
-                # Process the crash to generate a processed crash
-                processed_crash = self.processor.process_crash(
-                    ruleset_name, raw_crash, dumps, processed_crash
-                )
+                # Process the crash and remove any temporary artifacts from disk
+                try:
+                    # Process the crash to generate a processed crash
+                    processed_crash = self.processor.process_crash(
+                        ruleset_name=ruleset_name,
+                        raw_crash=raw_crash,
+                        dumps=dumps,
+                        processed_crash=processed_crash,
+                        tmpdir=tmpdir,
+                    )
 
-                self.destination.save_processed_crash(raw_crash, processed_crash)
-                self.logger.info("saved - %s", crash_id)
-            except PolyStorageError as poly_storage_error:
-                # Capture and log the exceptions raised by storage backends
-                for storage_error in poly_storage_error:
-                    sentry_sdk.capture_exception(storage_error)
-                    self.logger.error("error: crash id %s: %r", crash_id, storage_error)
-                self.logger.warning("error in processing or saving crash %s", crash_id)
+                    self.destination.save_processed_crash(raw_crash, processed_crash)
+                    self.logger.info("saved %s", crash_id)
+                except PolyStorageError as poly_storage_error:
+                    # Capture and log the exceptions raised by storage backends
+                    for storage_error in poly_storage_error:
+                        sentry_sdk.capture_exception(storage_error)
+                        self.logger.error(
+                            "error: crash id %s: %r", crash_id, storage_error
+                        )
+                    self.logger.warning(
+                        "error in processing or saving crash %s", crash_id
+                    )
 
-                # Re-raise the original exception with the correct traceback
-                raise
-
-            finally:
-                # Clean up any dump files saved to the file system
-                for a_dump_pathname in dumps.values():
-                    if "TEMPORARY" in a_dump_pathname:
-                        try:
-                            os.unlink(a_dump_pathname)
-                        except OSError as x:
-                            self.logger.info("deletion of dump failed: %s", x)
+                    # Re-raise the original exception with the correct traceback
+                    raise
 
             if ruleset_name == "default" and new_crash:
                 # Capture the total time for ingestion covering when the crash report was
@@ -255,6 +268,8 @@ class ProcessorApp(FetchTransformSaveApp):
                     delta = time.time() - isoformat_to_time(collected)
                     delta = delta * 1000
                     METRICS.timing("ingestion_timing", value=delta)
+
+        self.logger.info("completed %s", crash_id)
 
     def _setup_source_and_destination(self):
         """Instantiate classes necessary for processing."""
@@ -273,6 +288,9 @@ class ProcessorApp(FetchTransformSaveApp):
         self.processor = self.config.processor.processor_class(
             config=self.config.processor, host_id=self.app_instance_name
         )
+
+        self.temporary_path = self.config.processor.temporary_path
+        os.makedirs(self.temporary_path, exist_ok=True)
 
     def close(self):
         """Clean up the processor on shutdown."""

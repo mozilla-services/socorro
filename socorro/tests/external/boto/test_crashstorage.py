@@ -57,10 +57,8 @@ def test_build_keys(kind, crashid, expected):
 
 
 class TestBotoS3CrashStorage:
-    def get_s3_store(self, tmpdir=None):
+    def get_s3_store(self):
         values_source = {}
-        if tmpdir is not None:
-            values_source["temporary_file_system_storage_path"] = tmpdir
         return BotoS3CrashStorage(config=get_config(BotoS3CrashStorage, values_source))
 
     def test_save_raw_crash_no_dumps(self, boto_helper):
@@ -301,8 +299,8 @@ class TestBotoS3CrashStorage:
         with pytest.raises(CrashIDNotFound):
             boto_s3_store.get_dumps("0bba929f-dead-dead-dead-a43c20071027")
 
-    def test_get_dumps_as_files(self, boto_helper, tmpdir):
-        boto_s3_store = self.get_s3_store(tmpdir=tmpdir)
+    def test_get_dumps_as_files(self, boto_helper, tmp_path):
+        boto_s3_store = self.get_s3_store()
         bucket = boto_s3_store.conn.bucket
         boto_helper.create_bucket(bucket)
 
@@ -328,7 +326,8 @@ class TestBotoS3CrashStorage:
         )
 
         result = boto_s3_store.get_dumps_as_files(
-            "936ce666-ff3b-4c7a-9674-367fe2120408"
+            crash_id="936ce666-ff3b-4c7a-9674-367fe2120408",
+            tmpdir=str(tmp_path),
         )
 
         # We don't care much about the mocked internals as the bulk of that
@@ -336,15 +335,15 @@ class TestBotoS3CrashStorage:
         # We just need to be concerned about the file writing worked.
         expected = {
             "content_dump": os.path.join(
-                str(tmpdir),
+                str(tmp_path),
                 "936ce666-ff3b-4c7a-9674-367fe2120408.content_dump.TEMPORARY.dump",
             ),
             "city_dump": os.path.join(
-                str(tmpdir),
+                str(tmp_path),
                 "936ce666-ff3b-4c7a-9674-367fe2120408.city_dump.TEMPORARY.dump",
             ),
             "upload_file_minidump": os.path.join(
-                str(tmpdir),
+                str(tmp_path),
                 "936ce666-ff3b-4c7a-9674-367fe2120408.upload_file_minidump.TEMPORARY.dump",
             ),
         }
