@@ -279,7 +279,7 @@ class TestCrashStorageBase:
 
 
 class TestBench:
-    def test_benchmarking_crashstore(self, caplogpp):
+    def test_benchmarking_crashstore(self, tmp_path, caplogpp):
         caplogpp.set_level("DEBUG")
 
         required_config = Namespace()
@@ -334,9 +334,10 @@ class TestBench:
             assert "test get_dumps 1" in [rec.message for rec in caplogpp.records]
             caplogpp.clear()
 
-            crashstorage.get_dumps_as_files("uuid")
+            crashstorage.get_dumps_as_files("uuid", tmpdir=str(tmp_path))
             crashstorage.wrapped_crashstore.get_dumps_as_files.assert_called_with(
-                "uuid"
+                "uuid",
+                str(tmp_path),
             )
             assert "test get_dumps_as_files 1" in [
                 rec.message for rec in caplogpp.records

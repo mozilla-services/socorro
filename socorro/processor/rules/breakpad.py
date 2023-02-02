@@ -3,13 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections.abc import Mapping
-from contextlib import contextmanager
 import json
 import logging
 import os
 import shlex
 import subprocess
-import threading
 
 import glom
 import markus
@@ -32,10 +30,10 @@ class CrashingThreadInfoRule(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return processed_crash.get("json_dump", None) is not None
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         processed_crash["crashing_thread"] = glom.glom(
             processed_crash, "json_dump.crash_info.crashing_thread", default=None
         )
@@ -63,7 +61,7 @@ class MinidumpSha256HashRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         checksums = raw_crash.get("metadata", {}).get("dump_checksums", {})
         processed_crash["minidump_sha256_hash"] = checksums.get(
             "upload_file_minidump", ""
@@ -134,7 +132,7 @@ class TruncateStacksRule(Rule):
                     + f"{len(frames)} > {len(truncated_frames)}"
                 )
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # Traverse processed_crash for "json_dump" sections. Each one of these has
         # multiple stacks in it.
         for key, value in processed_crash.items():
@@ -144,30 +142,6 @@ class TruncateStacksRule(Rule):
             elif isinstance(value, dict):
                 if "json_dump" in value:
                     self.truncate_stacks(value["json_dump"], f"{key}.json_dump", status)
-
-
-@contextmanager
-def tmp_raw_crash_file(tmp_path, raw_crash, crash_id):
-    """Saves JSON data to file, returns path, and deletes file when done.
-
-    :param tmp_path: str path to temp storage
-    :param raw_crash: dict of raw crash data
-    :param crash_id: crash id for this crash report
-
-    :yields: absolute path to temp file
-
-    """
-
-    path = os.path.join(
-        tmp_path, f"{crash_id}.{threading.currentThread().getName()}.TEMPORARY.json"
-    )
-    with open(path, "w") as fp:
-        json.dump(raw_crash, fp)
-
-    try:
-        yield path
-    finally:
-        os.unlink(path)
 
 
 def execute_process(command_line):
@@ -239,7 +213,6 @@ class MinidumpStackwalkRule(Rule):
         kill_timeout=600,
         symbol_tmp_path="/tmp/symbols-tmp",
         symbol_cache_path="/tmp/symbols",
-        tmp_path="/tmp/",
     ):
         super().__init__()
         self.dump_field = dump_field
@@ -249,7 +222,6 @@ class MinidumpStackwalkRule(Rule):
         self.kill_timeout = kill_timeout
         self.symbol_tmp_path = symbol_tmp_path
         self.symbol_cache_path = symbol_cache_path
-        self.tmp_path = tmp_path
 
         self.stackwalk_version = self.get_version()
         self.build_directories()
@@ -265,7 +237,6 @@ class MinidumpStackwalkRule(Rule):
             "kill_timeout",
             "symbol_tmp_path",
             "symbol_cache_path",
-            "tmp_path",
         )
         return self.generate_repr(keys=keys)
 
@@ -359,6 +330,14 @@ class MinidumpStackwalkRule(Rule):
                 self.logger.warning(f"{msg} ({crash_id})")
                 output = {}
 
+        else:
+            # Log last 500 characters replacing \n with "\\n"
+            self.logger.error(
+                "MinidumpStackwalkRule: minidump-stackwalk failed: %s %s",
+                returncode,
+                stderr.replace("\n", "\\n")[-1000:],
+            )
+
         stackwalker_data = {
             "json_dump": output,
             "mdsw_return_code": returncode,
@@ -397,68 +376,72 @@ class MinidumpStackwalkRule(Rule):
 
         return stackwalker_data
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         crash_id = raw_crash["uuid"]
 
         processed_crash.setdefault("additional_minidumps", [])
 
-        with tmp_raw_crash_file(self.tmp_path, raw_crash, crash_id) as raw_crash_path:
-            for dump_name, dump_file_path in dumps.items():
-                # This rule only works on minidumps which the crash reporter prefixes
-                # with the value of dump_field (defaults to "upload_file_minidump")
-                if not dump_name.startswith(self.dump_field):
-                    continue
+        # Save crash annotations to disk for stackwalker to look at
+        raw_crash_path = f"{tmpdir}/{crash_id}.json"
+        with open(raw_crash_path, "w") as fp:
+            json.dump(raw_crash, fp)
 
-                file_size = os.path.getsize(dump_file_path)
-                if file_size == 0:
-                    # If the dump file is empty (0-bytes), then we don't want to bother
-                    # running minidump-stackwalker.
-                    #
-                    # This is a bad case, so we want to add a note. However, since this
-                    # is a shortcut, we also include some stackwalker_data.
-                    stackwalker_data = {
-                        "mdsw_status_string": "EmptyMinidump",
-                        "mdsw_stderr": "Shortcut for 0-bytes minidump.",
-                    }
+        for dump_name, dump_file_path in dumps.items():
+            # This rule only works on minidumps which the crash reporter prefixes
+            # with the value of dump_field (defaults to "upload_file_minidump")
+            if not dump_name.startswith(self.dump_field):
+                continue
 
-                    status.add_note(
-                        f"MinidumpStackwalkRule: {dump_name} is empty--skipping "
-                        + "minidump processing"
-                    )
+            file_size = os.path.getsize(dump_file_path)
+            if file_size == 0:
+                # If the dump file is empty (0-bytes), then we don't want to bother
+                # running minidump-stackwalker.
+                #
+                # This is a bad case, so we want to add a note. However, since this
+                # is a shortcut, we also include some stackwalker_data.
+                stackwalker_data = {
+                    "mdsw_status_string": "EmptyMinidump",
+                    "mdsw_stderr": "Shortcut for 0-bytes minidump.",
+                }
 
-                else:
-                    command_line = self.expand_commandline(
-                        dump_file_path=dump_file_path,
-                        raw_crash_path=raw_crash_path,
-                    )
+                status.add_note(
+                    f"MinidumpStackwalkRule: {dump_name} is empty--skipping "
+                    + "minidump processing"
+                )
 
-                    stackwalker_data = self.run_stackwalker(
-                        crash_id=crash_id,
-                        command_path=self.command_path,
-                        command_line=command_line,
-                        status=status,
-                    )
+            else:
+                command_line = self.expand_commandline(
+                    dump_file_path=dump_file_path,
+                    raw_crash_path=raw_crash_path,
+                )
 
-                    stderr = stackwalker_data.get("mdsw_stderr", "").strip()
-                    if stderr:
-                        if stderr.startswith("ERROR"):
-                            indicator = stderr.split(" ")[1]
-                        else:
-                            indicator = ""
+                stackwalker_data = self.run_stackwalker(
+                    crash_id=crash_id,
+                    command_path=self.command_path,
+                    command_line=command_line,
+                    status=status,
+                )
 
-                        status_string = stackwalker_data.get("mdsw_status_string", "")
-                        if indicator and status_string in ["OK", "unknown error"]:
-                            stackwalker_data["mdsw_status_string"] = indicator
-                            status.add_note(
-                                f"MinidumpStackwalkRule: processing {dump_name} had error; "
-                                + "stomped on mdsw_status_string"
-                            )
+                stderr = stackwalker_data.get("mdsw_stderr", "").strip()
+                if stderr:
+                    if stderr.startswith("ERROR"):
+                        indicator = stderr.split(" ")[1]
+                    else:
+                        indicator = ""
 
-                if dump_name == self.dump_field:
-                    processed_crash.update(stackwalker_data)
+                    status_string = stackwalker_data.get("mdsw_status_string", "")
+                    if indicator and status_string in ["OK", "unknown error"]:
+                        stackwalker_data["mdsw_status_string"] = indicator
+                        status.add_note(
+                            f"MinidumpStackwalkRule: processing {dump_name} had error; "
+                            + "stomped on mdsw_status_string"
+                        )
 
-                else:
-                    if dump_name not in processed_crash["additional_minidumps"]:
-                        processed_crash["additional_minidumps"].append(dump_name)
-                    processed_crash.setdefault(dump_name, {})
-                    processed_crash[dump_name].update(stackwalker_data)
+            if dump_name == self.dump_field:
+                processed_crash.update(stackwalker_data)
+
+            else:
+                if dump_name not in processed_crash["additional_minidumps"]:
+                    processed_crash["additional_minidumps"].append(dump_name)
+                processed_crash.setdefault(dump_name, {})
+                processed_crash[dump_name].update(stackwalker_data)

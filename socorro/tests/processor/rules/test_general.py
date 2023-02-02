@@ -90,19 +90,19 @@ class TestDeNoneRule:
             ({"foo": "bar", "baz": None}, {"foo": "bar"}),
         ],
     )
-    def test_denone(self, raw_crash, expected):
+    def test_denone(self, tmp_path, raw_crash, expected):
         rule = DeNoneRule()
-        rule.action(raw_crash, None, {}, {})
+        rule.action(raw_crash, None, {}, str(tmp_path), Status())
         assert raw_crash == expected
 
-    def test_denone_with_dotdict(self):
+    def test_denone_with_dotdict(self, tmp_path):
         # We want to explicitly test with DotDict since it might have different deletion
         # things
         raw_crash = DotDict({"foo": "bar", "baz": None})
         expected = DotDict({"foo": "bar"})
 
         rule = DeNoneRule()
-        rule.action(raw_crash, None, {}, {})
+        rule.action(raw_crash, None, {}, str(tmp_path), Status())
         assert raw_crash == expected
 
 
@@ -126,26 +126,26 @@ class TestDeNullRule:
         rule = DeNullRule()
         assert rule.de_null(data) == expected
 
-    def test_rule_with_dict(self):
+    def test_rule_with_dict(self, tmp_path):
         raw_crash = {"key1": "val1", b"\0key2": b"val2\0", "\0key3": "\0val3"}
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, Status())
+        rule.act(raw_crash, None, {}, str(tmp_path), Status())
 
         assert raw_crash == {"key1": "val1", b"key2": b"val2", "key3": "val3"}
 
-    def test_rule_with_dotdict(self):
+    def test_rule_with_dotdict(self, tmp_path):
         # NOTE(willkg): DotDict doesn't like bytes keys
         raw_crash = DotDict({"key1": "val1", "\0key2": b"val2\0", "\0key3": "\0val3"})
 
         rule = DeNullRule()
-        rule.act(raw_crash, {}, {}, Status())
+        rule.act(raw_crash, None, {}, str(tmp_path), Status())
 
         assert raw_crash == DotDict({"key1": "val1", "key2": b"val2", "key3": "val3"})
 
 
 class TestIdentifierRule:
-    def test_everything_we_hoped_for(self):
+    def test_everything_we_hoped_for(self, tmp_path):
         uuid = "00000000-0000-0000-0000-000002140504"
         raw_crash = {"uuid": uuid}
         dumps = {}
@@ -153,19 +153,19 @@ class TestIdentifierRule:
         status = Status()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["crash_id"] == uuid
         assert processed_crash["uuid"] == uuid
 
-    def test_uuid_missing(self):
+    def test_uuid_missing(self, tmp_path):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
 
         rule = IdentifierRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         # raw crash and processed crashes should be unchanged
         assert raw_crash == {}
@@ -173,7 +173,7 @@ class TestIdentifierRule:
 
 
 class TestCPUInfoRule:
-    def test_cpu_count(self):
+    def test_cpu_count(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -181,10 +181,10 @@ class TestCPUInfoRule:
         rule = CPUInfoRule()
 
         processed_crash = {"json_dump": {"system_info": {"cpu_count": 4}}}
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_count"] == 4
 
-    def test_cpu_count_no_json_dump(self):
+    def test_cpu_count_no_json_dump(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -192,10 +192,10 @@ class TestCPUInfoRule:
         rule = CPUInfoRule()
 
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_count"] == 0
 
-    def test_cpu_info(self):
+    def test_cpu_info(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -209,12 +209,12 @@ class TestCPUInfoRule:
                 }
             }
         }
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert (
             processed_crash["cpu_info"] == "GenuineIntel family 6 model 42 stepping 7"
         )
 
-    def test_cpu_info_no_json_dump(self):
+    def test_cpu_info_no_json_dump(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -222,10 +222,10 @@ class TestCPUInfoRule:
         rule = CPUInfoRule()
 
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_info"] == "unknown"
 
-    def test_cpu_arch_no_json_dump(self):
+    def test_cpu_arch_no_json_dump(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -234,10 +234,10 @@ class TestCPUInfoRule:
 
         # If there's no information, then it should be "unknown"
         processed_crash = {}
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_arch"] == "unknown"
 
-    def test_cpu_arch_from_json_dump(self):
+    def test_cpu_arch_from_json_dump(self, tmp_path):
         raw_crash = {}
         dumps = {}
         status = Status()
@@ -246,7 +246,7 @@ class TestCPUInfoRule:
 
         # If it's in the minidump-stackwalk output, use that
         processed_crash = {"json_dump": {"system_info": {"cpu_arch": "x86"}}}
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_arch"] == "x86"
 
     @pytest.mark.parametrize(
@@ -258,49 +258,49 @@ class TestCPUInfoRule:
             ("value not in map", "value not in map"),
         ],
     )
-    def test_cpu_arch_from_android_cpu_abi(self, android_cpu_abi, expected):
+    def test_cpu_arch_from_android_cpu_abi(self, tmp_path, android_cpu_abi, expected):
         raw_crash = {"Android_CPU_ABI": android_cpu_abi}
         processed_crash = {}
         dumps = {}
         status = Status()
 
         rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_arch"] == expected
 
-    def test_no_cpu_microcode_version(self):
+    def test_no_cpu_microcode_version(self, tmp_path):
         raw_crash = {}
         processed_crash = {}
         dumps = {}
         status = Status()
 
         rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert "cpu_microcode_version" not in processed_crash
 
-    def test_cpu_microcode_version_from_stackwalker(self):
+    def test_cpu_microcode_version_from_stackwalker(self, tmp_path):
         raw_crash = {"CPUMicrocodeVersion": "ignored value"}
         processed_crash = {"json_dump": {"system_info": {"cpu_microcode_version": 66}}}
         dumps = {}
         status = Status()
 
         rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_microcode_version"] == "0x42"
 
-    def test_cpu_microcode_version_from_annotation(self):
+    def test_cpu_microcode_version_from_annotation(self, tmp_path):
         raw_crash = {"CPUMicrocodeVersion": "0x42"}
         processed_crash = {}
         dumps = {}
         status = Status()
 
         rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["cpu_microcode_version"] == "0x42"
 
 
 class TestOSInfoRule:
-    def test_everything_we_hoped_for(self):
+    def test_everything_we_hoped_for(self, tmp_path):
         raw_crash = {}
         processed_crash = {
             "json_dump": {
@@ -315,7 +315,7 @@ class TestOSInfoRule:
         rule = OSInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, {}, processed_crash, status)
+        rule.act(raw_crash, {}, processed_crash, str(tmp_path), status)
 
         assert processed_crash["os_name"] == "Windows NT"
         assert processed_crash["os_version"] == "6.1.7601 Service Pack 1"
@@ -323,7 +323,7 @@ class TestOSInfoRule:
         # raw crash should be unchanged
         assert raw_crash == {}
 
-    def test_stuff_missing(self):
+    def test_stuff_missing(self, tmp_path):
         raw_crash = {}
         processed_crash = {}
         status = Status()
@@ -331,7 +331,7 @@ class TestOSInfoRule:
         rule = OSInfoRule()
 
         # the call to be tested
-        rule.act(raw_crash, {}, processed_crash, status)
+        rule.act(raw_crash, {}, processed_crash, str(tmp_path), status)
 
         # processed crash should have empties
         assert processed_crash["os_name"] == "Unknown"
@@ -342,7 +342,7 @@ class TestOSInfoRule:
 
 
 class TestCrashReportKeysRule:
-    def test_basic(self):
+    def test_basic(self, tmp_path):
         raw_crash = {
             "Product": "Firefox",
             "Version": "95.0",
@@ -357,7 +357,7 @@ class TestCrashReportKeysRule:
 
         rule = CrashReportKeysRule()
 
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert status.notes == []
         assert processed_crash == {
@@ -406,17 +406,17 @@ class TestCrashReportKeysRule:
 
 
 class TestCollectorMetadataRule:
-    def test_no_metadata(self):
+    def test_no_metadata(self, tmp_path):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
         rule = CollectorMetadataRule()
-        rule.action(raw_crash, dumps, processed_crash, status)
+        rule.action(raw_crash, dumps, processed_crash, str(tmp_path), status)
         print(processed_crash)
         assert processed_crash["collector_metadata"] == {}
 
-    def test_metadata(self):
+    def test_metadata(self, tmp_path):
         raw_crash = {
             "metadata": {
                 "collector_notes": ["some notes"],
@@ -426,5 +426,5 @@ class TestCollectorMetadataRule:
         processed_crash = {}
         status = Status()
         rule = CollectorMetadataRule()
-        rule.action(raw_crash, dumps, processed_crash, status)
+        rule.action(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["collector_metadata"] == raw_crash["metadata"]

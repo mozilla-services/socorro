@@ -167,7 +167,7 @@ canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
 class TestCrashingThreadInfoRule:
-    def test_valid_data(self):
+    def test_valid_data(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {
@@ -186,14 +186,14 @@ class TestCrashingThreadInfoRule:
         status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["crashing_thread"] == 0
         assert processed_crash["crashing_thread_name"] == "MainThread"
         assert processed_crash["address"] == "0x0"
         assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
 
-    def test_json_dump_missing(self):
+    def test_json_dump_missing(self, tmp_path):
         """If there's no dump data, then this rule doesn't do anything"""
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
@@ -202,12 +202,12 @@ class TestCrashingThreadInfoRule:
         status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash == {}
         assert status.notes == []
 
-    def test_empty_json_dump(self):
+    def test_empty_json_dump(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
         processed_crash = {"json_dump": {}}
@@ -215,7 +215,7 @@ class TestCrashingThreadInfoRule:
         status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["crashing_thread"] is None
         assert processed_crash["crashing_thread_name"] is None
@@ -224,7 +224,7 @@ class TestCrashingThreadInfoRule:
 
 
 class TestTruncateStacksRule:
-    def test_truncate_json_dump(self):
+    def test_truncate_json_dump(self, tmp_path):
         frames = [
             {
                 "frame": 0,
@@ -296,7 +296,7 @@ class TestTruncateStacksRule:
         status = Status()
 
         rule = TruncateStacksRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         json_dump = processed_crash["json_dump"]
 
@@ -320,7 +320,7 @@ class TestTruncateStacksRule:
 
         validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
 
-    def test_truncate_upload_file_minidump_browser(self):
+    def test_truncate_upload_file_minidump_browser(self, tmp_path):
         frames = [
             {
                 "frame": 0,
@@ -394,7 +394,7 @@ class TestTruncateStacksRule:
         status = Status()
 
         rule = TruncateStacksRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         json_dump = processed_crash["upload_file_minidump_browser"]["json_dump"]
 
@@ -420,24 +420,24 @@ class TestTruncateStacksRule:
 
 
 class TestMinidumpSha256HashRule:
-    def test_no_dump_checksum(self):
+    def test_no_dump_checksum(self, tmp_path):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
 
         rule = MinidumpSha256HashRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["minidump_sha256_hash"] == ""
 
-    def test_copy_over(self):
+    def test_copy_over(self, tmp_path):
         raw_crash = {"metadata": {"dump_checksums": {"upload_file_minidump": "hash"}}}
         dumps = {}
         processed_crash = {}
         status = Status()
 
         rule = MinidumpSha256HashRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
 
@@ -584,7 +584,6 @@ class TestMinidumpStackwalkRule:
             kill_timeout=5,
             symbol_tmp_path="/tmp/symbols/tmp",
             symbol_cache_path="/tmp/symbols/cache",
-            tmp_path="/tmp",
         )
 
     def test_everything_we_hoped_for(self, tmp_path):
@@ -608,7 +607,7 @@ class TestMinidumpStackwalkRule:
                     stderr=b"",
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, status)
+                rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
             expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
 
@@ -642,7 +641,7 @@ class TestMinidumpStackwalkRule:
                     returncode=124, stdout=b"{}\n", stderr=b""
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, status)
+                rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
             assert processed_crash["mdsw_return_code"] == 124
             assert processed_crash["mdsw_status_string"] == "unknown error"
@@ -675,7 +674,7 @@ class TestMinidumpStackwalkRule:
                 returncode=-1, stdout=b"{ff", stderr=b"boo hiss"
             )
 
-            rule.act(raw_crash, dumps, processed_crash, status)
+            rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
@@ -699,7 +698,7 @@ class TestMinidumpStackwalkRule:
         processed_crash = {}
         status = Status()
 
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["mdsw_status_string"] == "EmptyMinidump"
         assert processed_crash["mdsw_stderr"] == "Shortcut for 0-bytes minidump."
