@@ -331,38 +331,32 @@ class MinidumpStackwalkRule(Rule):
                 self.logger.warning("%s (%s)", msg, crash_id)
                 output = {}
 
-        else:
-            # Log last 500 characters replacing \n with "\\n"
-            self.logger.error(
-                "MinidumpStackwalkRule: minidump-stackwalk failed: %s '%s'",
-                returncode,
-                stderr.replace("\n", "\\n")[-1000:],
-            )
-
+        status_line = output.get("status", "unknown error")
         stackwalker_data = {
             "json_dump": output,
             "mdsw_return_code": returncode,
-            "mdsw_status_string": output.get("status", "unknown error"),
-            "success": output.get("status", "") == "OK",
+            "mdsw_status_string": status_line,
+            "success": status_line == "OK",
             "stackwalk_version": self.stackwalk_version,
             # Note: this may contain proected data
             "mdsw_stderr": stderr,
         }
 
-        if returncode == 124:
-            msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
-            status.add_note(msg)
-            self.logger.warning("%s (%s)", msg, crash_id)
-
-        elif returncode != 0 or not stackwalker_data["success"]:
-            msg = (
-                "MinidumpStackwalkRule: minidump-stackwalk: failed with "
-                + f"{returncode}: {stackwalker_data['mdsw_status_string']}"
-            )
-            # subprocess.Popen with shell=False returns negative exit codes
-            # where the number is the signal that got kicked up
+        # subprocess.Popen with shell=False returns negative exit codes where the number
+        # is the signal that got kicked up
+        if returncode != 0 or not stackwalker_data["success"]:
             if returncode == -6:
-                msg = msg + " (SIGABRT)"
+                msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGABRT)"
+
+            elif returncode == -9:
+                msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
+
+            else:
+                status_string = stackwalker_data["mdsw_status_string"]
+                msg = (
+                    "MinidumpStackwalkRule: minidump-stackwalk: failed: "
+                    + f"{returncode}: {status_string}"
+                )
 
             status.add_note(msg)
             self.logger.warning("%s (%s)", msg, crash_id)

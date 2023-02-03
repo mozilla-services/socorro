@@ -622,7 +622,11 @@ class TestMinidumpStackwalkRule:
                 tags=["outcome:success", "exitcode:0"],
             )
 
-    def test_stackwalker_hangs(self, tmp_path):
+    def test_stackwalker_timeout(self, tmp_path):
+        # NOTE(willkg): we run the stackwalker with a "timeout --signal KILL ..." When
+        # stackwalker exceeds the amount of time alotted, timeout kills it with a
+        # SIGKILL (9) and subprocess denotes that using a negative exit code of -9.
+        # This tests that.
         rule = self.build_rule()
 
         dumppath = tmp_path / "dumpfile.dmp"
@@ -638,12 +642,12 @@ class TestMinidumpStackwalkRule:
                 "socorro.processor.rules.breakpad.subprocess"
             ) as mock_subprocess:
                 mock_subprocess.run.return_value = ProcessCompletedMock(
-                    returncode=124, stdout=b"{}\n", stderr=b""
+                    returncode=-9, stdout=b"{}\n", stderr=b""
                 )
 
                 rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-            assert processed_crash["mdsw_return_code"] == 124
+            assert processed_crash["mdsw_return_code"] == -9
             assert processed_crash["mdsw_status_string"] == "unknown error"
             assert processed_crash["stackwalk_version"] == rule.stackwalk_version
             assert processed_crash["success"] is False
@@ -653,7 +657,7 @@ class TestMinidumpStackwalkRule:
 
             mm.assert_incr(
                 "processor.minidumpstackwalk.run",
-                tags=["outcome:fail", "exitcode:124"],
+                tags=["outcome:fail", "exitcode:-9"],
             )
 
     def test_stackwalker_bad_output(self, tmp_path):
@@ -683,7 +687,7 @@ class TestMinidumpStackwalkRule:
         assert not processed_crash["success"]
         assert (
             status.notes[0]
-            == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
+            == "MinidumpStackwalkRule: minidump-stackwalk: failed: -1: unknown error"
         )
 
     def test_empty_minidump_shortcut(self, tmp_path):
