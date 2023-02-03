@@ -315,8 +315,9 @@ class MinidumpStackwalkRule(Rule):
             except Exception as exc:
                 msg = f"{command_path}: non-json output: {exc}"
                 self.logger.debug(
-                    f"MinidumpStackwalkRule: {command_path}: non-json output: "
-                    f"{stdout[:1000]}"
+                    "MinidumpStackwalkRule: %s: non-json output: %s",
+                    command_path,
+                    stdout[:1000],
                 )
                 self.logger.error(msg)
                 status.add_note(msg)
@@ -324,16 +325,16 @@ class MinidumpStackwalkRule(Rule):
             if output and not isinstance(output, Mapping):
                 msg = (
                     "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
-                    + f"output: {output[:20]}"
+                    + f"output: {str(output)[:200]}"
                 )
                 status.add_note(msg)
-                self.logger.warning(f"{msg} ({crash_id})")
+                self.logger.warning("%s (%s)", msg, crash_id)
                 output = {}
 
         else:
             # Log last 500 characters replacing \n with "\\n"
             self.logger.error(
-                "MinidumpStackwalkRule: minidump-stackwalk failed: %s %s",
+                "MinidumpStackwalkRule: minidump-stackwalk failed: %s '%s'",
                 returncode,
                 stderr.replace("\n", "\\n")[-1000:],
             )
@@ -351,7 +352,7 @@ class MinidumpStackwalkRule(Rule):
         if returncode == 124:
             msg = "MinidumpStackwalkRule: minidump-stackwalk: timeout (SIGKILL)"
             status.add_note(msg)
-            self.logger.warning(f"{msg} ({crash_id})")
+            self.logger.warning("%s (%s)", msg, crash_id)
 
         elif returncode != 0 or not stackwalker_data["success"]:
             msg = (
@@ -364,7 +365,7 @@ class MinidumpStackwalkRule(Rule):
                 msg = msg + " (SIGABRT)"
 
             status.add_note(msg)
-            self.logger.warning(f"{msg} ({crash_id})")
+            self.logger.warning("%s (%s)", msg, crash_id)
 
         self.metrics.incr(
             "run",
@@ -382,7 +383,7 @@ class MinidumpStackwalkRule(Rule):
         processed_crash.setdefault("additional_minidumps", [])
 
         # Save crash annotations to disk for stackwalker to look at
-        raw_crash_path = f"{tmpdir}/{crash_id}.json"
+        raw_crash_path = os.path.join(tmpdir, f"{crash_id}.json")
         with open(raw_crash_path, "w") as fp:
             json.dump(raw_crash, fp)
 
