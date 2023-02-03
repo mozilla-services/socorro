@@ -141,26 +141,26 @@ class TestDockerflowHeartbeatViews:
 
 
 class TestDockerflowVersionView:
-    def test_version_no_file(self, client, settings, tmpdir):
+    def test_version_no_file(self, client, settings, tmp_path):
         """Test with no version.json file"""
-        # The tmpdir definitely doesn't have a version.json in it, so we use
+        # The tmp_path definitely doesn't have a version.json in it, so we use
         # that
-        settings.SOCORRO_ROOT = str(tmpdir)
+        settings.SOCORRO_ROOT = str(tmp_path)
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json; charset=UTF-8"
         assert smart_str(resp.content) == "{}"
 
-    def test_version_with_file(self, client, settings, tmpdir):
+    def test_version_with_file(self, client, settings, tmp_path):
         """Test with a version.json file"""
-        settings.SOCORRO_ROOT = str(tmpdir)
+        settings.SOCORRO_ROOT = str(tmp_path)
 
         text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
 
-        # Create the version.json file in the tmpdir
-        version_json = tmpdir / "version.json"
-        version_json.write(text)
+        # Create the version.json file in the tmp_path
+        version_json = tmp_path / "version.json"
+        version_json.write_text(text)
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
