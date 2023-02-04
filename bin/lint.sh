@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp bin)
+BLACKARGS=("--line-length=88" "--target-version=py39" socorro-cmd docker socorro webapp bin)
 
 if [[ "${1:-}" == "--fix" ]]; then
     echo ">>> black fix"
