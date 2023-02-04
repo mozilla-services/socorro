@@ -13,7 +13,6 @@ It uses a fetch/transform/save model.
    processing rules which results in a processed crash
 3. save: crash storage saves the data to crash storage destinations
 
-
 """
 
 from contextlib import suppress
@@ -309,7 +308,6 @@ class ProcessorApp(App):
             new_crash = True
             processed_crash = {}
 
-        # Process the crash and remove any temporary artifacts from disk
         # Process the crash to generate a processed crash
         self.logger.debug("processing %s", crash_id)
         processed_crash = self.processor.process_crash(
@@ -330,7 +328,6 @@ class ProcessorApp(App):
             for storage_error in poly_storage_error:
                 sentry_sdk.capture_exception(storage_error)
                 self.logger.error("error: crash id %s: %r", crash_id, storage_error)
-            self.logger.warning("error in processing or saving crash %s", crash_id)
 
             # Re-raise the original exception with the correct traceback
             raise
