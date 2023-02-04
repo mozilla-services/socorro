@@ -124,12 +124,8 @@ class TaskManager(RequiredConfig):
                 self.logger.info("%s: %dsec of %dsec", wait_reason, x, seconds)
             time.sleep(1.0)
 
-    def blocking_start(self, waiting_func=None):
-        """this function starts the task manager running to do tasks.  The
-        waiting_func is normally used to do something while other threads
-        are running, but here we don't have other threads.  So the waiting
-        func will never get called.  I can see wanting this function to be
-        called at least once after the end of the task loop."""
+    def blocking_start(self):
+        """This function starts the task manager running to do tasks."""
         self.logger.debug("threadless start")
         try:
             # May never exhaust
