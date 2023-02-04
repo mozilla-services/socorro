@@ -393,5 +393,13 @@ def test_transform_save_error(sentry_helper, caplogpp):
         # Assert that the exception was not sent to Sentry and not logged at this
         # point--it gets caught and logged  by the processor
         assert len(sentry_client.events) == 0
-        # "starting {crashid}" and "using tmpdir {tmpdir}"
-        assert len(caplogpp.records) == 2
+
+        # Assert what got logged. It should be all the messages except the last
+        # "completed" one because this kicked up a ValueError in saving
+        messages = [record.message for record in caplogpp.records]
+        assert messages == [
+            "starting 930b08ba-e425-49bf-adbd-7c9172220721 with default",
+            "fetching data 930b08ba-e425-49bf-adbd-7c9172220721",
+            "processing 930b08ba-e425-49bf-adbd-7c9172220721",
+            "saving 930b08ba-e425-49bf-adbd-7c9172220721",
+        ]
