@@ -179,10 +179,6 @@ class ProcessorApp(App):
         from_string_converter=class_converter,
     )
 
-    def __init__(self, config):
-        super().__init__(config)
-        self.waiting_func = None
-
     @classmethod
     def configure_sentry(cls, basedir, host_id, sentry_dsn):
         release = get_release_name(basedir)
@@ -367,10 +363,6 @@ class ProcessorApp(App):
         else:
             self.companion_process = None
 
-        # This function will be called by the MainThread periodically
-        # while the threaded_task_manager processes crashes.
-        self.waiting_func = None
-
         self.processor = self.config.processor.processor_class(
             config=self.config.processor, host_id=self.app_instance_name
         )
@@ -422,7 +414,7 @@ class ProcessorApp(App):
 
         self._setup_task_manager()
         self._setup_source_and_destination()
-        self.task_manager.blocking_start(waiting_func=self.waiting_func)
+        self.task_manager.blocking_start()
         self.close()
         self.logger.info("done.")
 

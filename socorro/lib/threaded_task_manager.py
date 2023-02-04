@@ -89,16 +89,20 @@ class ThreadedTaskManager(TaskManager):
         )
         self.queuing_thread.start()
 
-    def wait_for_completion(self, waiting_func=None):
+    def wait_for_completion(self):
         """This is a blocking function call that will wait for the queuing
         thread to complete.
 
-        parameters:
-            waiting_func - this function will be called every one second while
-                           waiting for the queuing thread to quit.  This allows
-                           for logging timers, status indicators, etc."""
+        """
         self.logger.debug("waiting to join queuing_thread")
-        self._responsive_join(self.queuing_thread, waiting_func)
+        while True:
+            try:
+                self.queuing_thread.join(1.0)
+                if not self.queuing_thread.is_alive():
+                    break
+            except KeyboardInterrupt:
+                self.logger.debug("quit detected by wait_for_completion")
+                self.quit = True
 
     def stop(self):
         """This function will tell all threads to quit.  All threads
@@ -108,7 +112,7 @@ class ThreadedTaskManager(TaskManager):
         self.quit = True
         self.wait_for_completion()
 
-    def blocking_start(self, waiting_func=None):
+    def blocking_start(self):
         """this function is just a wrapper around the start and
         wait_for_completion methods.  It starts the queuing thread and then
         waits for it to complete.  If run by the main thread, it will detect
@@ -116,7 +120,7 @@ class ThreadedTaskManager(TaskManager):
         have been translated to) and will order the threads to die."""
         try:
             self.start()
-            self.wait_for_completion(waiting_func)
+            self.wait_for_completion()
             # it only ends if someone hits  ^C or sends SIGHUP or SIGTERM -
             # any of which will get translated into a KeyboardInterrupt
         except KeyboardInterrupt:
@@ -153,29 +157,6 @@ class ThreadedTaskManager(TaskManager):
                 self.logger.info("%s: %dsec so far", wait_reason, seconds)
             seconds += 1
             time.sleep(1.0)
-
-    def _responsive_join(self, thread, waiting_func=None):
-        """similar to the responsive sleep, a join function blocks a thread
-        until some other thread dies.  If that takes a long time, we'd like to
-        have some indicaition as to what the waiting thread is doing.  This
-        method will wait for another thread while calling the waiting_func
-        once every second.
-
-        parameters:
-            thread - an instance of the TaskThread class representing the
-                     thread to wait for
-            waiting_func - a function to call every second while waiting for
-                           the thread to die"""
-        while True:
-            try:
-                thread.join(1.0)
-                if not thread.is_alive():
-                    break
-                if waiting_func:
-                    waiting_func()
-            except KeyboardInterrupt:
-                self.logger.debug("quit detected by _responsive_join")
-                self.quit = True
 
     def _kill_worker_threads(self):
         """This function coerces the consumer/worker threads to kill

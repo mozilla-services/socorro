@@ -58,12 +58,9 @@ class TestTaskManager:
 
         tm = MyTaskManager(config, task_func=mock.Mock())
 
-        waiting_func = mock.Mock()
-
-        tm.blocking_start(waiting_func=waiting_func)
+        tm.blocking_start()
 
         assert tm.task_func.call_count == 10
-        assert waiting_func.call_count == 0
 
     def test_blocking_start_with_quit_on_empty(self):
         config = DotDict()
@@ -72,9 +69,6 @@ class TestTaskManager:
 
         tm = TaskManager(config, task_func=mock.Mock())
 
-        waiting_func = mock.Mock()
-
-        tm.blocking_start(waiting_func=waiting_func)
+        tm.blocking_start()
 
         assert tm.task_func.call_count == 10
-        assert waiting_func.call_count == 0

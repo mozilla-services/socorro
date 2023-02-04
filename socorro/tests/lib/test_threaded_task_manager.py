@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import time
-from unittest import mock
 
 from configman.dotdict import DotDict
 
@@ -104,7 +103,5 @@ class TestThreadedTaskManager:
 
         tm = ThreadedTaskManager(config, task_func=task_func)
 
-        waiting_func = mock.Mock()
-
-        tm.blocking_start(waiting_func=waiting_func)
+        tm.blocking_start()
         assert len(calls) == 10
