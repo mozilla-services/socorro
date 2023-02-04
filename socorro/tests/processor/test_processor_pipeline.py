@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import ANY
 
 from configman import ConfigurationManager
-from configman.dotdict import DotDict
 import freezegun
 
 from socorro.lib.libdatetime import date_to_string, utc_now
@@ -149,7 +148,7 @@ class TestProcessorPipeline:
 
             # Test with Sentry enabled (dsn set)
             raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
-            processed_crash = DotDict()
+            processed_crash = {}
 
             processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
             processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
@@ -172,13 +171,11 @@ class TestProcessorPipeline:
             assert event == RULE_ERROR_EVENT
 
     def test_process_crash_existing_processed_crash(self, tmp_path):
-        raw_crash = DotDict({"uuid": "1"})
+        raw_crash = {"uuid": "1"}
         dumps = {}
-        processed_crash = DotDict(
-            {
-                "processor_notes": "previousnotes",
-            }
-        )
+        processed_crash = {
+            "processor_notes": "previousnotes",
+        }
 
         pipeline = ProcessorPipeline(
             self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}

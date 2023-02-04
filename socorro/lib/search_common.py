@@ -12,7 +12,7 @@ import datetime
 from typing import Any, Optional
 
 from socorro.lib import BadArgumentError, libdatetime
-import socorro.lib.external_common as extern
+from socorro.lib import external_common
 
 
 """Operators description:
@@ -443,7 +443,7 @@ def get_parameters(kwargs):
         ("result_offset", 0, "int"),
     ]
 
-    params = extern.parse_arguments(filters, kwargs)
+    params = external_common.parse_arguments(filters, kwargs)
 
     # To be moved into a config file?
     authorized_modes = ["default", "starts_with", "contains", "is_exactly"]

@@ -4,7 +4,6 @@
 
 import datetime
 
-from configman.dotdict import DotDict
 import isodate
 import pytest
 
@@ -99,10 +98,11 @@ class TestExternalCommon:
             ("param3", ["list", "of", 4, "values"], ["list", "str"]),
         ]
         arguments = {"param1": "value1", "unknown": 12345}
-        params_exp = DotDict()
-        params_exp.param1 = ["value1"]
-        params_exp.param2 = None
-        params_exp.param3 = ["list", "of", "4", "values"]
+        params_exp = {
+            "param1": ["value1"],
+            "param2": None,
+            "param3": ["list", "of", "4", "values"],
+        }
 
         params = external_common.parse_arguments(filters, arguments, modern=False)
 
@@ -129,16 +129,17 @@ class TestExternalCommon:
             "param8": datetime.datetime(2016, 2, 9).isoformat(),
             # note the 'param9' is deliberately not specified.
         }
-        params_exp = DotDict()
-        params_exp.param1 = ["value1"]
-        params_exp.param2 = None
-        params_exp.param3 = ["some", "default", "list"]
-        params_exp.param4 = ["list", "of", "4", "values"]
-        params_exp.param5 = True
-        params_exp.param6 = None
-        params_exp.param7 = datetime.date(2016, 2, 9)
-        params_exp.param8 = datetime.datetime(2016, 2, 9).replace(tzinfo=isodate.UTC)
-        params_exp.param9 = None
+        params_exp = {
+            "param1": ["value1"],
+            "param2": None,
+            "param3": ["some", "default", "list"],
+            "param4": ["list", "of", "4", "values"],
+            "param5": True,
+            "param6": None,
+            "param7": datetime.date(2016, 2, 9),
+            "param8": datetime.datetime(2016, 2, 9).replace(tzinfo=isodate.UTC),
+            "param9": None,
+        }
 
         params = external_common.parse_arguments(filters, arguments, modern=True)
         for key in params:
@@ -159,8 +160,9 @@ class TestExternalCommon:
 
         filters = [("param1", 0, NumberConverter())]
         arguments = {"param1": "one"}
-        params_exp = DotDict()
-        params_exp.param1 = 1
+        params_exp = {
+            "param1": 1,
+        }
 
         params = external_common.parse_arguments(filters, arguments, modern=True)
         assert params == params_exp

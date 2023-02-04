@@ -40,23 +40,23 @@ class Query(RequiredConfig):
         """Return the result of a custom query"""
         params = external_common.parse_arguments(self.filters, kwargs)
 
-        if not params.query:
+        if not params["query"]:
             raise MissingArgumentError("query")
 
         # Set indices.
         indices = []
-        if not params.indices:
+        if not params["indices"]:
             # By default, use the last two indices.
             today = libdatetime.utc_now()
             last_week = today - datetime.timedelta(days=7)
 
             index_template = self.context.get_index_template()
             indices = generate_list_of_indexes(last_week, today, index_template)
-        elif len(params.indices) == 1 and params.indices[0] == "ALL":
+        elif len(params["indices"]) == 1 and params["indices"][0] == "ALL":
             # If we want all indices, just do nothing.
             pass
         else:
-            indices = params.indices
+            indices = params["indices"]
 
         search_args = {}
         if indices:
@@ -66,7 +66,7 @@ class Query(RequiredConfig):
         connection = self.get_connection()
 
         try:
-            results = connection.search(body=json.dumps(params.query), **search_args)
+            results = connection.search(body=json.dumps(params["query"]), **search_args)
         except elasticsearch.exceptions.NotFoundError as e:
             missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
             raise ResourceNotFound(

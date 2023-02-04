@@ -85,7 +85,7 @@ class TestProcessorApp:
         pa = ProcessorApp(config)
         pa._setup_source_and_destination()
 
-        fake_raw_crash = DotDict({"raw": "1"})
+        fake_raw_crash = {"raw": "1"}
         mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
         pa.source.get_raw_crash = mocked_get_raw_crash
 
@@ -93,11 +93,11 @@ class TestProcessorApp:
         mocked_get_dumps_as_files = mock.Mock(return_value=fake_dumps)
         pa.source.get_dumps_as_files = mocked_get_dumps_as_files
 
-        fake_processed_crash = DotDict({"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"})
+        fake_processed_crash = {"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"}
         mocked_get_processed = mock.Mock(return_value=fake_processed_crash)
         pa.source.get_processed = mocked_get_processed
 
-        mocked_process_crash = mock.Mock(return_value=DotDict({"processed": "1"}))
+        mocked_process_crash = mock.Mock(return_value={"processed": "1"})
         pa.processor.process_crash = mocked_process_crash
         pa.destination.save_processed_crash = mock.Mock()
         finished_func = mock.Mock()
@@ -308,7 +308,7 @@ def test_transform_polystorage_error(sentry_helper, caplogpp):
     sentry_dsn = os.environ.get("SENTRY_DSN", "")
     processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
     processor._setup_source_and_destination()
-    processor.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
+    processor.source.get_raw_crash.return_value = {"raw": "crash"}
     processor.source.get_dumps_as_files.return_value = {}
 
     # FIXME(willkg): the structure of the events suggest this PolyStorageError isn't
@@ -377,7 +377,7 @@ def test_transform_save_error(sentry_helper, caplogpp):
     sentry_dsn = os.environ.get("SENTRY_DSN", "")
     processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
     processor._setup_source_and_destination()
-    processor.source.get_raw_crash.return_value = DotDict({"raw": "crash"})
+    processor.source.get_raw_crash.return_value = {"raw": "crash"}
     processor.source.get_dumps_as_files.return_value = {}
 
     expected_exception = ValueError("simulated error")
