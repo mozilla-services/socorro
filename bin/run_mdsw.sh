@@ -13,12 +13,6 @@
 
 set -euo pipefail
 
-# First convert configman environment vars which have bad identifiers to ones
-# that don't
-function getenv {
-    python -c "import os; print(os.environ['$1'])"
-}
-
 DATADIR=./crashdata_mdsw_tmp
 STACKWALKER="/stackwalk-rust/minidump-stackwalk"
 
