@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from configman.dotdict import DotDict
 import pytest
 
 from socorro.processor.rules.general import (
@@ -95,16 +94,6 @@ class TestDeNoneRule:
         rule.action(raw_crash, None, {}, str(tmp_path), Status())
         assert raw_crash == expected
 
-    def test_denone_with_dotdict(self, tmp_path):
-        # We want to explicitly test with DotDict since it might have different deletion
-        # things
-        raw_crash = DotDict({"foo": "bar", "baz": None})
-        expected = DotDict({"foo": "bar"})
-
-        rule = DeNoneRule()
-        rule.action(raw_crash, None, {}, str(tmp_path), Status())
-        assert raw_crash == expected
-
 
 class TestDeNullRule:
     @pytest.mark.parametrize(
@@ -135,13 +124,12 @@ class TestDeNullRule:
         assert raw_crash == {"key1": "val1", b"key2": b"val2", "key3": "val3"}
 
     def test_rule_with_dotdict(self, tmp_path):
-        # NOTE(willkg): DotDict doesn't like bytes keys
-        raw_crash = DotDict({"key1": "val1", "\0key2": b"val2\0", "\0key3": "\0val3"})
+        raw_crash = {"key1": "val1", "\0key2": b"val2\0", "\0key3": "\0val3"}
 
         rule = DeNullRule()
         rule.act(raw_crash, None, {}, str(tmp_path), Status())
 
-        assert raw_crash == DotDict({"key1": "val1", "key2": b"val2", "key3": "val3"})
+        assert raw_crash == {"key1": "val1", "key2": b"val2", "key3": "val3"}
 
 
 class TestIdentifierRule:

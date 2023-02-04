@@ -34,13 +34,13 @@ class SimplifiedCrashData(BotoS3CrashStorage):
         ]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
 
-        if not params.uuid:
+        if not params["uuid"]:
             raise MissingArgumentError("uuid")
 
-        if not libooid.is_crash_id_valid(params.uuid):
+        if not libooid.is_crash_id_valid(params["uuid"]):
             raise BadArgumentError("uuid")
 
-        if not params.datatype:
+        if not params["datatype"]:
             raise MissingArgumentError("datatype")
 
         datatype_method_mapping = {
@@ -51,24 +51,24 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             # Redacted processed crash
             "processed": "get_processed",
         }
-        if params.datatype not in datatype_method_mapping:
-            raise BadArgumentError(params.datatype)
-        get = self.__getattribute__(datatype_method_mapping[params.datatype])
+        if params["datatype"] not in datatype_method_mapping:
+            raise BadArgumentError(params["datatype"])
+        get = self.__getattribute__(datatype_method_mapping[params["datatype"]])
         try:
-            if params.datatype == "raw":
-                return get(params.uuid, name=params.name)
+            if params["datatype"] == "raw":
+                return get(params["uuid"], name=params["name"])
             else:
-                return get(params.uuid)
+                return get(params["uuid"])
         except CrashIDNotFound as cidnf:
             self.logger.warning(
                 "%(datatype)s not found: %(exception)s",
-                {"datatype": params.datatype, "exception": cidnf},
+                {"datatype": params["datatype"], "exception": cidnf},
             )
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
             # Re-wrap it here so the message is just the crash ID.
-            raise CrashIDNotFound(params.uuid)
+            raise CrashIDNotFound(params["uuid"])
 
 
 class TelemetryCrashData(TelemetryBotoS3CrashStorage):
@@ -79,11 +79,11 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
         filters = [("uuid", None, str)]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
 
-        if not params.uuid:
+        if not params["uuid"]:
             raise MissingArgumentError("uuid")
 
         try:
-            return self.get_processed(params.uuid)
+            return self.get_processed(params["uuid"])
         except CrashIDNotFound as cidnf:
             self.logger.warning(
                 "telemetry crash not found: %(exception)s", {"exception": cidnf}
@@ -92,4 +92,4 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
             # crashstorage is too revealing as exception message contains
             # information about buckets and prefix keys. Re-wrap it here so the
             # message is just the crash ID.
-            raise CrashIDNotFound(params.uuid)
+            raise CrashIDNotFound(params["uuid"])
