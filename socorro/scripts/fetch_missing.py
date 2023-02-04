@@ -4,7 +4,6 @@
 
 import argparse
 
-
 from socorro.lib.librequests import session_with_retries
 from socorro.scripts import WrappedTextHelpFormatter
 
