@@ -165,7 +165,15 @@ class ProcessorApp(App):
             "a local filesystem path that can be used as a workspace for processing "
             + "rules"
         ),
-        default=os.path.join(tempfile.gettempdir(), "workspace"),
+        default=os.path.join(
+            (
+                # FIXME(willkg): this is for backwards compatability with existing
+                # configuration
+                os.environ.get("resource.boto.temporary_file_system_storage_path", "")
+                or tempfile.gettempdir()
+            ),
+            "workspace",
+        ),
     )
 
     # The companion_process runs alongside the processor and cleans up
