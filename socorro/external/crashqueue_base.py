@@ -6,17 +6,9 @@
 crash ids from queues for processing.
 """
 
-from configman import Namespace, RequiredConfig
 
-
-class CrashQueueBase(RequiredConfig):
+class CrashQueueBase:
     """Base class for crash queue classes."""
-
-    required_config = Namespace()
-
-    def __init__(self, config, namespace=""):
-        self.config = config
-        self.namespace = namespace
 
     def close(self):
         pass

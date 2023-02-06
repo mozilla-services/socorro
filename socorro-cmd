@@ -27,6 +27,10 @@ import click
 from socorro.app.socorro_app import App
 
 
+sys.path.insert(0, "bin")
+sys.path.insert(0, "webapp")
+
+
 def wrapped(text, width=80):
     """Wraps a block of text"""
     return "\n".join(textwrap.wrap(text, width=width))
@@ -56,7 +60,6 @@ def django_cmd(cmd):
 
     def _django_cmd(argv):
         argv = ["socorro-cmd", cmd] + argv
-        sys.path.insert(0, "webapp")
         import manage
 
         manage.main(argv)
@@ -103,7 +106,7 @@ COMMANDS = [
             ),
             "db": import_path("socorro.scripts.db.db_group"),
             "es": import_path("socorro.scripts.es.es_group"),
-            "sqs": import_path("socorro.scripts.sqs_cli.main"),
+            "sqs": import_path("sqs_cli.main"),
         },
     ),
     Group(

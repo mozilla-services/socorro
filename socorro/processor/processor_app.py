@@ -23,8 +23,6 @@ import sys
 import tempfile
 import time
 
-from configman import Namespace
-from configman.converters import class_converter
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
@@ -37,65 +35,12 @@ from sentry_sdk.integrations.modules import ModulesIntegration
 from sentry_sdk.integrations.stdlib import StdlibIntegration
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
+from socorro import settings
 from socorro.app.socorro_app import App
 from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
 from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.libdockerflow import get_release_name
 from socorro.lib.task_manager import respond_to_SIGTERM
-
-
-CONFIG_DEFAULTS = {
-    "always_ignore_mismatches": True,
-    "queue": {"crashqueue_class": "socorro.external.sqs.crashqueue.SQSCrashQueue"},
-    "source": {
-        "benchmark_tag": "BotoS3CrashStorage",
-        "crashstorage_class": "socorro.external.crashstorage_base.BenchmarkingCrashStorage",
-        "wrapped_crashstore": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
-    },
-    "destination": {
-        "crashstorage_class": "socorro.external.crashstorage_base.PolyCrashStorage",
-        # Each key in this list corresponds to a key in this dict containing
-        # a crash storage config.
-        "storage_namespaces": ",".join(["s3", "elasticsearch", "statsd", "telemetry"]),
-        "s3": {
-            "active_list": "save_processed_crash",
-            "benchmark_tag": "BotoS3CrashStorage",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.s3",
-            "wrapped_object_class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
-        },
-        "elasticsearch": {
-            "active_list": "save_processed_crash",
-            "benchmark_tag": "ElasticsearchCrashStorage",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.es",
-            "wrapped_object_class": "socorro.external.es.crashstorage.ESCrashStorage",
-        },
-        "statsd": {
-            "active_list": "save_processed_crash",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsCounter",
-            "metrics_prefix": "processor",
-        },
-        "telemetry": {
-            "active_list": "save_processed_crash",
-            "bucket_name": "org-mozilla-telemetry-crashes",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.telemetry",
-            "wrapped_object_class": (
-                "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage"
-            ),
-        },
-    },
-    "companion_process": {
-        "companion_class": "socorro.processor.symbol_cache_manager.SymbolLRUCacheManager",
-        "symbol_cache_size": "40G",
-        "verbosity": 0,
-    },
-    "producer_consumer": {"maximum_queue_size": 8, "number_of_threads": 4},
-    "resource": {
-        "boto": {"prefix": "", "boto_metrics_prefix": "processor.s3"},
-    },
-}
 
 
 METRICS = markus.get_metrics("processor")
@@ -111,81 +56,6 @@ class ProcessorApp(App):
     app_name = "processor"
     app_version = "3.0"
     app_description = __doc__
-    config_defaults = CONFIG_DEFAULTS
-
-    required_config = Namespace()
-
-    # The queue class has an iterator for work items to be processed.
-    required_config.namespace("queue")
-    required_config.queue.add_option(
-        "crashqueue_class",
-        doc="an iterable that will stream work items for processing",
-        default="",
-        from_string_converter=class_converter,
-    )
-
-    # The source class has methods to fetch the data to use.
-    required_config.source = Namespace()
-    required_config.source.add_option(
-        "crashstorage_class",
-        doc="the source storage class",
-        default="socorro.external.fs.crashstorage.FSPermanentStorage",
-        from_string_converter=class_converter,
-    )
-
-    # The destination class has methods to save the transformed data to storage.
-    required_config.destination = Namespace()
-    required_config.destination.add_option(
-        "crashstorage_class",
-        doc="the destination storage class",
-        default="socorro.external.fs.crashstorage.FSPermanentStorage",
-        from_string_converter=class_converter,
-    )
-
-    required_config.producer_consumer = Namespace()
-    required_config.producer_consumer.add_option(
-        "producer_consumer_class",
-        doc="the class implements a threaded producer consumer queue",
-        default="socorro.lib.threaded_task_manager.ThreadedTaskManager",
-        from_string_converter=class_converter,
-    )
-
-    # The processor is the pipeline that transforms raw crashes into
-    # processed crashes.
-    required_config.namespace("processor")
-    required_config.processor.add_option(
-        "processor_class",
-        doc="the class that transforms raw crashes into processed crashes",
-        default="socorro.processor.pipeline.Pipeline",
-        from_string_converter=class_converter,
-    )
-    required_config.processor.add_option(
-        "temporary_path",
-        doc=(
-            "a local filesystem path that can be used as a workspace for processing "
-            + "rules"
-        ),
-        default=os.path.join(
-            (
-                # FIXME(willkg): this is for backwards compatability with existing
-                # configuration
-                os.environ.get("resource.boto.temporary_file_system_storage_path", "")
-                or tempfile.gettempdir()
-            ),
-            "workspace",
-        ),
-    )
-
-    # The companion_process runs alongside the processor and cleans up
-    # the symbol lru cache.
-    required_config.namespace("companion_process")
-    required_config.companion_process.add_option(
-        "companion_class",
-        doc="a classname that runs a process in parallel with the processor",
-        default="",
-        # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
-        from_string_converter=class_converter,
-    )
 
     @classmethod
     def configure_sentry(cls, basedir, host_id, sentry_dsn):
@@ -351,6 +221,8 @@ class ProcessorApp(App):
 
     def _setup_source_and_destination(self):
         """Instantiate classes necessary for processing."""
+        # FIXME(willkg): rewrite this
+
         self.queue = self.config.queue.crashqueue_class(
             self.config.queue,
             namespace=self.app_instance_name,

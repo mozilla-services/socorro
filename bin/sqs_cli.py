@@ -10,41 +10,21 @@
 #
 # Usage: socorro-cmd sqs [SUBCOMMAND]
 
-import os
 import sys
 import time
 
-import boto3
 import click
+
+from socorro import settings
+from socorro.libclass import import_class
 
 
 VISIBILITY_TIMEOUT = 2
 
 
-class InvalidQueueName(Exception):
-    """Denotes an invalid queue name."""
-
-
-def validate_queue_name(queue_name):
-    if len(queue_name) > 80:
-        raise InvalidQueueName("queue name is too long.")
-
-    for c in queue_name:
-        if not c.isalnum() and c not in "-_":
-            raise InvalidQueueName("%r is not an alphanumeric, - or _ character." % c)
-
-
 def get_client():
-    session = boto3.session.Session(
-        aws_access_key_id=os.environ.get("resource.boto.access_key"),
-        aws_secret_access_key=os.environ.get("secrets.boto.secret_access_key"),
-    )
-    client = session.client(
-        service_name="sqs",
-        region_name=os.environ.get("resource.boto.region"),
-        endpoint_url=os.environ.get("resource.boto.sqs_endpoint_url"),
-    )
-    return client
+    cls = import_class(settings.QUEUE["class"])
+    return cls.build_client(**settings.QUEUE["options"])
 
 
 @click.group()
@@ -160,7 +140,9 @@ def create(ctx, queue):
         return
 
     conn = get_client()
-    validate_queue_name(queue)
+
+    cls = import_class(settings.QUEUE["class"])
+    cls.validate_queue_name(queue)
     try:
         conn.get_queue_url(QueueName=queue)
         click.echo("Queue %s already exists." % queue)
@@ -175,9 +157,13 @@ def create(ctx, queue):
 @click.pass_context
 def create_all(ctx):
     """Create SQS queues related to processing."""
-    ctx.invoke(create, queue=os.environ["resource.boto.standard_queue"])
-    ctx.invoke(create, queue=os.environ["resource.boto.priority_queue"])
-    ctx.invoke(create, queue=os.environ["resource.boto.reprocessing_queue"])
+    options = settings.QUEUE["options"]
+    for queue in (
+        options["standard_queue"],
+        options["priority_queue"],
+        options["reprocessing_queue"],
+    ):
+        ctx.invoke(create, queue=queue)
 
 
 @sqs_group.command("delete")
@@ -206,9 +192,13 @@ def delete(ctx, queue):
 @click.pass_context
 def delete_all(ctx):
     """Delete SQS queues related to processing."""
-    ctx.invoke(delete, queue=os.environ["resource.boto.standard_queue"])
-    ctx.invoke(delete, queue=os.environ["resource.boto.priority_queue"])
-    ctx.invoke(delete, queue=os.environ["resource.boto.reprocessing_queue"])
+    options = settings.QUEUE["options"]
+    for queue in (
+        options["standard_queue"],
+        options["priority_queue"],
+        options["reprocessing_queue"],
+    ):
+        ctx.invoke(delete, queue=queue)
 
 
 def main(argv=None):
