@@ -1222,7 +1222,7 @@ class TestOutOfMemoryBinaryRule:
     def test_everything_we_hoped_for(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         raw_crash["JavaStackTrace"] = "this is a Java Stack trace"
-        dumps = {"memory_report": "a_pathname"}
+        dumps = {"memory_report": str(tmp_path / "a_pathname")}
         processed_crash = {}
         status = Status()
 
@@ -1233,10 +1233,9 @@ class TestOutOfMemoryBinaryRule:
                 assert status.notes == []
                 return "mysterious-awesome-memory"
 
-        with mock.patch("socorro.processor.rules.mozilla.temp_file_context"):
-            rule = MyOutOfMemoryBinaryRule()
-            rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-            assert processed_crash["memory_report"] == "mysterious-awesome-memory"
+        rule = MyOutOfMemoryBinaryRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["memory_report"] == "mysterious-awesome-memory"
 
     def test_this_is_not_the_crash_you_are_looking_for(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
