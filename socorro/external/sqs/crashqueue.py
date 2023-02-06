@@ -9,7 +9,6 @@ import time
 
 import boto3
 from botocore.client import ClientError
-from configman import Namespace
 from more_itertools import chunked
 
 from socorro.external.crashqueue_base import CrashQueueBase
@@ -25,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class CrashIdsFailedToPublish(Exception):
     """Crash ids that failed to publish."""
+
+
+class InvalidQueueName(Exception):
+    """Denotes an invalid queue name."""
 
 
 def wait_times_connect():
@@ -100,65 +103,47 @@ class SQSCrashQueue(CrashQueueBase):
 
     """
 
-    required_config = Namespace()
-    required_config.add_option(
-        "access_key",
-        doc="access key",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "secret_access_key",
-        doc="secret access key",
-        secret=True,
-        reference_value_from="secrets.boto",
-    )
-    required_config.add_option(
-        "region",
-        doc="Name of the S3 region (e.g. us-west-2)",
-        default="us-west-2",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "sqs_endpoint_url",
-        doc=(
-            "endpoint url to connect to; None if you are connecting to AWS. For "
-            "example, ``http://localhost:4572/``."
-        ),
-        default="",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "standard_queue",
-        doc="The name for the standard queue.",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "priority_queue",
-        doc="The name for the priority queue.",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "reprocessing_queue",
-        doc="The name for the reprocessing queue.",
-        reference_value_from="resource.boto",
-    )
+    def __init__(
+        self,
+        standard_queue,
+        priority_queue,
+        reprocessing_queue,
+        region,
+        max_messages=SQS_MAX_MESSAGES,
+        access_key=None,
+        secret_access_key=None,
+        endpoint_url=None,
+    ):
+        self.client = self.build_client(
+            region=region,
+            access_key=access_key,
+            secret_access_key=secret_access_key,
+            endpoint_url=endpoint_url,
+        )
 
-    def __init__(self, config, namespace=""):
-        super().__init__(config, namespace)
-
-        self.client = self.build_client()
-        self.standard_queue_url = self.get_queue_url(self.config.standard_queue)
-        self.priority_queue_url = self.get_queue_url(self.config.priority_queue)
-        self.reprocessing_queue_url = self.get_queue_url(self.config.reprocessing_queue)
+        self.standard_queue_url = self.get_queue_url(standard_queue)
+        self.priority_queue_url = self.get_queue_url(priority_queue)
+        self.reprocessing_queue_url = self.get_queue_url(reprocessing_queue)
         self.queue_to_queue_url = {
             "standard": self.standard_queue_url,
             "priority": self.priority_queue_url,
             "reprocessing": self.reprocessing_queue_url,
         }
+        self.max_messages = max_messages
 
-    def get_queue_url(self, queue_name):
-        return self.client.get_queue_url(QueueName=queue_name)["QueueUrl"]
+    @classmethod
+    def validate_queue_name(cls, queue_name):
+        if len(queue_name) > 80:
+            raise InvalidQueueName("queue name is too long.")
 
+        for c in queue_name:
+            if not c.isalnum() and c not in "-_":
+                raise InvalidQueueName(
+                    f"queue name {queue_name!r} invalid: {c!r} is not an "
+                    + "alphanumeric, - or _ character."
+                )
+
+    @classmethod
     @retry(
         retryable_exceptions=[
             # FIXME(willkg): Seems like botocore always raises ClientError
@@ -173,26 +158,36 @@ class SQSCrashQueue(CrashQueueBase):
         sleep_function=time.sleep,
         module_logger=logger,
     )
-    def build_client(self):
+    def build_client(
+        cls,
+        region,
+        access_key=None,
+        secret_access_key=None,
+        endpoint_url=None,
+        **kwargs,
+    ):
         """Returns a Boto3 SQS Client."""
         # Either they provided ACCESS_KEY and SECRET_ACCESS_KEY in which case
         # we use those, or they didn't in which case boto3 pulls credentials
         # from one of a myriad of other places.
         # http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials
         session_kwargs = {}
-        if self.config.access_key and self.config.secret_access_key:
-            session_kwargs["aws_access_key_id"] = self.config.access_key
-            session_kwargs["aws_secret_access_key"] = self.config.secret_access_key
+        if access_key and secret_access_key:
+            session_kwargs["aws_access_key_id"] = access_key
+            session_kwargs["aws_secret_access_key"] = secret_access_key
         session = boto3.session.Session(**session_kwargs)
 
         kwargs = {
             "service_name": "sqs",
-            "region_name": self.config.region,
+            "region_name": region,
         }
-        if self.config.sqs_endpoint_url:
-            kwargs["endpoint_url"] = self.config.sqs_endpoint_url
+        if endpoint_url:
+            kwargs["endpoint_url"] = endpoint_url
 
         return session.client(**kwargs)
+
+    def get_queue_url(self, queue_name):
+        return self.client.get_queue_url(QueueName=queue_name)["QueueUrl"]
 
     def ack_crash(self, queue_url, handle):
         self.client.delete_message(QueueUrl=queue_url, ReceiptHandle=handle)
@@ -218,7 +213,7 @@ class SQSCrashQueue(CrashQueueBase):
                 resp = self.client.receive_message(
                     QueueUrl=queue_url,
                     WaitTimeSeconds=0,
-                    MaxNumberOfMessages=SQS_MAX_MESSAGES,
+                    MaxNumberOfMessages=self.max_messages,
                 )
                 msgs = resp.get("Messages", [])
 

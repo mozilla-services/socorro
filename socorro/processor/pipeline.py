@@ -10,60 +10,13 @@ process.
 """
 
 import logging
-import os
-import tempfile
 from typing import List
 
 from attrs import define, field
-from configman import Namespace, RequiredConfig
-from configman.converters import str_to_list
 import sentry_sdk
 
+from socorro import structure
 from socorro.lib.libdatetime import date_to_string, utc_now
-from socorro.lib.libsocorrodataschema import get_schema
-from socorro.processor.rules.breakpad import (
-    CrashingThreadInfoRule,
-    MinidumpSha256HashRule,
-    MinidumpStackwalkRule,
-    TruncateStacksRule,
-)
-from socorro.processor.rules.general import (
-    CollectorMetadataRule,
-    CPUInfoRule,
-    CrashReportKeysRule,
-    DeNoneRule,
-    DeNullRule,
-    IdentifierRule,
-    OSInfoRule,
-)
-from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
-from socorro.processor.rules.mozilla import (
-    AccessibilityRule,
-    AddonsRule,
-    BetaVersionRule,
-    BreadcrumbsRule,
-    ConvertModuleSignatureInfoRule,
-    CopyFromRawCrashRule,
-    DatesAndTimesRule,
-    DistributionIdRule,
-    ESRVersionRewrite,
-    FenixVersionRewriteRule,
-    JavaProcessRule,
-    MajorVersionRule,
-    ModulesInStackRule,
-    ModuleURLRewriteRule,
-    MacCrashInfoRule,
-    MozCrashReasonRule,
-    OSPrettyVersionRule,
-    OutOfMemoryBinaryRule,
-    PHCRule,
-    PluginRule,
-    SignatureGeneratorRule,
-    SubmittedFromRule,
-    ThemePrettyNameRule,
-    TopMostFilesRule,
-    UtilityActorsNameRule,
-)
 
 
 @define
@@ -77,161 +30,18 @@ class Status:
         self.notes.extend(notes)
 
 
-class Pipeline(RequiredConfig):
+class Pipeline:
     """Processor pipeline for Mozilla crash ingestion."""
 
-    required_config = Namespace("transform_rules")
-
-    # MinidumpStackwalkRule configuration
-    required_config.minidumpstackwalk = Namespace()
-    required_config.minidumpstackwalk.add_option(
-        "dump_field", doc="the default name of a dump", default="upload_file_minidump"
-    )
-    required_config.minidumpstackwalk.add_option(
-        "command_path",
-        doc="absolute path to rust-minidump minidump-stackwalk binary",
-        default="/stackwalk-rust/minidump-stackwalk",
-    )
-    required_config.minidumpstackwalk.add_option(
-        name="symbols_urls",
-        doc="comma-delimited ordered list of urls for symbol lookup",
-        default="https://symbols.mozilla.org/",
-        from_string_converter=str_to_list,
-        likely_to_be_changed=True,
-    )
-    required_config.minidumpstackwalk.add_option(
-        "command_line",
-        doc=(
-            "template for the command to invoke the external program; uses Python "
-            "format syntax"
-        ),
-        default=(
-            "timeout --signal KILL {kill_timeout} "
-            "{command_path} "
-            "--evil-json={raw_crash_path} "
-            "--symbols-cache={symbol_cache_path} "
-            "--symbols-tmp={symbol_tmp_path} "
-            "--no-color "
-            "{symbols_urls} "
-            "--json "
-            "--verbose=error "
-            "{dump_file_path}"
-        ),
-    )
-    required_config.minidumpstackwalk.add_option(
-        "kill_timeout",
-        doc="time in seconds to let minidump-stackwalk run before killing it",
-        default=600,
-    )
-    required_config.minidumpstackwalk.add_option(
-        "symbol_tmp_path",
-        doc=(
-            "absolute path to temp space for downloading symbols--must be on the same "
-            "filesystem as symbol_cache_path"
-        ),
-        default=os.path.join(tempfile.gettempdir(), "symbols-tmp"),
-    ),
-    required_config.minidumpstackwalk.add_option(
-        "symbol_cache_path",
-        doc="absolute path to symbol cache",
-        default=os.path.join(tempfile.gettempdir(), "symbols"),
-    )
-
-    # BetaVersionRule configuration
-    required_config.betaversion = Namespace()
-    required_config.betaversion.add_option(
-        "version_string_api",
-        doc="url for the version string api endpoint in the webapp",
-        default="https://crash-stats.mozilla.org/api/VersionString",
-    )
-
-    def __init__(self, config, rules=None, host_id=None):
+    def __init__(self, rules=None, host_id=None):
         super().__init__()
-        self.config = config
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.host_id = host_id or "unknown"
-        self.rulesets = rules or self.get_rulesets(config)
+        self.rulesets = rules or structure.get("RULESETS", {})
         for ruleset_name, ruleset in self.rulesets.items():
             self.logger.info(f"Loading ruleset: {ruleset_name}")
             for rule in ruleset:
                 self.logger.info(f"Loaded rule: {rule!r}")
-
-    def get_rulesets(self, config):
-        """Generate rule sets for Mozilla crash processing.
-
-        :arg config: configman DotDict config instance
-
-        :returns: dict of rulesets
-
-        """
-        # NOTE(willkg): the rulesets defined in here must match the set of rulesets in
-        # webapp/crashstats/settings/base.py VALID_RULESETS for them to be available to
-        # the Reprocessing API
-        rulesets = {
-            # The default processing pipeline
-            "default": [
-                # fix the raw crash removing null characters and Nones
-                DeNullRule(),
-                DeNoneRule(),
-                # capture collector things
-                CrashReportKeysRule(),
-                CollectorMetadataRule(),
-                # fix ModuleSignatureInfo if it needs fixing
-                ConvertModuleSignatureInfoRule(),
-                # rules to change the internals of the raw crash
-                FenixVersionRewriteRule(),
-                ESRVersionRewrite(),
-                # rules to transform a raw crash into a processed crash
-                CopyFromRawCrashRule(schema=get_schema("processed_crash.schema.yaml")),
-                SubmittedFromRule(),
-                IdentifierRule(),
-                MinidumpSha256HashRule(),
-                MinidumpStackwalkRule(
-                    dump_field=config.minidumpstackwalk.dump_field,
-                    symbols_urls=config.minidumpstackwalk.symbols_urls,
-                    command_line=config.minidumpstackwalk.command_line,
-                    command_path=config.minidumpstackwalk.command_path,
-                    kill_timeout=config.minidumpstackwalk.kill_timeout,
-                    symbol_tmp_path=config.minidumpstackwalk.symbol_tmp_path,
-                    symbol_cache_path=config.minidumpstackwalk.symbol_cache_path,
-                ),
-                ModuleURLRewriteRule(),
-                CrashingThreadInfoRule(),
-                TruncateStacksRule(),
-                MajorVersionRule(),
-                PluginRule(),
-                AccessibilityRule(),
-                AddonsRule(),
-                DatesAndTimesRule(),
-                OutOfMemoryBinaryRule(),
-                PHCRule(),
-                BreadcrumbsRule(schema=get_schema("processed_crash.schema.yaml")),
-                JavaProcessRule(),
-                MacCrashInfoRule(),
-                MozCrashReasonRule(),
-                UtilityActorsNameRule(),
-                # post processing of the processed crash
-                CPUInfoRule(),
-                DistributionIdRule(),
-                OSInfoRule(),
-                BetaVersionRule(
-                    version_string_api=config.betaversion.version_string_api
-                ),
-                OSPrettyVersionRule(),
-                TopMostFilesRule(),
-                ModulesInStackRule(),
-                ThemePrettyNameRule(),
-                MemoryReportExtraction(),
-                # generate signature now that we've done all the processing it depends on
-                SignatureGeneratorRule(),
-            ],
-            # Regenerate signatures
-            "regenerate_signature": [
-                SignatureGeneratorRule(),
-            ],
-        }
-
-        return rulesets
 
     def process_crash(self, ruleset_name, raw_crash, dumps, processed_crash, tmpdir):
         """Process a crash

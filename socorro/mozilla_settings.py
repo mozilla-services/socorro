@@ -16,6 +16,23 @@ from everett.manager import ConfigManager, ListOf
 _config = ConfigManager.basic_config()
 
 
+TOOL_ENV = _config(
+    "TOOL_ENV",
+    default="False",
+    parser=bool,
+    doc=(
+        "Whether or not this is running in a tool environment and should ignore "
+        + "required configuration."
+    ),
+)
+if TOOL_ENV:
+    fake_values = [
+        ("ELASTICSEARCH_URL", "http://elasticsearch:9200"),
+    ]
+    for key, val in fake_values:
+        os.environ[key] = val
+
+
 LOCAL_DEV_ENV = _config(
     "LOCAL_DEV_ENV",
     default="False",
@@ -29,11 +46,11 @@ HOST_ID = _config(
     doc="Name of the host this is running on.",
 )
 
-ALWAYS_IGNORE_MISMATCHES = True
-
 # Sentry DSN--leave as an empty string to disable
 SENTRY_DSN = _config(
-    "SENTRY_DSN", default="", doc="Sentry DSN or empty string to disable.",
+    "SENTRY_DSN",
+    default="",
+    doc="Sentry DSN or empty string to disable.",
 )
 
 # This has to be a valid level from the Python logging module
@@ -49,16 +66,28 @@ MARKUS_BACKENDS = [
         "class": "markus.backends.statsd.StatsdMetrics",
         "options": {
             "statsd_host": _config(
-                "STATSD_HOST", default="localhost", doc="statsd host.",
+                "STATSD_HOST",
+                default="localhost",
+                doc="statsd host.",
             ),
             "statsd_port": _config(
-                "STATSD_PORT", default="8125", parser=int, doc="statsd port.",
-            )
+                "STATSD_PORT",
+                default="8125",
+                parser=int,
+                doc="statsd port.",
+            ),
         },
     },
 ]
 if LOCAL_DEV_ENV:
     MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
+
+
+AWS_ENDPOINT_URL = _config(
+    "AWS_ENDPOINT_URL",
+    default="",
+    doc="Endpoint url for AWS SQS/S3 in the local dev environment.",
+)
 
 # Processor configuration
 PROCESSOR = {
@@ -81,6 +110,7 @@ PROCESSOR = {
     ),
     "pipeline": {
         "class": "socorro.processor.processor_pipeline.ProcessorPipeline",
+        # FIXME(willkg): specify ruleset here as a python dotted path?
     },
 }
 
@@ -90,14 +120,17 @@ QUEUE = {
     "options": {
         "standard_queue": _config(
             "SQS_STANDARD_QUEUE",
+            default="standard-queue",
             doc="Name for the standard processing queue.",
         ),
         "priority_queue": _config(
             "SQS_PRIORITY_QUEUE",
+            default="priority-queue",
             doc="Name for the priority processing queue.",
         ),
         "reprocessing_queue": _config(
             "SQS_REPROCESSING_QUEUE",
+            default="reprocessing-queue",
             doc="Name for the reprocessing queue.",
         ),
         "access_key": _config("SQS_ACCESS_KEY", default="", doc="SQS access key."),
@@ -107,15 +140,7 @@ QUEUE = {
             doc="SQS secret access key.",
         ),
         "region": _config("SQS_REGION", default="", doc="SQS region."),
-
-        "endpoint_url": _config(
-            "SQS_ENDPOINT_URL",
-            default="",
-            doc=(
-                "Endpoint url for AWS SQS. This is only used in the local dev "
-                + "environment."
-            ),
-        ),
+        "endpoint_url": AWS_ENDPOINT_URL,
     },
 }
 
@@ -144,14 +169,7 @@ CRASH_SOURCE = {
             default="",
             doc="S3 region for crash report data.",
         ),
-        "endpoint_url": _config(
-            "CRASHSTORAGE_S3_ENDPOINT_URL",
-            default="",
-            doc=(
-                "Endpoint url for AWS S3 for crash report data. This is only used in "
-                + "the local dev environment."
-            ),
-        ),
+        "endpoint_url": AWS_ENDPOINT_URL,
     },
 }
 
@@ -164,9 +182,18 @@ CRASH_DESTINATIONS = {
         "class": "socorro.external.es.crashstorage.ESCrashStorage",
         "options": {
             "metrics_prefix": "processor.es",
-            "index": "testsocorro%Y%W",
-            "index_regex": "^testsocorro[0-9]{6}$",
-            "urls": ["http://elasticsearch:9200"],
+            "index": _config(
+                "ELASTICSEARCH_INDEX",
+                default="socorro%Y%W",
+                doc="Template for Elasticsearch index names.",
+            ),
+            "index_regex": _config(
+                "ELASTICSEARCH_INDEX_REGEX",
+                default="^socorro[0-9]{6}$",
+                doc="Regex for matching Elasticsearch index names.",
+            ),
+            # FIXME(willkg): convert this to singular url
+            "urls": [_config("ELASTICSEARCH_URL", doc="Elasticsearch url.")],
         },
     },
     "statsd": {
@@ -195,11 +222,7 @@ CRASH_DESTINATIONS = {
                 default="",
                 doc="S3 secret access key for telemetry bucket.",
             ),
-            "region": _config(
-                "TELEMETRY_S3_REGION",
-                default="",
-                doc="S3 region."),
-
+            "region": _config("TELEMETRY_S3_REGION", default="", doc="S3 region."),
             "endpoint_url": _config(
                 "TELEMETRY_S3_ENDPOINT_URL",
                 default="",

@@ -30,15 +30,27 @@ def path(*dirs):
     return os.path.join(ROOT, *dirs)
 
 
+# Whether or not we're running in a tool environment where we want to ignore required
+# configuration
+TOOL_ENV = config("TOOL_ENV", False, cast=bool)
+if TOOL_ENV:
+    fake_values = [
+        ("ELASTICSEARCH_URL", "http://elasticsearch:9200"),
+        ("SECRET_KEY", "ou812"),
+    ]
+    for key, val in fake_values:
+        os.environ[key] = val
+
+
+# Whether or not we're running in the local development environment
+LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
+
 # Debugging displays nice error messages, but leaks memory. Set this to False
 # on all server instances and True only for development.
 DEBUG = config("DEBUG", False, cast=bool)
 
 # Set this to True to make debugging AJAX requests easier; development-only!
 DEBUG_PROPAGATE_EXCEPTIONS = config("DEBUG_PROPAGATE_EXCEPTIONS", False, cast=bool)
-
-# Whether or not we're running in the local development environment
-LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
 
 SITE_ID = 1
 
@@ -182,6 +194,7 @@ TEMPLATES = [
 ANON_ALWAYS = True
 
 LOGGING_LEVEL = config("LOGGING_LEVEL", "INFO")
+DJANGO_LOGGING_LEVEL = config("DJANGO_LOGGING_LEVEL", "INFO")
 
 HOST_ID = socket.gethostname()
 
@@ -223,9 +236,9 @@ if LOCAL_DEV_ENV:
     # format at all, but we do want to see markus things and py.warnings.
     # So set the logging up that way.
     LOGGING["loggers"] = {
-        "django": {"handlers": ["console"], "level": LOGGING_LEVEL},
-        "django.server": {"handlers": ["console"], "level": LOGGING_LEVEL},
-        "django.request": {"handlers": ["console"], "level": LOGGING_LEVEL},
+        "django": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
+        "django.server": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
+        "django.request": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
         "fillmore": {"handlers": ["console"], "level": logging.ERROR},
         "py.warnings": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "markus": {"handlers": ["console"], "level": LOGGING_LEVEL},
