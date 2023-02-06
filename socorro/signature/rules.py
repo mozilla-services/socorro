@@ -943,7 +943,7 @@ class SignatureShutdownTimeout(Rule):
                 # be a string that looks like a "name" or a dict with a "name" in it.
                 #
                 # This handles both variations.
-                c["name"] if isinstance(c, dict) else c
+                str(c["name"] if isinstance(c, dict) else c)
                 for c in shutdown_data.get("conditions") or []
             ]
             if conditions:
