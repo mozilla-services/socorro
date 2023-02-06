@@ -364,19 +364,19 @@ class ProcessorApp(App):
             namespace=self.app_name,
         )
 
-        if self.config.companion_process.companion_class:
-            self.companion_process = self.config.companion_process.companion_class(
-                self.config.companion_process
-            )
-        else:
-            self.companion_process = None
-
         self.processor = self.config.processor.processor_class(
             config=self.config.processor, host_id=self.app_instance_name
         )
 
         self.temporary_path = self.config.processor.temporary_path
         os.makedirs(self.temporary_path, exist_ok=True)
+
+        if self.config.companion_process.companion_class:
+            self.companion_process = self.config.companion_process.companion_class(
+                self.config.companion_process
+            )
+        else:
+            self.companion_process = None
 
     def _setup_task_manager(self):
         """instantiate the threaded task manager to run the producer/consumer

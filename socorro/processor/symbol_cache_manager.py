@@ -168,6 +168,9 @@ class SymbolLRUCacheManager(RequiredConfig):
         # Load existing files into the cache.
         self._get_existing_files(self.directory)
         self._notifier.start()
+        self.logger.warning(
+            "symbol_cache_manager started with cache: %s", self.directory
+        )
 
     @property
     def num_files(self):
