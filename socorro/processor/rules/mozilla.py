@@ -19,7 +19,6 @@ import sentry_sdk
 
 from socorro.lib import libjava
 from socorro.lib import libsocorrodataschema
-from socorro.lib.context_tools import temp_file_context
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
 from socorro.lib.libdatetime import UTC
@@ -554,15 +553,12 @@ class OutOfMemoryBinaryRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         pathname = dumps["memory_report"]
-        with temp_file_context(pathname):
-            memory_report = self._extract_memory_info(
-                dump_pathname=pathname, status=status
-            )
+        memory_report = self._extract_memory_info(dump_pathname=pathname, status=status)
 
-            if isinstance(memory_report, dict) and memory_report.get("ERROR"):
-                processed_crash["memory_report_error"] = memory_report["ERROR"]
-            else:
-                processed_crash["memory_report"] = memory_report
+        if isinstance(memory_report, dict) and memory_report.get("ERROR"):
+            processed_crash["memory_report_error"] = memory_report["ERROR"]
+        else:
+            processed_crash["memory_report"] = memory_report
 
 
 class FenixVersionRewriteRule(Rule):
