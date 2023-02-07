@@ -204,6 +204,30 @@ class BotoS3CrashStorage(CrashStorageBase):
         path = build_keys("processed_crash", crash_id)[0]
         self.save_file(path, data)
 
+    def list_objects_paginator(self, prefix):
+        """Return generator of objects in the bucket that have a specified key prefix
+
+        :arg prefix: the prefix to look at
+
+        :returns: generator of keys
+
+        """
+        return self.connection.list(bucket_name=self.bucket_name, prefix=prefix)
+
+    def exists_object(self, key):
+        """Returns whether the object exists in the bucket
+
+        :arg key: the key to check
+
+        :returns: bool
+
+        """
+        try:
+            self.connection.head_object(bucket_name=self.bucket_name, key=key)
+            return True
+        except self.connection.KeyNotFound:
+            return False
+
     def get_raw_crash(self, crash_id):
         """Get the raw crash file for the given crash id
 

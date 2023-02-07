@@ -203,6 +203,38 @@ class S3Connection:
             return resp["Body"].read()
         except self.client.exceptions.NoSuchKey:
             raise KeyNotFound(
-                f"{id} (bucket={bucket_name!r} key={path}) not found, no value "
-                + "returned"
+                f"(bucket={bucket_name!r} key={path}) not found, no value returned"
+            )
+
+    def list_objects_paginator(self, bucket_name, prefix):
+        """Returns S3 client paginator of objects with key prefix in bucket
+
+        :arg bucket_name: the name of the bucket
+        :arg prefix: the key prefix
+
+        :returns: S3 paginator
+
+        """
+        paginator = self.client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+        return page_iterator
+
+    def head_object(self, bucket_name, key):
+        """HEAD action on an object in a S3 bucket
+
+        :arg bucket_name: the name of the bucket
+        :arg key: the key for the object to HEAD
+
+        :returns: S3 HEAD response
+
+        :raises KeyNotFound: if the object doesn't exist
+        :raises botocore.exceptions.ClientError: connection issues, permissions
+            issues, bucket is missing, etc.
+
+        """
+        try:
+            return self.client.head_object(Bucket=self.bucket_name, Key=key)
+        except self.client.exceptions.NoSuchKey:
+            raise KeyNotFound(
+                f"(bucket={bucket_name!r} key={key}) not found, no value returned"
             )
