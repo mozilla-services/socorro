@@ -101,9 +101,7 @@ COMMANDS = [
     Group(
         "Local development environment maintenance",
         {
-            "upload_telemetry_schema": import_path(
-                "socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema"
-            ),
+            "upload_telemetry_schema": import_path("upload_telemetry_schema.main"),
             "db": import_path("socorro.scripts.db.db_group"),
             "es": import_path("es_cli.main"),
             "sqs": import_path("sqs_cli.main"),

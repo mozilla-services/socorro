@@ -6,8 +6,7 @@ import datetime
 import json
 import logging
 
-from configman import Namespace
-from configman.converters import class_converter
+import markus
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -15,6 +14,7 @@ from socorro.external.crashstorage_base import (
     MemoryDumpsMapping,
     migrate_raw_crash,
 )
+from socorro.external.boto.connection_context import S3Connection
 from socorro.lib.libjsonschema import JsonSchemaReducer
 from socorro.lib.libsocorrodataschema import (
     get_schema,
@@ -36,8 +36,6 @@ def wait_time_generator():
 class CrashIDMissingDatestamp(Exception):
     """Indicates the crash id is invalid and missing a datestamp."""
 
-    pass
-
 
 def get_datestamp(crashid):
     """Parses out datestamp from a crashid.
@@ -50,7 +48,7 @@ def get_datestamp(crashid):
     datestamp = date_from_ooid(crashid)
     if datestamp is None:
         # We should never hit this situation unless the crashid is not valid
-        raise CrashIDMissingDatestamp("%s is missing datestamp" % crashid)
+        raise CrashIDMissingDatestamp(f"{crashid} is missing datestamp")
     return datestamp
 
 
@@ -79,34 +77,17 @@ def build_keys(name_of_thing, crashid):
         entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
-            "v1/%(nameofthing)s/%(date)s/%(crashid)s"
-            % {
-                "nameofthing": name_of_thing,
-                "date": date,
-                "crashid": crashid,
-            },
+            f"v1/{name_of_thing}/{date}/{crashid}"
             # NOTE(willkg): This format is deprecated and will be removed in April 2023
-            "v2/%(nameofthing)s/%(entropy)s/%(date)s/%(crashid)s"
-            % {
-                "nameofthing": name_of_thing,
-                "entropy": entropy,
-                "date": date,
-                "crashid": crashid,
-            },
+            f"v2/{name_of_thing}/{entropy}/{date}/{crashid}"
         ]
 
     elif name_of_thing == "crash_report":
         # Crash data from the TelemetryBotoS3CrashStorage
         date = get_datestamp(crashid).strftime("%Y%m%d")
-        return [
-            "v1/%(nameofthing)s/%(date)s/%(crashid)s"
-            % {"nameofthing": name_of_thing, "date": date, "crashid": crashid}
-        ]
+        return [f"v1/{name_of_thing}/{date}/{crashid}"]
 
-    return [
-        "v1/%(nameofthing)s/%(crashid)s"
-        % {"nameofthing": name_of_thing, "crashid": crashid}
-    ]
+    return [f"v1/{name_of_thing}/{crashid}"]
 
 
 class JSONISOEncoder(json.JSONEncoder):
@@ -131,24 +112,61 @@ def str_to_list(a_string):
 class BotoS3CrashStorage(CrashStorageBase):
     """Saves and loads crash data to S3"""
 
-    required_config = Namespace()
-    required_config.add_option(
-        "resource_class",
-        default="socorro.external.boto.connection_context.S3Connection",
-        doc="fully qualified dotted Python classname to handle Boto connections",
-        from_string_converter=class_converter,
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "dump_file_suffix",
-        doc="the suffix used to identify a dump file (for use in temp files)",
-        default=".dump",
-        reference_value_from="resource.boto",
-    )
+    def __init__(
+        self,
+        bucket_name="crashstats",
+        dump_file_suffix=".dump",
+        metrics_prefix="processor.s3",
+        region=None,
+        access_key=None,
+        secret_access_key=None,
+        endpoint_url=None,
+    ):
+        """
+        :arg bucket_name: the S3 bucket to save to
+        :arg dump_file_suffix: the suffix used to identify a dump file (for use in temp
+            files)
+        :arg region: the S3 region to use
+        :arg access_key: the S3 access_key to use
+        :arg secret_access_key: the S3 secret_access_key to use
+        :arg endpoint_url: the endpoint url to use when in a local development
+            environment
 
-    def __init__(self, config, namespace=""):
-        super().__init__(config, namespace=namespace)
-        self.conn = config.resource_class(config)
+        """
+        super().__init__()
+        self.connection = self.build_connection(
+            region=region,
+            access_key=access_key,
+            secret_access_key=secret_access_key,
+            endpoint_url=endpoint_url,
+        )
+        self.bucket_name = bucket_name
+        self.dump_file_suffix = dump_file_suffix
+
+        self.metrics = markus.get_metrics(metrics_prefix)
+
+    @classmethod
+    def build_connection(cls, region, access_key, secret_access_key, endpoint_url):
+        """
+        :arg region: the S3 region to use
+        :arg access_key: the S3 access_key to use
+        :arg secret_access_key: the S3 secret_access_key to use
+        :arg endpoint_url: the endpoint url to use when in a local development
+            environment
+
+        """
+        return S3Connection(
+            region=region,
+            access_key=access_key,
+            secret_access_key=secret_access_key,
+            endpoint_url=endpoint_url,
+        )
+
+    def load_file(self, path):
+        return self.connection.load_file(self.bucket_name, path)
+
+    def save_file(self, path, data):
+        return self.connection.save_file(self.bucket_name, path, data)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """Save raw crash data to S3 bucket.
@@ -163,11 +181,11 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         path = build_keys("raw_crash", crash_id)[0]
         raw_crash_data = dict_to_str(raw_crash).encode("utf-8")
-        self.conn.save_file(path, raw_crash_data)
+        self.save_file(path, raw_crash_data)
 
         path = build_keys("dump_names", crash_id)[0]
         dump_names_data = list_to_str(dumps.keys()).encode("utf-8")
-        self.conn.save_file(path, dump_names_data)
+        self.save_file(path, dump_names_data)
 
         # We don't know what type of dumps mapping we have. We do know,
         # however, that by calling the memory_dump_mapping method, we will get
@@ -177,14 +195,14 @@ class BotoS3CrashStorage(CrashStorageBase):
             if dump_name in (None, "", "upload_file_minidump"):
                 dump_name = "dump"
             path = build_keys(dump_name, crash_id)[0]
-            self.conn.save_file(path, dump)
+            self.save_file(path, dump)
 
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save the processed crash file."""
         crash_id = processed_crash["uuid"]
         data = dict_to_str(processed_crash).encode("utf-8")
         path = build_keys("processed_crash", crash_id)[0]
-        self.conn.save_file(path, data)
+        self.save_file(path, data)
 
     def get_raw_crash(self, crash_id):
         """Get the raw crash file for the given crash id
@@ -196,13 +214,13 @@ class BotoS3CrashStorage(CrashStorageBase):
         """
         for path in build_keys("raw_crash", crash_id):
             try:
-                raw_crash_as_string = self.conn.load_file(path)
+                raw_crash_as_string = self.load_file(path)
                 data = json.loads(raw_crash_as_string)
                 return migrate_raw_crash(data)
-            except self.conn.KeyNotFound:
+            except self.connection.KeyNotFound:
                 continue
 
-        raise CrashIDNotFound("%s not found" % crash_id)
+        raise CrashIDNotFound(f"{crash_id} not found")
 
     def get_raw_dump(self, crash_id, name=None):
         """Get a specified dump file for the given crash id.
@@ -216,10 +234,10 @@ class BotoS3CrashStorage(CrashStorageBase):
             if name in (None, "", "upload_file_minidump"):
                 name = "dump"
             path = build_keys(name, crash_id)[0]
-            a_dump = self.conn.load_file(path)
+            a_dump = self.load_file(path)
             return a_dump
-        except self.conn.KeyNotFound as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+        except self.conn.KeyNotFound as exc:
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
     def get_dumps(self, crash_id):
         """Get all the dump files for a given crash id.
@@ -231,7 +249,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         """
         try:
             path = build_keys("dump_names", crash_id)[0]
-            dump_names_as_string = self.conn.load_file(path)
+            dump_names_as_string = self.load_file(path)
             dump_names = str_to_list(dump_names_as_string)
 
             dumps = MemoryDumpsMapping()
@@ -239,10 +257,10 @@ class BotoS3CrashStorage(CrashStorageBase):
                 if dump_name in (None, "", "upload_file_minidump"):
                     dump_name = "dump"
                 path = build_keys(dump_name, crash_id)[0]
-                dumps[dump_name] = self.conn.load_file(path)
+                dumps[dump_name] = self.load_file(path)
             return dumps
-        except self.conn.KeyNotFound as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+        except self.conn.KeyNotFound as exc:
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
     def get_dumps_as_files(self, crash_id, tmpdir):
         """Get the dump files for given crash id and save them to tmp.
@@ -257,7 +275,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         return in_memory_dumps.as_file_dumps_mapping(
             crash_id,
             tmpdir,
-            self.config.dump_file_suffix,
+            self.dump_file_suffix,
         )
 
     def get_processed(self, crash_id):
@@ -270,10 +288,10 @@ class BotoS3CrashStorage(CrashStorageBase):
         """
         path = build_keys("processed_crash", crash_id)[0]
         try:
-            processed_crash_as_string = self.conn.load_file(path)
+            processed_crash_as_string = self.load_file(path)
             return json.loads(processed_crash_as_string)
-        except self.conn.KeyNotFound as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+        except self.conn.KeyNotFound as exc:
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
 
 class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
@@ -341,7 +359,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         crash_id = telemetry_data["uuid"]
         data = dict_to_str(telemetry_data).encode("utf-8")
         path = build_keys("crash_report", crash_id)[0]
-        self.conn.save_file(path, data)
+        self.save_file(path, data)
 
     def get_processed(self, crash_id):
         """Get a crash report from the S3 bucket.
@@ -353,7 +371,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         """
         path = build_keys("crash_report", crash_id)[0]
         try:
-            crash_report_as_str = self.conn.load_file(path)
+            crash_report_as_str = self.load_file(path)
             return json.loads(crash_report_as_str)
-        except self.conn.KeyNotFound as x:
-            raise CrashIDNotFound("%s not found: %s" % (crash_id, x))
+        except self.conn.KeyNotFound as exc:
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
