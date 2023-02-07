@@ -192,8 +192,7 @@ CRASH_DESTINATIONS = {
                 default="^socorro[0-9]{6}$",
                 doc="Regex for matching Elasticsearch index names.",
             ),
-            # FIXME(willkg): convert this to singular url
-            "urls": [_config("ELASTICSEARCH_URL", doc="Elasticsearch url.")],
+            "url": _config("ELASTICSEARCH_URL", doc="Elasticsearch url."),
         },
     },
     "statsd": {
