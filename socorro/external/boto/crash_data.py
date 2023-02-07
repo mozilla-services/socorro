@@ -60,10 +60,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             else:
                 return get(params["uuid"])
         except CrashIDNotFound as cidnf:
-            self.logger.warning(
-                "%(datatype)s not found: %(exception)s",
-                {"datatype": params["datatype"], "exception": cidnf},
-            )
+            self.logger.warning("%s not found: %s", params["datatype"], cidnf)
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
@@ -85,9 +82,7 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
         try:
             return self.get_processed(params["uuid"])
         except CrashIDNotFound as cidnf:
-            self.logger.warning(
-                "telemetry crash not found: %(exception)s", {"exception": cidnf}
-            )
+            self.logger.warning("telemetry crash not found: %s", cidnf)
             # The CrashIDNotFound exception that happens inside the
             # crashstorage is too revealing as exception message contains
             # information about buckets and prefix keys. Re-wrap it here so the
