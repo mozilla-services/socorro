@@ -15,7 +15,6 @@ from typing import List
 from attrs import define, field
 import sentry_sdk
 
-from socorro import structure
 from socorro.lib.libdatetime import date_to_string, utc_now
 
 
@@ -33,11 +32,10 @@ class Status:
 class Pipeline:
     """Processor pipeline for Mozilla crash ingestion."""
 
-    def __init__(self, rules=None, host_id=None):
-        super().__init__()
+    def __init__(self, rulesets, host_id=None):
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.host_id = host_id or "unknown"
-        self.rulesets = rules or structure.get("RULESETS", {})
+        self.rulesets = rulesets
         for ruleset_name, ruleset in self.rulesets.items():
             self.logger.info(f"Loading ruleset: {ruleset_name}")
             for rule in ruleset:

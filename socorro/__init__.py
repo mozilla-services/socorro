@@ -25,7 +25,7 @@ class Settings:
                 continue
             setattr(self, key, getattr(settings_module, key))
 
-    def log_settings(self):
+    def log_settings(self, logger=LOGGER):
         """Log settings making sure to sanitize values that have "secret" in the key"""
 
         def sanitize_value(k, v):
@@ -46,7 +46,7 @@ class Settings:
                 continue
             value = sanitize_value(key, getattr(self, key))
 
-            LOGGER.info("%s: %r", key, value)
+            logger.info("%s: %r", key, value)
 
     def __repr__(self):
         return f"<Settings {self._settings_module_path!r}>"

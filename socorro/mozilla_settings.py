@@ -91,27 +91,36 @@ AWS_ENDPOINT_URL = _config(
 
 # Processor configuration
 PROCESSOR = {
-    "number_of_threads": _config(
-        "PROCESSOR_NUMBER_OF_THREADS",
-        default="4",
-        parser=int,
-        doc="Number of worker threads for the processor.",
-    ),
-    "maximum_queue_size": _config(
-        "PROCESSOR_MAXIMUM_QUEUE_SIZE",
-        default="8",
-        parser=int,
-        doc="Number of items to queue up from the processing queues.",
-    ),
+    "task_manager": {
+        "class": "socorro.lib.threaded_task_manager.ThreadedTaskManager",
+        "options": {
+            "idle_delay": 7,
+            "number_of_threads": _config(
+                "PROCESSOR_NUMBER_OF_THREADS",
+                default="4",
+                parser=int,
+                doc="Number of worker threads for the processor.",
+            ),
+            "maximum_queue_size": _config(
+                "PROCESSOR_MAXIMUM_QUEUE_SIZE",
+                default="8",
+                parser=int,
+                doc="Number of items to queue up from the processing queues.",
+            ),
+        },
+    },
+    "pipeline": {
+        "class": "socorro.processor.pipeline.Pipeline",
+        "options": {
+            "rulesets": "socorro.mozilla_rulesets.RULESETS",
+            "host_id": HOST_ID,
+        },
+    },
     "temporary_path": _config(
         "PROCESSOR_TEMPORARY_PATH",
         default=tempfile.gettempdir(),
         doc="Directory to use as a workspace for crash report processing.",
     ),
-    "pipeline": {
-        "class": "socorro.processor.processor_pipeline.ProcessorPipeline",
-        # FIXME(willkg): specify ruleset here as a python dotted path?
-    },
 }
 
 # Crash report processing queue configuration

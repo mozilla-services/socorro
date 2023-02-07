@@ -24,8 +24,6 @@ import types
 
 import click
 
-from socorro.app.socorro_app import App
-
 
 sys.path.insert(0, "bin")
 sys.path.insert(0, "webapp")
@@ -126,11 +124,7 @@ COMMANDS = [
 
 
 def import_and_run(app):
-    """Takes a runner and runs it
-
-    Runners can be either a function or a Socorro App.
-
-    """
+    """Takes a runner and runs it."""
     # If the app is a main function, we run it as is
     if isinstance(app, types.FunctionType):
         sys.exit(app(sys.argv[1:]))
@@ -139,10 +133,6 @@ def import_and_run(app):
     # own
     if isinstance(app, click.core.Group):
         app()
-
-    # If the app is a Socorro App, we run it using the Socorro App main
-    if issubclass(app, App):
-        sys.exit(app.run())
 
     print("ProgrammerError: Unknown runner type")
     sys.exit(1)
