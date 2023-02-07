@@ -14,15 +14,17 @@ from configman.environment import environment
 from django.conf import settings
 from django.utils.module_loading import import_string
 
+from socorro import settings as socorro_settings
 from socorro.app.socorro_app import App
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.external.es.connection_context import (
     ConnectionContext as ESConnectionContext,
 )
+from socorro.libclass import build_instance_from_settings
 
 
 def get_s3_context():
-    """Return an S3ConnectionContext."""
+    """Return an S3Connection."""
     # The class could be anything, so get the class first
     cls_path = settings.SOCORRO_CONFIG["resource"]["boto"]["resource_class"]
     module, name = cls_path.rsplit(".", 1)
