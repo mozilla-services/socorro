@@ -17,7 +17,9 @@ It uses a fetch/transform/save model.
 
 from contextlib import suppress
 from functools import partial
+import logging
 import os
+from pathlib import Path
 import signal
 import sys
 import tempfile
@@ -36,10 +38,11 @@ from sentry_sdk.integrations.stdlib import StdlibIntegration
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 from socorro import settings
-from socorro.app.socorro_app import App
-from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
+from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.libclass import build_instance, build_instance_from_settings
 from socorro.lib.libdatetime import isoformat_to_time
-from socorro.lib.libdockerflow import get_release_name
+from socorro.lib.libdockerflow import get_release_name, get_version_info
+from socorro.lib.liblogging import set_up_logging
 from socorro.lib.task_manager import respond_to_SIGTERM
 
 
@@ -50,15 +53,22 @@ def count_sentry_scrub_error(msg):
     METRICS.incr("sentry_scrub_error", 1)
 
 
-class ProcessorApp(App):
+class ProcessorApp:
     """Configman app that transforms raw crashes into processed crashes."""
 
-    app_name = "processor"
-    app_version = "3.0"
-    app_description = __doc__
+    def __init__(self):
+        self.basedir = Path(__file__).resolve().parent.parent.parent
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
-    @classmethod
-    def configure_sentry(cls, basedir, host_id, sentry_dsn):
+    def log_config(self):
+        version_info = get_version_info(self.basedir)
+        data = ", ".join(
+            [f"{key!r}: {val!r}" for key, val in sorted(version_info.items())]
+        )
+        self.logger.info("version.json: {%s}", data)
+        settings.log_settings(logger=self.logger)
+
+    def set_up_sentry(self, basedir, host_id, sentry_dsn):
         release = get_release_name(basedir)
         scrubber = Scrubber(
             rules=SCRUB_RULES_DEFAULT,
@@ -163,14 +173,14 @@ class ProcessorApp(App):
         except CrashIDNotFound:
             # If the crash isn't found, we just reject it--no need to capture
             # errors here
-            self.processor.reject_raw_crash(
+            self.pipeline.reject_raw_crash(
                 crash_id, "crash cannot be found in raw crash storage"
             )
             return
         except Exception as exc:
             sentry_sdk.capture_exception(exc)
             self.logger.exception("error: crash id %s: %r", crash_id, exc)
-            self.processor.reject_raw_crash(crash_id, f"error in loading: {exc}")
+            self.pipeline.reject_raw_crash(crash_id, f"error in loading: {exc}")
             return
 
         # Fetch processed crash data--there won't be any if this crash hasn't
@@ -184,7 +194,7 @@ class ProcessorApp(App):
 
         # Process the crash to generate a processed crash
         self.logger.debug("processing %s", crash_id)
-        processed_crash = self.processor.process_crash(
+        processed_crash = self.pipeline.process_crash(
             ruleset_name=ruleset_name,
             raw_crash=raw_crash,
             dumps=dumps,
@@ -192,19 +202,17 @@ class ProcessorApp(App):
             tmpdir=tmpdir,
         )
 
-        # Save data to crash storage
-        try:
-            self.logger.debug("saving %s", crash_id)
-            self.destination.save_processed_crash(raw_crash, processed_crash)
-            self.logger.info("saved %s", crash_id)
-        except PolyStorageError as poly_storage_error:
-            # Capture and log the exceptions raised by storage backends
-            for storage_error in poly_storage_error:
-                sentry_sdk.capture_exception(storage_error)
+        # Save data to crash storage destinations
+        self.logger.debug("saving %s", crash_id)
+        for destination in self.destinations:
+            try:
+                self.destination.save_processed_crash(raw_crash, processed_crash)
+            except Exception as storage_error:
                 self.logger.error("error: crash id %s: %r", crash_id, storage_error)
+                # Re-raise the original exception with the correct traceback
+                raise
 
-            # Re-raise the original exception with the correct traceback
-            raise
+        self.logger.info("saved %s", crash_id)
 
         if ruleset_name == "default" and new_crash:
             # Capture the total time for ingestion covering when the crash report
@@ -219,40 +227,32 @@ class ProcessorApp(App):
 
         self.logger.info("completed %s", crash_id)
 
-    def _setup_source_and_destination(self):
+    def _set_up_source_and_destination(self):
         """Instantiate classes necessary for processing."""
-        # FIXME(willkg): rewrite this
 
-        self.queue = self.config.queue.crashqueue_class(
-            self.config.queue,
-            namespace=self.app_instance_name,
-        )
-        self.source = self.config.source.crashstorage_class(
-            self.config.source,
-            namespace=self.app_name,
-        )
-        self.destination = self.config.destination.crashstorage_class(
-            self.config.destination,
-            namespace=self.app_name,
-        )
+        self.queue = build_instance_from_settings(settings.QUEUE)
+        self.source = build_instance_from_settings(settings.CRASH_SOURCE)
+        self.destinations = [
+            build_instance_from_settings(settings.CRASH_DESTINATIONS[key])
+            for key in settings.CRASH_DESTINATIONS_ORDER
+        ]
 
-        self.processor = self.config.processor.processor_class(
-            config=self.config.processor, host_id=self.app_instance_name
-        )
+        self.pipeline = build_instance_from_settings(settings.PROCESSOR["pipeline"])
 
-        self.temporary_path = self.config.processor.temporary_path
+        self.temporary_path = settings.PROCESSOR["temporary_path"]
         os.makedirs(self.temporary_path, exist_ok=True)
 
-        if self.config.companion_process.companion_class:
-            self.companion_process = self.config.companion_process.companion_class(
-                self.config.companion_process
-            )
-        else:
-            self.companion_process = None
+    def _set_up_cache_manager(self):
+        """Launch symbol cache manager."""
+        # if self.config.companion_process.companion_class:
+        #     self.companion_process = self.config.companion_process.companion_class(
+        #         self.config.companion_process
+        #     )
+        # else:
+        #     self.companion_process = None
 
-    def _setup_task_manager(self):
-        """instantiate the threaded task manager to run the producer/consumer
-        queue that is the heart of the processor."""
+    def _set_up_task_manager(self):
+        """Create and set up task manager."""
         self.logger.info("installing signal handers")
         # Set up the signal handler for dealing with SIGTERM. The target should be this
         # app instance so the signal handler can reach in and set the quit flag to be
@@ -260,10 +260,17 @@ class ProcessorApp(App):
         respond_to_SIGTERM_with_logging = partial(respond_to_SIGTERM, target=self)
         signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
 
-        self.task_manager = self.config.producer_consumer.producer_consumer_class(
-            self.config.producer_consumer,
-            job_source_iterator=self.source_iterator,
-            task_func=self.transform,
+        # Create task manager
+        manager_class = settings.PROCESSOR["task_manager"]["class"]
+        manager_settings = settings.PROCESSOR["task_manager"]["options"]
+        manager_settings.update(
+            {
+                "job_source_iterator": self.source_iterator,
+                "task_func": self.transform,
+            }
+        )
+        self.task_manager = build_instance(
+            class_path=manager_class, kwargs=manager_settings
         )
 
     def close(self):
@@ -281,7 +288,7 @@ class ProcessorApp(App):
             self.companion_process.close()
 
         with suppress(AttributeError):
-            self.processor.close()
+            self.pipeline.close()
 
     def main(self):
         """Main routine
@@ -292,12 +299,36 @@ class ProcessorApp(App):
 
         """
 
-        self._setup_task_manager()
-        self._setup_source_and_destination()
+        # Set everything up
+        set_up_logging(
+            local_dev_env=settings.LOCAL_DEV_ENV,
+            logging_level=settings.LOGGING_LEVEL,
+            host_id=settings.HOST_ID,
+        )
+
+        self.log_config()
+
+        markus.configure(backends=settings.MARKUS_BACKENDS)
+
+        if settings.SENTRY_DSN:
+            self.set_up_sentry(
+                basedir=self.basedir,
+                host_id=settings.HOST_ID,
+                sentry_dsn=settings.SENTRY_DSN,
+            )
+
+        self._set_up_task_manager()
+        self._set_up_source_and_destination()
+        self._set_up_cache_manager()
+
+        # Run
         self.task_manager.blocking_start()
+
+        # End processing and quit
         self.close()
         self.logger.info("done.")
+        return 0
 
 
 if __name__ == "__main__":
-    sys.exit(ProcessorApp.run())
+    sys.exit(ProcessorApp().main())
