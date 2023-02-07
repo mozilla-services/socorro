@@ -64,13 +64,13 @@ class TestVerifyProcessed:
 
     def test_get_threechars(self):
         cmd = Command()
-        entropy = list(sorted(cmd.get_threechars()))
+        threechars = list(sorted(cmd.get_threechars()))
 
         # We don't want to assert the contents of the whole list, so let's
         # just assert some basic facts and it's probably fine
-        assert len(entropy) == 4096
-        assert entropy[0] == "000"
-        assert entropy[-1] == "fff"
+        assert len(threechars) == 4096
+        assert threechars[0] == "000"
+        assert threechars[-1] == "fff"
 
     def test_no_crashes(self, boto_helper, monkeypatch):
         """Verify no crashes in bucket result in no missing crashes."""
