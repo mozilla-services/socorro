@@ -7,7 +7,6 @@ from contextlib import suppress
 import datetime
 import re
 
-from configman import class_converter, Namespace, RequiredConfig
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 
@@ -48,26 +47,17 @@ def prune_invalid_indices(indices, policy, template):
     return list(set(indices) & set(valid_indices))
 
 
-class SuperSearch(RequiredConfig, SearchBase):
-    required_config = Namespace()
-    required_config.add_option(
-        "elasticsearch_class",
-        doc="a class that implements the ES connection object",
-        default="socorro.external.es.connection_context.ConnectionContext",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config):
+class SuperSearch(SearchBase):
+    def __init__(self, crashstorage):
         """Create a SuperSearch instance.
 
-        :arg context: an Elasticsearch ConnectionContext instance
+        :arg crashstorage: an ESCrashStorage instance
 
         """
-        self.config = config
-        self.context = self.config.elasticsearch_class(self.config)
+        self.crashstorage = crashstorage
 
     def get_connection(self):
-        with self.context() as conn:
+        with self.crashstorage.client() as conn:
             return conn
 
     def get_indices(self, dates):
@@ -81,7 +71,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 end_date = date.value
 
         return generate_list_of_indexes(
-            start_date, end_date, self.context.get_index_template()
+            start_date, end_date, self.crashstorage.get_index_template()
         )
 
     def format_field_names(self, hit):
@@ -190,19 +180,19 @@ class SuperSearch(RequiredConfig, SearchBase):
         # Find the indices to use to optimize the elasticsearch query.
         indices = self.get_indices(params["date"])
 
-        if "%" in self.context.get_index_template():
+        if "%" in self.crashstorage.get_index_template():
             # If the index template is date-centric, remove indices before the retention
             # policy because they're not valid to search through and probably don't
             # exist
-            policy = datetime.timedelta(weeks=self.context.get_retention_policy())
-            template = self.context.get_index_template()
+            policy = datetime.timedelta(weeks=self.crashstorage.get_retention_policy())
+            template = self.crashstorage.get_index_template()
             indices = prune_invalid_indices(indices, policy, template)
 
         # Create and configure the search object.
         search = Search(
             using=self.get_connection(),
             index=indices,
-            doc_type=self.context.get_doctype(),
+            doc_type=self.crashstorage.get_doctype(),
         )
 
         # Create filters.
@@ -224,7 +214,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                         if results_number > 1000:
                             raise BadArgumentError(
                                 "_results_number",
-                                msg=("_results_number cannot be greater " "than 1,000"),
+                                msg=("_results_number cannot be greater than 1,000"),
                             )
                         if results_number < 0:
                             raise BadArgumentError(
@@ -244,7 +234,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                             raise BadArgumentError("_facets_size greater than 10,000")
 
                     for f in self.histogram_fields:
-                        if param.name == "_histogram_interval.%s" % f:
+                        if param.name == f"_histogram_interval.{f}":
                             histogram_intervals[f] = param.value[0]
 
                     # Don't use meta parameters in the query.

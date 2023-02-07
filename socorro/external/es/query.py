@@ -7,33 +7,26 @@ import elasticsearch
 import json
 import re
 
-from configman import RequiredConfig, Namespace, class_converter
-
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import libdatetime, external_common
 
 
-class Query(RequiredConfig):
+class Query:
     """Implement the /query service with ElasticSearch."""
-
-    required_config = Namespace()
-    required_config.add_option(
-        "elasticsearch_class",
-        doc="a class that implements the ES connection object",
-        default="socorro.external.es.connection_context.ConnectionContext",
-        from_string_converter=class_converter,
-    )
 
     filters = [("query", None, "json"), ("indices", None, ["list", "str"])]
 
-    def __init__(self, config):
-        self.config = config
-        self.context = self.config.elasticsearch_class(self.config)
+    def __init__(self, crashstorage, timeout=120):
+        """
+        :arg crashstorage: an ESCrashStorage instance
+        """
+        self.crashstorage = crashstorage
+        self.timeout = timeout
 
     def get_connection(self):
-        with self.context(timeout=self.context.get_timeout_extended()) as conn:
+        with self.crashstorage.client(timeout=self.timeout_extended) as conn:
             return conn
 
     def get(self, **kwargs):
@@ -50,7 +43,8 @@ class Query(RequiredConfig):
             today = libdatetime.utc_now()
             last_week = today - datetime.timedelta(days=7)
 
-            index_template = self.context.get_index_template()
+            # FIXME requires crashstorage
+            index_template = self.crashstorage.get_index_template()
             indices = generate_list_of_indexes(last_week, today, index_template)
         elif len(params["indices"]) == 1 and params["indices"][0] == "ALL":
             # If we want all indices, just do nothing.
@@ -61,7 +55,7 @@ class Query(RequiredConfig):
         search_args = {}
         if indices:
             search_args["index"] = indices
-            search_args["doc_type"] = self.context.get_doctype()
+            search_args["doc_type"] = self.crashstorage.get_doctype()
 
         connection = self.get_connection()
 
