@@ -158,8 +158,8 @@ CRASH_SOURCE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     "options": {
         "metrics_prefix": "processor.s3",
-        "bucket_name": _config(
-            "CRASHSTORAGE_S3_BUCKET_NAME",
+        "bucket": _config(
+            "CRASHSTORAGE_S3_BUCKET",
             default="",
             doc="S3 bucket name for crash report data.",
         ),
@@ -215,8 +215,8 @@ CRASH_DESTINATIONS = {
         "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
         "options": {
             "metrics_prefix": "processor.telemetry",
-            "bucket_name": _config(
-                "TELEMETRY_S3_BUCKET_NAME",
+            "bucket": _config(
+                "TELEMETRY_S3_BUCKET",
                 default="",
                 doc="S3 bucket name for telemetry data export.",
             ),

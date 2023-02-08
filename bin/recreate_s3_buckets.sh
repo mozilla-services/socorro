@@ -15,9 +15,9 @@ set -euo pipefail
 cd /app
 
 echo "Dropping and recreating S3 crash bucket..."
-(./bin/socorro_aws_s3.sh rb "s3://${CRASHSTORAGE_S3_BUCKET_NAME}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
-./bin/socorro_aws_s3.sh mb "s3://${CRASHSTORAGE_S3_BUCKET_NAME}/"
+(./bin/socorro_aws_s3.sh rb "s3://${CRASHSTORAGE_S3_BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
+./bin/socorro_aws_s3.sh mb "s3://${CRASHSTORAGE_S3_BUCKET}/"
 
 echo "Dropping and recreating S3 telemetry bucket..."
-(./bin/socorro_aws_s3.sh rb "s3://${TELEMETRY_S3_BUCKET_NAME}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
-./bin/socorro_aws_s3.sh mb "s3://${TELEMETRY_S3_BUCKET_NAME}/"
+(./bin/socorro_aws_s3.sh rb "s3://${TELEMETRY_S3_BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
+./bin/socorro_aws_s3.sh mb "s3://${TELEMETRY_S3_BUCKET}/"
