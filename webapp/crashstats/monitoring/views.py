@@ -5,8 +5,6 @@
 import datetime
 import uuid
 
-import elasticsearch
-
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Permission
@@ -19,6 +17,8 @@ from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
+from socorro import settings as socorro_settings
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdockerflow import get_version_info
 
 
@@ -80,10 +80,10 @@ def dockerflow_heartbeat(request):
     Returns HTTP 200 if everything is ok or HTTP 500 on error.
 
     """
-    # Perform a basic DB query
+    # Test database
     Permission.objects.all().count()
 
-    # We should also be able to set and get a cache value
+    # Test caching
     cache_key = "__healthcheck__" + str(uuid.uuid4())
     try:
         cache.set(cache_key, 1, 10)
@@ -103,20 +103,15 @@ def dockerflow_heartbeat(request):
     except Exception as exc:
         raise HeartbeatException(f"cache.delete failed: {exc}")
 
-    # Perform a basic Elasticsearch query
-    es = elasticsearch.Elasticsearch(
-        hosts=settings.ELASTICSEARCH_URLS,
-        timeout=30,
-        connection_class=elasticsearch.connection.RequestsHttpConnection,
-        verify_certs=True,
-    )
-    # This will raise an error if there's a problem with the cluster
+    es = build_instance_from_settings(socorro_settings.CRASH_DESTINATIONS["elasticsearch"])
+
+    # Test Elasticsearch
     try:
-        es.info()
+        with es.client() as conn:
+            conn.info()
     except Exception as exc:
         raise HeartbeatException(f"es.info failed: {exc}")
 
-    # Check SuperSearch paginated results
     supersearch = SuperSearch()
     supersearch.cache_seconds = 0
     try:

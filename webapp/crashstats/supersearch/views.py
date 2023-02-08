@@ -28,7 +28,9 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
 )
+from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
+from socorro.libclass import build_instance_from_settings
 
 
 DEFAULT_COLUMNS = ("date", "signature", "product", "version", "build_id", "platform")
@@ -284,12 +286,12 @@ def search_custom(request, default_context=None):
         except BadArgumentError as e:
             error = e
 
-    schema = settings.ELASTICSEARCH_INDEX_SCHEMA
-    now = timezone.now()
+    es_crashstorage = build_instance_from_settings(
+        socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+    )
 
     possible_indices = []
-    for i in range(26):
-        index = (now - datetime.timedelta(weeks=i)).strftime(schema)
+    for index in es_crashstorage.get_indices():
         possible_indices.append({"id": index, "text": index})
 
     context = default_context
