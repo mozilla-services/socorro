@@ -114,7 +114,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
     def __init__(
         self,
-        bucket_name="crashstats",
+        bucket="crashstats",
         dump_file_suffix=".dump",
         metrics_prefix="processor.s3",
         region=None,
@@ -123,7 +123,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         endpoint_url=None,
     ):
         """
-        :arg bucket_name: the S3 bucket to save to
+        :arg bucket: the S3 bucket to save to
         :arg dump_file_suffix: the suffix used to identify a dump file (for use in temp
             files)
         :arg region: the AWS region to use
@@ -140,7 +140,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             secret_access_key=secret_access_key,
             endpoint_url=endpoint_url,
         )
-        self.bucket_name = bucket_name
+        self.bucket = bucket
         self.dump_file_suffix = dump_file_suffix
 
         self.metrics = markus.get_metrics(metrics_prefix)
@@ -163,10 +163,10 @@ class BotoS3CrashStorage(CrashStorageBase):
         )
 
     def load_file(self, path):
-        return self.connection.load_file(self.bucket_name, path)
+        return self.connection.load_file(self.bucket, path)
 
     def save_file(self, path, data):
-        return self.connection.save_file(self.bucket_name, path, data)
+        return self.connection.save_file(self.bucket, path, data)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """Save raw crash data to S3 bucket.
@@ -212,7 +212,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         :returns: generator of keys
 
         """
-        return self.connection.list(bucket_name=self.bucket_name, prefix=prefix)
+        return self.connection.list(bucket=self.bucket, prefix=prefix)
 
     def exists_object(self, key):
         """Returns whether the object exists in the bucket
@@ -223,7 +223,7 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         """
         try:
-            self.connection.head_object(bucket_name=self.bucket_name, key=key)
+            self.connection.head_object(bucket=self.bucket, key=key)
             return True
         except self.connection.KeyNotFound:
             return False

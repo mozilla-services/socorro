@@ -90,7 +90,7 @@ def check_crashids_for_date(firstchars_chunk, date):
         raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (date, firstchars)
 
         page_iterator = s3_crash_source.connection.list_objects_paginator(
-            bucket_name=s3_crash_source.bucket_name,
+            bucket=s3_crash_source.bucket,
             prefix=raw_crash_key_prefix,
         )
 

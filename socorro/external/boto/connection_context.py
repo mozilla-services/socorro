@@ -69,14 +69,14 @@ class S3Connection:
 
     def __init__(
         self,
-        bucket_name="crashstats",
+        bucket="crashstats",
         region=None,
         access_key=None,
         secret_access_key=None,
         endpoint_url=None,
     ):
         """
-        :arg bucket_name: the S3 bucket to use
+        :arg bucket: the S3 bucket to use
         :arg region: AWS region to use (e.g. us-west-2)
         :arg access_key: AWS access key
         :arg secret_access_key: AWS secret access key
@@ -151,14 +151,14 @@ class S3Connection:
         wait_time_generator=wait_times_access,
         module_logger=logger,
     )
-    def save_file(self, bucket_name, path, data):
+    def save_file(self, bucket, path, data):
         """Save a single file to S3.
 
         This will retry a handful of times in short succession so as to deal
         with some amount of fishiness. After that, the caller should retry
         saving after a longer period of time.
 
-        :arg str bucket_name: the bucket to save to
+        :arg str bucket: the bucket to save to
         :arg str path: the path to save to
         :arg bytes data: the data to save
 
@@ -170,7 +170,7 @@ class S3Connection:
             raise TypeError("data argument must be bytes")
 
         self.client.upload_fileobj(
-            Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=path
+            Fileobj=io.BytesIO(data), Bucket=bucket, Key=path
         )
 
     @retry(
@@ -182,14 +182,14 @@ class S3Connection:
         wait_time_generator=wait_times_access,
         module_logger=logger,
     )
-    def load_file(self, bucket_name, path):
+    def load_file(self, bucket, path):
         """Load a file from S3.
 
         This will retry a handful of times in short succession so as to deal with some
         amount of fishiness. After that, the caller should retry saving after a longer
         period of time.
 
-        :arg str bucket_name: the bucket to load from
+        :arg str bucket: the bucket to load from
         :arg str path: the path to load from
 
         :returns: bytes
@@ -200,30 +200,30 @@ class S3Connection:
 
         """
         try:
-            resp = self.client.get_object(Bucket=bucket_name, Key=path)
+            resp = self.client.get_object(Bucket=bucket, Key=path)
             return resp["Body"].read()
         except self.client.exceptions.NoSuchKey:
             raise KeyNotFound(
-                f"(bucket={bucket_name!r} key={path}) not found, no value returned"
+                f"(bucket={bucket!r} key={path}) not found, no value returned"
             )
 
-    def list_objects_paginator(self, bucket_name, prefix):
+    def list_objects_paginator(self, bucket, prefix):
         """Returns S3 client paginator of objects with key prefix in bucket
 
-        :arg bucket_name: the name of the bucket
+        :arg bucket: the name of the bucket
         :arg prefix: the key prefix
 
         :returns: S3 paginator
 
         """
         paginator = self.client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
         return page_iterator
 
-    def head_object(self, bucket_name, key):
+    def head_object(self, bucket, key):
         """HEAD action on an object in a S3 bucket
 
-        :arg bucket_name: the name of the bucket
+        :arg bucket: the name of the bucket
         :arg key: the key for the object to HEAD
 
         :returns: S3 HEAD response
@@ -234,8 +234,8 @@ class S3Connection:
 
         """
         try:
-            return self.client.head_object(Bucket=self.bucket_name, Key=key)
+            return self.client.head_object(Bucket=self.bucket, Key=key)
         except self.client.exceptions.NoSuchKey:
             raise KeyNotFound(
-                f"(bucket={bucket_name!r} key={key}) not found, no value returned"
+                f"(bucket={bucket!r} key={key}) not found, no value returned"
             )
