@@ -126,9 +126,9 @@ class BotoS3CrashStorage(CrashStorageBase):
         :arg bucket_name: the S3 bucket to save to
         :arg dump_file_suffix: the suffix used to identify a dump file (for use in temp
             files)
-        :arg region: the S3 region to use
-        :arg access_key: the S3 access_key to use
-        :arg secret_access_key: the S3 secret_access_key to use
+        :arg region: the AWS region to use
+        :arg access_key: the AWS access_key to use
+        :arg secret_access_key: the AWS secret_access_key to use
         :arg endpoint_url: the endpoint url to use when in a local development
             environment
 
