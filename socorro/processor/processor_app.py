@@ -65,7 +65,8 @@ class ProcessorApp:
         data = ", ".join(
             [f"{key!r}: {val!r}" for key, val in sorted(version_info.items())]
         )
-        self.logger.info("version.json: {%s}", data)
+        data = data or "no version data"
+        self.logger.info("version.json: %s", data)
         settings.log_settings(logger=self.logger)
 
     def set_up_sentry(self, basedir, host_id, sentry_dsn):
@@ -204,11 +205,16 @@ class ProcessorApp:
 
         # Save data to crash storage destinations
         self.logger.debug("saving %s", crash_id)
-        for destination in self.destinations:
+        for dest in self.destinations:
             try:
-                self.destination.save_processed_crash(raw_crash, processed_crash)
+                dest.save_processed_crash(raw_crash, processed_crash)
             except Exception as storage_error:
-                self.logger.error("error: crash id %s: %r", crash_id, storage_error)
+                self.logger.error(
+                    "error: crash id %s: %r (%s)",
+                    crash_id,
+                    storage_error,
+                    dest.crash_destination_name,
+                )
                 # Re-raise the original exception with the correct traceback
                 raise
 
@@ -232,10 +238,12 @@ class ProcessorApp:
 
         self.queue = build_instance_from_settings(settings.QUEUE)
         self.source = build_instance_from_settings(settings.CRASH_SOURCE)
-        self.destinations = [
-            build_instance_from_settings(settings.CRASH_DESTINATIONS[key])
-            for key in settings.CRASH_DESTINATIONS_ORDER
-        ]
+        destinations = []
+        for key in settings.CRASH_DESTINATIONS_ORDER:
+            dest_obj = build_instance_from_settings(settings.CRASH_DESTINATIONS[key])
+            setattr(dest_obj, "crash_destination_name", key)
+            destinations.append(dest_obj)
+        self.destinations = destinations
 
         self.pipeline = build_instance_from_settings(settings.PROCESSOR["pipeline"])
 
@@ -290,7 +298,7 @@ class ProcessorApp:
         with suppress(AttributeError):
             self.pipeline.close()
 
-    def main(self):
+    def main(self, *args):
         """Main routine
 
         Sets up the signal handlers, the source and destination crashstorage systems at
@@ -298,7 +306,6 @@ class ProcessorApp:
         shepherd tasks from the source to the destination.
 
         """
-
         # Set everything up
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
@@ -330,5 +337,9 @@ class ProcessorApp:
         return 0
 
 
+def main(args):
+    sys.exit(ProcessorApp().main(args))
+
+
 if __name__ == "__main__":
-    sys.exit(ProcessorApp().main())
+    main()
