@@ -49,9 +49,6 @@ LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
 # on all server instances and True only for development.
 DEBUG = config("DEBUG", False, cast=bool)
 
-# Set this to True to make debugging AJAX requests easier; development-only!
-DEBUG_PROPAGATE_EXCEPTIONS = config("DEBUG_PROPAGATE_EXCEPTIONS", False, cast=bool)
-
 SITE_ID = 1
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
@@ -193,10 +190,14 @@ TEMPLATES = [
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
+# Logging level for Crash Stats code
 LOGGING_LEVEL = config("LOGGING_LEVEL", "INFO")
+
+# Logging level for Django logging (requests, SQL, etc)
 DJANGO_LOGGING_LEVEL = config("DJANGO_LOGGING_LEVEL", "INFO")
 
-HOST_ID = socket.gethostname()
+# Name of the host this is running on. Used in logging.
+HOST_ID = config("HOST_ID", socket.gethostname())
 
 
 class AddHostID(logging.Filter):
@@ -379,12 +380,6 @@ RATELIMIT_SUPERSEARCH_AUTHENTICATED = "100/m"
 # Path to the view that gets executed if you hit upon a ratelimit block
 RATELIMIT_VIEW = "crashstats.crashstats.views.ratelimit_blocked"
 
-# FIXME(willkg): remove this
-# We don't want to test the migrations when we run tests.
-# We trust that syncdb matches what you'd get if you install
-# all the migrations.
-SOUTH_TESTS_MIGRATE = False
-
 # To extend any settings from above here's an example:
 # INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
@@ -410,32 +405,20 @@ STATSD_PORT = config("STATSD_PORT", 8125, cast=int)
 STATSD_PREFIX = config("STATSD_PREFIX", None)
 
 # set up markus backends for metrics
-if LOCAL_DEV_ENV:
-    MARKUS_BACKENDS = [
-        {"class": "markus.backends.logging.LoggingMetrics"},
-        {
-            "class": "markus.backends.statsd.StatsdMetrics",
-            "options": {
-                "statsd_host": STATSD_HOST,
-                "statsd_port": STATSD_PORT,
-                "statsd_prefix": STATSD_PREFIX,
-            },
+MARKUS_BACKENDS = [
+    {
+        "class": "markus.backends.datadog.DatadogMetrics",
+        "options": {
+            "statsd_host": STATSD_HOST,
+            "statsd_port": STATSD_PORT,
+            "statsd_namespace": STATSD_PREFIX,
         },
-    ]
-else:
-    # Otherwise we're in a server environment and we use the datadog
-    # backend there
-    MARKUS_BACKENDS = [
-        {
-            # Log metrics to Datadog
-            "class": "markus.backends.datadog.DatadogMetrics",
-            "options": {
-                "statsd_host": STATSD_HOST,
-                "statsd_port": STATSD_PORT,
-                "statsd_namespace": STATSD_PREFIX,
-            },
-        }
-    ]
+    },
+]
+if LOCAL_DEV_ENV:
+    # Add logging backend in local dev environment so we see metrics without
+    # needing a whole statsd/grafana backend.
+    MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
 
 
 CACHES = {
@@ -455,14 +438,8 @@ CACHES = {
 
 TIME_ZONE = config("TIME_ZONE", "UTC")
 
-
-# We'll possible reuse this later in this file
-database_url = config("DATABASE_URL", "sqlite://sqlite.crashstats.db")
-
-DATABASES = {"default": dj_database_url.parse(database_url)}
-
-# Uncomment this and set to all slave DBs in use on the site.
-SLAVE_DATABASES = config("SLAVE_DATABASES", "", cast=Csv())
+DATABASE_URL = config("DATABASE_URL", "sqlite://sqlite.crashstats.db")
+DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 
 STATICFILES_FINDERS = [
@@ -480,9 +457,11 @@ PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
     "LESS_BINARY": config("LESS_BINARY", path("node_modules/.bin/lessc")),
-    "LESS_ARGUMENTS": "--global-var=\"root-path='"
-    + STATIC_ROOT
-    + "/crashstats/css/'\"",
+    "LESS_ARGUMENTS": (
+        "--global-var=\"root-path='"
+        + STATIC_ROOT
+        + "/crashstats/css/'\""
+    ),
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": config("UGLIFYJS_BINARY", path("node_modules/.bin/uglifyjs")),
     "UGLIFYJS_ARGUMENTS": "--mangle",
@@ -527,6 +506,7 @@ SENTRY_DSN = config("SENTRY_DSN", "")
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
 # The list of valid rulesets for the Reprocessing API
+# FIXME(willkg): we can pluck this from settings or structure
 VALID_RULESETS = ["default", "regenerate_signature"]
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
@@ -540,20 +520,27 @@ OIDC_OP_USER_ENDPOINT = config("OIDC_OP_USER_ENDPOINT", "")
 # contexts and that doesn't handle redirecting.
 OIDC_EXEMPT_URLS = [
     # Used by supersearch page as an XHR
-    "supersearch:search_fields",  # data-fields-url
-    "supersearch:search_results",  # data-results-url
+    # data-fields-url
+    "supersearch:search_fields",
+    # data-results-url
+    "supersearch:search_results",
     # Used by bugzilla.js
     "/buginfo/bug",
     # Used by signature report as an XHR
-    "signature:signature_summary",  # data-urls-summary
-    "signature:signature_reports",  # data-urls-reports
-    "signature:signature_bugzilla",  # data-urls-bugzilla
-    "signature:signature_comments",  # data-urls-comments
-    "signature:signature_correlations",  # data-urls-correlations
-    re.compile(r"^/signature/graphs/(?P<field>\w+)/$"),  # data-urls-graphs
-    re.compile(
-        r"^/signature/aggregation/(?P<aggregation>\w+)/$"
-    ),  # data-urls-aggregations
+    # data-urls-summary
+    "signature:signature_summary",
+    # data-urls-reports
+    "signature:signature_reports",
+    # data-urls-bugzilla
+    "signature:signature_bugzilla",
+    # data-urls-comments
+    "signature:signature_comments",
+    # data-urls-correlations
+    "signature:signature_correlations",
+    # data-urls-graphs
+    re.compile(r"^/signature/graphs/(?P<field>\w+)/$"),
+    # data-urls-aggregations
+    re.compile(r"^/signature/aggregation/(?P<aggregation>\w+)/$"),
 ]
 LOGOUT_REDIRECT_URL = "/"
 
