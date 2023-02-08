@@ -18,4 +18,4 @@ CMDPREFIX="${CMDPREFIX:-}"
 PATH=/stackwalk:${PATH:-}
 
 # Run the processor
-${CMDPREFIX} python /app/socorro/processor/processor_app.py
+${CMDPREFIX} /app/socorro-cmd processor

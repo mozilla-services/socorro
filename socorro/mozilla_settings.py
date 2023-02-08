@@ -205,7 +205,7 @@ CRASH_DESTINATIONS = {
         },
     },
     "statsd": {
-        "class": "socorro.external.crashstorage_base.MetricsCounter",
+        "class": "socorro.external.statsd.crashstorage.MetricsCounter",
         "options": {
             "metrics_prefix": "processor",
         },

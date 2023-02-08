@@ -303,6 +303,7 @@ class ESCrashStorage(CrashStorageBase):
         # Cached answers for things that don't change
         self._keys_for_indexable_fields_cache = None
         self._keys_for_mapping_cache = {}
+        self._mapping_cache = {}
 
     @classmethod
     def build_client(cls, url, timeout):
@@ -366,7 +367,7 @@ class ESCrashStorage(CrashStorageBase):
         mapping = self._mapping_cache.get(cache_key)
         if mapping is None:
             try:
-                resp = self.indices_client().get_mapping(index=index_name)
+                resp = self.client.indices_client().get_mapping(index=index_name)
                 mapping = resp[index_name]["mappings"][es_doctype]["properties"]
                 self._mapping_cache[cache_key] = mapping
             except elasticsearch.exceptions.NotFoundError:
@@ -466,7 +467,7 @@ class ESCrashStorage(CrashStorageBase):
         cache_key = f"{index_name}::{es_doctype}"
         keys = self._keys_for_mapping_cache.get(cache_key)
         if keys is None:
-            mapping = self.client.get_mapping(index_name, es_doctype, reraise=True)
+            mapping = self.get_mapping(index_name, es_doctype, reraise=True)
             keys = parse_mapping(mapping, None)
             self._keys_for_mapping_cache[cache_key] = keys
         return keys
@@ -490,10 +491,10 @@ class ESCrashStorage(CrashStorageBase):
         """Save processed crash report to Elasticsearch"""
         crash_id = processed_crash["uuid"]
 
-        index_name = self.client.get_index_for_date(
+        index_name = self.get_index_for_date(
             string_to_datetime(processed_crash["date_processed"])
         )
-        es_doctype = self.config.elasticsearch.elasticsearch_doctype
+        es_doctype = self.get_doctype()
         all_valid_keys = self.get_keys(index_name, es_doctype)
 
         src = {
@@ -556,7 +557,7 @@ class ESCrashStorage(CrashStorageBase):
     ):
         """Submit a crash report to elasticsearch"""
         # Attempt to create the index; it's OK if it already exists.
-        self.client.create_index(index_name)
+        self.create_index(index_name)
 
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in

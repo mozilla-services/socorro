@@ -112,7 +112,7 @@ class FSPermanentStorage(CrashStorageBase):
         if dump_name == self.dump_field or not dump_name:
             return crash_id + self.dump_file_suffix
         else:
-            return "%s.%s%s" % (crash_id, dump_name, self.config.dump_file_suffix)
+            return "%s.%s%s" % (crash_id, dump_name, self.dump_file_suffix)
 
     @staticmethod
     def _get_radix(crash_id):

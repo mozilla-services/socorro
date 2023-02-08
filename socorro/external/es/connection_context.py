@@ -26,9 +26,6 @@ class ConnectionContext:
         self.url = url
         self.timeout = timeout
 
-        # Cached answers for things that don't change
-        self._mapping_cache = {}
-
     def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
         encapsulated by the Connection class above.

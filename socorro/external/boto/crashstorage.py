@@ -314,7 +314,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             processed_crash_as_string = self.load_file(path)
             return json.loads(processed_crash_as_string)
-        except self.conn.KeyNotFound as exc:
+        except self.connection.KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
 
@@ -397,5 +397,5 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         try:
             crash_report_as_str = self.load_file(path)
             return json.loads(crash_report_as_str)
-        except self.conn.KeyNotFound as exc:
+        except self.connection.KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}")

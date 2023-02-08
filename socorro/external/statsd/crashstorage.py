@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from functools import partial
+
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase
@@ -13,7 +15,7 @@ class MetricsCounter(CrashStorageBase):
     def __init__(
         self,
         metrics_prefix="",
-        active_list=["save_processed_crash", "act"],
+        active_list=["save_processed_crash"],
     ):
         """
         :arg metrics_prefix: a string to be used as the prefix for metrics keys
@@ -23,13 +25,11 @@ class MetricsCounter(CrashStorageBase):
         self.active_list = active_list
         self.metrics = markus.get_metrics(metrics_prefix)
 
+        for mem in self.active_list:
+            setattr(self, mem, partial(self.incr_attr, mem))
+
     def _make_key(self, *args):
         return ".".join(x for x in args if x)
 
-    def __getattr__(self, attr):
-        if attr in self.active_list:
-            self.metrics.incr(attr)
-        return self._noop
-
-    def _noop(self, *args, **kwargs):
-        pass
+    def incr_attr(self, attr, *args, **kwargs):
+        self.metrics.incr(attr)
