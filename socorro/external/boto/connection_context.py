@@ -76,9 +76,10 @@ class S3Connection:
         endpoint_url=None,
     ):
         """
-        :arg region: S3 region to use (e.g. us-west-2)
-        :arg access_key: S3 access key
-        :arg secret_access_key: S3 secret access key
+        :arg bucket_name: the S3 bucket to use
+        :arg region: AWS region to use (e.g. us-west-2)
+        :arg access_key: AWS access key
+        :arg secret_access_key: AWS secret access key
         :arg endpoint_url: the endpoint url to use when in a local development
             environment
         """

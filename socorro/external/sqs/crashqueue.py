@@ -114,6 +114,17 @@ class SQSCrashQueue(CrashQueueBase):
         secret_access_key=None,
         endpoint_url=None,
     ):
+        """
+        :arg standard_queue: name for the standard SQS queue
+        :arg priority_queue: name for the priority SQS queue
+        :arg reprocessing_queue: name for the reprocessing SQS queue
+        :arg region: the AWS region to use
+        :arg access_key: the AWS access_key to use
+        :arg secret_access_key: the AWS secret_access_key to use
+        :arg endpoint_url: the endpoint url to use when in a local development
+            environment
+        """
+
         self.client = self.build_client(
             region=region,
             access_key=access_key,
@@ -133,6 +144,14 @@ class SQSCrashQueue(CrashQueueBase):
 
     @classmethod
     def validate_queue_name(cls, queue_name):
+        """Validates a queue name
+
+        :arg queue_name: the queue name to validate
+
+        :raises InvalidQueueName: if the queue name is invalid, this is raised with
+            details
+
+        """
         if len(queue_name) > 80:
             raise InvalidQueueName("queue name is too long.")
 
@@ -187,9 +206,22 @@ class SQSCrashQueue(CrashQueueBase):
         return session.client(**kwargs)
 
     def get_queue_url(self, queue_name):
+        """Returns the SQS queue url for the given queue name
+
+        :arg queue_name: the queue name
+
+        :returns: the url for the queue
+
+        """
         return self.client.get_queue_url(QueueName=queue_name)["QueueUrl"]
 
     def ack_crash(self, queue_url, handle):
+        """Acknowledges a crash
+
+        :arg queue_url: the url for the queue
+        :arg handle: the handle for the item to acknowledge
+
+        """
         self.client.delete_message(QueueUrl=queue_url, ReceiptHandle=handle)
         logger.debug("ack %s from %s", handle, queue_url)
 
@@ -239,7 +271,16 @@ class SQSCrashQueue(CrashQueueBase):
                 return
 
     def publish(self, queue, crash_ids):
-        """Publish crash ids to specified queue."""
+        """Publish crash ids to specified queue.
+
+        :arg queue: the name of the queue to publish to; "standard", "priority" or
+            "reprocessing"
+        :arg crash_ids: the list of crash ids to publish
+
+        :raises CrashIdsFailedToPublish: raised if there was a failure publishing
+            crash ids with the list of crash ids that failed to publish
+
+        """
         failed = []
 
         queue_url = self.queue_to_queue_url[queue]
@@ -256,5 +297,5 @@ class SQSCrashQueue(CrashQueueBase):
 
         if failed:
             raise CrashIdsFailedToPublish(
-                "Crashids failed to publish: %s", ",".join(failed)
+                f"Crashids failed to publish: {','.join(failed)}"
             )
