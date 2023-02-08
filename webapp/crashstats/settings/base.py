@@ -356,22 +356,6 @@ BZAPI_TOKEN = config("BZAPI_TOKEN", "")
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
 
-ELASTICSEARCH_URLS = config(
-    "resource.elasticsearch.elasticsearch_urls", "http://localhost:9200", cast=Csv()
-)
-
-# The index schema used in our elasticsearch databases, used in the
-# Super Search Custom Query page.
-ELASTICSEARCH_INDEX_SCHEMA = config(
-    "resource.elasticsearch.elasticsearch_index", "socorro%Y%W"
-)
-
-# Number of shards per index in our Elasticsearch database.
-ES_SHARDS_PER_INDEX = 10
-
-# Default number of crashes to show on the Exploitable Crashes report
-EXPLOITABILITY_BATCH_SIZE = config("EXPLOITABILITY_BATCH_SIZE", default=250, cast=int)
-
 # Default number of days a token lasts until it expires
 TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 
@@ -395,6 +379,7 @@ RATELIMIT_SUPERSEARCH_AUTHENTICATED = "100/m"
 # Path to the view that gets executed if you hit upon a ratelimit block
 RATELIMIT_VIEW = "crashstats.crashstats.views.ratelimit_blocked"
 
+# FIXME(willkg): remove this
 # We don't want to test the migrations when we run tests.
 # We trust that syncdb matches what you'd get if you install
 # all the migrations.
@@ -541,57 +526,8 @@ SENTRY_DSN = config("SENTRY_DSN", "")
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
-# This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
-# implementation classes will use the config coming from `DATABASE_URL`.
-# For local development you might want to connect to different databases
-# for the Django ORM and for the socorro implementation classes.
-implementations_database_url = config("IMPLEMENTATIONS_DATABASE_URL", "")
-if not implementations_database_url:
-    implementations_database_url = database_url
-implementations_config = dj_database_url.parse(implementations_database_url)
-
 # The list of valid rulesets for the Reprocessing API
 VALID_RULESETS = ["default", "regenerate_signature"]
-
-# The CrashQueueBase class to use for submitting priority and reprocessing
-# requests
-CRASHQUEUE = config(
-    "queue.crashqueue_class", "socorro.external.sqs.crashqueue.SQSCrashQueue"
-)
-
-# Config for when the models pull directly from socorro.external classes.
-SOCORRO_CONFIG = {
-    "secrets": {
-        "boto": {"secret_access_key": config("secrets.boto.secret_access_key", None)}
-    },
-    "resource": {
-        "elasticsearch": {
-            # All of these settings are repeated with sensible defaults
-            # in the implementation itself.
-            # We repeat them here so it becomes super easy to override
-            # from the way we set settings for the webapp.
-            "elasticsearch_urls": ELASTICSEARCH_URLS,
-            "elasticsearch_index": ELASTICSEARCH_INDEX_SCHEMA,
-            "elasticsearch_index_regex": config(
-                "resource.elasticsearch.elasticsearch_index_regex", "^socorro[0-9]{6}$"
-            ),
-        },
-        "boto": {
-            "access_key": config("resource.boto.access_key", None),
-            "region": config("resource.boto.region", "us-west-2"),
-            # S3 things
-            "bucket_name": config("resource.boto.bucket_name", "crashstats"),
-            "resource_class": "socorro.external.boto.connection_context.S3Connection",
-            "s3_endpoint_url": config("resource.boto.s3_endpoint_url", None),
-            # SQS things
-            "sqs_endpoint_url": config("resource.boto.sqs_endpoint_url", None),
-            "standard_queue": config("resource.boto.standard_queue", None),
-            "priority_queue": config("resource.boto.priority_queue", None),
-            "reprocessing_queue": config("resource.boto.reprocessing_queue", None),
-        },
-    },
-    "telemetrydata": {"bucket_name": config("destination.telemetry.bucket_name", None)},
-}
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
@@ -624,7 +560,6 @@ LOGOUT_REDIRECT_URL = "/"
 # Max number of seconds you are allowed to be logged in with OAuth2.  When the user has
 # been logged in >= this number, the user is automatically logged out.
 LAST_LOGIN_MAX = config("LAST_LOGIN_MAX", default=60 * 60 * 24, cast=int)
-
 
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_OBJECT_SRC = ("'none'",)

@@ -18,13 +18,14 @@ from django.db import models
 from django.template.defaultfilters import slugify
 from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import iri_to_uri
-from django.utils.module_loading import import_string
 
 import markus
 from pymemcache.exceptions import MemcacheServerError
 
+from socorro import settings as socorro_settings
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.lib import BadArgumentError
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import is_crash_id_valid
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import (
@@ -33,8 +34,6 @@ from socorro.lib.libsocorrodataschema import (
     SocorroDataReducer,
     transform_schema,
 )
-
-from crashstats.crashstats.configman_utils import config_from_configman
 
 
 logger = logging.getLogger("crashstats.models")
@@ -284,10 +283,6 @@ class SocorroCommon:
     # Default cache expiration time if applicable (5 minutes)
     cache_seconds = 5 * 60
 
-    # At the moment, we're supporting talk HTTP to the middleware AND instantiating
-    # implementation classes so this is None by default.
-    implementation = None
-
     # By default, the model is not called with an API user. This is applicable when the
     # models are used from views that originate from pure class instantiation instead of
     # from web GET or POST requests
@@ -341,12 +336,7 @@ class SocorroCommon:
         return url
 
     def get_implementation(self):
-        if self.implementation:
-            config = config_from_configman()
-            if self.implementation_config_namespace:
-                config = config[self.implementation_config_namespace]
-            return self.implementation(config=config)
-        return None
+        raise NotImplementedError("get_implementation was not implemented")
 
 
 def convert_permissions(user):
@@ -365,12 +355,6 @@ def convert_permissions(user):
 
 
 class SocorroMiddleware(SocorroCommon):
-    # By default, assume the class to not have an implementation reference
-    implementation = None
-
-    # Config namespace to use for the implementation
-    implementation_config_namespace = ""
-
     default_date_format = "%Y-%m-%d"
     default_datetime_format = "%Y-%m-%dT%H:%M:%S"
 
@@ -550,15 +534,20 @@ class SocorroMiddleware(SocorroCommon):
 class TelemetryCrash(SocorroMiddleware):
     """Model for data we store in the S3 bucket to send to Telemetry"""
 
-    implementation = TelemetryCrashData
-    implementation_config_namespace = "telemetrydata"
-
     required_params = ("crash_id",)
     aliases = {"crash_id": "uuid"}
 
     post = None
     put = None
     delete = None
+
+    def get_implementation(self):
+        # FIXME(willkg): change this to BotoS3CrashStorage
+        s3_settings = socorro_settings.CRASH_DESTINATIONS["telemetry"]["options"]
+        return TelemetryCrashData(**s3_settings)
+
+        telemetry_settings = socorro_settings.CRASH_DESTINATIONS["telemetry"]
+        return build_instance_from_settings(telemetry_settings)
 
 
 class PermissionsReducerError(Exception):
@@ -619,10 +608,6 @@ class ProcessedCrash(SocorroMiddleware):
     # Prevent caching processed crash data from storage
     cache_seconds = 0
 
-    # FIXME(willkg): change this to BotoS3CrashStorage
-    implementation = SimplifiedCrashData
-    implementation_config_namespace = "crashdata"
-
     required_params = ("crash_id",)
 
     aliases = {"crash_id": "uuid"}
@@ -643,6 +628,11 @@ class ProcessedCrash(SocorroMiddleware):
     # NOTE(willkg): This doesn't have an explicit allow list. The allow list is
     # determined by the processed crash schema.
     API_ALLOWLIST = None
+
+    def get_implementation(self):
+        # FIXME(willkg): change this to BotoS3CrashStorage
+        s3_settings = socorro_settings.CRASH_DESTINATIONS["s3"]["options"]
+        return SimplifiedCrashData(**s3_settings)
 
     def get(self, crash_id, dont_cache=False, refresh_cache=False):
         data = self.fetch(
@@ -703,9 +693,6 @@ class RawCrash(SocorroMiddleware):
     # Prevent caching raw crash data from storage
     cache_seconds = 0
 
-    implementation = SimplifiedCrashData
-    implementation_config_namespace = "crashdata"
-
     required_params = ("crash_id",)
 
     possible_params = ("format", "name")
@@ -750,6 +737,11 @@ class RawCrash(SocorroMiddleware):
 
     # Permissions required to download binary data
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
+
+    def get_implementation(self):
+        # FIXME(willkg): change this to BotoS3CrashStorage
+        s3_settings = socorro_settings.CRASH_DESTINATIONS["s3"]["options"]
+        return SimplifiedCrashData(**s3_settings)
 
     def public_keys(self):
         """Return list of public annotations."""
@@ -1091,8 +1083,6 @@ class Reprocessing(SocorroMiddleware):
 
     """
 
-    implementation = import_string(settings.CRASHQUEUE)
-
     API_REQUIRED_PERMISSIONS = ("crashstats.reprocess_crashes",)
 
     API_ALLOWLIST = None
@@ -1100,6 +1090,9 @@ class Reprocessing(SocorroMiddleware):
     required_params = (("crash_ids", list),)
 
     get = None
+
+    def get_implementation(self):
+        return build_instance_from_settings(socorro_settings.QUEUE)
 
     def post(self, crash_ids, **kwargs):
         if not isinstance(crash_ids, (list, tuple)):
@@ -1129,9 +1122,10 @@ class Reprocessing(SocorroMiddleware):
 class PriorityJob(SocorroMiddleware):
     """Submit crash ids to priority queue."""
 
-    implementation = import_string(settings.CRASHQUEUE)
-
     required_params = (("crash_ids", list),)
+
+    def get_implementation(self):
+        return build_instance_from_settings(socorro_settings.QUEUE)
 
     get = None
 
