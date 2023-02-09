@@ -153,7 +153,7 @@ class ProcessorApp:
                 # we're running all in the same thread, a failure here could
                 # derail the the whole processor. Best just log the problem
                 # so that we can continue.
-                self.logger.exception(f"Error calling finishing_func() on {task}")
+                self.logger.exception("Error calling finishing_func() on %s", task)
 
     def process_crash(self, crash_id, ruleset_name, tmpdir):
         """Processed crash data using a specified ruleset into a processed crash.
