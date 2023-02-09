@@ -103,7 +103,9 @@ def dockerflow_heartbeat(request):
     except Exception as exc:
         raise HeartbeatException(f"cache.delete failed: {exc}")
 
-    es = build_instance_from_settings(socorro_settings.CRASH_DESTINATIONS["elasticsearch"])
+    es = build_instance_from_settings(
+        socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+    )
 
     # Test Elasticsearch
     try:

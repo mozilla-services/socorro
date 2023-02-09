@@ -169,9 +169,7 @@ class S3Connection:
         if not isinstance(data, bytes):
             raise TypeError("data argument must be bytes")
 
-        self.client.upload_fileobj(
-            Fileobj=io.BytesIO(data), Bucket=bucket, Key=path
-        )
+        self.client.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket, Key=path)
 
     @retry(
         retryable_exceptions=[
