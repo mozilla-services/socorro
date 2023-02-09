@@ -255,15 +255,6 @@ class ProcessorApp:
         self.temporary_path = settings.PROCESSOR["temporary_path"]
         os.makedirs(self.temporary_path, exist_ok=True)
 
-    def _set_up_cache_manager(self):
-        """Launch symbol cache manager."""
-        # if self.config.companion_process.companion_class:
-        #     self.companion_process = self.config.companion_process.companion_class(
-        #         self.config.companion_process
-        #     )
-        # else:
-        #     self.companion_process = None
-
     def _set_up_task_manager(self):
         """Create and set up task manager."""
         self.logger.info("installing signal handers")
@@ -296,9 +287,6 @@ class ProcessorApp:
 
         with suppress(AttributeError):
             self.destination.close()
-
-        with suppress(AttributeError):
-            self.companion_process.close()
 
         with suppress(AttributeError):
             self.pipeline.close()

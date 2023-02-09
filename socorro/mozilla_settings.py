@@ -284,7 +284,7 @@ STACKWALKER = {
 
 # Configuration for the symbols cache manager
 SYMBOLS_CACHE_MANAGER = {
-    "class": "socorro.processor.symbol_cache_manager.SymbolLRUCacheManager",
+    "class": "FIXME",
     "symbol_cache_size": "40G",
     "symbol_cache_path": STACKWALKER["symbol_cache_path"],
     "verbosity": 0,
