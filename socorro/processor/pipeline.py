@@ -47,9 +47,9 @@ class Pipeline:
 
         self.rulesets = rulesets
         for ruleset_name, ruleset in self.rulesets.items():
-            self.logger.info(f"Loading ruleset: {ruleset_name}")
+            self.logger.info("Loading ruleset: %s", ruleset_name)
             for rule in ruleset:
-                self.logger.info(f"Loaded rule: {rule!r}")
+                self.logger.info("Loaded rule: %r", rule)
 
     def process_crash(self, ruleset_name, raw_crash, dumps, processed_crash, tmpdir):
         """Process a crash
@@ -79,7 +79,7 @@ class Pipeline:
             status.add_note(f"error: no ruleset: {ruleset_name}")
             return processed_crash
 
-        self.logger.info(f"processing with {ruleset_name} for crash {crash_id}")
+        self.logger.info("processing with %s for crash %s", ruleset_name, crash_id)
 
         # Apply rules; if a rule fails, capture the error and continue onward
         for rule in ruleset:

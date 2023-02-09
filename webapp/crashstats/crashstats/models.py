@@ -315,7 +315,7 @@ class SocorroCommon:
             if not refresh_cache:
                 result = cache.get(cache_key)
                 if result is not None:
-                    logger.debug("CACHE HIT %s" % implementation.__class__.__name__)
+                    logger.debug("CACHE HIT %s", implementation.__class__.__name__)
                     return result
 
         implementation_method = getattr(implementation, method)
