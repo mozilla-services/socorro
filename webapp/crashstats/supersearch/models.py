@@ -118,7 +118,7 @@ class SuperSearch(ESSocorroMiddleware):
 
     def get_implementation(self):
         s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+            socorro_settings.CRASH_DESTINATIONS["es"]
         )
         return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
@@ -223,7 +223,7 @@ class SuperSearchUnredacted(SuperSearch):
 
     def get_implementation(self):
         s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+            socorro_settings.CRASH_DESTINATIONS["es"]
         )
         return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
@@ -276,6 +276,6 @@ class Query(ESSocorroMiddleware):
 
     def get_implementation(self):
         s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+            socorro_settings.CRASH_DESTINATIONS["es"]
         )
         return query.Query(crashstorage=s3_crash_dest)

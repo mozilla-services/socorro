@@ -184,10 +184,10 @@ CRASH_SOURCE = {
 
 # Each key in this list corresponds to a key in this dict containing a crash report data
 # destination configuration
-CRASH_DESTINATIONS_ORDER = ["s3", "elasticsearch", "statsd", "telemetry"]
+CRASH_DESTINATIONS_ORDER = ["s3", "es", "telemetry"]
 CRASH_DESTINATIONS = {
     "s3": CRASH_SOURCE,
-    "elasticsearch": {
+    "es": {
         "class": "socorro.external.es.crashstorage.ESCrashStorage",
         "options": {
             "metrics_prefix": "processor.es",
@@ -202,12 +202,6 @@ CRASH_DESTINATIONS = {
                 doc="Regex for matching Elasticsearch index names.",
             ),
             "url": _config("ELASTICSEARCH_URL", doc="Elasticsearch url."),
-        },
-    },
-    "statsd": {
-        "class": "socorro.external.statsd.crashstorage.MetricsCounter",
-        "options": {
-            "metrics_prefix": "processor",
         },
     },
     "telemetry": {
@@ -242,7 +236,7 @@ CRASH_DESTINATIONS = {
         },
     },
 }
-SEARCH = CRASH_DESTINATIONS["elasticsearch"]
+SEARCH = CRASH_DESTINATIONS["es"]
 
 # Stackwalker configuration
 STACKWALKER = {
