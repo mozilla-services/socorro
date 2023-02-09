@@ -150,8 +150,7 @@ class FSPermanentStorage(CrashStorageBase):
         if dumps is None:
             dumps = MemoryDumpsMapping()
         files = {
-            crash_id
-            + self.json_file_suffix: json.dumps(raw_crash).encode("utf-8")
+            crash_id + self.json_file_suffix: json.dumps(raw_crash).encode("utf-8")
         }
         in_memory_dumps = dumps.as_memory_dumps_mapping()
         files.update(
@@ -169,9 +168,7 @@ class FSPermanentStorage(CrashStorageBase):
         with closing(gzip.GzipFile(mode="wb", fileobj=f)) as fz:
             data = json.dumps(processed_crash, cls=JsonDTEncoder)
             fz.write(data.encode("utf-8"))
-        self._save_files(
-            crash_id, {crash_id + self.jsonz_file_suffix: f.getvalue()}
-        )
+        self._save_files(crash_id, {crash_id + self.jsonz_file_suffix: f.getvalue()})
 
     def get_raw_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
