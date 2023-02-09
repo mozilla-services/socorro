@@ -287,7 +287,7 @@ def search_custom(request, default_context=None):
             error = e
 
     es_crashstorage = build_instance_from_settings(
-        socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+        socorro_settings.CRASH_DESTINATIONS["es"]
     )
 
     possible_indices = []

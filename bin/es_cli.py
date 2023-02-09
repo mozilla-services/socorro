@@ -22,9 +22,7 @@ from socorro.libclass import build_instance_from_settings
 
 
 def get_crashstorage():
-    es_settings = settings.CRASH_DESTINATIONS["elasticsearch"]
-    crashstorage = build_instance_from_settings(es_settings)
-    return crashstorage
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
 
 
 @click.group()

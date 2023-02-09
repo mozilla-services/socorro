@@ -207,7 +207,10 @@ class ProcessorApp:
         self.logger.debug("saving %s", crash_id)
         for dest in self.destinations:
             try:
-                dest.save_processed_crash(raw_crash, processed_crash)
+                with METRICS.timer(
+                    f"{dest.crash_destination_name}.save_processed_crash"
+                ):
+                    dest.save_processed_crash(raw_crash, processed_crash)
             except Exception as storage_error:
                 self.logger.error(
                     "error: crash id %s: %r (%s)",
@@ -217,6 +220,8 @@ class ProcessorApp:
                 )
                 # Re-raise the original exception with the correct traceback
                 raise
+
+        METRICS.incr("save_processed_crash")
 
         self.logger.info("saved %s", crash_id)
 

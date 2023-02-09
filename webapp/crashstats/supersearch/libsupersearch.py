@@ -61,7 +61,7 @@ class SuperSearchStatusModel:
 
     def __init__(self):
         self.es_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["elasticsearch"]
+            socorro_settings.CRASH_DESTINATIONS["es"]
         )
 
     def get_connection(self):
