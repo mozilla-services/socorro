@@ -46,6 +46,10 @@ class Pipeline:
             rulesets = import_class(rulesets)
 
         self.rulesets = rulesets
+
+        self.log_rulesets()
+
+    def log_rulesets(self):
         for ruleset_name, ruleset in self.rulesets.items():
             self.logger.info("Loading ruleset: %s", ruleset_name)
             for rule in ruleset:

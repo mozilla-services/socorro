@@ -4,6 +4,7 @@
 
 """Base classes for crashstorage system."""
 
+from contextlib import suppress
 import logging
 import os
 
@@ -177,16 +178,20 @@ class CrashStorageBase:
 
         :returns: dict of raw crash data
 
+        :raises CrashIdNotFound:
+
         """
         raise NotImplementedError("get_raw_crash is not implemented")
 
-    def get_raw_dump(self, crash_id, name=None):
+    def get_raw_dump(self, crash_id, name):
         """Fetch dump for a raw crash
 
         :param crash_id: crash report id
         :param name: name of dump to fetch
 
         :returns: dump as bytes
+
+        :raises CrashIdNotFound:
 
         """
         raise NotImplementedError("get_raw_dump is not implemented")
@@ -197,6 +202,8 @@ class CrashStorageBase:
         :param crash_id: crash report id
 
         :returns: MemoryDumpsMapping of dumps
+
+        :raises CrashIdNotFound:
 
         """
         raise NotImplementedError("get_dumps is not implemented")
@@ -209,8 +216,10 @@ class CrashStorageBase:
 
         :returns: dict of dumpname -> file path
 
+        :raises CrashIdNotFound:
+
         """
-        raise NotImplementedError("get_dumps is not implemented")
+        raise NotImplementedError("get_dumps_as_files is not implemented")
 
     def get_processed(self, crash_id):
         """Fetch processed crash.
@@ -218,6 +227,8 @@ class CrashStorageBase:
         :arg crash_id: crash report id
 
         :returns: dict of processed crash data
+
+        :raises CrashIdNotFound:
 
         """
         raise NotImplementedError("get_processed is not implemented")
@@ -229,3 +240,67 @@ class CrashStorageBase:
 
         """
         raise NotImplementedError("remove is not implemented")
+
+
+class InMemoryCrashStorage(CrashStorageBase):
+    """In-memory crash storage for testing."""
+
+    def __init__(self):
+        # crash id -> data
+        self._raw_crash_data = {}
+        # crash id -> (dump name -> data)
+        self._dumps = {}
+        # crash id -> data
+        self._processed_crash_data = {}
+
+    def save_raw_crash(self, raw_crash, dumps, crash_id):
+        self._raw_crash_data[crash_id] = raw_crash
+        self._dumps[crash_id] = MemoryDumpsMapping(dumps)
+
+    def save_processed_crash(self, raw_crash, processed_crash):
+        crash_id = processed_crash["uuid"]
+        self._processed_crash_data[crash_id] = processed_crash
+
+    def get_raw_crash(self, crash_id):
+        try:
+            return self._raw_crash_data[crash_id]
+        except KeyError:
+            raise CrashIDNotFound(f"{crash_id} not found")
+
+    def get_raw_dump(self, crash_id, name):
+        try:
+            return self._dumps[crash_id][name]
+        except KeyError:
+            raise CrashIDNotFound(f"{crash_id} not found")
+
+    def get_dumps(self, crash_id):
+        try:
+            return self._dumps[crash_id]
+        except KeyError:
+            raise CrashIDNotFound(f"{crash_id} not found")
+
+    def get_dumps_as_files(self, crash_id, tmpdir):
+        try:
+            return self._dumps[crash_id].as_file_dumps_mapping(
+                crash_id=crash_id,
+                temp_path=str(tmpdir),
+                dump_file_suffix=".dump",
+            )
+        except KeyError:
+            raise CrashIDNotFound(f"{crash_id} not found")
+
+    def get_processed(self, crash_id):
+        try:
+            return self._processed_crash_data[crash_id]
+        except KeyError:
+            raise CrashIDNotFound(f"{crash_id} not found")
+
+    def remove(self, crash_id):
+        with suppress(KeyError):
+            del self._raw_crash_data[crash_id]
+
+        with suppress(KeyError):
+            del self._dumps[crash_id]
+
+        with suppress(KeyError):
+            del self._processed_crash_data[crash_id]
