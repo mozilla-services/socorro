@@ -8,6 +8,7 @@ This module defines classes that implements a threaded producer/consumer system.
 single iterator thread pushes jobs into an internal queue while a flock of
 consumer/worker threads do the jobs. A job consists of a function and the data applied
 to the function.
+
 """
 
 import logging
@@ -16,6 +17,9 @@ import threading
 import time
 
 from socorro.lib.task_manager import default_task_func, default_iterator, TaskManager
+
+
+STOP_TOKEN = (None, None)
 
 
 class ThreadedTaskManager(TaskManager):
@@ -55,6 +59,8 @@ class ThreadedTaskManager(TaskManager):
         self.number_of_threads = number_of_threads
         self.task_queue = queue.Queue(maximum_queue_size)
 
+        self.queueing_thread = None
+
     def start(self):
         """Starts the queueing thread and creates workers.
 
@@ -71,22 +77,25 @@ class ThreadedTaskManager(TaskManager):
             new_thread = TaskThread(self.task_queue)
             self.thread_list.append(new_thread)
             new_thread.start()
-        self.queuing_thread = threading.Thread(
-            name="QueuingThread", target=self._queuing_thread_func
+
+        self.queueing_thread = threading.Thread(
+            name="queueingThread", target=self._queueing_thread_func
         )
-        self.queuing_thread.start()
+        self.queueing_thread.start()
 
     def wait_for_completion(self):
         """Blocks on queueing thread completion."""
-        self.logger.debug("waiting to join queuing_thread")
+        if self.queueing_thread is None:
+            return
+
+        self.logger.debug("waiting to join queueing_thread")
         while True:
             try:
-                self.queuing_thread.join(1.0)
-                if not self.queuing_thread.is_alive():
+                self.queueing_thread.join(1.0)
+                if not self.queueing_thread.is_alive():
                     break
             except KeyboardInterrupt:
                 self.logger.debug("quit detected by wait_for_completion")
-                self.quit = True
 
     def stop(self):
         """Stop all worker threads."""
@@ -103,8 +112,6 @@ class ThreadedTaskManager(TaskManager):
         try:
             self.start()
             self.wait_for_completion()
-            # it only ends if someone hits  ^C or sends SIGHUP or SIGTERM -
-            # any of which will get translated into a KeyboardInterrupt
         except KeyboardInterrupt:
             while True:
                 try:
@@ -114,16 +121,15 @@ class ThreadedTaskManager(TaskManager):
                     pass
 
     def wait_for_empty_queue(self, wait_log_interval=0, wait_reason=""):
-        """Sit around and wait for the queue to become empty
+        """Wait for queue to become empty.
 
-        parameters:
-            wait_log_interval - while sleeping, it is helpful if the thread
-                                periodically announces itself so that we
-                                know that it is still alive.  This number is
-                                the time in seconds between log entries.
-            wait_reason - the is for the explaination of why the thread is
-                          sleeping.  This is likely to be a message like:
-                          'there is no work to do'."""
+        :arg wait_log_interval: While sleeping, it is helpful if the thread periodically
+            announces itself so that we know that it is still alive. This number is the
+            time in seconds between log entries.
+        :arg wait_reason: The is for the explaination of why the thread is sleeping.
+            This is likely to be a message like: 'there is no work to do'.
+
+        """
         seconds = 0
         while True:
             if self.task_queue.empty():
@@ -133,31 +139,39 @@ class ThreadedTaskManager(TaskManager):
             seconds += 1
             time.sleep(1.0)
 
-    def _kill_worker_threads(self):
-        """This function coerces the consumer/worker threads to kill
-        themselves.  When called by the queuing thread, one death token will
-        be placed on the queue for each thread.  Each worker thread is always
-        looking for the death token.  When it encounters it, it immediately
-        runs to completion without drawing anything more off the queue.
+    def _stop_worker_threads(self):
+        """Stop worker threads.
 
-        This is a blocking call.  The thread using this function will wait for
-        all the worker threads to die."""
+        When called by the queueing thread, one STOP_TOKEN will be placed on the queue
+        for each thread. Each worker thread works until it hits a STOP_TOKEN and then
+        immediately ends.
+
+        This is a blocking call. The thread using this function will wait for
+        all the worker threads to end.
+
+        """
         for x in range(self.number_of_threads):
-            self.task_queue.put((None, None))
+            self.task_queue.put(STOP_TOKEN)
         self.logger.debug("waiting for standard worker threads to stop")
         for t in self.thread_list:
             t.join()
 
-    def _queuing_thread_func(self):
-        """This is the function responsible for reading the iterator and
-        putting contents into the queue.  It loops as long as there are items
-        in the iterator.  Should something go wrong with this thread, or it
-        detects the quit flag, it will calmly kill its workers and then
-        quit itself."""
-        self.logger.debug("_queuing_thread_func start")
+    def _queueing_thread_func(self):
+        """Main function for queueing thread
+
+        This is the function responsible for reading the iterator and putting contents
+        into the queue. It loops as long as there are items in the iterator. Should
+        something go wrong with this thread, or it detects the quit flag, it will stop
+        workers and then quit.
+
+        """
+        self.logger.debug("_queueing_thread_func start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
+                if self.quit:
+                    raise KeyboardInterrupt
+
                 if job_params is None:
                     if self.quit_on_empty_queue:
                         self.wait_for_empty_queue(
@@ -165,20 +179,20 @@ class ThreadedTaskManager(TaskManager):
                             wait_reason="waiting for queue to drain",
                         )
                         raise KeyboardInterrupt
+
                     self._responsive_sleep(self.idle_delay)
                     continue
 
                 self.logger.debug("received %r", job_params)
                 self.task_queue.put((self.task_func, job_params))
         except Exception:
-            self.logger.error("queuing jobs has failed", exc_info=True)
+            self.logger.error("queueing jobs has failed", exc_info=True)
         except KeyboardInterrupt:
-            self.logger.debug("queuing_thread gets quit request")
+            self.logger.debug("queueing_thread gets quit request")
         finally:
-            self.logger.debug("we're quitting queuing_thread")
-            self._kill_worker_threads()
+            self.logger.debug("we're quitting queueing_thread")
+            self._stop_worker_threads()
             self.logger.debug("all worker threads stopped")
-            self.quit = True
 
 
 class TaskThread(threading.Thread):
@@ -206,14 +220,14 @@ class TaskThread(threading.Thread):
         try:
             quit_request_detected = False
             while True:
-                function, arguments = self.task_queue.get()
-                if function is None:
-                    # this allows us to watch the threads die and identify
-                    # threads that may be hanging or deadlocked
+                task = self.task_queue.get()
+                if task is STOP_TOKEN:
                     self.logger.info("quits")
                     break
                 if quit_request_detected:
                     continue
+
+                function, arguments = task
                 try:
                     try:
                         args, kwargs = arguments

@@ -319,7 +319,6 @@ class ProcessorApp:
 
         self._set_up_task_manager()
         self._set_up_source_and_destination()
-        self._set_up_cache_manager()
 
         # Run
         self.task_manager.blocking_start()
