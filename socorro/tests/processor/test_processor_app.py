@@ -3,16 +3,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
-import os
-from pathlib import Path
-import tempfile
 from unittest import mock
 from unittest.mock import ANY
 
-from configman.dotdict import DotDict
 from markus.testing import MetricsMock
 import pytest
 
+from socorro import settings
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.processor.processor_app import ProcessorApp, count_sentry_scrub_error
 
@@ -25,89 +22,74 @@ def sequencer(*args):
 
 
 class FakeCrashQueue:
-    def __init__(self, *args, **kwargs):
-        pass
-
     def new_crashes(self):
         return sequencer(
             ((1,), {}), 2, None, ((3,), {})  # ensure both forms acceptable
         )()
 
 
-def get_standard_config():
-    config = DotDict()
+@pytest.fixture
+def processor_settings():
+    with settings.override(
+        QUEUE={
+            "class": "socorro.tests.processor.test_processor_app.FakeCrashQueue",
+        },
+        CRASH_SOURCE={
+            "class": "socorro.external.crashstorage_base.InMemoryCrashStorage",
+        },
+        CRASH_DESTINATIONS_ORDER=["dest1"],
+        CRASH_DESTINATIONS={
+            "dest1": {
+                "class": "socorro.external.crashstorage_base.InMemoryCrashStorage",
+            },
+        },
+    ):
+        yield
 
-    config.source = DotDict()
-    mocked_source_crashstorage = mock.Mock()
-    mocked_source_crashstorage.id = "mocked_source_crashstorage"
-    config.source.crashstorage_class = mock.Mock(
-        return_value=mocked_source_crashstorage
-    )
 
-    config.destination = DotDict()
-    mocked_destination_crashstorage = mock.Mock()
-    mocked_destination_crashstorage.id = "mocked_destination_crashstorage"
-    config.destination.crashstorage_class = mock.Mock(
-        return_value=mocked_destination_crashstorage
-    )
-
-    config.processor = DotDict()
-    mocked_processor = mock.Mock()
-    mocked_processor.id = "mocked_processor"
-    config.processor.processor_class = mock.Mock(return_value=mocked_processor)
-    config.processor.temporary_path = tempfile.gettempdir()
-
-    config.queue = DotDict()
-    config.queue.crashqueue_class = FakeCrashQueue
-
-    config.companion_process = DotDict()
-    mocked_companion_process = mock.Mock()
-    config.companion_process.companion_class = mock.Mock(
-        return_value=mocked_companion_process
-    )
-
-    return config
+def get_destination(app, destination_name):
+    index = settings.CRASH_DESTINATIONS_ORDER.index(destination_name)
+    return app.destinations[index]
 
 
 class TestProcessorApp:
-    def test_source_iterator(self):
-        config = get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
-        g = pa.source_iterator()
-        assert next(g) == ((1,), {})
-        assert next(g) == ((2,), {})
-        assert next(g) is None
-        assert next(g) == ((3,), {})
+    def test_source_iterator(self, processor_settings):
+        app = ProcessorApp()
+        app._set_up_source_and_destination()
 
-    def test_transform_success(self):
-        config = get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
+        queue = app.source_iterator()
+        assert next(queue) == ((1,), {})
+        assert next(queue) == ((2,), {})
+        assert next(queue) is None
+        assert next(queue) == ((3,), {})
+
+    def test_transform_success(self, processor_settings):
+        app = ProcessorApp()
+        app._set_up_source_and_destination()
 
         fake_raw_crash = {"raw": "1"}
         mocked_get_raw_crash = mock.Mock(return_value=fake_raw_crash)
-        pa.source.get_raw_crash = mocked_get_raw_crash
+        app.source.get_raw_crash = mocked_get_raw_crash
 
         fake_dumps = {"upload_file_minidump": "fake_dump_TEMPORARY.dump"}
         mocked_get_dumps_as_files = mock.Mock(return_value=fake_dumps)
-        pa.source.get_dumps_as_files = mocked_get_dumps_as_files
+        app.source.get_dumps_as_files = mocked_get_dumps_as_files
 
         fake_processed_crash = {"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"}
         mocked_get_processed = mock.Mock(return_value=fake_processed_crash)
-        pa.source.get_processed = mocked_get_processed
+        app.source.get_processed = mocked_get_processed
 
         mocked_process_crash = mock.Mock(return_value={"processed": "1"})
-        pa.processor.process_crash = mocked_process_crash
-        pa.destination.save_processed_crash = mock.Mock()
+        app.pipeline.process_crash = mocked_process_crash
+        app.destinations[0].save_processed_crash = mock.Mock()
         finished_func = mock.Mock()
 
         # the call being tested
-        pa.transform("17", finished_func)
+        app.transform("17", finished_func)
 
         # test results
-        pa.source.get_raw_crash.assert_called_with("17")
-        pa.processor.process_crash.assert_called_with(
+        app.source.get_raw_crash.assert_called_with("17")
+        app.pipeline.process_crash.assert_called_with(
             ruleset_name="default",
             raw_crash=fake_raw_crash,
             dumps=fake_dumps,
@@ -116,37 +98,44 @@ class TestProcessorApp:
             # TemporaryDirectory
             tmpdir=ANY,
         )
-        pa.destination.save_processed_crash.assert_called_with(
+        app.destinations[0].save_processed_crash.assert_called_with(
             {"raw": "1"}, {"processed": "1"}
         )
         assert finished_func.call_count == 1
 
-    def test_transform_crash_id_missing(self):
-        config = get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
+    def test_transform_crash_id_missing(self, processor_settings):
+        app = ProcessorApp()
+        app._set_up_source_and_destination()
+
         mocked_get_raw_crash = mock.Mock(side_effect=CrashIDNotFound(17))
-        pa.source.get_raw_crash = mocked_get_raw_crash
+        app.source.get_raw_crash = mocked_get_raw_crash
+
+        mocked_reject_raw_crash = mock.Mock()
+        app.pipeline.reject_raw_crash = mocked_reject_raw_crash
 
         finished_func = mock.Mock()
-        pa.transform("17", finished_func)
-        pa.source.get_raw_crash.assert_called_with("17")
-        pa.processor.reject_raw_crash.assert_called_with(
+
+        app.transform("17", finished_func)
+        app.source.get_raw_crash.assert_called_with("17")
+        app.pipeline.reject_raw_crash.assert_called_with(
             "17", "crash cannot be found in raw crash storage"
         )
         assert finished_func.call_count == 1
 
-    def test_transform_unexpected_exception(self):
-        config = get_standard_config()
-        pa = ProcessorApp(config)
-        pa._setup_source_and_destination()
+    def test_transform_unexpected_exception(self, processor_settings):
+        app = ProcessorApp()
+        app._set_up_source_and_destination()
         mocked_get_raw_crash = mock.Mock(side_effect=Exception("bummer"))
-        pa.source.get_raw_crash = mocked_get_raw_crash
+        app.source.get_raw_crash = mocked_get_raw_crash
+
+        mocked_reject_raw_crash = mock.Mock()
+        app.pipeline.reject_raw_crash = mocked_reject_raw_crash
 
         finished_func = mock.Mock()
-        pa.transform("17", finished_func)
-        pa.source.get_raw_crash.assert_called_with("17")
-        pa.processor.reject_raw_crash.assert_called_with(
+
+        app.transform("17", finished_func)
+        app.source.get_raw_crash.assert_called_with("17")
+        app.pipeline.reject_raw_crash.assert_called_with(
             "17", "error in loading: bummer"
         )
         assert finished_func.call_count == 1
@@ -244,34 +233,30 @@ TRANSFORM_GET_ERROR = {
         "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
         "version": ANY,
     },
-    "server_name": "testhost",
+    "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
 }
 
 
-def test_transform_get_error(sentry_helper, caplogpp):
+def test_transform_get_error(processor_settings, sentry_helper, caplogpp):
     caplogpp.set_level("DEBUG")
 
     # Set up a processor and mock .get_raw_crash() to raise an exception
-    config = get_standard_config()
-    processor = ProcessorApp(config)
-    # NOTE(willkg): This is relative to this file
-    basedir = Path(__file__).resolve().parent.parent.parent
-    host_id = "testhost"
-    sentry_dsn = os.environ.get("SENTRY_DSN", "")
-    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
-    processor._setup_source_and_destination()
+    app = ProcessorApp()
+    app._set_up_sentry()
+    app._set_up_source_and_destination()
 
     expected_exception = ValueError("simulated error")
-    processor.source.get_raw_crash.side_effect = expected_exception
+    mocked_get_raw_crash = mock.Mock(side_effect=expected_exception)
+    app.source.get_raw_crash = mocked_get_raw_crash
 
     crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
 
     with sentry_helper.reuse() as sentry_client:
         # The processor catches all exceptions from .get_raw_crash() and
         # .get_dumps_as_files(), so there's nothing we need to catch here
-        processor.transform(crash_id)
+        app.transform(crash_id)
 
         (event,) = sentry_client.events
 
@@ -296,41 +281,53 @@ def test_count_sentry_scrub_error():
         metricsmock.assert_incr("processor.sentry_scrub_error", value=1)
 
 
-def test_transform_save_error(sentry_helper, caplogpp):
-    caplogpp.set_level("DEBUG")
+def test_transform_save_error(processor_settings, sentry_helper, caplogpp, tmp_path):
+    with settings.override(TEMPORARY_PATH=str(tmp_path)):
+        caplogpp.set_level("DEBUG")
 
-    # Set up a processor and mock .save_processed_crash() to raise an exception
-    config = get_standard_config()
-    processor = ProcessorApp(config)
-    # NOTE(willkg): This is relative to this file
-    basedir = Path(__file__).resolve().parent.parent.parent
-    host_id = "testhost"
-    sentry_dsn = os.environ.get("SENTRY_DSN", "")
-    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
-    processor._setup_source_and_destination()
-    processor.source.get_raw_crash.return_value = {"raw": "crash"}
-    processor.source.get_dumps_as_files.return_value = {}
+        # Set up a processor and mock .save_processed_crash() to raise an exception
+        app = ProcessorApp()
+        app._set_up_sentry()
+        app._set_up_source_and_destination()
 
-    expected_exception = ValueError("simulated error")
-    processor.destination.save_processed_crash.side_effect = expected_exception
+        # Truncate the rulesets--we're not testing the pipeline here
+        app.pipeline.rulesets = {}
 
-    crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
+        # Clear all the logging up to this point
+        caplogpp.clear()
 
-    with sentry_helper.reuse() as sentry_client:
-        # Run .transform() and make sure it raises the ValueError
-        with pytest.raises(ValueError):
-            processor.transform(crash_id)
+        # Set up crash storage
+        crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
+        raw_crash = {
+            "uuid": crash_id,
+            "ProductName": "Firefox",
+        }
+        app.source.save_raw_crash(crash_id=crash_id, raw_crash=raw_crash, dumps={})
 
-        # Assert that the exception was not sent to Sentry and not logged at this
-        # point--it gets caught and logged  by the processor
-        assert len(sentry_client.events) == 0
+        # Mock the destination to throw an error
+        expected_exception = ValueError("simulated error")
+        mocked_save_processed_crash = mock.Mock(side_effect=expected_exception)
+        app.destinations[0].save_processed_crash = mocked_save_processed_crash
 
-        # Assert what got logged. It should be all the messages except the last
-        # "completed" one because this kicked up a ValueError in saving
-        messages = [record.message for record in caplogpp.records]
-        assert messages == [
-            "starting 930b08ba-e425-49bf-adbd-7c9172220721 with default",
-            "fetching data 930b08ba-e425-49bf-adbd-7c9172220721",
-            "processing 930b08ba-e425-49bf-adbd-7c9172220721",
-            "saving 930b08ba-e425-49bf-adbd-7c9172220721",
-        ]
+        with sentry_helper.reuse() as sentry_client:
+            # Run .transform() and make sure it raises the ValueError
+            with pytest.raises(ValueError):
+                app.transform(crash_id)
+
+            # Assert that the exception was not sent to Sentry and not logged at this
+            # point--it gets caught and logged  by the processor
+            assert len(sentry_client.events) == 0
+
+            # Assert what got logged. It should be all the messages except the last
+            # "completed" one because this kicked up a ValueError in saving
+            messages = [record.message for record in caplogpp.records]
+            assert messages == [
+                "starting 930b08ba-e425-49bf-adbd-7c9172220721 with default",
+                "fetching data 930b08ba-e425-49bf-adbd-7c9172220721",
+                "processing 930b08ba-e425-49bf-adbd-7c9172220721",
+                "saving 930b08ba-e425-49bf-adbd-7c9172220721",
+                (
+                    "error: crash id 930b08ba-e425-49bf-adbd-7c9172220721: "
+                    + "ValueError('simulated error') (dest1)"
+                ),
+            ]

@@ -34,7 +34,6 @@ class TestTaskManager:
         assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
 
     def test_blocking_start(self):
-
         class MyTaskManager(TaskManager):
             def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
                 try:

@@ -52,29 +52,34 @@ class Settings:
         return f"<Settings {self._settings_module_path!r}>"
 
     @contextlib.contextmanager
-    def override(self, key, value):
+    def override(self, **kwargs):
         """Override settings for testing
 
-        :arg key: the key to override
-        :arg value: the value to override with
+        :arg kwargs: settings to override
 
         """
         NOVALUE = object()
 
-        if not UPPER_CASE_KEY_RE.match(key):
-            raise ValueError(f"Invalid key {key!r}")
+        old_values = {}
 
-        old_value = getattr(self, key, NOVALUE)
-        setattr(self, key, value)
         try:
+            for key, value in kwargs.items():
+                if not UPPER_CASE_KEY_RE.match(key):
+                    raise ValueError(f"Invalid key {key!r}")
+
+                old_values[key] = getattr(self, key, NOVALUE)
+                print(f"settings override: {key}={value}")
+                setattr(self, key, value)
+
             yield
 
         finally:
-            if old_value is NOVALUE:
-                with contextlib.suppress(AttributeError):
-                    delattr(self, key)
-            else:
-                setattr(self, key, old_value)
+            for key, old_value in old_values.items():
+                if old_value is NOVALUE:
+                    with contextlib.suppress(AttributeError):
+                        delattr(self, key)
+                else:
+                    setattr(self, key, old_value)
 
 
 def __load_settings():

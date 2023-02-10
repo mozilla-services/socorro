@@ -3,11 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
-import os
-from pathlib import Path
 from unittest.mock import ANY
 
-from configman import ConfigurationManager
 import freezegun
 
 from socorro.lib.libdatetime import date_to_string, utc_now
@@ -20,25 +17,6 @@ from socorro.processor.rules.base import Rule
 class BadRule(Rule):
     def action(self, *args, **kwargs):
         raise KeyError("pii")
-
-
-def set_up_sentry():
-    """Sets up sentry using SENTRY_DSN"""
-    # FIXME(willkg): SENTRY_DSN is where we're putting the SENTRY_DSN even if there
-    # are components that are configured in other ways.
-    sentry_dsn = os.environ.get("SENTRY_DSN")
-    if not sentry_dsn:
-        raise Exception("SENTRY_DSN is not defined in os.environ")
-
-    # This basedir is relative to this file
-    basedir = Path(__file__).resolve().parent.parent.parent
-
-    # We need the same configuration of Sentry as what the ProcessorApp creates
-    ProcessorApp.configure_sentry(
-        basedir=basedir,
-        host_id="test_processor",
-        sentry_dsn=sentry_dsn,
-    )
 
 
 # NOTE(willkg): If this changes, we should update it and look for new things that should
@@ -124,33 +102,23 @@ RULE_ERROR_EVENT = {
         "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
         "version": ANY,
     },
-    "server_name": "test_processor",
+    "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
 }
 
 
 class TestPipeline:
-    def get_config(self):
-        # Retrieve config for a Pipeline
-        cm = ConfigurationManager(
-            definition_source=Pipeline.get_required_config(),
-            values_source_list=[],
-        )
-        config = cm.get_config()
-        return config
-
     def test_rule_error(self, tmp_path, sentry_helper):
-        set_up_sentry()
+        ProcessorApp()._set_up_sentry()
 
         with sentry_helper.reuse() as sentry_client:
-            config = self.get_config()
-
             # Test with Sentry enabled (dsn set)
             raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
             processed_crash = {}
 
-            processor = Pipeline(config, rules={"default": [BadRule()]})
+            rulesets = {"default": [BadRule()]}
+            processor = Pipeline(rulesets=rulesets)
             processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
@@ -173,13 +141,10 @@ class TestPipeline:
     def test_process_crash_existing_processed_crash(self, tmp_path):
         raw_crash = {"uuid": "1"}
         dumps = {}
-        processed_crash = {
-            "processor_notes": "previousnotes",
-        }
+        processed_crash = {"processor_notes": "previousnotes"}
 
-        pipeline = Pipeline(
-            self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}
-        )
+        rulesets = {"default": [CPUInfoRule(), OSInfoRule()]}
+        pipeline = Pipeline(rulesets=rulesets)
 
         now = utc_now()
         with freezegun.freeze_time(now):

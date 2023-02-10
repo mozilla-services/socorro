@@ -77,8 +77,12 @@ class TestThreadedTaskManager:
         def task_func(index):
             calls.append(index)
 
-        tm = ThreadedTaskManager(number_of_threads=2, maximum_queue_size=2,
-                                 quit_on_empty_queue=True, task_func=task_func)
+        tm = ThreadedTaskManager(
+            number_of_threads=2,
+            maximum_queue_size=2,
+            quit_on_empty_queue=True,
+            task_func=task_func,
+        )
 
         tm.blocking_start()
         assert len(calls) == 10

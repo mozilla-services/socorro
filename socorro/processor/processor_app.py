@@ -69,16 +69,19 @@ class ProcessorApp:
         self.logger.info("version.json: %s", data)
         settings.log_settings(logger=self.logger)
 
-    def set_up_sentry(self, basedir, host_id, sentry_dsn):
-        release = get_release_name(basedir)
+    def _set_up_sentry(self):
+        if not settings.SENTRY_DSN:
+            return
+
+        release = get_release_name(self.basedir)
         scrubber = Scrubber(
             rules=SCRUB_RULES_DEFAULT,
             error_handler=count_sentry_scrub_error,
         )
         set_up_sentry(
-            sentry_dsn=sentry_dsn,
+            sentry_dsn=settings.SENTRY_DSN,
             release=release,
-            host_id=host_id,
+            host_id=settings.HOST_ID,
             # Disable frame-local variables
             with_locals=False,
             # Disable request data from being added to Sentry events
@@ -240,7 +243,6 @@ class ProcessorApp:
 
     def _set_up_source_and_destination(self):
         """Instantiate classes necessary for processing."""
-
         self.queue = build_instance_from_settings(settings.QUEUE)
         self.source = build_instance_from_settings(settings.CRASH_SOURCE)
         destinations = []
@@ -305,17 +307,10 @@ class ProcessorApp:
             logging_level=settings.LOGGING_LEVEL,
             host_id=settings.HOST_ID,
         )
-
         self.log_config()
 
         markus.configure(backends=settings.MARKUS_BACKENDS)
-
-        if settings.SENTRY_DSN:
-            self.set_up_sentry(
-                basedir=self.basedir,
-                host_id=settings.HOST_ID,
-                sentry_dsn=settings.SENTRY_DSN,
-            )
+        self._set_up_sentry()
 
         self._set_up_task_manager()
         self._set_up_source_and_destination()
