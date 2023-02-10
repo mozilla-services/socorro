@@ -77,7 +77,7 @@ class TaskManager:
         """
         self.idle_delay = idle_delay
         self.quit_on_empty_queue = quit_on_empty_queue
-        self.job_param_source_iter = job_source_iterator
+        self.job_source_iterator = job_source_iterator
         self.task_func = task_func
 
         self._pid = os.getpid()
@@ -86,9 +86,9 @@ class TaskManager:
         self.logger.debug("TaskManager finished init")
 
     def _get_iterator(self):
-        """Return an iterator from the job_param_source_iter
+        """Return an iterator from the job_source_iterator
 
-        job_param_source_iter can be one of a few things:
+        job_source_iterator can be one of a few things:
 
         * a class that can be instantiated and iterated over
         * a function that returns an interator
@@ -99,9 +99,9 @@ class TaskManager:
 
         """
         # FIXME(willkg): test this out; we dropped the class instance one
-        if callable(self.job_param_source_iter):
-            return iter(self.job_param_source_iter())
-        return iter(self.job_param_source_iter)
+        if callable(self.job_source_iterator):
+            return iter(self.job_source_iterator())
+        return iter(self.job_source_iterator)
 
     def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
         """Responsive sleep that checks for quit flag
