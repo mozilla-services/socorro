@@ -4,11 +4,11 @@
 
 from click.testing import CliRunner
 
-from socorro.scripts.sqs_cli import sqs_group
+from es_cli import es_group
 
 
 def test_it_runs():
     """Test whether the module loads and spits out help."""
     runner = CliRunner()
-    result = runner.invoke(sqs_group, ["--help"])
+    result = runner.invoke(es_group, ["--help"])
     assert result.exit_code == 0
