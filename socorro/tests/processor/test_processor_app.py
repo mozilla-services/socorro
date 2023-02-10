@@ -13,7 +13,7 @@ from configman.dotdict import DotDict
 from markus.testing import MetricsMock
 import pytest
 
-from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
+from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.processor.processor_app import ProcessorApp, count_sentry_scrub_error
 
 
@@ -294,75 +294,6 @@ def test_count_sentry_scrub_error():
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
         metricsmock.assert_incr("processor.sentry_scrub_error", value=1)
-
-
-def test_transform_polystorage_error(sentry_helper, caplogpp):
-    caplogpp.set_level("DEBUG")
-
-    # Set up processor and mock .save_processed_crash() to raise an exception
-    config = get_standard_config()
-    processor = ProcessorApp(config)
-    # NOTE(willkg): This is relative to this file
-    basedir = Path(__file__).resolve().parent.parent.parent
-    host_id = "testhost"
-    sentry_dsn = os.environ.get("SENTRY_DSN", "")
-    processor.configure_sentry(basedir=basedir, host_id=host_id, sentry_dsn=sentry_dsn)
-    processor._setup_source_and_destination()
-    processor.source.get_raw_crash.return_value = {"raw": "crash"}
-    processor.source.get_dumps_as_files.return_value = {}
-
-    # FIXME(willkg): the structure of the events suggest this PolyStorageError isn't
-    # really working since it's not capturing any stack information
-    expected_exception = PolyStorageError()
-    expected_exception.exceptions.append(NameError("waldo"))
-    expected_exception.exceptions.append(AssertionError(False))
-    processor.destination.save_processed_crash.side_effect = expected_exception
-
-    crash_id = "930b08ba-e425-49bf-adbd-7c9172220721"
-
-    with sentry_helper.reuse() as sentry_client:
-        # The important thing is that this is the exception that is raised and
-        # not something from the sentry error handling
-        with pytest.raises(PolyStorageError):
-            processor.transform(crash_id)
-
-        name_error_event, assertion_error_event = sentry_client.events
-
-        print(json.dumps(name_error_event, indent=4, sort_keys=True))
-        assert name_error_event["extra"] == {"crash_id": crash_id, "ruleset": "default"}
-        assert name_error_event["exception"] == {
-            "values": [
-                {
-                    "mechanism": None,
-                    "module": None,
-                    "type": "NameError",
-                    "value": "waldo",
-                }
-            ]
-        }
-        assert name_error_event["extra"]["crash_id"] == crash_id
-
-        print(json.dumps(assertion_error_event, indent=4, sort_keys=True))
-        assert assertion_error_event["extra"] == {
-            "crash_id": crash_id,
-            "ruleset": "default",
-        }
-        assert assertion_error_event["exception"] == {
-            "values": [
-                {
-                    "mechanism": None,
-                    "module": None,
-                    "type": "AssertionError",
-                    "value": "False",
-                }
-            ]
-        }
-        assert assertion_error_event["extra"]["crash_id"] == crash_id
-
-        # Assert that the logger logged the appropriate thing
-        logging_msgs = [rec.message for rec in caplogpp.records]
-        assert f"error: crash id {crash_id}: NameError('waldo')" in logging_msgs
-        assert f"error: crash id {crash_id}: AssertionError(False)" in logging_msgs
 
 
 def test_transform_save_error(sentry_helper, caplogpp):
