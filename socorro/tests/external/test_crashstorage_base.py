@@ -2,9 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from unittest import mock
-
-from configman import Namespace, ConfigurationManager
 import pytest
 
 from socorro.external.crashstorage_base import (
@@ -88,62 +85,26 @@ class Test_migrate_raw_crash:
         assert migrate_raw_crash(data) == expected
 
 
-class A(CrashStorageBase):
-    foo = "a"
-    required_config = Namespace()
-    required_config.add_option("x", default=1)
-    required_config.add_option("y", default=2)
-
-    def __init__(self, config, namespace=""):
-        super().__init__(config, namespace)
-        self.raw_crash_count = 0
-
-    def save_raw_crash(self, raw_crash, dump):
-        pass
-
-    def save_processed_crash(self, processed_crash):
-        pass
-
-
-class B(A):
-    foo = "b"
-    required_config = Namespace()
-    required_config.add_option("z", default=2)
-
-
 class TestCrashStorageBase:
-    def test_basic_crashstorage(self):
-        required_config = Namespace()
+    def test_not_implemented(self):
+        crashstorage = CrashStorageBase()
 
-        mock_logging = mock.Mock()
-        required_config.add_option("logger", default=mock_logging)
-        required_config.update(CrashStorageBase.required_config)
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
 
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name="testapp",
-            app_version="1.0",
-            app_description="app description",
-            values_source_list=[{"logger": mock_logging}],
-            argv_source=[],
-        )
+        crashstorage.save_raw_crash(raw_crash={}, dumps={}, crash_id=crash_id)
+        with pytest.raises(NotImplementedError):
+            crashstorage.get_raw_crash(crash_id)
 
-        with config_manager.context() as config:
-            crashstorage = CrashStorageBase(config)
-            crashstorage.save_raw_crash({}, "payload", "ooid")
-            with pytest.raises(NotImplementedError):
-                crashstorage.get_raw_crash("ooid")
+        with pytest.raises(NotImplementedError):
+            crashstorage.get_raw_dump(crash_id, name="upload_file_minidump")
 
-            with pytest.raises(NotImplementedError):
-                crashstorage.get_raw_dump("ooid")
+        with pytest.raises(NotImplementedError):
+            crashstorage.get_processed_crash(crash_id)
 
-            with pytest.raises(NotImplementedError):
-                crashstorage.get_processed("ooid")
+        with pytest.raises(NotImplementedError):
+            crashstorage.remove(crash_id)
 
-            with pytest.raises(NotImplementedError):
-                crashstorage.remove("ooid")
-
-            crashstorage.close()
+        crashstorage.close()
 
 
 class TestDumpsMappings:
