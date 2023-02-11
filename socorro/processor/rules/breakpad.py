@@ -197,6 +197,7 @@ class MinidumpStackwalkRule(Rule):
         self,
         dump_field="upload_file_minidump",
         symbols_urls=None,
+        # NOTE(willkg): this is the location it gets put in the Docker image
         command_path="/stackwalk-rust/minidump-stackwalk",
         command_line=(
             "timeout --signal KILL {kill_timeout} "

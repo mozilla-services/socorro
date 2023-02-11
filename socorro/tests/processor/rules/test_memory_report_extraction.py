@@ -150,7 +150,7 @@ class TestMemoryReportExtraction:
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "bad kind for an explicit/ report: explicit/foo, 2"
+            + "bad kind for an explicit/ report: explicit/foo, 2"
         )
 
     def test_action_failure_bad_units(self, tmp_path, caplogpp):
@@ -171,7 +171,7 @@ class TestMemoryReportExtraction:
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "bad units for an explicit/ report: explicit/foo, 1"
+            + "bad units for an explicit/ report: explicit/foo, 1"
         )
 
     def test_action_failure_bad_pid(self, tmp_path, caplogpp):
@@ -192,7 +192,7 @@ class TestMemoryReportExtraction:
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "no measurements found for pid 12345"
+            + "no measurements found for pid 12345"
         )
 
     def test_action_failure_key_error(self, tmp_path, caplogpp):
@@ -213,5 +213,5 @@ class TestMemoryReportExtraction:
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "key 'process' is missing from a report"
+            + "key 'process' is missing from a report"
         )

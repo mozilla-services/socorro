@@ -9,7 +9,7 @@ from unittest import mock
 from markus.testing import MetricsMock
 
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
-from socorro.processor.pipeline import Pipeline, Status
+from socorro.processor.pipeline import Status
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
@@ -571,23 +571,11 @@ MINIMAL_STACKWALKER_OUTPUT_STR = json.dumps(MINIMAL_STACKWALKER_OUTPUT)
 
 
 class TestMinidumpStackwalkRule:
-    # NOTE(willkg): this tests the mechanics of the rule that runs minidump-stackwalk,
-    # but doesn't test minidump-stackwalk itself
-    def build_rule(self):
-        config = Pipeline.required_config.minidumpstackwalk
-
-        return MinidumpStackwalkRule(
-            dump_field="upload_file_minidump",
-            symbols_urls=config.symbols_urls.default,
-            command_path=config.command_path.default,
-            command_line=config.command_line.default,
-            kill_timeout=5,
-            symbol_tmp_path="/tmp/symbols/tmp",
-            symbol_cache_path="/tmp/symbols/cache",
-        )
-
     def test_everything_we_hoped_for(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -627,7 +615,10 @@ class TestMinidumpStackwalkRule:
         # stackwalker exceeds the amount of time alotted, timeout kills it with a
         # SIGKILL (9) and subprocess denotes that using a negative exit code of -9.
         # This tests that.
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -661,7 +652,10 @@ class TestMinidumpStackwalkRule:
             )
 
     def test_stackwalker_bad_output(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -691,7 +685,10 @@ class TestMinidumpStackwalkRule:
         )
 
     def test_empty_minidump_shortcut(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         # Write a 0-byte minidump file with the correct name
         dumppath = tmp_path / "upload_file_minidump"
