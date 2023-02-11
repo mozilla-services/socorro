@@ -190,7 +190,7 @@ class ProcessorApp:
         # Fetch processed crash data--there won't be any if this crash hasn't
         # been processed, yet
         try:
-            processed_crash = self.source.get_processed(crash_id)
+            processed_crash = self.source.get_processed_crash(crash_id)
             new_crash = False
         except CrashIDNotFound:
             new_crash = True

@@ -49,7 +49,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             # Raw Crash
             "meta": "get_raw_crash",
             # Redacted processed crash
-            "processed": "get_processed",
+            "processed": "get_processed_crash",
         }
         if params["datatype"] not in datatype_method_mapping:
             raise BadArgumentError(params["datatype"])
@@ -80,7 +80,7 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
             raise MissingArgumentError("uuid")
 
         try:
-            return self.get_processed(params["uuid"])
+            return self.get_processed_crash(params["uuid"])
         except CrashIDNotFound as cidnf:
             self.logger.warning("telemetry crash not found: %s", cidnf)
             # The CrashIDNotFound exception that happens inside the
