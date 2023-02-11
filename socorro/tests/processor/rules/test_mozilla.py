@@ -918,9 +918,9 @@ class TestJavaProcessRule:
         raw_crash = {
             "JavaStackTrace": (
                 "Exception: some messge\n"
-                "\tat org.File.function(File.java:100)\n"
-                "\tCaused by: Exception: some other message\n"
-                "\t\tat org.File.function(File.java:100)"
+                + "\tat org.File.function(File.java:100)\n"
+                + "\tCaused by: Exception: some other message\n"
+                + "\t\tat org.File.function(File.java:100)"
             )
         }
         dumps = {}
@@ -1097,8 +1097,10 @@ class TestMozCrashReasonRule:
         "bad_reason",
         [
             "byte index 21548 is not a char boundary",
-            'Failed to load module "jar:file..."'
-            "do not use eval with system privileges: jar:file...",
+            (
+                'Failed to load module "jar:file..."'
+                + "do not use eval with system privileges: jar:file..."
+            ),
         ],
     )
     def test_bad_mozcrashreason(self, tmp_path, bad_reason):
@@ -1157,8 +1159,8 @@ class TestOutOfMemoryBinaryRule:
 
             memory = rule._extract_memory_info("a_pathname", status)
             expected_error_message = (
-                "Uncompressed memory info too large %d (max: %s)"
-                % (35, rule.MAX_SIZE_UNCOMPRESSED)
+                "Uncompressed memory info too large 35 "
+                + f"(max: {rule.MAX_SIZE_UNCOMPRESSED})"
             )
             assert memory == {"ERROR": expected_error_message}
             assert status.notes == [expected_error_message]
@@ -1665,7 +1667,7 @@ class TestBetaVersionRule:
         assert processed_crash["version"] == "3.0.1b0"
         assert status.notes == [
             "release channel is beta but no version data was found - "
-            'added "b0" suffix to version number'
+            + 'added "b0" suffix to version number'
         ]
 
     def test_aurora_channel(self, tmp_path):

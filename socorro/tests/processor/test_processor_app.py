@@ -76,8 +76,8 @@ class TestProcessorApp:
         app.source.get_dumps_as_files = mocked_get_dumps_as_files
 
         fake_processed_crash = {"uuid": "9d8e7127-9d98-4d92-8ab1-065982200317"}
-        mocked_get_processed = mock.Mock(return_value=fake_processed_crash)
-        app.source.get_processed = mocked_get_processed
+        mocked_get_processed_crash = mock.Mock(return_value=fake_processed_crash)
+        app.source.get_processed_crash = mocked_get_processed_crash
 
         mocked_process_crash = mock.Mock(return_value={"processed": "1"})
         app.pipeline.process_crash = mocked_process_crash
