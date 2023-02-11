@@ -197,3 +197,88 @@ def es_conn():
 
     for index in conn.get_indices():
         conn.delete_index(index)
+
+
+class SQSHelper:
+    """Helper class for setting up, tearing down, and publishing to SQS."""
+
+    def __init__(self):
+        self.conn = self.get_client()
+
+        self.queue_to_queue_name = {
+            "standard": os.environ["SQS_STANDARD_QUEUE"],
+            "priority": os.environ["SQS_PRIORITY_QUEUE"],
+            "reprocessing": os.environ["SQS_REPROCESSING_QUEUE"],
+        }
+
+        self.conn = self.get_client()
+
+        # Visibility timeout for the AWS SQS queue in seconds
+        self.visibility_timeout = 1
+
+    def get_client(self):
+        session = boto3.session.Session(
+            # NOTE(willkg): these use environment variables set in
+            # docker/config/test.env
+            aws_access_key_id=os.environ["SQS_ACCESS_KEY"],
+            aws_secret_access_key=os.environ["SQS_SECRET_ACCESS_KEY"],
+        )
+        client = session.client(
+            service_name="sqs",
+            region_name=os.environ["SQS_REGION"],
+            endpoint_url=os.environ["AWS_ENDPOINT_URL"],
+        )
+        return client
+
+    def setup_queues(self):
+        for queue_name in self.queue_to_queue_name.values():
+            self.create_queue(queue_name)
+
+    def teardown_queues(self):
+        for queue_name in self.queue_to_queue_name.values():
+            try:
+                queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+                self.conn.delete_queue(QueueUrl=queue_url)
+            except self.conn.exceptions.QueueDoesNotExist:
+                print(f"skipping teardown {queue_name!r}: does not exist")
+
+    def __enter__(self):
+        self.setup_queues()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.teardown_queues()
+
+    def create_queue(self, queue_name):
+        self.conn.create_queue(
+            QueueName=queue_name,
+            Attributes={"VisibilityTimeout": str(self.visibility_timeout)},
+        )
+
+    def get_published_crashids(self, queue):
+        queue_name = self.queue_to_queue_name[queue]
+        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+        all_crashids = []
+        while True:
+            resp = self.conn.receive_message(
+                QueueUrl=queue_url,
+                WaitTimeSeconds=0,
+                VisibilityTimeout=1,
+            )
+            msgs = resp.get("Messages", [])
+            if not msgs:
+                break
+            all_crashids.extend([msg["Body"] for msg in msgs])
+
+        return all_crashids
+
+    def publish(self, queue, crash_id):
+        queue_name = self.queue_to_queue_name[queue]
+        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+        self.conn.send_message(QueueUrl=queue_url, MessageBody=crash_id)
+
+
+@pytest.fixture
+def sqs_helper():
+    with SQSHelper() as sqs:
+        yield sqs
