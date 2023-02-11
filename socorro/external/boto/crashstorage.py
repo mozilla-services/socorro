@@ -302,7 +302,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             self.dump_file_suffix,
         )
 
-    def get_processed(self, crash_id):
+    def get_processed_crash(self, crash_id):
         """Get the processed crash.
 
         :returns: dict
@@ -385,7 +385,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         path = build_keys("crash_report", crash_id)[0]
         self.save_file(path, data)
 
-    def get_processed(self, crash_id):
+    def get_processed_crash(self, crash_id):
         """Get a crash report from the S3 bucket.
 
         :returns: dict

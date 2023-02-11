@@ -4,9 +4,10 @@
 
 from contextlib import contextmanager, closing, suppress
 import gzip
-import json
 from io import BytesIO
+import json
 import os
+import shutil
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
@@ -147,8 +148,10 @@ class FSPermanentStorage(CrashStorageBase):
                     f.write(contents)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        if dumps is None:
-            dumps = MemoryDumpsMapping()
+        dumps = dumps or {}
+        if isinstance(dumps, dict):
+            dumps = MemoryDumpsMapping(dumps)
+
         files = {
             crash_id + self.json_file_suffix: json.dumps(raw_crash).encode("utf-8")
         }
@@ -202,7 +205,7 @@ class FSPermanentStorage(CrashStorageBase):
             for dump_file_name in os.listdir(parent_dir)
             if (
                 dump_file_name.startswith(crash_id)
-                and dump_file_name.endswith(self.config.dump_file_suffix)
+                and dump_file_name.endswith(self.dump_file_suffix)
             )
         ]
         # we want to return a name/pathname mapping for the raw dumps
@@ -215,8 +218,7 @@ class FSPermanentStorage(CrashStorageBase):
         # ensure that we return a name/blob mapping
         return file_dump_mapping.as_memory_dumps_mapping()
 
-    def get_processed(self, crash_id):
-        """this method returns a processed crash"""
+    def get_processed_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         pathname = os.sep.join([parent_dir, crash_id + self.jsonz_file_suffix])
         if not os.path.exists(pathname):
@@ -236,20 +238,4 @@ class FSPermanentStorage(CrashStorageBase):
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
 
-        removal_candidates = [os.sep.join([parent_dir, crash_id + ".json"])] + list(
-            self.get_dumps_as_files(crash_id, None).values()
-        )
-
-        # Remove all the files related to the crash
-        for cand in removal_candidates:
-            try:
-                os.unlink(cand)
-            except OSError:
-                self.logger.error("could not delete: %s", cand, exc_info=True)
-
-        # If the directory is empty, clean it up
-        if len(os.listdir(parent_dir)) == 0:
-            try:
-                os.rmdir(parent_dir)
-            except OSError:
-                self.logger.error("could not delete: %s", parent_dir, exc_info=True)
+        shutil.rmtree(parent_dir)

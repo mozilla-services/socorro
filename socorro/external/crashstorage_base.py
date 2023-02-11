@@ -221,7 +221,7 @@ class CrashStorageBase:
         """
         raise NotImplementedError("get_dumps_as_files is not implemented")
 
-    def get_processed(self, crash_id):
+    def get_processed_crash(self, crash_id):
         """Fetch processed crash.
 
         :arg crash_id: crash report id
@@ -231,7 +231,7 @@ class CrashStorageBase:
         :raises CrashIdNotFound:
 
         """
-        raise NotImplementedError("get_processed is not implemented")
+        raise NotImplementedError("get_processed_crash is not implemented")
 
     def remove(self, crash_id):
         """Delete crash report data from storage
@@ -289,7 +289,7 @@ class InMemoryCrashStorage(CrashStorageBase):
         except KeyError:
             raise CrashIDNotFound(f"{crash_id} not found")
 
-    def get_processed(self, crash_id):
+    def get_processed_crash(self, crash_id):
         try:
             return self._processed_crash_data[crash_id]
         except KeyError:
