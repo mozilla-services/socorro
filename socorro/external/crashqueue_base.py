@@ -21,7 +21,7 @@ class CrashQueueBase:
         ``finished_func`` when it's done processing the crash.
 
         """
-        pass
+        raise NotImplementedError("__iter__ not implemented")
 
     def new_crashes(self):
         return self.__iter__()
@@ -31,4 +31,4 @@ class CrashQueueBase:
 
     def publish(self, queue, crash_ids):
         """Publish crash ids to specified queue."""
-        assert queue in ["standard", "priority", "reprocessing"]
+        raise NotImplementedError("publish not implemented")

@@ -281,6 +281,8 @@ class SQSCrashQueue(CrashQueueBase):
             crash ids with the list of crash ids that failed to publish
 
         """
+        assert queue in ["standard", "priority", "reprocessing"]
+
         failed = []
 
         queue_url = self.queue_to_queue_url[queue]
