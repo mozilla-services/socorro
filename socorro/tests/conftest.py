@@ -96,13 +96,15 @@ class BotoHelper:
 
     def get_client(self):
         session = boto3.session.Session(
-            aws_access_key_id=os.environ.get("resource.boto.access_key"),
-            aws_secret_access_key=os.environ.get("secrets.boto.secret_access_key"),
+            # NOTE(willkg): these use environment variables set in
+            # docker/config/test.env
+            aws_access_key_id=os.environ["CRASHSTORAGE_S3_ACCESS_KEY"],
+            aws_secret_access_key=os.environ["CRASHSTORAGE_S3_SECRET_ACCESS_KEY"],
         )
         client = session.client(
             service_name="s3",
             config=Config(s3={"addressing_style": "path"}),
-            endpoint_url=os.environ.get("resource.boto.s3_endpoint_url"),
+            endpoint_url=os.environ["AWS_ENDPOINT_URL"],
         )
         return client
 

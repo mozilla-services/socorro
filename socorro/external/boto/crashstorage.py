@@ -77,9 +77,9 @@ def build_keys(name_of_thing, crashid):
         entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [
-            f"v1/{name_of_thing}/{date}/{crashid}"
+            f"v1/{name_of_thing}/{date}/{crashid}",
             # NOTE(willkg): This format is deprecated and will be removed in April 2023
-            f"v2/{name_of_thing}/{entropy}/{date}/{crashid}"
+            f"v2/{name_of_thing}/{entropy}/{date}/{crashid}",
         ]
 
     elif name_of_thing == "crash_report":
@@ -260,7 +260,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             path = build_keys(name, crash_id)[0]
             a_dump = self.load_file(path)
             return a_dump
-        except self.conn.KeyNotFound as exc:
+        except self.connection.KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
     def get_dumps(self, crash_id):
@@ -283,7 +283,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 path = build_keys(dump_name, crash_id)[0]
                 dumps[dump_name] = self.load_file(path)
             return dumps
-        except self.conn.KeyNotFound as exc:
+        except self.connection.KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}")
 
     def get_dumps_as_files(self, crash_id, tmpdir):
