@@ -69,14 +69,13 @@ class S3Connection:
 
     def __init__(
         self,
-        bucket="crashstats",
         region=None,
         access_key=None,
         secret_access_key=None,
         endpoint_url=None,
+        **kwargs,
     ):
         """
-        :arg bucket: the S3 bucket to use
         :arg region: AWS region to use (e.g. us-west-2)
         :arg access_key: AWS access key
         :arg secret_access_key: AWS secret access key
@@ -232,7 +231,7 @@ class S3Connection:
 
         """
         try:
-            return self.client.head_object(Bucket=self.bucket, Key=key)
+            return self.client.head_object(Bucket=bucket, Key=key)
         except self.client.exceptions.NoSuchKey:
             raise KeyNotFound(
                 f"(bucket={bucket!r} key={key}) not found, no value returned"
