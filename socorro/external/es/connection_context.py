@@ -18,6 +18,7 @@ class ConnectionContext:
         self,
         url="http://localhost:9200",
         timeout=30,
+        **kwargs,
     ):
         """
         :arg url: the url to the elasticsearch instances

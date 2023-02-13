@@ -2,42 +2,56 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from socorro.lib import libdatetime
+from socorro import settings
+from socorro.lib.libdatetime import utc_now
+from socorro.libclass import build_instance
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.external.es.supersearch import SuperSearch
-from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
-class TestIntegrationAnalyzers(ElasticsearchTestCase):
+class TestIntegrationAnalyzers:
     """Test the custom analyzers we create in our indices"""
 
-    def setup_method(self):
-        super().setup_method()
+    def build_crashstorage(self):
+        return build_instance(
+            class_path="socorro.external.es.crashstorage.ESCrashStorage",
+            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+        )
 
-        config = self.get_base_config(cls=SuperSearch)
-        self.api = SuperSearch(config=config)
-        self.now = libdatetime.utc_now()
-
-    def test_semicolon_keywords(self):
+    def test_semicolon_keywords(self, es_helper):
         """Test the analyzer called `semicolon_keywords`.
 
         That analyzer creates tokens (terms) by splitting the input on
         semicolons (;) only.
 
         """
+        crashstorage = self.build_crashstorage()
+        api = SuperSearch(crashstorage=crashstorage)
+        now = utc_now()
+        crash_id_1 = "936ce666-ff3b-4c7a-9674-367fe2230212"
+        crash_id_2 = "b39a6e4a-1680-4968-99bd-272286230212"
+
         value1 = "/path/to/dll;;foo;C:\\bar\\boo"
-        self.index_crash(
-            processed_crash={"app_init_dlls": value1, "date_processed": self.now},
+        es_helper.index_crash(
             raw_crash={},
+            processed_crash={
+                "uuid": crash_id_1,
+                "app_init_dlls": value1,
+                "date_processed": now,
+            },
         )
         value2 = "/path/to/dll;D:\\bar\\boo"
-        self.index_crash(
-            processed_crash={"app_init_dlls": value2, "date_processed": self.now},
+        es_helper.index_crash(
             raw_crash={},
+            processed_crash={
+                "uuid": crash_id_2,
+                "app_init_dlls": value2,
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
-        res = self.api.get(
+        res = api.get(
             app_init_dlls="/path/to/dll", _facets=["app_init_dlls"], _fields=FIELDS
         )
         assert res["total"] == 2
