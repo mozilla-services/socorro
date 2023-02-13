@@ -31,15 +31,15 @@ class TestVerifyProcessed:
             "crash_id", flat=True
         )
 
-    def create_raw_crash_in_s3(self, boto_helper, crash_id):
-        boto_helper.upload_fileobj(
+    def create_raw_crash_in_s3(self, s3_helper, crash_id):
+        s3_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
             key="v1/raw_crash/%s/%s" % (TODAY, crash_id),
             data=b"test",
         )
 
-    def create_processed_crash_in_s3(self, boto_helper, crash_id):
-        boto_helper.upload_fileobj(
+    def create_processed_crash_in_s3(self, s3_helper, crash_id):
+        s3_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
             key="v1/processed_crash/%s" % crash_id,
             data=b"test",
@@ -72,23 +72,23 @@ class TestVerifyProcessed:
         assert threechars[0] == "000"
         assert threechars[-1] == "fff"
 
-    def test_no_crashes(self, boto_helper, monkeypatch):
+    def test_no_crashes(self, s3_helper, monkeypatch):
         """Verify no crashes in bucket result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_no_missing_crashes(self, boto_helper, es_conn, monkeypatch):
+    def test_no_missing_crashes(self, s3_helper, es_conn, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         # Create a few raw and processed crashes
         crashids = [
@@ -97,8 +97,8 @@ class TestVerifyProcessed:
             "000" + create_new_ooid()[3:],
         ]
         for crash_id in crashids:
-            self.create_raw_crash_in_s3(boto_helper, crash_id)
-            self.create_processed_crash_in_s3(boto_helper, crash_id)
+            self.create_raw_crash_in_s3(s3_helper, crash_id)
+            self.create_processed_crash_in_s3(s3_helper, crash_id)
             self.create_processed_crash_in_es(es_conn, crash_id)
 
         es_conn.refresh()
@@ -107,44 +107,44 @@ class TestVerifyProcessed:
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_missing_crashes(self, boto_helper, es_conn, monkeypatch):
+    def test_missing_crashes(self, s3_helper, es_conn, monkeypatch):
         """Verify it finds a missing crash."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(boto_helper, crash_id_1)
-        self.create_processed_crash_in_s3(boto_helper, crash_id_1)
+        self.create_raw_crash_in_s3(s3_helper, crash_id_1)
+        self.create_processed_crash_in_s3(s3_helper, crash_id_1)
         self.create_processed_crash_in_es(es_conn, crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(boto_helper, crash_id_2)
+        self.create_raw_crash_in_s3(s3_helper, crash_id_2)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == [crash_id_2]
 
-    def test_missing_crashes_es(self, boto_helper, es_conn, monkeypatch):
+    def test_missing_crashes_es(self, s3_helper, es_conn, monkeypatch):
         """Verify it finds a processed crash missing in ES."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
         bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(boto_helper, crash_id_1)
-        self.create_processed_crash_in_s3(boto_helper, crash_id_1)
+        self.create_raw_crash_in_s3(s3_helper, crash_id_1)
+        self.create_processed_crash_in_s3(s3_helper, crash_id_1)
         self.create_processed_crash_in_es(es_conn, crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(boto_helper, crash_id_2)
-        self.create_processed_crash_in_s3(boto_helper, crash_id_2)
+        self.create_raw_crash_in_s3(s3_helper, crash_id_2)
+        self.create_processed_crash_in_s3(s3_helper, crash_id_2)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
