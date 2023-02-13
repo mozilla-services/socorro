@@ -3,16 +3,19 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import contextlib
+import copy
 import importlib
 import logging
-import re
 import os
+import re
+
+import glom
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-UPPER_CASE_KEY_RE = re.compile(r"^[A-Z][A-Z_]+$")
+UPPERCASE_KEY_RE = re.compile(r"^[A-Z][A-Z_]+$")
 
 
 class Settings:
@@ -21,7 +24,7 @@ class Settings:
 
         settings_module = importlib.import_module(settings_module_path)
         for key in dir(settings_module):
-            if not UPPER_CASE_KEY_RE.match(key):
+            if not UPPERCASE_KEY_RE.match(key):
                 continue
             setattr(self, key, getattr(settings_module, key))
 
@@ -42,7 +45,7 @@ class Settings:
             return v
 
         for key in dir(self):
-            if not UPPER_CASE_KEY_RE.match(key):
+            if not UPPERCASE_KEY_RE.match(key):
                 continue
             value = sanitize_value(key, getattr(self, key))
 
@@ -58,28 +61,42 @@ class Settings:
         :arg kwargs: settings to override
 
         """
+        global settings
+
         NOVALUE = object()
 
-        old_values = {}
+        # (key, key_value at time it was overridden) in order they were overridden
+        key_values = []
 
         try:
-            for key, value in kwargs.items():
-                if not UPPER_CASE_KEY_RE.match(key):
+            for key_path, value in kwargs.items():
+                key, _, path = key_path.partition(".")
+                if not UPPERCASE_KEY_RE.match(key):
                     raise ValueError(f"Invalid key {key!r}")
 
-                old_values[key] = getattr(self, key, NOVALUE)
+                key_value = getattr(self, key, NOVALUE)
+                key_values.append((key, key_value))
+
+                new_key_value = copy.deepcopy(key_value)
+                if "." in path:
+                    new_key_value = glom.assign(
+                        new_key_value, path, value, missing=dict
+                    )
+                else:
+                    new_key_value = value
+
                 print(f"settings override: {key}={value}")
-                setattr(self, key, value)
+                setattr(self, key, new_key_value)
 
             yield
 
         finally:
-            for key, old_value in old_values.items():
-                if old_value is NOVALUE:
+            for key, original_value in key_values:
+                if original_value is NOVALUE:
                     with contextlib.suppress(AttributeError):
                         delattr(self, key)
                 else:
-                    setattr(self, key, old_value)
+                    setattr(self, key, original_value)
 
 
 def __load_settings():
