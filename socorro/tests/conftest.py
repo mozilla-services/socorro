@@ -11,6 +11,7 @@ import io
 import logging
 import os
 import pathlib
+import sys
 
 import boto3
 from botocore.client import ClientError, Config
@@ -26,11 +27,17 @@ from socorro.external.es.connection_context import (
 from socorro.lib.libdatetime import utc_now
 
 
+REPOROOT = pathlib.Path(__file__).parent.parent.parent
+
+
+# Add bin directory to Python path
+sys.path.insert(0, str(REPOROOT / "bin"))
+
+
 @pytest.fixture
 def reporoot():
     """Returns path to repository root directory"""
-    path = pathlib.Path(__file__).parent.parent.parent
-    return path
+    return REPOROOT
 
 
 @pytest.fixture
