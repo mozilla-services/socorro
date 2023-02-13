@@ -77,7 +77,7 @@ class Status:
         self.notes.extend(notes)
 
 
-class ProcessorPipeline(RequiredConfig):
+class Pipeline(RequiredConfig):
     """Processor pipeline for Mozilla crash ingestion."""
 
     required_config = Namespace("transform_rules")

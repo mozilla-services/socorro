@@ -13,7 +13,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
-from socorro.processor.processor_pipeline import Status
+from socorro.processor.pipeline import Status
 
 
 canonical_standard_raw_crash = {

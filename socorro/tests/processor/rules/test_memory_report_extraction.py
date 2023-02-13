@@ -5,7 +5,7 @@
 import os
 import json
 
-from socorro.processor.processor_pipeline import Status
+from socorro.processor.pipeline import Status
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 
 

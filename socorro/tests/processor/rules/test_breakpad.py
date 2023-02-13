@@ -9,7 +9,7 @@ from unittest import mock
 from markus.testing import MetricsMock
 
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
-from socorro.processor.processor_pipeline import ProcessorPipeline, Status
+from socorro.processor.pipeline import Pipeline, Status
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
@@ -574,7 +574,7 @@ class TestMinidumpStackwalkRule:
     # NOTE(willkg): this tests the mechanics of the rule that runs minidump-stackwalk,
     # but doesn't test minidump-stackwalk itself
     def build_rule(self):
-        config = ProcessorPipeline.required_config.minidumpstackwalk
+        config = Pipeline.required_config.minidumpstackwalk
 
         return MinidumpStackwalkRule(
             dump_field="upload_file_minidump",
