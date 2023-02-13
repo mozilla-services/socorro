@@ -39,7 +39,7 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
     UtilityActorsNameRule,
 )
-from socorro.processor.processor_pipeline import Status
+from socorro.processor.pipeline import Status
 from socorro.signature.generator import SignatureGenerator
 
 

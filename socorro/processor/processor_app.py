@@ -156,7 +156,7 @@ class ProcessorApp(App):
     required_config.processor.add_option(
         "processor_class",
         doc="the class that transforms raw crashes into processed crashes",
-        default="socorro.processor.processor_pipeline.ProcessorPipeline",
+        default="socorro.processor.pipeline.Pipeline",
         from_string_converter=class_converter,
     )
     required_config.processor.add_option(

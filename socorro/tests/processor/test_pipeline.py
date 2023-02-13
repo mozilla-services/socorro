@@ -12,7 +12,7 @@ import freezegun
 
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.processor_app import ProcessorApp
-from socorro.processor.processor_pipeline import ProcessorPipeline
+from socorro.processor.pipeline import Pipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
 from socorro.processor.rules.base import Rule
 
@@ -64,13 +64,13 @@ RULE_ERROR_EVENT = {
                 "stacktrace": {
                     "frames": [
                         {
-                            "abs_path": "/app/socorro/processor/processor_pipeline.py",
+                            "abs_path": "/app/socorro/processor/pipeline.py",
                             "context_line": ANY,
-                            "filename": "socorro/processor/processor_pipeline.py",
+                            "filename": "socorro/processor/pipeline.py",
                             "function": "process_crash",
                             "in_app": True,
                             "lineno": ANY,
-                            "module": "socorro.processor.processor_pipeline",
+                            "module": "socorro.processor.pipeline",
                             "post_context": ANY,
                             "pre_context": ANY,
                         },
@@ -86,13 +86,13 @@ RULE_ERROR_EVENT = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/app/socorro/tests/processor/test_processor_pipeline.py",
+                            "abs_path": "/app/socorro/tests/processor/test_pipeline.py",
                             "context_line": ANY,
-                            "filename": "socorro/tests/processor/test_processor_pipeline.py",
+                            "filename": "socorro/tests/processor/test_pipeline.py",
                             "function": "action",
                             "in_app": True,
                             "lineno": ANY,
-                            "module": "socorro.tests.processor.test_processor_pipeline",
+                            "module": "socorro.tests.processor.test_pipeline",
                             "post_context": ANY,
                             "pre_context": ANY,
                         },
@@ -104,7 +104,7 @@ RULE_ERROR_EVENT = {
         ]
     },
     "extra": {
-        "rule": "socorro.tests.processor.test_processor_pipeline.BadRule",
+        "rule": "socorro.tests.processor.test_pipeline.BadRule",
     },
     "level": "error",
     "modules": ANY,
@@ -130,11 +130,11 @@ RULE_ERROR_EVENT = {
 }
 
 
-class TestProcessorPipeline:
+class TestPipeline:
     def get_config(self):
-        # Retrieve config for a ProcessorPipeline
+        # Retrieve config for a Pipeline
         cm = ConfigurationManager(
-            definition_source=ProcessorPipeline.get_required_config(),
+            definition_source=Pipeline.get_required_config(),
             values_source_list=[],
         )
         config = cm.get_config()
@@ -150,14 +150,14 @@ class TestProcessorPipeline:
             raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
             processed_crash = {}
 
-            processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
+            processor = Pipeline(config, rules={"default": [BadRule()]})
             processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
             notes = processed_crash["processor_notes"].split("\n")
             assert notes[1] == (
                 "ruleset 'default' "
-                + "rule 'socorro.tests.processor.test_processor_pipeline.BadRule' "
+                + "rule 'socorro.tests.processor.test_pipeline.BadRule' "
                 + "failed: KeyError"
             )
 
@@ -177,7 +177,7 @@ class TestProcessorPipeline:
             "processor_notes": "previousnotes",
         }
 
-        pipeline = ProcessorPipeline(
+        pipeline = Pipeline(
             self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}
         )
 
