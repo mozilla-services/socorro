@@ -2,10 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""This module defines classes that implements a threaded
-producer/consumer system.  A single iterator thread pushes jobs into an
-internal queue while a flock of consumer/worker threads do the jobs.  A job
-consists of a function and the data applied to the function."""
+"""Defines the ThreadedTaskManager.
+
+This module defines classes that implements a threaded producer/consumer system. A
+single iterator thread pushes jobs into an internal queue while a flock of
+consumer/worker threads do the jobs. A job consists of a function and the data applied
+to the function.
+"""
 
 import logging
 import queue
@@ -18,8 +21,7 @@ from socorro.lib.task_manager import default_task_func, default_iterator, TaskMa
 
 
 class ThreadedTaskManager(TaskManager):
-    """Given an iterator over a sequence of job parameters and a function,
-    this class will execute the function in a set of threads."""
+    """Threaded task manager."""
 
     required_config = Namespace()
     required_config.add_option(
@@ -70,11 +72,12 @@ class ThreadedTaskManager(TaskManager):
         self.task_queue = queue.Queue(config.maximum_queue_size)
 
     def start(self):
-        """this function will start the queing thread that executes the
-        iterator and feeds jobs into the queue.  It also starts the worker
-        threads that just sit and wait for items to appear on the queue. This
-        is a non blocking call, so the executing thread is free to do other
-        things while the other threads work."""
+        """Starts the queueing thread and creates workers.
+
+        The queueing thread executes the iterator and feeds jobs into the work queue.
+        This then starts the worker threads.
+
+        """
         self.logger.debug("start")
         # start each of the task threads.
         for x in range(self.number_of_threads):
@@ -90,10 +93,7 @@ class ThreadedTaskManager(TaskManager):
         self.queuing_thread.start()
 
     def wait_for_completion(self):
-        """This is a blocking function call that will wait for the queuing
-        thread to complete.
-
-        """
+        """Blocks on queueing thread completion."""
         self.logger.debug("waiting to join queuing_thread")
         while True:
             try:
@@ -105,19 +105,17 @@ class ThreadedTaskManager(TaskManager):
                 self.quit = True
 
     def stop(self):
-        """This function will tell all threads to quit.  All threads
-        periodically look at the value of quit.  If they detect quit is True,
-        then they commit ritual suicide.  After setting the quit flag, this
-        function will wait for the queuing thread to quit."""
+        """Stop all worker threads."""
         self.quit = True
         self.wait_for_completion()
 
     def blocking_start(self):
-        """this function is just a wrapper around the start and
-        wait_for_completion methods.  It starts the queuing thread and then
-        waits for it to complete.  If run by the main thread, it will detect
-        the KeyboardInterrupt exception (which is what SIGTERM and SIGHUP
-        have been translated to) and will order the threads to die."""
+        """Starts queueing thread and waits for it to complete.
+
+        If run by the main thread, it will detect the KeyboardInterrupt exception and
+        will stop worker threads.
+
+        """
         try:
             self.start()
             self.wait_for_completion()
@@ -203,15 +201,6 @@ class ThreadedTaskManager(TaskManager):
             self.logger.debug("we're quitting queuing_thread")
             self._kill_worker_threads()
             self.logger.debug("all worker threads stopped")
-            # now that we've killed all the workers, we can set the quit flag
-            # to True.  This will cause any other threads to die and shut down
-            # the application.  Originally, the setting of this flag was at the
-            # start of this "finally" block.  However, that meant that the
-            # workers would abort their currently running jobs.  In the case of
-            # of the natural ending of an application where an iterater ran to
-            # exhaustion, the workers would die before completing their tasks.
-            # Moving the setting of the flag to this location allows the
-            # workers to finish and then the app shuts down.
             self.quit = True
 
 
