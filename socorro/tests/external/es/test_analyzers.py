@@ -8,13 +8,6 @@ from socorro.external.es.supersearch import SuperSearch
 from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
-
-
 class TestIntegrationAnalyzers(ElasticsearchTestCase):
     """Test the custom analyzers we create in our indices"""
 

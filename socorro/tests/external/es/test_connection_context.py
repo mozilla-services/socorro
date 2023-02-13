@@ -6,12 +6,6 @@ import datetime
 
 from socorro.lib.libdatetime import utc_now
 
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
-
 
 class TestConnectionContext:
     def test_create_index(self, es_conn):

@@ -13,12 +13,6 @@ from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib import BadArgumentError, libdatetime, search_common
 from socorro.tests.external.es.base import ElasticsearchTestCase
 
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
-
 
 class SuperSearchWithFields(SuperSearch):
     """Adds FIELDS to all .get() calls"""

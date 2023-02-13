@@ -17,13 +17,6 @@ from socorro.external.es.super_search_fields import (
 from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
-
-
 def get_fields():
     return copy.deepcopy(FIELDS)
 

@@ -13,12 +13,6 @@ from socorro.external.es.query import Query
 from socorro.lib.libdatetime import utc_now, date_to_string
 from socorro.tests.external.es.base import ElasticsearchTestCase
 
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
-# logging.getLogger('requests').setLevel(logging.ERROR)
-
 
 class TestIntegrationQuery(ElasticsearchTestCase):
     """Test Query with an elasticsearch database containing fake data."""

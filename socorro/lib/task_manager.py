@@ -10,16 +10,20 @@ from configman import RequiredConfig, Namespace
 
 
 def default_task_func(a_param):
-    """This default consumer function just doesn't do anything.  It is a
-    placeholder just to demonstrate the api and not really for any other
-    purpose"""
-    pass
+    """Default task function.
+    This default consumer function just doesn't do anything.  It is a placeholder just
+    to demonstrate the api and not really for any other purpose.
+    """
 
 
 def default_iterator():
-    """This default producer's iterator yields the integers 0 through 9 and
-    then yields none forever thereafter.  It is a placeholder to demonstrate
-    the  api and not used for anything in a real system."""
+    """Default iterator for tasks.
+
+    This default producer's iterator yields the integers 0 through 9 and then yields
+    none forever thereafter. It is a placeholder to demonstrate the api and not used
+    for anything in a real system.
+
+    """
     for x in range(10):
         yield ((x,), {})
     while True:
@@ -27,23 +31,21 @@ def default_iterator():
 
 
 def respond_to_SIGTERM(signal_number, frame, target=None):
-    """these classes are instrumented to respond to a KeyboardInterrupt by
-    cleanly shutting down.  This function, when given as a handler to for
-    a SIGTERM event, will make the program respond to a SIGTERM as neatly
-    as it responds to ^C.
+    """Handles SIGTERM event
 
-    This function is used in registering a signal handler from the signal
-    module.  It should be registered for any signal for which the desired
-    behavior is to kill the application:
+    These classes are instrumented to respond to a KeyboardInterrupt by cleanly shutting
+    down.  This function, when given as a handler to for a SIGTERM event, will make the
+    program respond to a SIGTERM as neatly as it responds to ^C.
+    This function is used in registering a signal handler from the signal module.  It
+    should be registered for any signal for which the desired behavior is to kill the
+    application::
 
         signal.signal(signal.SIGTERM, respondToSIGTERM)
 
-    parameters:
-
-        signal_number - unused in this function but required by the api.
-        frame - unused in this function but required by the api.
-        target - an instance of a class that has a member called 'task_manager'
-                 that is a derivative of the TaskManager class below.
+    :arg signal_number: unused in this function but required by the api
+    :arg frame: unused in this function but required by the api
+    :arg target: an instance of a class that has a member called 'task_manager'
+        that is a derivative of the TaskManager class below.
 
     """
     if target:
@@ -88,11 +90,18 @@ class TaskManager(RequiredConfig):
         self.logger.debug("TaskManager finished init")
 
     def _get_iterator(self):
-        """The iterator passed in can take several forms: a class that can be
-        instantiated and then iterated over; a function that when called
-        returns an iterator; an actual iterator/generator or an iterable
-        collection.  This function sorts all that out and returns an iterator
-        that can be used"""
+        """Return an iterator from the job_source_iterator
+
+        job_source_iterator can be one of a few things:
+
+        * a class that can be instantiated and iterated over
+        * a function that returns an interator
+        * an actual iterator/generator
+        * an iterable collection
+
+        This sorts that out and returns an iterator.
+
+        """
         try:
             return self.job_param_source_iter(self.config)
         except TypeError:
@@ -102,23 +111,23 @@ class TaskManager(RequiredConfig):
                 return self.job_param_source_iter
 
     def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
-        """When there is litte work to do, the queuing thread sleeps a lot.
-        It can't sleep for too long without checking for the quit flag and/or
-        logging about why it is sleeping.
+        """Responsive sleep that checks for quit flag
 
-        parameters:
-            seconds - the number of seconds to sleep
-            wait_log_interval - while sleeping, it is helpful if the thread
-                                periodically announces itself so that we
-                                know that it is still alive.  This number is
-                                the time in seconds between log entries.
-            wait_reason - the is for the explaination of why the thread is
-                          sleeping.  This is likely to be a message like:
-                          'there is no work to do'.
+        When there is litte work to do, the queuing thread sleeps a lot. It can't sleep
+        for too long without checking for the quit flag and/or logging about why it is
+        sleeping.
 
-        This was also partially motivated by old versions' of Python inability
-        to KeyboardInterrupt out of a long sleep()."""
+        :arg seconds: the number of seconds to sleep
+        :arg wait_log_interval: while sleeping, it is helpful if the thread
+            periodically announces itself so that we know that it is still alive.
+            This number is the time in seconds between log entries.
+        :arg wait_reason: the is for the explaination of why the thread is
+            sleeping. This is likely to be a message like: 'there is no work to do'.
 
+        This was also partially motivated by old versions' of Python inability to
+        KeyboardInterrupt out of a long sleep().
+
+        """
         for x in range(int(seconds)):
             if wait_log_interval and not x % wait_log_interval:
                 self.logger.info("%s: %dsec of %dsec", wait_reason, x, seconds)
