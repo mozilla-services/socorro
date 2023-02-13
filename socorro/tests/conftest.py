@@ -15,16 +15,15 @@ import sys
 
 import boto3
 from botocore.client import ClientError, Config
-from configman import ConfigurationManager
-from configman.environment import environment
+from elasticsearch_dsl import Search
 from markus.testing import MetricsMock
 import pytest
 import requests_mock
 
-from socorro.external.es.connection_context import (
-    ConnectionContext as ESConnectionContext,
-)
+from socorro import settings
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import utc_now
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 REPOROOT = pathlib.Path(__file__).parent.parent.parent
@@ -81,10 +80,7 @@ def caplogpp(caplog):
 
 
 class BotoHelper:
-    """Helper class inspired by Boto's S3 API.
-
-    The goal here is to automate repetitive things in a convenient way, but
-    be inspired by the existing Boto S3 API.
+    """S3 helper class.
 
     When used in a context, this will clean up any buckets created.
 
@@ -168,37 +164,129 @@ def boto_helper():
         yield boto_helper
 
 
-@pytest.fixture
-def es_conn():
-    """Create an Elasticsearch ConnectionContext and clean up indices afterwards.
+class ElasticsearchHelper:
+    """Elasticsearch helper class.
 
-    This uses defaults and configuration from the environment.
+    When used in a context, this will clean up any indexes created.
 
     """
-    manager = ConfigurationManager(
-        ESConnectionContext.get_required_config(), values_source_list=[environment]
-    )
-    conn = ESConnectionContext(manager.get_config())
 
-    # Create all the indexes for the last couple of weeks; we have to do it this way to
-    # handle split indexes over the new year
-    template = conn.config.elasticsearch_index
-    to_create = set()
+    def __init__(self):
+        self._crashstorage = build_instance_from_settings(
+            settings.CRASH_DESTINATIONS["es"]
+        )
+        self.conn = self._crashstorage.client
 
-    for i in range(14):
-        index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
-        to_create.add(index_name)
+    def get_index_template(self):
+        return self._crashstorage.get_index_template()
 
-    for index_name in to_create:
-        print(f"es_conn: creating index: {index_name}")
-        conn.create_index(index_name)
+    def get_doctype(self):
+        return self._crashstorage.get_doctype()
 
-    conn.health_check()
+    def create_indices(self):
+        # Create all the indexes for the last couple of weeks; we have to do it this way
+        # to handle split indexes over the new year
+        template = self._crashstorage.index
+        to_create = set()
 
-    yield conn
+        for i in range(14):
+            index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
+            to_create.add(index_name)
 
-    for index in conn.get_indices():
-        conn.delete_index(index)
+        for index_name in to_create:
+            print(f"ElasticsearchHelper: creating index: {index_name}")
+            self._crashstorage.create_index(index_name)
+
+        self.health_check()
+
+    def delete_indices(self):
+        for index in self._crashstorage.get_indices():
+            self._crashstorage.delete_index(index)
+
+    def get_indices(self):
+        return self._crashstorage.get_indices()
+
+    def health_check(self):
+        with self.conn() as conn:
+            conn.cluster.health(wait_for_status="yellow", request_timeout=5)
+
+    def get_url(self):
+        """Returns the Elasticsearch url."""
+        return settings.CRASH_DESTINATIONS["es"]["options"]["url"]
+
+    def refresh(self):
+        self.conn.refresh()
+
+    def index_crash(self, raw_crash, processed_crash, refresh=True):
+        """Index a single crash and refresh"""
+        self._crashstorage.save_processed_crash(raw_crash, processed_crash)
+
+        if refresh:
+            self.refresh()
+
+    def index_many_crashes(
+        self, number, raw_crash=None, processed_crash=None, loop_field=None
+    ):
+        """Index multiple crashes and refresh at the end"""
+        processed_crash = processed_crash or {}
+        raw_crash = raw_crash or {}
+
+        crash_ids = []
+        for i in range(number):
+            processed_copy = processed_crash.copy()
+            processed_copy["uuid"] = create_new_ooid()
+            processed_copy["date_processed"] = date_from_ooid(processed_copy["uuid"])
+            if loop_field is not None:
+                processed_copy[loop_field] = processed_crash[loop_field] % i
+
+            self.index_crash(
+                raw_crash=raw_crash, processed_crash=processed_copy, refresh=False
+            )
+
+        self.refresh()
+        return crash_ids
+
+    def get_crash_data(self, crash_id):
+        """Get source in index for given crash_id
+
+        :arg crash_id: the crash id to fetch the source for
+
+        :returns: source as a Python dict
+
+        """
+        index = self._crashstorage.get_index_for_date(date_from_ooid(crash_id))
+        doc_type = self._crashstorage.get_doctype()
+
+        with self.conn() as conn:
+            search = Search(using=conn, index=index, doc_type=doc_type)
+            search = search.filter("term", **{"processed_crash.uuid": crash_id})
+            results = search.execute().to_dict()
+
+            print(results)
+            return results["hits"]["hits"][0]["_source"]
+
+
+@pytest.fixture
+def es_helper():
+    """Returns an ElasticsearchHelper for helping tests.
+
+    Provides:
+
+    * ``get_doctype()``
+    * ``get_url()``
+    * ``create_indices()``
+    * ``delete_indices()``
+    * ``get_indices()``
+    * ``index_crash()``
+    * ``index_many_crashes()``
+    * ``refresh()``
+    * ``get_crash_data()``
+
+    """
+    es_helper = ElasticsearchHelper()
+    es_helper.create_indices()
+    yield es_helper
+    es_helper.delete_indices()
 
 
 class SQSHelper:

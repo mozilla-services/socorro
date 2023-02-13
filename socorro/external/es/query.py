@@ -26,7 +26,7 @@ class Query:
         self.timeout = timeout
 
     def get_connection(self):
-        with self.crashstorage.client(timeout=self.timeout_extended) as conn:
+        with self.crashstorage.client(timeout=self.timeout) as conn:
             return conn
 
     def get(self, **kwargs):
@@ -43,7 +43,6 @@ class Query:
             today = libdatetime.utc_now()
             last_week = today - datetime.timedelta(days=7)
 
-            # FIXME requires crashstorage
             index_template = self.crashstorage.get_index_template()
             indices = generate_list_of_indexes(last_week, today, index_template)
         elif len(params["indices"]) == 1 and params["indices"][0] == "ALL":
@@ -64,7 +63,7 @@ class Query:
         except elasticsearch.exceptions.NotFoundError as e:
             missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
             raise ResourceNotFound(
-                "elasticsearch index '%s' does not exist" % missing_index
+                f"elasticsearch index {missing_index!r} does not exist"
             )
         except elasticsearch.exceptions.TransportError as e:
             raise DatabaseError(e)

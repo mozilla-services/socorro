@@ -106,12 +106,12 @@ class SuperSearch(SearchBase):
         try:
             field_ = self.all_fields[value]
         except KeyError:
-            raise BadArgumentError(value, msg='Unknown field "%s"' % value)
+            raise BadArgumentError(value, msg=f"Unknown field {value!r}")
 
         if not field_["is_returned"]:
             # Returning this field is not allowed.
             raise BadArgumentError(
-                value, msg='Field "%s" is not allowed to be returned' % value
+                value, msg=f"Field {value!r} is not allowed to be returned"
             )
 
         field_name = get_search_key(field_)
@@ -214,7 +214,7 @@ class SuperSearch(SearchBase):
                         if results_number > 1000:
                             raise BadArgumentError(
                                 "_results_number",
-                                msg=("_results_number cannot be greater than 1,000"),
+                                msg="_results_number cannot be greater than 1,000",
                             )
                         if results_number < 0:
                             raise BadArgumentError(
@@ -291,7 +291,7 @@ class SuperSearch(SearchBase):
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_range:
                     filter_type = "range"
@@ -305,7 +305,7 @@ class SuperSearch(SearchBase):
                 elif param.operator == "@":
                     filter_type = "regexp"
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
                     filter_type = "query"
@@ -313,7 +313,7 @@ class SuperSearch(SearchBase):
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
 
                     q_args = {}
                     q_args[search_key] = (
@@ -536,7 +536,7 @@ class SuperSearch(SearchBase):
                         param, histogram_bucket, facets_size, histogram_intervals
                     )
 
-                search.aggs.bucket("histogram_%s" % f, histogram_bucket)
+                search.aggs.bucket(f"histogram_{f}", histogram_bucket)
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
@@ -566,13 +566,13 @@ class SuperSearch(SearchBase):
                 if field_name not in self.histogram_fields:
                     continue
 
-                bucket_name = "histogram_%s" % field_name
+                bucket_name = f"histogram_{field_name}"
                 bucket = self._get_histogram_agg(field_name, histogram_intervals)
 
             elif field.startswith("_cardinality"):
                 field_name = field[len("_cardinality.") :]
 
-                bucket_name = "cardinality_%s" % field_name
+                bucket_name = f"cardinality_{field_name}"
                 bucket = self._get_cardinality_agg(field_name)
 
             else:

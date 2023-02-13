@@ -26,6 +26,7 @@ from socorro.external.es.super_search_fields import (
 
 from socorro.lib.libdatetime import JsonDTEncoder, string_to_datetime, utc_now
 
+
 # Additional custom analyzers for crash report data
 ES_CUSTOM_ANALYZERS = {
     "analyzer": {"semicolon_keywords": {"type": "pattern", "pattern": ";"}}
@@ -557,6 +558,9 @@ class ESCrashStorage(CrashStorageBase):
     ):
         """Submit a crash report to elasticsearch"""
         # Attempt to create the index; it's OK if it already exists.
+
+        # FIXME(willkg): we shouldn't do this--instead we should try to index and create
+        # the index if the index doesn't exist
         self.create_index(index_name)
 
         # Submit the crash for indexing.

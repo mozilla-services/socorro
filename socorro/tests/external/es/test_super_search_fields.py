@@ -14,7 +14,6 @@ from socorro.external.es.super_search_fields import (
     is_doc_values_friendly,
     get_fields_by_item,
 )
-from socorro.tests.external.es.base import ElasticsearchTestCase
 
 
 def get_fields():
@@ -87,11 +86,11 @@ class Test_get_fields_by_item:
         assert id(result) != id(third_result)
 
 
-class Test_build_mapping(ElasticsearchTestCase):
+class Test_build_mapping:
     """Test build_mapping with an elasticsearch database containing fake data"""
 
-    def test_get_mapping(self):
-        doctype = self.es_context.get_doctype()
+    def test_get_mapping(self, es_helper):
+        doctype = es_helper.get_doctype()
         mapping = build_mapping(doctype=doctype, fields=get_fields())
 
         assert doctype in mapping

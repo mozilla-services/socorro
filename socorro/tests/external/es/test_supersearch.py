@@ -8,10 +8,14 @@ import json
 import requests_mock
 import pytest
 
+from socorro import settings
 from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.lib import BadArgumentError, libdatetime, search_common
-from socorro.tests.external.es.base import ElasticsearchTestCase
+
+from socorro.libclass import build_instance
+from socorro.lib.libdatetime import utc_now
+from socorro.lib.libooid import create_new_ooid
 
 
 class SuperSearchWithFields(SuperSearch):
@@ -23,21 +27,20 @@ class SuperSearchWithFields(SuperSearch):
         return super().get(**kwargs)
 
 
-class TestIntegrationSuperSearch(ElasticsearchTestCase):
+class TestIntegrationSuperSearch:
     """Test SuperSearch with an elasticsearch database containing fake data."""
 
-    def setup_method(self):
-        super().setup_method()
+    def build_crashstorage(self):
+        return build_instance(
+            class_path="socorro.external.es.crashstorage.ESCrashStorage",
+            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+        )
 
-        config = self.get_base_config(cls=SuperSearchWithFields)
-        self.api = SuperSearchWithFields(config=config)
-        self.now = libdatetime.utc_now()
+    def test_get_indices(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        # Wait until the cluster is yellow before proceeding.
-        self.health_check()
-
-    def test_get_indices(self):
-        now = datetime.datetime(2001, 1, 2, 0, 0)
+        now = datetime.datetime(2021, 1, 2, 0, 0)
         lastweek = now - datetime.timedelta(weeks=1)
         lastmonth = now - datetime.timedelta(weeks=4)
 
@@ -46,21 +49,8 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             search_common.SearchParam("date", lastweek, ">"),
         ]
 
-        res = self.api.get_indices(dates)
-        assert res == ["testsocorro_52", "testsocorro_01"]
-
-        config = self.get_base_config(
-            cls=SuperSearchWithFields, es_index="testsocorro_%Y%W"
-        )
-        api = SuperSearchWithFields(config=config)
-
-        dates = [
-            search_common.SearchParam("date", now, "<"),
-            search_common.SearchParam("date", lastweek, ">"),
-        ]
-
         res = api.get_indices(dates)
-        assert res == ["testsocorro_200052", "testsocorro_200101"]
+        assert res == ["testsocorro202051", "testsocorro202052", "testsocorro202100"]
 
         dates = [
             search_common.SearchParam("date", now, "<"),
@@ -68,21 +58,27 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         ]
 
         res = api.get_indices(dates)
-        expected = [
-            "testsocorro_200049",
-            "testsocorro_200050",
-            "testsocorro_200051",
-            "testsocorro_200052",
-            "testsocorro_200101",
+        assert res == [
+            "testsocorro202048",
+            "testsocorro202049",
+            "testsocorro202050",
+            "testsocorro202051",
+            "testsocorro202052",
+            "testsocorro202100",
         ]
-        assert res == expected
 
-    def test_get(self):
+    def test_get(self, es_helper):
         """Run a very basic test, just to see if things work"""
-        self.index_crash(
-            {
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        es_helper.index_crash(
+            raw_crash={"ProductName": "Firefox"},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
-                "date_processed": self.now,
+                "date_processed": now,
                 "build": 20000000,
                 "os_name": "Linux",
                 "json_dump": {
@@ -90,11 +86,11 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
                         "cpu_count": 4,
                     },
                 },
-            }
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
-        res = self.api.get(
+        res = api.get(
             _columns=["date", "build_id", "platform", "signature", "cpu_count"]
         )
 
@@ -121,72 +117,123 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         # processed_crash.json_dump.system_info.cpu_count -> cpu_count
         assert "cpu_count" in res["hits"][0]
 
-    def test_get_with_bad_results_number(self):
+    def test_get_with_bad_results_number(self, es_helper):
         """Run a very basic test, just to see if things work"""
-        with pytest.raises(BadArgumentError):
-            self.api.get(_columns=["date"], _results_number=-1)
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
 
-    def test_get_with_enum_operators(self):
-        self.index_crash(
-            {
+        with pytest.raises(BadArgumentError):
+            api.get(_columns=["date"], _results_number=-1)
+
+    def test_get_with_enum_operators(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        es_helper.index_crash(
+            raw_crash={"ProductName": "WaterWolf"},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
                 "app_notes": "somebody that I used to know",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {"product": "NightTrain", "app_notes": None, "date_processed": self.now}
+        es_helper.index_crash(
+            raw_crash={"ProductName": "NightTrain"},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "product": "NightTrain",
+                "app_notes": None,
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={"ProductName": "NightTrain"},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
                 "app_notes": "processor that I used to run",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
         # A term that exists.
-        res = self.api.get(product="WaterWolf")
+        res = api.get(product="WaterWolf")
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["product"] == "WaterWolf"
 
         # Not a term that exists.
-        res = self.api.get(product="!WaterWolf")
+        res = api.get(product="!WaterWolf")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
         assert res["hits"][0]["product"] == "NightTrain"
 
         # A term that does not exist.
-        res = self.api.get(product="EarthRacoon")
+        res = api.get(product="EarthRacoon")
 
         assert res["total"] == 0
 
         # A phrase instead of a term.
-        res = self.api.get(app_notes="that I used", _columns=["app_notes"])
+        res = api.get(app_notes="that I used", _columns=["app_notes"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
         for hit in res["hits"]:
             assert "that I used" in hit["app_notes"]
 
-    def test_get_with_string_operators(self):
-        self.index_crash(
-            {"signature": "js::break_your_browser", "date_processed": self.now}
+    def test_get_with_string_operators(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "js::break_your_browser",
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {"signature": "mozilla::js::function", "date_processed": self.now}
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "mozilla::js::function",
+                "date_processed": now,
+            },
         )
-        self.index_crash({"signature": "json_Is_Kewl", "date_processed": self.now})
-        self.index_crash({"signature": "OhILoveMyBrowser", "date_processed": self.now})
-        self.index_crash({"signature": "foo(bar)", "date_processed": self.now})
-        self.es_context.refresh()
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "json_Is_Kewl",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "OhILoveMyBrowser",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "foo(bar)",
+                "date_processed": now,
+            },
+        )
+        es_helper.refresh()
 
         # Test the "contains" operator.
-        res = self.api.get(signature="~js")
+        res = api.get(signature="~js")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -200,7 +247,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Does not contain
-        res = self.api.get(signature="!~js")
+        res = api.get(signature="!~js")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -214,7 +261,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "starts with" operator.
-        res = self.api.get(signature="^js")
+        res = api.get(signature="^js")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -228,7 +275,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Does not start with
-        res = self.api.get(signature="!^js")
+        res = api.get(signature="!^js")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -242,7 +289,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "ends with" operator.
-        res = self.api.get(signature="$browser")
+        res = api.get(signature="$browser")
 
         # Those operators are case-sensitive, so here we expect only 1 result.
         assert res["total"] == 1
@@ -256,7 +303,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "count": 1,
         }
 
-        res = self.api.get(signature="$rowser")
+        res = api.get(signature="$rowser")
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -270,7 +317,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Does not end with
-        res = self.api.get(signature="!$rowser")
+        res = api.get(signature="!$rowser")
 
         assert res["total"] == 3
         assert len(res["hits"]) == 3
@@ -284,37 +331,61 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert facet["count"] == 1
 
         # Test the "regex" operator.
-        res = self.api.get(signature="@mozilla::.*::function")
+        res = api.get(signature="@mozilla::.*::function")
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["signature"] == "mozilla::js::function"
 
-        res = self.api.get(signature='@f.."(bar)"')
+        res = api.get(signature='@f.."(bar)"')
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["signature"] == "foo(bar)"
 
-        res = self.api.get(signature="!@mozilla::.*::function")
+        res = api.get(signature="!@mozilla::.*::function")
         assert res["total"] == 4
         assert len(res["hits"]) == 4
         for hit in res["hits"]:
             assert hit["signature"] != "mozilla::js::function"
 
-    def test_get_with_range_operators(self):
-        self.index_crash({"build": 2000, "date_processed": self.now})
-        self.index_crash({"build": 2001, "date_processed": self.now})
-        self.index_crash({"build": 1999, "date_processed": self.now})
-        self.es_context.refresh()
+    def test_get_with_range_operators(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "build": 2000,
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "build": 2001,
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "build": 1999,
+                "date_processed": now,
+            },
+        )
+        es_helper.refresh()
 
         # Test the "has terms" operator.
-        res = self.api.get(build_id="2000", _columns=["build_id"])
+        res = api.get(build_id="2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 2000
 
         # Does not have terms
-        res = self.api.get(build_id="!2000", _columns=["build_id"])
+        res = api.get(build_id="!2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -322,14 +393,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert hit["build_id"] != 2000
 
         # Test the "greater than" operator.
-        res = self.api.get(build_id=">2000", _columns=["build_id"])
+        res = api.get(build_id=">2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 2001
 
         # Test the "greater than or equal" operator.
-        res = self.api.get(build_id=">=2000", _columns=["build_id"])
+        res = api.get(build_id=">=2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
@@ -337,51 +408,60 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert hit["build_id"] >= 2000
 
         # Test the "lower than" operator.
-        res = self.api.get(build_id="<2000", _columns=["build_id"])
+        res = api.get(build_id="<2000", _columns=["build_id"])
 
         assert res["total"] == 1
         assert len(res["hits"]) == 1
         assert res["hits"][0]["build_id"] == 1999
 
         # Test the "lower than or equal" operator.
-        res = self.api.get(build_id="<=2000", _columns=["build_id"])
+        res = api.get(build_id="<=2000", _columns=["build_id"])
 
         assert res["total"] == 2
         assert len(res["hits"]) == 2
         for hit in res["hits"]:
             assert hit["build_id"] <= 2000
 
-    def test_get_with_bool_operators(self):
-        self.index_crash(
+    def test_get_with_bool_operators(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={"Accessibility": True},
             processed_crash={
-                "date_processed": self.now,
+                "uuid": create_new_ooid(timestamp=now),
+                "date_processed": now,
                 "accessibility": True,
             },
-            raw_crash={"Accessibility": True},
         )
-        self.index_crash(
+        es_helper.index_crash(
+            raw_crash={"Accessibility": False},
             processed_crash={
-                "date_processed": self.now,
+                "uuid": create_new_ooid(timestamp=now),
+                "date_processed": now,
                 "accessibility": False,
             },
-            raw_crash={"Accessibility": False},
         )
-        self.index_crash(
+        es_helper.index_crash(
+            raw_crash={"Accessibility": True},
             processed_crash={
-                "date_processed": self.now,
+                "uuid": create_new_ooid(timestamp=now),
+                "date_processed": now,
                 "accessibility": True,
             },
-            raw_crash={"Accessibility": True},
         )
-        self.index_crash(
-            processed_crash={"date_processed": self.now},
+        es_helper.index_crash(
             # Missing value means it's neither true nor false
             raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
         # Test the "has terms" operator.
-        resp = self.api.get(accessibility="__true__", _columns=["accessibility"])
+        resp = api.get(accessibility="__true__", _columns=["accessibility"])
 
         assert resp["total"] == 2
         assert len(resp["hits"]) == 2
@@ -389,13 +469,16 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             assert hit["accessibility"]
 
         # Is not true -- this picks up both False and None
-        resp = self.api.get(accessibility="!__true__", _columns=["accessibility"])
+        resp = api.get(accessibility="!__true__", _columns=["accessibility"])
 
         assert resp["total"] == 2
         assert len(resp["hits"]) == 2
         assert not resp["hits"][0]["accessibility"]
 
-    def test_get_with_combined_operators(self):
+    def test_get_with_combined_operators(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
         sigs = (
             "js::break_your_browser",
             "mozilla::js::function",
@@ -403,107 +486,134 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "foo(bar)",
         )
 
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[0],
                 "app_notes": "foo bar mozilla",
                 "product": "WaterWolf",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[1],
                 "app_notes": "foo bar",
                 "product": "WaterWolf",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[2],
                 "app_notes": "foo mozilla",
                 "product": "EarthRacoon",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[3],
                 "app_notes": "mozilla bar",
                 "product": "EarthRacoon",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
-        res = self.api.get(signature=["js", "~::"])
+        res = api.get(signature=["js", "~::"])
         assert res["total"] == 3
         assert sorted([x["signature"] for x in res["hits"]]), sorted(
             [sigs[0], sigs[1], sigs[2]]
         )
 
-        res = self.api.get(signature=["js", "~::"], product=["Unknown"])
+        res = api.get(signature=["js", "~::"], product=["Unknown"])
         assert res["total"] == 0
         assert len(res["hits"]) == 0
 
-        res = self.api.get(
-            signature=["js", "~::"], product=["WaterWolf", "EarthRacoon"]
-        )
+        res = api.get(signature=["js", "~::"], product=["WaterWolf", "EarthRacoon"])
         assert res["total"] == 3
         assert sorted([x["signature"] for x in res["hits"]]) == sorted(
             [sigs[0], sigs[1], sigs[2]]
         )
 
-        res = self.api.get(signature=["js", "~::"], app_notes=["foo bar"])
+        res = api.get(signature=["js", "~::"], app_notes=["foo bar"])
         assert res["total"] == 2
         assert sorted([x["signature"] for x in res["hits"]]) == sorted(
             [sigs[0], sigs[1]]
         )
 
-    def test_get_with_pagination(self):
+    def test_get_with_pagination(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
         number_of_crashes = 21
-        processed_crash = {"signature": "something", "date_processed": self.now}
-        self.index_many_crashes(number_of_crashes, processed_crash)
+        processed_crash = {"signature": "something"}
+        es_helper.index_many_crashes(
+            number_of_crashes, raw_crash={}, processed_crash=processed_crash
+        )
 
         kwargs = {"_results_number": "10"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
         assert res["total"] == number_of_crashes
         assert len(res["hits"]) == 10
 
         kwargs = {"_results_number": "10", "_results_offset": "10"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
         assert res["total"] == number_of_crashes
         assert len(res["hits"]) == 10
 
         kwargs = {"_results_number": "10", "_results_offset": "15"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
         assert res["total"] == number_of_crashes
         assert len(res["hits"]) == 6
 
         kwargs = {"_results_number": "10", "_results_offset": "30"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
         assert res["total"] == number_of_crashes
         assert len(res["hits"]) == 0
 
-    def test_get_with_sorting(self):
+    def test_get_with_sorting(self, es_helper):
         """Test a search with sort returns expected results"""
-        self.index_crash(
-            {
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {"product": "WaterWolf", "os_name": "Linux", "date_processed": self.now}
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "product": "WaterWolf",
+                "os_name": "Linux",
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {"product": "NightTrain", "os_name": "Linux", "date_processed": self.now}
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "product": "NightTrain",
+                "os_name": "Linux",
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
-        res = self.api.get(_sort="product")
+        res = api.get(_sort="product")
         assert res["total"] > 0
 
         last_item = ""
@@ -512,7 +622,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             last_item = hit["product"]
 
         # Descending order.
-        res = self.api.get(_sort="-product")
+        res = api.get(_sort="-product")
         assert res["total"] > 0
 
         last_item = "zzzzz"
@@ -521,9 +631,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             last_item = hit["product"]
 
         # Several fields.
-        res = self.api.get(
-            _sort=["product", "platform"], _columns=["product", "platform"]
-        )
+        res = api.get(_sort=["product", "platform"], _columns=["product", "platform"])
         assert res["total"] > 0
 
         last_product = ""
@@ -540,53 +648,66 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Invalid field--"something" is invalid
         with pytest.raises(BadArgumentError):
-            self.api.get(_sort="something")
+            api.get(_sort="something")
 
-    def test_get_with_facets(self):
-        self.index_crash(
-            {
+    def test_get_with_facets(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values to test the results limit.
         number_of_crashes = 51
-        processed_crash = {"version": "10.%s", "date_processed": self.now}
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        processed_crash = {"version": "10.%s"}
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test several facets
         kwargs = {"_facets": ["signature", "platform"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "signature" in res["facets"]
@@ -606,7 +727,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with filters
         kwargs = {"_facets": ["product"], "product": "WaterWolf"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "product" in res["facets"]
         expected_terms = [{"term": "WaterWolf", "count": 2}]
@@ -614,7 +735,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with a different filter
         kwargs = {"_facets": ["product"], "platform": "linux"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "product" in res["facets"]
 
@@ -627,78 +748,94 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test the number of results.
         kwargs = {"_facets": ["version"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "version" in res["facets"]
         assert len(res["facets"]["version"]) == 50  # 50 is the default value
 
         # Test with a different number of facets results.
         kwargs = {"_facets": ["version"], "_facets_size": 20}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "version" in res["facets"]
         assert len(res["facets"]["version"]) == 20
 
         kwargs = {"_facets": ["version"], "_facets_size": 100}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "version" in res["facets"]
         assert len(res["facets"]["version"]) == number_of_crashes
 
         # Test errors
         with pytest.raises(BadArgumentError):
-            self.api.get(_facets=["unknownfield"])
+            api.get(_facets=["unknownfield"])
 
-    def test_get_with_too_many_facets(self):
+    def test_get_with_too_many_facets(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
         # Some very big number
         with pytest.raises(BadArgumentError):
-            self.api.get(_facets=["signature"], _facets_size=999999)
+            api.get(_facets=["signature"], _facets_size=999999)
 
         # 10,000 is the max,
         # should not raise an error
-        self.api.get(_facets=["signature"], _facets_size=10000)
+        api.get(_facets=["signature"], _facets_size=10000)
 
-    def test_get_with_no_facets(self):
-        self.index_crash(
-            {
+    def test_get_with_no_facets(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values to test the results limit.
         number_of_crashes = 5
-        processed_crash = {"version": "10.%s", "date_processed": self.now}
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        processed_crash = {"version": "10.%s"}
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test 0 facets
         kwargs = {
@@ -707,57 +844,70 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_aggs.platform": ["_histogram.date"],
             "_facets_size": 0,
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
         assert res["facets"] == {}
         # hits should still work as normal
         assert res["hits"]
         assert len(res["hits"]) == res["total"]
 
-    def test_get_with_cardinality(self):
-        self.index_crash(
-            {
+    def test_get_with_cardinality(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values.
         number_of_crashes = 51
-        processed_crash = {"version": "10.%s", "date_processed": self.now}
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        processed_crash = {"version": "10.%s"}
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test a simple cardinality.
         kwargs = {"_facets": ["_cardinality.platform"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "cardinality_platform" in res["facets"]
@@ -765,7 +915,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test more distinct values.
         kwargs = {"_facets": ["_cardinality.version"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "cardinality_version" in res["facets"]
@@ -773,7 +923,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test as a level 2 aggregation.
         kwargs = {"_aggs.signature": ["_cardinality.platform"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "signature" in res["facets"]
@@ -782,44 +932,55 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test errors
         with pytest.raises(BadArgumentError):
-            self.api.get(_facets=["_cardinality.unknownfield"])
+            api.get(_facets=["_cardinality.unknownfield"])
 
-    def test_get_with_sub_aggregations(self):
-        self.index_crash(
-            {
+    def test_get_with_sub_aggregations(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "version": "2.1",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "version": "2.1",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "version": "2.1",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "version": "2.1",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values to test the results limit.
@@ -827,19 +988,20 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         processed_crash = {
             "version": "10.%s",
             "signature": "crash_me_I_m_famous",
-            "date_processed": self.now,
         }
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test several facets
         kwargs = {
             "_aggs.signature": ["product", "platform"],
             "signature": "!=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "signature" in res["facets"]
@@ -872,7 +1034,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test a different field.
         kwargs = {"_aggs.platform": ["product"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "platform" in res["facets"]
@@ -899,7 +1061,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with filters
         kwargs = {"_aggs.signature": ["product"], "product": "WaterWolf"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "signature" in res["facets"]
         expected_terms = [
@@ -913,7 +1075,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with a different filter
         kwargs = {"_aggs.signature": ["product"], "platform": "linux"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "signature" in res["facets"]
 
@@ -938,7 +1100,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test the number of results.
         kwargs = {"_aggs.signature": ["version"], "signature": "=crash_me_I_m_famous"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "signature" in res["facets"]
         assert "version" in res["facets"]["signature"][0]["facets"]
@@ -952,7 +1114,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 20,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "signature" in res["facets"]
         assert "version" in res["facets"]["signature"][0]["facets"]
@@ -965,14 +1127,14 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 100,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         version_sub_facet = res["facets"]["signature"][0]["facets"]["version"]
         assert len(version_sub_facet) == number_of_crashes
 
         # Test with a third level aggregation.
         kwargs = {"_aggs.product.version": ["_cardinality.signature"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "product" in res["facets"]
         product_facet = res["facets"]["product"]
@@ -984,7 +1146,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test with a fourth level aggregation.
         kwargs = {"_aggs.product.version.platform": ["_cardinality.signature"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "product" in res["facets"]
         product_facet = res["facets"]["product"]
@@ -1001,43 +1163,54 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         args = {}
         args["_aggs.signature"] = ["unknownfield"]
         with pytest.raises(BadArgumentError):
-            self.api.get(**args)
+            api.get(**args)
 
-    def test_get_with_date_histogram(self):
-        yesterday = self.now - datetime.timedelta(days=1)
-        the_day_before = self.now - datetime.timedelta(days=2)
+    def test_get_with_date_histogram(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        yesterday = now - datetime.timedelta(days=1)
+        the_day_before = now - datetime.timedelta(days=2)
 
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Linux",
                 "date_processed": yesterday,
-            }
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "os_name": "Linux",
                 "date_processed": the_day_before,
-            }
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "os_name": "Linux",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values to test the results limit.
@@ -1045,19 +1218,20 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         processed_crash = {
             "version": "10.%s",
             "signature": "crash_me_I_m_famous",
-            "date_processed": self.now,
         }
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test several facets
         kwargs = {
             "_histogram.date": ["product", "platform"],
             "signature": "!=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
         assert "histogram_date" in res["facets"]
@@ -1065,7 +1239,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         def dt_to_midnight(date):
             return date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        today_str = dt_to_midnight(self.now).isoformat()
+        today_str = dt_to_midnight(now).isoformat()
         yesterday_str = dt_to_midnight(yesterday).isoformat()
         day_before_str = dt_to_midnight(the_day_before).isoformat()
 
@@ -1105,7 +1279,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with filters
         kwargs = {"_histogram.date": ["product"], "product": "WaterWolf"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "histogram_date" in res["facets"]
         expected_terms = [
@@ -1124,7 +1298,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with a different filter
         kwargs = {"_histogram.date": ["product"], "platform": "linux"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "histogram_date" in res["facets"]
 
@@ -1149,7 +1323,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test the number of results.
         kwargs = {"_histogram.date": ["version"], "signature": "=crash_me_I_m_famous"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "histogram_date" in res["facets"]
         assert "version" in res["facets"]["histogram_date"][0]["facets"]
@@ -1163,7 +1337,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 20,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "histogram_date" in res["facets"]
         assert "version" in res["facets"]["histogram_date"][0]["facets"]
@@ -1176,7 +1350,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 100,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         version_facet = res["facets"]["histogram_date"][0]["facets"]["version"]
         assert len(version_facet) == number_of_crashes
@@ -1185,9 +1359,12 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         args = {}
         args["_histogram.date"] = ["unknownfield"]
         with pytest.raises(BadArgumentError):
-            self.api.get(**args)
+            api.get(**args)
 
-    def test_get_with_date_histogram_with_bad_interval(self):
+    def test_get_with_date_histogram_with_bad_interval(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
         kwargs = {
             "_histogram.date": ["product", "platform"],
             "signature": "!=crash_me_I_m_famous",
@@ -1197,55 +1374,67 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         # Not using assert_raises here so we can do a check on the exception
         # object when it does raise.
         try:
-            self.api.get(**kwargs)
+            api.get(**kwargs)
             raise AssertionError("The line above is supposed to error out")
         except BadArgumentError as exception:
             assert exception.param == "_histogram_interval.date"
 
-    def test_get_with_number_histogram(self):
-        yesterday = self.now - datetime.timedelta(days=1)
-        the_day_before = self.now - datetime.timedelta(days=2)
+    def test_get_with_number_histogram(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        now = utc_now()
+        yesterday = now - datetime.timedelta(days=1)
+        the_day_before = now - datetime.timedelta(days=2)
 
         time_str = "%Y%m%d%H%M%S"
-        today_int = int(self.now.strftime(time_str))
+        today_int = int(now.strftime(time_str))
         yesterday_int = int(yesterday.strftime(time_str))
         day_before_int = int(the_day_before.strftime(time_str))
 
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Windows NT",
                 "build": today_int,
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=yesterday),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "os_name": "Linux",
                 "build": yesterday_int,
                 "date_processed": yesterday,
-            }
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=the_day_before),
                 "signature": "js::break_your_browser",
                 "product": "NightTrain",
                 "os_name": "Linux",
                 "build": day_before_int,
                 "date_processed": the_day_before,
-            }
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "product": "EarthRacoon",
                 "os_name": "Linux",
                 "build": today_int,
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
 
         # Index a lot of distinct values to test the results limit.
@@ -1254,19 +1443,20 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "version": "10.%s",
             "signature": "crash_me_I_m_famous",
             "build": today_int,
-            "date_processed": self.now,
         }
-        self.index_many_crashes(
-            number_of_crashes, processed_crash, loop_field="version"
+        es_helper.index_many_crashes(
+            number_of_crashes,
+            raw_crash={},
+            processed_crash=processed_crash,
+            loop_field="version",
         )
-        # Note: index_many_crashes does the index refreshing.
 
         # Test several facets
         kwargs = {
             "_histogram.build_id": ["product", "platform"],
             "signature": "!=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "facets" in res
 
@@ -1306,7 +1496,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with filters
         kwargs = {"_histogram.build_id": ["product"], "product": "WaterWolf"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         expected_terms = [
             {
@@ -1324,7 +1514,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test one facet with a different filter
         kwargs = {"_histogram.build_id": ["product"], "platform": "linux"}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         expected_terms = [
             {
@@ -1350,7 +1540,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_histogram.build_id": ["version"],
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "version" in res["facets"]["histogram_build_id"][0]["facets"]
 
@@ -1363,7 +1553,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 20,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "version" in res["facets"]["histogram_build_id"][0]["facets"]
 
@@ -1375,7 +1565,7 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
             "_facets_size": 100,
             "signature": "=crash_me_I_m_famous",
         }
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         version_facet = res["facets"]["histogram_build_id"][0]["facets"]["version"]
         assert len(version_facet) == number_of_crashes
@@ -1384,23 +1574,28 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         args = {}
         args["_histogram.build_id"] = ["unknownfield"]
         with pytest.raises(BadArgumentError):
-            self.api.get(**args)
+            api.get(**args)
 
-    def test_get_with_columns(self):
-        self.index_crash(
-            {
+    def test_get_with_columns(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "cpu_arch": "intel",
                 "os_name": "Windows NT",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
         # Test several facets
         kwargs = {"_columns": ["signature", "platform"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert "signature" in res["hits"][0]
         assert "platform" in res["hits"][0]
@@ -1408,49 +1603,62 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
 
         # Test errors
         with pytest.raises(BadArgumentError):
-            self.api.get(_columns=["unknownfield"])
+            api.get(_columns=["unknownfield"])
 
         with pytest.raises(BadArgumentError):
-            self.api.get(_columns=["fake_field"])
+            api.get(_columns=["fake_field"])
 
-    def test_get_with_beta_version(self):
-        self.index_crash(
-            {
+    def test_get_with_beta_version(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "version": "4.0b2",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "version": "4.0b3",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.index_crash(
-            {
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "product": "WaterWolf",
                 "version": "5.0a1",
-                "date_processed": self.now,
-            }
+                "date_processed": now,
+            },
         )
-        self.es_context.refresh()
+        es_helper.refresh()
 
         # Test several facets
         kwargs = {"version": ["4.0b"]}
-        res = self.api.get(**kwargs)
+        res = api.get(**kwargs)
 
         assert res["total"] == 2
 
         for hit in res["hits"]:
             assert "4.0b" in hit["version"]
 
-    def test_get_against_nonexistent_index(self):
-        # Create start and end dates to look at indices in, but anchor them to monday so
+    def test_get_against_nonexistent_index(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        es_helper.delete_indices()
+
         # it's not moving around over week barriers
         end = libdatetime.utc_now()
         while end.weekday() != 0:
@@ -1458,10 +1666,6 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         start = end - datetime.timedelta(days=10)
         end = end.strftime("%Y-%m-%dT%H:%M:%S")
         start = start.strftime("%Y-%m-%dT%H:%M:%S")
-        config = self.get_base_config(
-            cls=SuperSearchWithFields, es_index="socorro_test_reports_%W"
-        )
-        api = SuperSearchWithFields(config=config)
         params = {"date": [">%s" % start, "<%s" % end]}
 
         res = api.get(**params)
@@ -1471,14 +1675,20 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         # this is either 3 or 4 weeks; fun times
         assert len(res["errors"]) in [3, 4]
 
-    def test_get_too_large_date_range(self):
+    def test_get_too_large_date_range(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
         # this is a whole year apart
         params = {"date": [">2000-01-01T00:00:00", "<2001-01-10T00:00:00"]}
         with pytest.raises(BadArgumentError):
-            self.api.get(**params)
+            api.get(**params)
 
-    def test_get_return_query_mode(self):
-        res = self.api.get(signature="js", _return_query=True)
+    def test_get_return_query_mode(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        res = api.get(signature="js", _return_query=True)
         assert "query" in res
         assert "indices" in res
 
@@ -1487,111 +1697,125 @@ class TestIntegrationSuperSearch(ElasticsearchTestCase):
         assert "aggs" in query
         assert "size" in query
 
-    def test_get_with_zero(self):
-        res = self.api.get(_results_number=0)
+    def test_get_with_zero(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        res = api.get(_results_number=0)
         assert len(res["hits"]) == 0
 
-    def test_get_with_too_many(self):
-        with pytest.raises(BadArgumentError):
-            self.api.get(_results_number=1001)
+    def test_get_with_too_many(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
 
-    def test_get_with_bad_regex(self):
+        with pytest.raises(BadArgumentError):
+            api.get(_results_number=1001)
+
+    def test_get_with_bad_regex(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
         # A bad regex kicks up a SearchParseException which supersearch converts
         # to a BadArgumentError
         with pytest.raises(BadArgumentError):
-            self.api.get(
-                signature='@"OOM | ".*" | ".*"()&%<acx><ScRiPt >sruq(9393)</ScRiPt'
-            )
+            api.get(signature='@"OOM | ".*" | ".*"()&%<acx><ScRiPt >sruq(9393)</ScRiPt')
 
-    def test_get_with_failing_shards(self):
+    def test_get_with_failing_shards(self, es_helper):
         # NOTE(willkg): We're asserting on a url which includes the indexes being
         # searched. If the index template includes a date, then the indexes could be in
         # any order, so we don't include date bits and then we're guaranteed for that
         # part of the url to be stable for mocking.
-        index_name = "testsocorro_nodate"
-
-        config = self.get_base_config(cls=SuperSearchWithFields, es_index=index_name)
-        api = SuperSearchWithFields(config=config)
-
-        with requests_mock.Mocker(real_http=False) as mock_requests:
-            # Test with one failing shard.
-            es_results = {
-                "hits": {"hits": [], "total": 0, "max_score": None},
-                "timed_out": False,
-                "took": 194,
-                "_shards": {
-                    "successful": 9,
-                    "failed": 1,
-                    "total": 10,
-                    "failures": [
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": "foo bar gone bad",
-                            "shard": 3,
-                        }
-                    ],
-                },
+        index_name = "testsocorro_module"
+        with settings.override(
+            **{
+                "CRASH_DESTINATIONS.es.options.index": index_name,
+                "CRASH_DESTINATIONS.es.options.index_regex": f"^{index_name}$",
             }
+        ):
+            crashstorage = self.build_crashstorage()
+            api = SuperSearchWithFields(crashstorage=crashstorage)
 
-            mock_requests.get(
-                "{url}/{index}/crash_reports/_search".format(
-                    url=self.get_url(),
-                    index=index_name,
-                ),
-                text=json.dumps(es_results),
-            )
+            with requests_mock.Mocker(real_http=False) as mock_requests:
+                # Test with one failing shard.
+                es_results = {
+                    "hits": {"hits": [], "total": 0, "max_score": None},
+                    "timed_out": False,
+                    "took": 194,
+                    "_shards": {
+                        "successful": 9,
+                        "failed": 1,
+                        "total": 10,
+                        "failures": [
+                            {
+                                "status": 500,
+                                "index": "fake_index",
+                                "reason": "foo bar gone bad",
+                                "shard": 3,
+                            }
+                        ],
+                    },
+                }
 
-            res = api.get()
+                mock_requests.get(
+                    "{url}/{index}/crash_reports/_search".format(
+                        url=es_helper.get_url(),
+                        index=index_name,
+                    ),
+                    text=json.dumps(es_results),
+                )
 
-            errors_exp = [{"type": "shards", "index": "fake_index", "shards_count": 1}]
-            assert res["errors"] == errors_exp
+                res = api.get()
 
-            # Test with several failures.
-            es_results = {
-                "hits": {"hits": [], "total": 0, "max_score": None},
-                "timed_out": False,
-                "took": 194,
-                "_shards": {
-                    "successful": 9,
-                    "failed": 3,
-                    "total": 10,
-                    "failures": [
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": "foo bar gone bad",
-                            "shard": 2,
-                        },
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": "foo bar gone bad",
-                            "shard": 3,
-                        },
-                        {
-                            "status": 500,
-                            "index": "other_index",
-                            "reason": "foo bar gone bad",
-                            "shard": 1,
-                        },
-                    ],
-                },
-            }
+                errors_exp = [
+                    {"type": "shards", "index": "fake_index", "shards_count": 1}
+                ]
+                assert res["errors"] == errors_exp
 
-            mock_requests.get(
-                "{url}/{index}/crash_reports/_search".format(
-                    url=self.get_url(),
-                    index=index_name,
-                ),
-                text=json.dumps(es_results),
-            )
+                # Test with several failures.
+                es_results = {
+                    "hits": {"hits": [], "total": 0, "max_score": None},
+                    "timed_out": False,
+                    "took": 194,
+                    "_shards": {
+                        "successful": 9,
+                        "failed": 3,
+                        "total": 10,
+                        "failures": [
+                            {
+                                "status": 500,
+                                "index": "fake_index",
+                                "reason": "foo bar gone bad",
+                                "shard": 2,
+                            },
+                            {
+                                "status": 500,
+                                "index": "fake_index",
+                                "reason": "foo bar gone bad",
+                                "shard": 3,
+                            },
+                            {
+                                "status": 500,
+                                "index": "other_index",
+                                "reason": "foo bar gone bad",
+                                "shard": 1,
+                            },
+                        ],
+                    },
+                }
 
-            res = api.get()
-            assert "errors" in res
+                mock_requests.get(
+                    "{url}/{index}/crash_reports/_search".format(
+                        url=es_helper.get_url(),
+                        index=index_name,
+                    ),
+                    text=json.dumps(es_results),
+                )
 
-            errors_exp = [
-                {"type": "shards", "index": "fake_index", "shards_count": 2},
-                {"type": "shards", "index": "other_index", "shards_count": 1},
-            ]
-            assert res["errors"] == errors_exp
+                res = api.get()
+                assert "errors" in res
+
+                errors_exp = [
+                    {"type": "shards", "index": "fake_index", "shards_count": 2},
+                    {"type": "shards", "index": "other_index", "shards_count": 1},
+                ]
+                assert res["errors"] == errors_exp
