@@ -2,15 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
-import sys
-
 from click.testing import CliRunner
 
-# Have to include the scripts/ directory so it imports
-sys.path.insert(0, os.path.join(os.getcwd(), "bin"))
-
-from remove_field import cmd_remove_field  # noqa
+from remove_field import cmd_remove_field
 
 
 def test_it_runs():
