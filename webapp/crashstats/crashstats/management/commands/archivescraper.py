@@ -94,19 +94,13 @@ def key_for_build_link(link):
 
 def get_session():
     """Return a retryable requests session."""
-    # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds, then
-    # it has issues and we should try again some other time
+    # NOTE(willkg): If archive.mozilla.org is timing out after 5 seconds, then it has
+    # issues and we should try again some other time
     return session_with_retries(default_timeout=5.0)
 
 
 class Downloader:
-    """Downloader class.
-
-    NOTE(willkg): I broke this out because it needs to be serializable so it
-    works with concurrant.futures. configman isn't serializable. Once we stop
-    using configman, we can merge this again.
-
-    """
+    """Downloader class."""
 
     def __init__(self, base_url, num_workers, verbose):
         self.base_url = base_url
