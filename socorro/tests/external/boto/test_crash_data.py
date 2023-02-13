@@ -36,14 +36,14 @@ TELEMETRY_SETTINGS = {
 
 
 class TestSimplifiedCrashData:
-    def test_get_processed(self, boto_helper):
+    def test_get_processed(self, s3_helper):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
-        boto_helper.upload_fileobj(
+        s3_helper.upload_fileobj(
             bucket_name=bucket,
             key=f"v1/processed_crash/{crash_id}",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
@@ -52,24 +52,24 @@ class TestSimplifiedCrashData:
         result = crashdata.get(uuid=crash_id, datatype="processed")
         assert result == {"foo": "bar"}
 
-    def test_get_processed_not_found(self, boto_helper):
+    def test_get_processed_not_found(self, s3_helper):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
             crashdata.get(uuid=crash_id, datatype="processed")
 
-    def test_get_raw_dump(self, boto_helper):
+    def test_get_raw_dump(self, s3_helper):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
-        boto_helper.upload_fileobj(
+        s3_helper.upload_fileobj(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b"\xa0",
@@ -78,22 +78,22 @@ class TestSimplifiedCrashData:
         result = crashdata.get(uuid=crash_id, datatype="raw")
         assert result == b"\xa0"
 
-    def test_get_raw_dump_not_found(self, boto_helper):
+    def test_get_raw_dump_not_found(self, s3_helper):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
             crashdata.get(uuid=crash_id, datatype="raw")
 
-    def test_get_raw_crash_not_found(self, boto_helper):
+    def test_get_raw_crash_not_found(self, s3_helper):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
         crash_id = "0bba929f-8721-460c-dead-a43c20071027"
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
             crashdata.get(uuid=crash_id, datatype="meta")
@@ -114,13 +114,13 @@ class TestSimplifiedCrashData:
 
 
 class TestTelemetryCrashData:
-    def test_get_data(self, boto_helper):
+    def test_get_data(self, s3_helper):
         crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
 
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
-        boto_helper.upload_fileobj(
+        s3_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
@@ -129,11 +129,11 @@ class TestTelemetryCrashData:
         result = crashdata.get(uuid="0bba929f-8721-460c-dead-a43c20071027")
         assert result == {"foo": "bar"}
 
-    def test_get_data_not_found(self, boto_helper):
+    def test_get_data_not_found(self, s3_helper):
         crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
 
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
-        boto_helper.create_bucket(bucket)
+        s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
             crashdata.get(uuid="0bba929f-8721-460c-dead-a43c20071027")

@@ -79,7 +79,7 @@ def caplogpp(caplog):
         logger.propagate = False
 
 
-class BotoHelper:
+class S3Helper:
     """S3 helper class.
 
     When used in a context, this will clean up any buckets created.
@@ -148,8 +148,8 @@ class BotoHelper:
 
 
 @pytest.fixture
-def boto_helper():
-    """Returns a BotoHelper for automating repetitive tasks in S3 setup.
+def s3_helper():
+    """Returns an S3Helper for automating repetitive tasks in S3 setup.
 
     Provides:
 
@@ -160,8 +160,8 @@ def boto_helper():
     * ``list(bucket_name)``
 
     """
-    with BotoHelper() as boto_helper:
-        yield boto_helper
+    with S3Helper() as s3_helper:
+        yield s3_helper
 
 
 class ElasticsearchHelper:

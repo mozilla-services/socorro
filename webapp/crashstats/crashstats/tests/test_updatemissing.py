@@ -15,15 +15,15 @@ BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
 
 
 class TestUpdateMissing:
-    def create_raw_crash_in_s3(self, boto_helper, crash_id):
-        boto_helper.upload_fileobj(
+    def create_raw_crash_in_s3(self, s3_helper, crash_id):
+        s3_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
             key="v1/raw_crash/%s/%s" % (TODAY, crash_id),
             data=b"test",
         )
 
-    def create_processed_crash_in_s3(self, boto_helper, crash_id):
-        boto_helper.upload_fileobj(
+    def create_processed_crash_in_s3(self, s3_helper, crash_id):
+        s3_helper.upload_fileobj(
             bucket_name=BUCKET_NAME,
             key="v1/processed_crash/%s" % crash_id,
             data=b"test",
@@ -60,7 +60,7 @@ class TestUpdateMissing:
         mpe = MissingProcessedCrash.objects.get(crash_id=crash_id)
         assert mpe.is_processed is False
 
-    def test_past_missing_no_longer_missing(self, capsys, db, es_conn, boto_helper):
+    def test_past_missing_no_longer_missing(self, capsys, db, es_conn, s3_helper):
         # Create a MissingProcessedCrash row and put the processed crash in the S3
         # bucket. After check_past_missing() runs, the MissingProcessedCrash should
         # have is_processed=True.
@@ -68,8 +68,8 @@ class TestUpdateMissing:
         mpe = MissingProcessedCrash(crash_id=crash_id, is_processed=False)
         mpe.save()
 
-        self.create_raw_crash_in_s3(boto_helper, crash_id)
-        self.create_processed_crash_in_s3(boto_helper, crash_id)
+        self.create_raw_crash_in_s3(s3_helper, crash_id)
+        self.create_processed_crash_in_s3(s3_helper, crash_id)
         self.create_processed_crash_in_es(es_conn, crash_id)
 
         cmd = Command()
