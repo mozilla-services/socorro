@@ -123,6 +123,9 @@ class S3Helper:
     def get_crashstorage_bucket(self):
         return os.environ["CRASHSTORAGE_S3_BUCKET"]
 
+    def get_telemetry_bucket(self):
+        return os.environ["TELEMETRY_S3_BUCKET"]
+
     def create_bucket(self, bucket_name):
         """Create specified bucket if it doesn't exist."""
         try:
@@ -157,6 +160,7 @@ def s3_helper():
     Provides:
 
     * ``get_client()``
+    * ``get_crashstorage_bucket()``
     * ``create_bucket(bucket_name)``
     * ``upload_fileobj(bucket_name, key, value)``
     * ``download_fileobj(bucket_name, key)``

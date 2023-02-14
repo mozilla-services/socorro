@@ -9,7 +9,6 @@ from unittest import mock
 
 from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
-from django.conf import settings
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.encoding import smart_str
@@ -593,15 +592,15 @@ class TestCrashVerify:
             }
 
         with mock.patch(
-            "crashstats.supersearch.models.SuperSearch.implementation"
+            "crashstats.supersearch.models.SuperSearch.get_implementation"
         ) as mock_ss:
             mock_ss.return_value.get.side_effect = mocked_supersearch_get
             yield
 
     def create_s3_buckets(self, s3_helper):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = s3_helper.get_crashstorage_bucket()
         s3_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
+        telemetry_bucket = s3_helper.get_telemetry_bucket()
         s3_helper.create_bucket(telemetry_bucket)
 
     def test_bad_uuid(self, client):
@@ -638,7 +637,7 @@ class TestCrashVerify:
         uuid = create_new_ooid()
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = s3_helper.get_crashstorage_bucket()
         raw_crash_key = "v1/raw_crash/20%s/%s" % (uuid[-6:], uuid)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
@@ -671,7 +670,7 @@ class TestCrashVerify:
             "completed_datetime": "2022-03-14 10:56:50.902884",
         }
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = s3_helper.get_crashstorage_bucket()
         s3_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/processed_crash/%s" % uuid,
@@ -703,7 +702,7 @@ class TestCrashVerify:
             "uuid": uuid,
         }
 
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
+        telemetry_bucket = s3_helper.get_telemetry_bucket()
         s3_helper.upload_fileobj(
             bucket_name=telemetry_bucket,
             key="v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
