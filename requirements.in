@@ -70,7 +70,7 @@ importlib_resources==5.10.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 4.2 (2023).
-django==3.2.17
+django==3.2.18
 
 # NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
 # because they work with the cluster we're using
