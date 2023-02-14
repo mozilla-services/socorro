@@ -7,41 +7,38 @@ from urllib.parse import quote
 from unittest import mock
 
 import pyquery
+import pytest
 
 from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats import models
-from crashstats.crashstats.tests.test_views import BaseTestViews
 from crashstats.supersearch.models import SuperSearchUnredacted
 
 
 DUMB_SIGNATURE = "hang | mozilla::wow::such_signature(smth*)"
 
 
-class TestViews(BaseTestViews):
-    def setUp(self):
-        super().setUp()
-        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
-        # supersearch mocking
-        self.mock_gvfp = mock.patch(
-            "crashstats.crashstats.utils.get_versions_for_product"
-        )
-        self.mock_gvfp.return_value = ["20.0", "19.1", "19.0", "18.0"]
-        self.mock_gvfp.start()
+@pytest.fixture
+def mocked_get_versions_for_product():
+    with mock.patch(
+        "crashstats.crashstats.utils.get_versions_for_product"
+    ) as mock_gvfp:
+        mock_gvfp.return_value = ["20.0", "19.1", "19.0", "18.0"]
+        yield
 
-    def tearDown(self):
-        self.mock_gvfp.stop()
-        super().tearDown()
 
-    def test_signature_report(self):
+class TestViews:
+    def test_signature_report(self, client, db, es_helper):
         url = reverse("signature:signature_report")
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": DUMB_SIGNATURE})
         assert response.status_code == 200
         assert DUMB_SIGNATURE in smart_str(response.content)
         assert "Loading" in smart_str(response.content)
 
-    def test_signature_reports(self):
+    def test_signature_reports(self, client, db, es_helper):
+        # FIXME(willkg): rewrite these
+
         def mocked_supersearch_get(**params):
             assert "_columns" in params
             assert "uuid" in params["_columns"]

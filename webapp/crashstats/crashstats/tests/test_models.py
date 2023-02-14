@@ -15,9 +15,11 @@ from django.utils import dateparse
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
+from socorro import settings as socorro_settings
+from socorro.external.boto.crashstorage import dict_to_str, build_keys as s3_build_keys
 from socorro.lib import BadArgumentError
-from socorro.lib.libooid import create_new_ooid
-from socorro.tests.external.sqs import get_sqs_config, SQSHelper
+from socorro.libclass import build_instance_from_settings
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 class TestGraphicsDevices(DjangoTestCase):
@@ -362,82 +364,6 @@ class TestMiddlewareModels(DjangoTestCase):
         with pytest.raises(models.BugzillaRestHTTPUnexpectedError):
             api.get("123456789")
 
-    def test_processed_crash(self):
-        model = models.ProcessedCrash
-        api = model()
-
-        def mocked_get(**params):
-            assert "datatype" in params
-            assert params["datatype"] == "processed"
-
-            return {
-                "product": "WaterWolf",
-                "uuid": "7c44ade2-fdeb-4d6c-830a-07d302120525",
-                "version": "13.0",
-                "build": "20120501201020",
-                "ReleaseChannel": "beta",
-                "os_name": "Windows NT",
-                "date_processed": "2022-05-15T11:35:57",
-                "success": True,
-                "signature": "CLocalEndpointEnumerator::OnMediaNotific",
-                "addons": [
-                    "testpilot@labs.mozilla.com:1.2.1",
-                    "{972ce4c6-7e08-4474-a285-3208198ce6fd}:13.0",
-                ],
-            }
-
-        model.implementation().get.side_effect = mocked_get
-        r = api.get(crash_id="7c44ade2-fdeb-4d6c-830a-07d302120525")
-        assert r["product"]
-
-    def test_raw_crash(self):
-        model = models.RawCrash
-        api = model()
-
-        def mocked_get(**params):
-            return {
-                "InstallTime": "1339289895",
-                "Theme": "classic/1.0",
-                "Version": "5.0a1",
-                "Vendor": "Mozilla",
-            }
-
-        model.implementation().get.side_effect = mocked_get
-        r = api.get(crash_id="some-crash-id")
-        assert r["Vendor"] == "Mozilla"
-
-    def test_raw_crash_invalid_id(self):
-        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
-        # the implementation code.
-        models.RawCrash.implementation = self._mockeries[models.RawCrash]
-        model = models.RawCrash
-        api = model()
-
-        with pytest.raises(BadArgumentError):
-            api.get(crash_id="821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh")
-
-    def test_raw_crash_raw_data(self):
-        model = models.RawCrash
-        api = model()
-
-        mocked_calls = []
-
-        def mocked_get(**params):
-            mocked_calls.append(params)
-            assert params["datatype"] == "raw"
-            if params.get("name") == "other":
-                return "\xe0\xe0"
-            else:
-                return "\xe0"
-
-        model.implementation().get.side_effect = mocked_get
-
-        r = api.get(crash_id="some-crash-id", format="raw")
-        assert r == "\xe0"
-
-        r = api.get(crash_id="some-crash-id", format="raw", name="other")
-        assert r == "\xe0\xe0"
-
     @mock.patch("requests.Session")
     def test_massive_querystring_caching(self, rsession):
         # doesn't actually matter so much what API model we use
@@ -465,13 +391,105 @@ class TestMiddlewareModels(DjangoTestCase):
         info = api.get(bugnumbers)
         assert info
 
-    def test_Reprocessing(self):
-        # This test runs against the AWS SQS emulator, so undo the mock to let
-        # that work.
-        self.undo_implementation_mock(models.Reprocessing)
 
-        config = get_sqs_config()
-        sqs_helper = SQSHelper(config)
+class TestProcessedCrash:
+    def test_api(self, s3_helper):
+        api = models.ProcessedCrash()
+
+        crash_id = create_new_ooid()
+        processed_crash = {
+            "product": "WaterWolf",
+            "uuid": crash_id,
+            "version": "13.0",
+            "build": "20120501201020",
+            "ReleaseChannel": "beta",
+            "os_name": "Windows NT",
+            "date_processed": date_from_ooid(crash_id),
+            "success": True,
+            "signature": "CLocalEndpointEnumerator::OnMediaNotific",
+            "addons": [
+                "testpilot@labs.mozilla.com:1.2.1",
+                "{972ce4c6-7e08-4474-a285-3208198ce6fd}:13.0",
+            ],
+        }
+
+        key = s3_build_keys("processed_crash", crash_id)[0]
+        crashstorage = build_instance_from_settings(
+            socorro_settings.CRASH_DESTINATIONS["s3"]
+        )
+        data = dict_to_str(processed_crash).encode("utf-8")
+        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
+
+        ret = api.get(crash_id=crash_id)
+        assert ret == {
+            "product": "WaterWolf",
+            "uuid": crash_id,
+            "version": "13.0",
+            "build": "20120501201020",
+            # NOTE(willkg): ReleaseChannel isn't in the processed_crash schema, so it's
+            # dropped
+            "os_name": "Windows NT",
+            "date_processed": mock.ANY,
+            "success": True,
+            "signature": "CLocalEndpointEnumerator::OnMediaNotific",
+            "addons": [
+                "testpilot@labs.mozilla.com:1.2.1",
+                "{972ce4c6-7e08-4474-a285-3208198ce6fd}:13.0",
+            ],
+        }
+
+
+class TestRawCrash:
+    def test_api(self, s3_helper):
+        api = models.RawCrash()
+
+        crash_id = create_new_ooid()
+        raw_crash = {
+            "InstallTime": "1339289895",
+            "Theme": "classic/1.0",
+            "Version": "5.0a1",
+            "Vendor": "Mozilla",
+        }
+
+        key = s3_build_keys("raw_crash", crash_id)[0]
+        crashstorage = build_instance_from_settings(
+            socorro_settings.CRASH_DESTINATIONS["s3"]
+        )
+        data = dict_to_str(raw_crash).encode("utf-8")
+        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
+
+        ret = api.get(crash_id=crash_id)
+        assert ret == {
+            "InstallTime": "1339289895",
+            # NOTE(willkg): Theme isn't in the raw_crash schema, so it's dropped
+            "Version": "5.0a1",
+            "Vendor": "Mozilla",
+            "version": 2,
+        }
+
+    def test_invalid_id(self):
+        api = models.RawCrash()
+        with pytest.raises(BadArgumentError):
+            api.get(crash_id="821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh")
+
+    def test_raw_data(self, s3_helper):
+        api = models.RawCrash()
+
+        crash_id = create_new_ooid()
+        dump = b"abcde"
+
+        key = s3_build_keys("dump", crash_id)[0]
+        crashstorage = build_instance_from_settings(
+            socorro_settings.CRASH_DESTINATIONS["s3"]
+        )
+        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=dump)
+
+        r = api.get(crash_id=crash_id, format="raw", name="upload_file_minidump")
+        assert r == dump
+
+
+class TestReprocessing:
+    def test_Reprocessing(self, sqs_helper):
         api = models.Reprocessing()
 
         with sqs_helper as helper:
@@ -485,13 +503,9 @@ class TestMiddlewareModels(DjangoTestCase):
         with pytest.raises(BadArgumentError):
             api.post(crash_ids="some-crash-id")
 
-    def test_PriorityJob(self):
-        # This test runs against the AWS SQS emulator, so undo the mock to let
-        # that work.
-        self.undo_implementation_mock(models.PriorityJob)
 
-        config = get_sqs_config()
-        sqs_helper = SQSHelper(config)
+class TestPriorityJob:
+    def test_api(self, sqs_helper):
         api = models.PriorityJob()
 
         with sqs_helper as helper:
