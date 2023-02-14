@@ -4,8 +4,6 @@
 
 import os
 
-from django.conf import settings
-
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.crashstats.management.commands.verifyprocessed import Command
 from socorro.lib.libdatetime import utc_now
@@ -31,36 +29,29 @@ class TestVerifyProcessed:
             "crash_id", flat=True
         )
 
-    def create_raw_crash_in_s3(self, s3_helper, crash_id):
+    def create_raw_crash_in_s3(self, s3_helper, bucket_name, crash_id):
         s3_helper.upload_fileobj(
-            bucket_name=BUCKET_NAME,
-            key="v1/raw_crash/%s/%s" % (TODAY, crash_id),
+            bucket_name=bucket_name,
+            key=f"v1/raw_crash/{TODAY}/{crash_id}",
             data=b"test",
         )
 
-    def create_processed_crash_in_s3(self, s3_helper, crash_id):
+    def create_processed_crash_in_s3(self, s3_helper, bucket_name, crash_id):
         s3_helper.upload_fileobj(
-            bucket_name=BUCKET_NAME,
-            key="v1/processed_crash/%s" % crash_id,
+            bucket_name=bucket_name,
+            key=f"v1/processed_crash/{crash_id}",
             data=b"test",
         )
 
-    def create_processed_crash_in_es(self, es_conn, crash_id):
+    def create_processed_crash_in_es(self, es_helper, crash_id):
         crash_date = date_from_ooid(crash_id)
-        document = {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "uuid": crash_id,
-                "signature": "OOM | Small",
-                "date_processed": crash_date,
-            },
+        raw_crash = {}
+        processed_crash = {
+            "uuid": crash_id,
+            "signature": "OOM | Small",
+            "date_processed": crash_date,
         }
-        index_name = crash_date.strftime(es_conn.get_index_template())
-        doctype = es_conn.get_doctype()
-        with es_conn() as conn:
-            conn.index(index=index_name, doc_type=doctype, body=document, id=crash_id)
-        es_conn.refresh()
+        es_helper.index_crash(raw_crash=raw_crash, processed_crash=processed_crash)
 
     def test_get_threechars(self):
         cmd = Command()
@@ -76,18 +67,18 @@ class TestVerifyProcessed:
         """Verify no crashes in bucket result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
         s3_helper.create_bucket(bucket)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_no_missing_crashes(self, s3_helper, es_conn, monkeypatch):
+    def test_no_missing_crashes(self, s3_helper, es_helper, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
         s3_helper.create_bucket(bucket)
 
         # Create a few raw and processed crashes
@@ -97,54 +88,64 @@ class TestVerifyProcessed:
             "000" + create_new_ooid()[3:],
         ]
         for crash_id in crashids:
-            self.create_raw_crash_in_s3(s3_helper, crash_id)
-            self.create_processed_crash_in_s3(s3_helper, crash_id)
-            self.create_processed_crash_in_es(es_conn, crash_id)
+            self.create_raw_crash_in_s3(
+                s3_helper, bucket_name=bucket, crash_id=crash_id
+            )
+            self.create_processed_crash_in_s3(
+                s3_helper, bucket_name=bucket, crash_id=crash_id
+            )
+            self.create_processed_crash_in_es(es_helper, crash_id=crash_id)
 
-        es_conn.refresh()
+        es_helper.refresh()
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_missing_crashes(self, s3_helper, es_conn, monkeypatch):
+    def test_missing_crashes(self, s3_helper, es_helper, monkeypatch):
         """Verify it finds a missing crash."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
         s3_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, crash_id_1)
-        self.create_processed_crash_in_s3(s3_helper, crash_id_1)
-        self.create_processed_crash_in_es(es_conn, crash_id_1)
+        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_1)
+        self.create_processed_crash_in_s3(
+            s3_helper, bucket_name=bucket, crash_id=crash_id_1
+        )
+        self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, crash_id_2)
+        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_2)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == [crash_id_2]
 
-    def test_missing_crashes_es(self, s3_helper, es_conn, monkeypatch):
+    def test_missing_crashes_es(self, s3_helper, es_helper, monkeypatch):
         """Verify it finds a processed crash missing in ES."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
         s3_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, crash_id_1)
-        self.create_processed_crash_in_s3(s3_helper, crash_id_1)
-        self.create_processed_crash_in_es(es_conn, crash_id_1)
+        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_1)
+        self.create_processed_crash_in_s3(
+            s3_helper, bucket_name=bucket, crash_id=crash_id_1
+        )
+        self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, crash_id_2)
-        self.create_processed_crash_in_s3(s3_helper, crash_id_2)
+        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_2)
+        self.create_processed_crash_in_s3(
+            s3_helper, bucket_name=bucket, crash_id=crash_id_2
+        )
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)

@@ -11,40 +11,32 @@ from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 TODAY = utc_now().strftime("%Y%m%d")
-BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
 
 
 class TestUpdateMissing:
-    def create_raw_crash_in_s3(self, s3_helper, crash_id):
+    def create_raw_crash_in_s3(self, s3_helper, bucket_name, crash_id):
         s3_helper.upload_fileobj(
-            bucket_name=BUCKET_NAME,
-            key="v1/raw_crash/%s/%s" % (TODAY, crash_id),
+            bucket_name=bucket_name,
+            key=f"v1/raw_crash/{TODAY}/{crash_id}",
             data=b"test",
         )
 
-    def create_processed_crash_in_s3(self, s3_helper, crash_id):
+    def create_processed_crash_in_s3(self, s3_helper, bucket_name, crash_id):
         s3_helper.upload_fileobj(
-            bucket_name=BUCKET_NAME,
-            key="v1/processed_crash/%s" % crash_id,
+            bucket_name=bucket_name,
+            key=f"v1/processed_crash/{crash_id}",
             data=b"test",
         )
 
-    def create_processed_crash_in_es(self, es_conn, crash_id):
+    def create_processed_crash_in_es(self, es_helper, crash_id):
         crash_date = date_from_ooid(crash_id)
-        document = {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "uuid": crash_id,
-                "signature": "OOM | Small",
-                "date_processed": crash_date,
-            },
+        raw_crash = {}
+        processed_crash = {
+            "uuid": crash_id,
+            "signature": "OOM | Small",
+            "date_processed": crash_date,
         }
-        index_name = crash_date.strftime(es_conn.get_index_template())
-        doctype = es_conn.get_doctype()
-        with es_conn() as conn:
-            conn.index(index=index_name, doc_type=doctype, body=document, id=crash_id)
-        es_conn.refresh()
+        es_helper.index_crash(raw_crash=raw_crash, processed_crash=processed_crash)
 
     def test_past_missing_still_missing(self, capsys, db):
         # Create a MissingProcessedCrash row, but don't put the processed crash in the
@@ -60,7 +52,7 @@ class TestUpdateMissing:
         mpe = MissingProcessedCrash.objects.get(crash_id=crash_id)
         assert mpe.is_processed is False
 
-    def test_past_missing_no_longer_missing(self, capsys, db, es_conn, s3_helper):
+    def test_past_missing_no_longer_missing(self, capsys, db, es_helper, s3_helper):
         # Create a MissingProcessedCrash row and put the processed crash in the S3
         # bucket. After check_past_missing() runs, the MissingProcessedCrash should
         # have is_processed=True.
@@ -68,9 +60,12 @@ class TestUpdateMissing:
         mpe = MissingProcessedCrash(crash_id=crash_id, is_processed=False)
         mpe.save()
 
-        self.create_raw_crash_in_s3(s3_helper, crash_id)
-        self.create_processed_crash_in_s3(s3_helper, crash_id)
-        self.create_processed_crash_in_es(es_conn, crash_id)
+        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
+        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id)
+        self.create_processed_crash_in_s3(
+            s3_helper, bucket_name=bucket, crash_id=crash_id
+        )
+        self.create_processed_crash_in_es(es_helper, crash_id)
 
         cmd = Command()
         cmd.check_past_missing()

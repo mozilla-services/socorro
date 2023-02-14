@@ -29,9 +29,6 @@ from crashstats.crashstats.models import (
     BugAssociation,
     MissingProcessedCrash,
     NoOpMiddleware,
-    ProcessedCrash,
-    RawCrash,
-    Reprocessing,
     SocorroMiddleware,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
@@ -196,7 +193,10 @@ class TestViews(BaseTestViews):
             # eventually you'll run into the limit there too.
             assert response.status_code == 429
 
-    def test_ProcessedCrash(self):
+
+class TestProcessedCrashAPI(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.ProcessedCrash.get_implementation")
+    def test_api(self, mock_implementation):
         public_data = {
             "addons_checked": None,
             "address": "0x8",
@@ -230,7 +230,7 @@ class TestViews(BaseTestViews):
                 return dict(**public_data, **protected_data)
             raise NotImplementedError
 
-        ProcessedCrash.implementation().get.side_effect = mocked_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         # If you don't specify a crash id, you get an HTTP 400
         url = reverse("api:model_wrapper", args=("ProcessedCrash",))
@@ -266,7 +266,10 @@ class TestViews(BaseTestViews):
         for key in protected_data.keys():
             assert key in dump
 
-    def test_RawCrash(self):
+
+class TestRawCrashAPI(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.RawCrash.get_implementation")
+    def test_api(self, mock_implementation):
         public_data = {
             "AdapterDeviceID": "0x  46",
             "AdapterVendorID": "0x8086",
@@ -291,12 +294,12 @@ class TestViews(BaseTestViews):
             "URL": "http://system.gaiamobile.org:8080/",
         }
 
-        def mocked_implementation_get(**params):
+        def mocked_get(**params):
             if "uuid" in params and params["uuid"] == "abc123":
                 return dict(**public_data, **protected_data)
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_implementation_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         # No crash id yields HTTP 400
         url = reverse("api:model_wrapper", args=("RawCrash",))
@@ -335,13 +338,14 @@ class TestViews(BaseTestViews):
         for key in protected_data.keys():
             assert key in dump
 
-    def test_RawCrash_binary_blob(self):
-        def mocked_implementation_get(**params):
+    @mock.patch("crashstats.crashstats.models.RawCrash.get_implementation")
+    def test_binary_blob(self, mock_implementation):
+        def mocked_get(**params):
             if "uuid" in params and params["uuid"] == "abc":
                 return "\xe0"
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_implementation_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(url, {"crash_id": "abc", "format": "raw"})
@@ -366,17 +370,16 @@ class TestViews(BaseTestViews):
         assert response["Content-Disposition"] == 'attachment; filename="abc.dmp"'
         assert response["Content-Type"] == "application/octet-stream"
 
-    def test_RawCrash_invalid_crash_id(self):
-        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
-        # the implementation code.
-        RawCrash.implementation = self._mockeries[RawCrash]
+    def test_invalid_crash_id(self):
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(
             url, {"crash_id": "821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh"}
         )
         assert response.status_code == 400
 
-    def test_Bugs(self):
+
+class TestBugs(BaseTestViews):
+    def test_api(self):
         BugAssociation.objects.create(bug_id="999999", signature="OOM | small")
         url = reverse("api:model_wrapper", args=("Bugs",))
         response = self.client.get(url)
@@ -392,7 +395,9 @@ class TestViews(BaseTestViews):
             "total": 1,
         }
 
-    def test_SignaturesForBugs(self):
+
+class TestSignaturesForBugs(BaseTestViews):
+    def test_api(self):
         BugAssociation.objects.create(bug_id="999999", signature="OOM | small")
 
         url = reverse("api:model_wrapper", args=("SignaturesByBugs",))
@@ -409,13 +414,18 @@ class TestViews(BaseTestViews):
             "total": 1,
         }
 
-    def test_Field(self):
+
+class TestField(BaseTestViews):
+    def test_api(self):
         url = reverse("api:model_wrapper", args=("Field",))
         response = self.client.get(url)
         assert response.status_code == 404
 
-    def test_SuperSearch(self):
-        def mocked_supersearch_get(**params):
+
+class TestSuperSearch(BaseTestViews):
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api(self, mock_implementation):
+        def mocked_get(**params):
             restricted_params = ("_facets", "_aggs.signature", "_histogram.date")
             for key in restricted_params:
                 if key in params:
@@ -438,7 +448,7 @@ class TestViews(BaseTestViews):
                 "total": 0,
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("SuperSearch",))
         response = self.client.get(url)
@@ -467,8 +477,13 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {"product": ["WaterWolf", "NightTrain"]})
         assert response.status_code == 200
 
-    def test_SuperSearchUnredacted(self):
-        def mocked_supersearch_get(**params):
+
+class TestSuperSearchUnredacted(BaseTestViews):
+    @mock.patch(
+        "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
+    )
+    def test_api(self, mock_implementation):
+        def mocked_get(**params):
             assert "url" in params
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
@@ -486,7 +501,7 @@ class TestViews(BaseTestViews):
                 "total": 0,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("SuperSearchUnredacted",))
         response = self.client.get(url, {"url": "example.com"})
@@ -517,7 +532,10 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 200
 
-    def test_Reprocessing(self):
+
+class TestReprocessing(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.Reprocessing.get_implementation")
+    def test_api(self, mock_implementation):
         crash_id = create_new_ooid()
 
         def mocked_publish(queue, crash_ids):
@@ -525,7 +543,7 @@ class TestViews(BaseTestViews):
             assert crash_ids == [crash_id]
             return True
 
-        Reprocessing.implementation().publish = mocked_publish
+        mock_implementation.return_value.publish.side_effect = mocked_publish
 
         url = reverse("api:model_wrapper", args=("Reprocessing",))
         response = self.client.get(url)

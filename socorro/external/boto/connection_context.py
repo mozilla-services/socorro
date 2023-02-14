@@ -236,3 +236,9 @@ class S3Connection:
             raise KeyNotFound(
                 f"(bucket={bucket!r} key={key}) not found, no value returned"
             )
+        except self.client.exceptions.ClientError as exc:
+            if "404" in str(exc):
+                raise KeyNotFound(
+                    f"(bucket={bucket!r} key={key}) not found, no value returned"
+                )
+            raise

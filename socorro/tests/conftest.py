@@ -120,6 +120,9 @@ class S3Helper:
             self.conn.delete_bucket(Bucket=bucket)
         self._buckets_seen = None
 
+    def get_crashstorage_bucket(self):
+        return os.environ["CRASHSTORAGE_S3_BUCKET"]
+
     def create_bucket(self, bucket_name):
         """Create specified bucket if it doesn't exist."""
         try:

@@ -131,9 +131,12 @@ def report_index(request, crash_id, default_context=None):
     if request.user.has_perm("crashstats.view_pii"):
         context["report"]["current_signature"] = generate_signature(context["report"])
 
-    context["product_details"] = productlib.get_product_by_name(
-        context["report"]["product"]
-    )
+    try:
+        context["product_details"] = productlib.get_product_by_name(
+            context["report"]["product"]
+        )
+    except productlib.ProductDoesNotExist:
+        context["product_details"] = {}
 
     # For C++/Rust crashes
     if "json_dump" in context["report"]:
