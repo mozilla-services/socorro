@@ -6,8 +6,6 @@ import copy
 import json
 from unittest import mock
 
-import pytest
-
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -170,27 +168,3 @@ class BaseTestViews(ProductVersionsMixin, SuperSearchFieldsMock, DjangoTestCase)
     def only_certain_columns(hits, columns):
         """Return new list where dicts only have specified keys"""
         return [{k: x[k] for k in x if k in columns} for x in hits]
-
-
-class UserHelper:
-    def __init__(self, django_user_model):
-        self._django_user_model = django_user_model
-
-    def create_user(self, username="example", password="pwd"):
-        user = self._django_user_model.objects.create_user(
-            username=username, password=password
-        )
-        return user
-
-    def create_protected_user(self, username="example", password="pwd"):
-        user = self.create_user(username=username, password=password)
-        group = Group.objects.get(name="Hackers")
-        user.groups.add(group)
-        assert user.has_perm("crashstats.view_pii")
-        assert user.has_perm("crashstats.view_rawdump")
-        return user
-
-
-@pytest.fixture
-def user_helper(django_user_model):
-    return UserHelper(django_user_model)
