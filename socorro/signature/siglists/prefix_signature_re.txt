@@ -104,13 +104,10 @@ mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
 mozilla::net::ShutdownEvent::PostAndWait
-mozilla::OffTheBooksMutex::Lock
-SleepConditionVariable(CS|SRW)
 mozilla::TimeStamp::Now
 mozilla::TimeStamp::operator
 mozilla::TimeStampValue::operator-
 mozilla::TimeStampValue::operator!=
-mozilla::detail::MutexImpl::
 mozilla::detail::SupportCheckedUnsafePtrImpl<T>::~SupportCheckedUnsafePtrImpl
 mozilla::ipc::LogicError
 mozilla::ipc::MessageChannel::AssertWorkerThread
