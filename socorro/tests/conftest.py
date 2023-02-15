@@ -190,6 +190,10 @@ class ElasticsearchHelper:
     def get_doctype(self):
         return self._crashstorage.get_doctype()
 
+    def create_index(self, index_name):
+        print(f"ElasticsearchHelper: creating index: {index_name}")
+        self._crashstorage.create_index(index_name)
+
     def create_indices(self):
         # Create all the indexes for the last couple of weeks; we have to do it this way
         # to handle split indexes over the new year

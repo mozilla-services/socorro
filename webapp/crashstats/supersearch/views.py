@@ -299,7 +299,7 @@ def search_custom(request, default_context=None):
 
     if query:
         context["query"] = json.dumps(query["query"])
-        context["indices"] = ",".join(query["indices"])
+        context["indices"] = ",".join(sorted(query["indices"]))
 
     context["error"] = error
 
