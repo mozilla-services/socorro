@@ -21,6 +21,7 @@ fillmore==1.0.0
 freezegun==1.2.2
 glom==23.1.1
 gunicorn==20.1.0
+honcho==1.1.0
 humanfriendly==10.0
 isodate==0.6.1
 isoweek==1.3.3

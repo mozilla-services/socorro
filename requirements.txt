@@ -301,6 +301,10 @@ gunicorn==20.1.0 \
     --hash=sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e \
     --hash=sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8
     # via -r requirements.in
+honcho==1.1.0 \
+    --hash=sha256:a4d6e3a88a7b51b66351ecfc6e9d79d8f4b87351db9ad7e923f5632cc498122f \
+    --hash=sha256:c5eca0bded4bef6697a23aec0422fd4f6508ea3581979a3485fc4b89357eb2a9
+    # via -r requirements.in
 httplib2==0.20.4 \
     --hash=sha256:58a98e45b4b1a48273073f905d2961666ecf0fbac4250ea5b47aef259eb5c585 \
     --hash=sha256:8b6a905cb1c79eefd03f8669fd993c36dc341f7c558f056cb5a33b5c2f458543
