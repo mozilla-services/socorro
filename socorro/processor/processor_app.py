@@ -54,7 +54,7 @@ def count_sentry_scrub_error(msg):
 
 
 class ProcessorApp:
-    """Configman app that transforms raw crashes into processed crashes."""
+    """App that transforms raw crashes into processed crashes."""
 
     def __init__(self):
         self.basedir = Path(__file__).resolve().parent.parent.parent
