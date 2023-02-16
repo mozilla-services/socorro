@@ -273,7 +273,6 @@ class ElasticsearchHelper:
             search = search.filter("term", **{"processed_crash.uuid": crash_id})
             results = search.execute().to_dict()
 
-            print(results)
             return results["hits"]["hits"][0]["_source"]
 
 
