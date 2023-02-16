@@ -10,6 +10,8 @@
 #
 # Use the "--dev" argument to run the webapp in a docker container for
 # local development.
+#
+# Note: This should be called from inside the socorro_app Docker container.
 
 set -euxo pipefail
 

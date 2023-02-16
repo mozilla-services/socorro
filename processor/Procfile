@@ -1,0 +1,2 @@
+processor: /app/bin/run_processor_process.sh
+# processor_disk_manager: /app/bin/run_processor_disk_manager.sh

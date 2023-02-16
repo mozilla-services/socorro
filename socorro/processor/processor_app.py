@@ -324,8 +324,13 @@ class ProcessorApp:
         return 0
 
 
-def main(args):
-    sys.exit(ProcessorApp().main(args))
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    # NOTE(willkg): we need to do this so that the processor app logger isn't `__main__`
+    # which causes problems when logging
+    from socorro.processor import processor_app
+    sys.exit(processor_app.ProcessorApp().main(args))
 
 
 if __name__ == "__main__":
