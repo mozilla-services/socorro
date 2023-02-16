@@ -132,7 +132,6 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context["product"] = product
 
     if not versions:
-        # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
         for pv in context["active_versions"][product.name]:
