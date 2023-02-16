@@ -330,6 +330,7 @@ def main(args=None):
     # NOTE(willkg): we need to do this so that the processor app logger isn't `__main__`
     # which causes problems when logging
     from socorro.processor import processor_app
+
     sys.exit(processor_app.ProcessorApp().main(args))
 
 

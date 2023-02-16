@@ -10,9 +10,6 @@ from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMappi
 from socorro.external.fs.crashstorage import FSPermanentStorage
 
 
-FS_ROOT = os.environ["resource.fs.fs_root"]
-
-
 class TestFSPermanentStorage:
     def test_save_raw_crash(self, tmp_path):
         fs = FSPermanentStorage(fs_root=str(tmp_path))
