@@ -236,7 +236,31 @@ CRASH_DESTINATIONS = {
         },
     },
 }
-SEARCH = CRASH_DESTINATIONS["es"]
+
+
+CACHE_MANAGER_LOGGING_LEVEL = _config(
+    "CACHE_MANAGER_LOGGING_LEVEL",
+    default="INFO",
+    doc=(
+        "Default logging level for the cache manager. Should be one of INFO, DEBUG, "
+        + "WARNING, ERROR."
+    ),
+)
+SYMBOLS_CACHE_PATH = _config(
+    "SYMBOLS_CACHE_PATH",
+    default=os.path.join(tempfile.gettempdir(), "symbols", "cache"),
+    doc="Directory to use for the on-disk LRU-cache for symbols files.",
+)
+SYMBOLS_CACHE_MAX_SIZE = _config(
+    "SYMBOLS_CACHE_MAX_SIZE",
+    default=str(1024 * 1024 * 1024),
+    parser=int,
+    doc=(
+        "Max size (bytes) of symbols cache. You can use _ to group digits for "
+        + "legibility."
+    ),
+)
+
 
 # Stackwalker configuration
 STACKWALKER = {
@@ -270,24 +294,12 @@ STACKWALKER = {
         parser=ListOf(str),
         doc="Comma-separated list of urls for symbols suppliers.",
     ),
-    "symbol_cache_path": _config(
-        "STACKWALKER_SYMBOLS_CACHE",
-        default=os.path.join(tempfile.gettempdir(), "symbols", "cache"),
-        doc="Directory to use for the on-disk LRU-cache for symbols files.",
-    ),
+    "symbol_cache_path": SYMBOLS_CACHE_PATH,
     "symbol_tmp_path": _config(
-        "STACKWALKER_SYMBOLS_TMP",
+        "SYMBOLS_TMP_PATH",
         default=os.path.join(tempfile.gettempdir(), "symbols", "tmp"),
         doc="Directory to use for temporary storage of files being downloaded.",
     ),
-}
-
-# Configuration for the symbols cache manager
-SYMBOLS_CACHE_MANAGER = {
-    "class": "FIXME",
-    "symbol_cache_size": "40G",
-    "symbol_cache_path": STACKWALKER["symbol_cache_path"],
-    "verbosity": 0,
 }
 
 BETAVERSIONRULE_VERSION_STRING_API = _config(
