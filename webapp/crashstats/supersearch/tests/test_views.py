@@ -53,7 +53,6 @@ class TestViews:
     def test_search_fields(self, client, db, es_helper, user_helper):
         url = reverse("supersearch:search_fields")
         response = client.get(url)
-        print(response.content.decode("utf-8"))
         assert response.status_code == 200
         data = json.loads(response.content)
         # Assert product names in response; these come from productlib
@@ -199,7 +198,6 @@ class TestViews:
         response = client.get(
             url, {"_columns": ["build_id", "platform"], "product": "Thunderbird"}
         )
-        print(response.content.decode("utf-8"))
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
         assert 'table id="facets-list-' in smart_str(response.content)
