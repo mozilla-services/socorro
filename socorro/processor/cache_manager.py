@@ -122,8 +122,6 @@ class DiskCacheManager:
         # Create the cachepath if we need to
         self.cachepath.mkdir(parents=True, exist_ok=True)
 
-        print(f"test {self.cachepath = }")
-
         self.logger.info(
             "starting up; watching: %s, max size: %s",
             str(self.cachepath),
