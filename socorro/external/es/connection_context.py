@@ -72,10 +72,10 @@ class ConnectionContext:
             client.create(index=index_name, body=index_settings)
             return True
 
-        except elasticsearch.exceptions.RequestError as e:
+        except elasticsearch.exceptions.RequestError as exc:
             # If this index already exists, swallow the error.
             # NOTE! This is NOT how the error looks like in ES 2.x
-            if "IndexAlreadyExistsException" not in str(e):
+            if "IndexAlreadyExistsException" not in str(exc):
                 raise
             return False
 
@@ -93,6 +93,11 @@ class ConnectionContext:
     def delete_index(self, index_name):
         """Delete an index."""
         self.indices_client().delete(index_name)
+
+    def get_mapping(self, index_name, doc_type):
+        """Return the mapping for the specified index and doc_type."""
+        resp = self.indices_client().get_mapping(index=index_name)
+        return resp[index_name]["mappings"][doc_type]["properties"]
 
     def refresh(self, index_name=None):
         self.indices_client().refresh(index=index_name or "_all")

@@ -143,8 +143,8 @@ class CrashStorageBase:
         # Collection of non-fatal exceptions that can be raised by a given storage
         # implementation. This may be fetched by a client of the crashstorge so that it
         # can determine if it can try a failed storage operation again.
-        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.exceptions_eligible_for_retry = ()
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def close(self):
         """Close resources used by this crashstorage."""
