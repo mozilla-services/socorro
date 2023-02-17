@@ -15,10 +15,30 @@ import glom
 LOGGER = logging.getLogger(__name__)
 
 
-UPPERCASE_KEY_RE = re.compile(r"^[A-Z][A-Z_]+$")
+UPPERCASE_KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]+$")
 
 
 class Settings:
+    """Internal settings class
+
+    This is the settings class that allows us to store configuration keys and values
+    for running Socorro services.
+
+    It includes several utility methods:
+
+    * ``log_settings`` for logging configuration keys and values taking care to mask
+      secret values
+    * ``override_settings`` context manager for temporarily overriding settings; useful
+      for testing
+
+    This will load settings in a Python dotted path specified in
+    ``settings_module_path``.
+
+    Settings keys should be upper-snakecase. Settings values can be Python nested
+    structures.
+
+    """
+
     def __init__(self, settings_module_path):
         self._settings_module_path = settings_module_path
 
@@ -29,7 +49,14 @@ class Settings:
             setattr(self, key, getattr(settings_module, key))
 
     def log_settings(self, logger=LOGGER):
-        """Log settings making sure to sanitize values that have "secret" in the key"""
+        """Log settings to a specified logger.
+
+        This makes sure to sanitize values that have "secret" in the key before logging
+        them.
+
+        :arg logger: the logger to log keys and values to
+
+        """
 
         def sanitize_value(k, v):
             if "secret" in k.lower():
@@ -58,6 +85,27 @@ class Settings:
     def override(self, **kwargs):
         """Override settings for testing
 
+        Example with shallow overrides::
+
+            from socorro import settings
+
+            with settings.override(LOCAL_DEV_ENV=True, OTHER_KEY="ou812"):
+                # do stuff here
+                pass
+
+        Example with deep overrides::
+
+            from socorro import settings
+
+            with settings.override(
+                **{
+                    "OTHER_KEY": "ou812",
+                    "PROCESSOR.task_manager.options.idle_delay": 1,
+                }
+            ):
+                # do stuff here
+                pass
+
         :arg kwargs: settings to override
 
         """
@@ -78,20 +126,20 @@ class Settings:
                 key_values.append((key, key_value))
 
                 new_key_value = copy.deepcopy(key_value)
-                if "." in path:
+                if path:
                     new_key_value = glom.assign(
                         new_key_value, path, value, missing=dict
                     )
                 else:
                     new_key_value = value
 
-                print(f"settings override: {key}={value}")
+                print(f"settings override: {key}={new_key_value}")
                 setattr(self, key, new_key_value)
 
             yield
 
         finally:
-            for key, original_value in key_values:
+            for key, original_value in reversed(key_values):
                 if original_value is NOVALUE:
                     with contextlib.suppress(AttributeError):
                         delattr(self, key)
