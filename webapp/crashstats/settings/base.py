@@ -395,10 +395,6 @@ MANAGERS = ADMINS
 
 CACHE_IMPLEMENTATION_FETCHES = config("CACHE_IMPLEMENTATION_FETCHES", True, cast=bool)
 
-# can be changed from null to log to test something locally
-# or if using the debug toolbar, you might give toolbar a try
-STATSD_CLIENT = config("STATSD_CLIENT", "django_statsd.clients.null")
-
 # for local development these don't matter
 STATSD_HOST = config("STATSD_HOST", "localhost")
 STATSD_PORT = config("STATSD_PORT", 8125, cast=int)
