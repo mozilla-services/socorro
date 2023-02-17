@@ -352,9 +352,8 @@ class ESCrashStorage(CrashStorageBase):
     def get_mapping(self, index_name, es_doctype, reraise=False):
         """Retrieves the mapping for a given index and doctype
 
-        NOTE(willkg): Mappings are cached on the ConnectionContext instance. If you
-        change the indices (like in tests), you should get a new ConnectionContext
-        instance.
+        NOTE(willkg): Mappings are cached on the ESCrashStorage instance. If you change
+        the indices (like in tests), you should get a new ESCrashStorage instance.
 
         :arg str index_name: the index to retrieve the mapping for
         :arg str es_doctype: the doctype to retrieve the mapping for
@@ -368,8 +367,9 @@ class ESCrashStorage(CrashStorageBase):
         mapping = self._mapping_cache.get(cache_key)
         if mapping is None:
             try:
-                resp = self.client.indices_client().get_mapping(index=index_name)
-                mapping = resp[index_name]["mappings"][es_doctype]["properties"]
+                mapping = self.client.get_mapping(
+                    index_name=index_name, doc_type=es_doctype
+                )
                 self._mapping_cache[cache_key] = mapping
             except elasticsearch.exceptions.NotFoundError:
                 if reraise:
