@@ -9,41 +9,16 @@
 # Usage: socorro-cmd upload_telemetry_schema
 
 import json
-from pathlib import Path
 
 import click
-from fillmore.libsentry import set_up_sentry
-from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
 
 from socorro import settings
 from socorro.libclass import build_instance_from_settings
-from socorro.lib.libdockerflow import get_release_name
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
 METRICS = markus.get_metrics("processor")
-
-
-def count_sentry_scrub_error(msg):
-    METRICS.incr("sentry_scrub_error", 1)
-
-
-def configure_sentry(basedir, host_id, sentry_dsn):
-    release = get_release_name(basedir)
-    scrubber = Scrubber(
-        rules=SCRUB_RULES_DEFAULT,
-        error_handler=count_sentry_scrub_error,
-    )
-    set_up_sentry(
-        sentry_dsn=sentry_dsn,
-        release=release,
-        host_id=host_id,
-        # Disable frame-local variables
-        with_locals=False,
-        # Scrub sensitive data
-        before_send=scrubber,
-    )
 
 
 @click.command()
@@ -72,15 +47,6 @@ def upload(ctx, destination_key):
     whole ingestion process has to halt/pause anyway.
 
     """
-
-    basedir = Path(__file__).resolve().parent.parent
-
-    configure_sentry(
-        basedir,
-        host_id=settings.HOST_ID,
-        sentry_dsn=settings.SENTRY_DSN,
-    )
-
     telemetry_settings = settings.CRASH_DESTINATIONS["telemetry"]
     crashstorage = build_instance_from_settings(telemetry_settings)
 
