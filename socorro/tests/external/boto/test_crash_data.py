@@ -10,6 +10,7 @@ import pytest
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.libclass import build_instance_from_settings
+from socorro.lib.libooid import create_new_ooid
 
 
 CRASHDATA_SETTINGS = {
@@ -40,7 +41,7 @@ class TestSimplifiedCrashData:
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         s3_helper.upload_fileobj(
@@ -56,7 +57,7 @@ class TestSimplifiedCrashData:
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
@@ -66,7 +67,7 @@ class TestSimplifiedCrashData:
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         s3_helper.upload_fileobj(
@@ -82,7 +83,7 @@ class TestSimplifiedCrashData:
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
@@ -92,7 +93,7 @@ class TestSimplifiedCrashData:
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
         bucket = CRASHDATA_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         with pytest.raises(CrashIDNotFound):
@@ -101,7 +102,7 @@ class TestSimplifiedCrashData:
     def test_bad_arguments(self):
         crashdata = build_instance_from_settings(CRASHDATA_SETTINGS)
 
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
 
         with pytest.raises(MissingArgumentError):
             crashdata.get()
@@ -118,25 +119,27 @@ class TestTelemetryCrashData:
         crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
 
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
         )
 
-        result = crashdata.get(uuid="0bba929f-8721-460c-dead-a43c20071027")
+        result = crashdata.get(uuid=crash_id)
         assert result == {"foo": "bar"}
 
     def test_get_data_not_found(self, s3_helper):
         crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
 
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         with pytest.raises(CrashIDNotFound):
-            crashdata.get(uuid="0bba929f-8721-460c-dead-a43c20071027")
+            crashdata.get(uuid=crash_id)
 
     def test_bad_arguments(self):
         crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
