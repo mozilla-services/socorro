@@ -90,9 +90,7 @@ class TestIsValidKey:
         assert is_valid_key(key) is False
 
 
-class TestIntegrationESCrashStorage:
-    """These tests interact with Elasticsearch (or some other external resource)."""
-
+class TestESCrashStorage:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
@@ -111,7 +109,6 @@ class TestIntegrationESCrashStorage:
             processed_crash=processed_crash,
         )
 
-        # Ensure that the document was indexed by attempting to retreive it.
         with es_helper.conn() as conn:
             assert conn.get(
                 index=crashstorage.get_index_for_date(utc_now()),
@@ -119,12 +116,12 @@ class TestIntegrationESCrashStorage:
             )
 
     def test_index_crash_indexable_keys(self, es_helper):
-        # Check super_search_fields.py for valid keys to update this
+        """Test indexing ONLY indexes valid, known keys."""
         raw_crash = {
             "InvalidKey": "alpha",
         }
         processed_crash = {
-            "AnotherInvalidKey": "alpha",
+            "another_invalid_key": "alpha",
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "dom_fission_enabled": "1",
@@ -136,7 +133,6 @@ class TestIntegrationESCrashStorage:
             processed_crash=processed_crash,
         )
 
-        # Ensure that the document was indexed by attempting to retreive it.
         with es_helper.conn() as conn:
             doc = conn.get(
                 index=crashstorage.get_index_for_date(utc_now()),
@@ -187,7 +183,7 @@ class TestIntegrationESCrashStorage:
         )
 
         # Create a crash for this week and save it
-        now_uuid = "00000000-0000-0000-0000-000000120408"
+        now_uuid = create_new_ooid(timestamp=now)
         raw_crash = {
             "BuildID": "20200506000000",
         }
@@ -203,7 +199,7 @@ class TestIntegrationESCrashStorage:
         )
 
         # Create a crash for four weeks ago with the bum mapping and save it
-        old_uuid = "11111111-1111-1111-1111-111111120408"
+        old_uuid = create_new_ooid(timestamp=four_weeks_ago)
         raw_crash = {
             "BuildID": "20200506000000",
         }
@@ -237,54 +233,6 @@ class TestIntegrationESCrashStorage:
                 id=old_uuid,
             )
             assert field not in doc["_source"]["processed_crash"]
-
-
-class TestESCrashStorage:
-    """These tests are self-contained and use Mock where necessary"""
-
-    def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
-
-    def test_indexing_success(self, es_helper):
-        """Test a successful index of a crash report"""
-        crash_id = create_new_ooid()
-        raw_crash = {
-            "BuildID": "20200605000",
-            "ProductName": "Firefox",
-            "ReleaseChannel": "nightly",
-        }
-        processed_crash = {
-            "uuid": crash_id,
-            "date_processed": date_to_string(utc_now()),
-            "dom_fission_enabled": "1",
-            # NOTE(willkg): json_dump is not a supersearch field, so it gets dropped
-            # when indexing
-            "json_dump": {},
-        }
-
-        # Submit a crash like normal, except that the back-end ES object is
-        # mocked (see the decorator above).
-        crashstorage = self.build_crashstorage()
-        crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
-            processed_crash=processed_crash,
-        )
-        es_helper.refresh()
-
-        # Assert what got saved
-        doc = es_helper.get_crash_data(crash_id)
-        assert doc == {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "uuid": crash_id,
-                "date_processed": processed_crash["date_processed"],
-                "dom_fission_enabled": "1",
-            },
-        }
 
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
