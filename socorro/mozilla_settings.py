@@ -83,12 +83,6 @@ if LOCAL_DEV_ENV:
     MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
 
 
-AWS_ENDPOINT_URL = _config(
-    "AWS_ENDPOINT_URL",
-    default="",
-    doc="Endpoint url for AWS SQS/S3 in the local dev environment.",
-)
-
 # Processor configuration
 PROCESSOR = {
     "task_manager": {
@@ -123,6 +117,12 @@ PROCESSOR = {
     ),
 }
 
+AWS_ENDPOINT_URL = _config(
+    "AWS_ENDPOINT_URL",
+    default="",
+    doc="Endpoint url for AWS SQS/S3 in the local dev environment.",
+)
+
 # Crash report processing queue configuration
 QUEUE = {
     "class": "socorro.external.sqs.crashqueue.SQSCrashQueue",
@@ -153,8 +153,7 @@ QUEUE = {
     },
 }
 
-# Crash report storage source
-CRASH_SOURCE = {
+S3_STORAGE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     "options": {
         "metrics_prefix": "processor.s3",
@@ -182,62 +181,69 @@ CRASH_SOURCE = {
     },
 }
 
+ES_STORAGE = {
+    "class": "socorro.external.es.crashstorage.ESCrashStorage",
+    "options": {
+        "metrics_prefix": "processor.es",
+        "index": _config(
+            "ELASTICSEARCH_INDEX",
+            default="socorro%Y%W",
+            doc="Template for Elasticsearch index names.",
+        ),
+        "index_regex": _config(
+            "ELASTICSEARCH_INDEX_REGEX",
+            default="^socorro[0-9]{6}$",
+            doc="Regex for matching Elasticsearch index names.",
+        ),
+        "url": _config("ELASTICSEARCH_URL", doc="Elasticsearch url."),
+    },
+}
+
+TELEMETRY_STORAGE = {
+    "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
+    "options": {
+        "metrics_prefix": "processor.telemetry",
+        "bucket": _config(
+            "TELEMETRY_S3_BUCKET",
+            default="",
+            doc="S3 bucket name for telemetry data export.",
+        ),
+        "access_key": _config(
+            "TELEMETRY_S3_ACCESS_KEY",
+            default="",
+            doc="S3 access key for telemetry bucket.",
+        ),
+        "secret_access_key": _config(
+            "TELEMETRY_S3_SECRET_ACCESS_KEY",
+            default="",
+            doc="S3 secret access key for telemetry bucket.",
+        ),
+        "region": _config("TELEMETRY_S3_REGION", default="", doc="S3 region."),
+        "endpoint_url": _config(
+            "TELEMETRY_S3_ENDPOINT_URL",
+            default="",
+            doc=(
+                "Endpoint url for AWS S3 for the telemetry bucket. This is only "
+                + "used in the local dev environment."
+            ),
+        ),
+    },
+}
+
+# Crash report storage source pulls from S3
+CRASH_SOURCE = S3_STORAGE
+
 # Each key in this list corresponds to a key in this dict containing a crash report data
 # destination configuration
 CRASH_DESTINATIONS_ORDER = ["s3", "es", "telemetry"]
 CRASH_DESTINATIONS = {
-    "s3": CRASH_SOURCE,
-    "es": {
-        "class": "socorro.external.es.crashstorage.ESCrashStorage",
-        "options": {
-            "metrics_prefix": "processor.es",
-            "index": _config(
-                "ELASTICSEARCH_INDEX",
-                default="socorro%Y%W",
-                doc="Template for Elasticsearch index names.",
-            ),
-            "index_regex": _config(
-                "ELASTICSEARCH_INDEX_REGEX",
-                default="^socorro[0-9]{6}$",
-                doc="Regex for matching Elasticsearch index names.",
-            ),
-            "url": _config("ELASTICSEARCH_URL", doc="Elasticsearch url."),
-        },
-    },
-    "telemetry": {
-        "name": "telemetry",
-        "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
-        "options": {
-            "metrics_prefix": "processor.telemetry",
-            "bucket": _config(
-                "TELEMETRY_S3_BUCKET",
-                default="",
-                doc="S3 bucket name for telemetry data export.",
-            ),
-            "access_key": _config(
-                "TELEMETRY_S3_ACCESS_KEY",
-                default="",
-                doc="S3 access key for telemetry bucket.",
-            ),
-            "secret_access_key": _config(
-                "TELEMETRY_S3_SECRET_ACCESS_KEY",
-                default="",
-                doc="S3 secret access key for telemetry bucket.",
-            ),
-            "region": _config("TELEMETRY_S3_REGION", default="", doc="S3 region."),
-            "endpoint_url": _config(
-                "TELEMETRY_S3_ENDPOINT_URL",
-                default="",
-                doc=(
-                    "Endpoint url for AWS S3 for the telemetry bucket. This is only "
-                    + "used in the local dev environment."
-                ),
-            ),
-        },
-    },
+    "s3": S3_STORAGE,
+    "es": ES_STORAGE,
+    "telemetry": TELEMETRY_STORAGE,
 }
 
 
+# Disk cache manager configuration
 CACHE_MANAGER_LOGGING_LEVEL = _config(
     "CACHE_MANAGER_LOGGING_LEVEL",
     default="INFO",
@@ -262,7 +268,7 @@ SYMBOLS_CACHE_MAX_SIZE = _config(
 )
 
 
-# Stackwalker configuration
+# MinidumpStackwalkerRule configuration
 STACKWALKER = {
     "command_path": _config(
         "STACKWALKER_COMMAND_PATH",
@@ -302,6 +308,8 @@ STACKWALKER = {
     ),
 }
 
+
+# BetaVersionRule configuration
 BETAVERSIONRULE_VERSION_STRING_API = _config(
     "BETAVERSIONRULE_VERSION_STRING_API",
     default="https://crash-stats.mozilla.org/api/VersionString",

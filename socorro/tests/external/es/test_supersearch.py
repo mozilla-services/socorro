@@ -33,7 +33,7 @@ class TestIntegrationSuperSearch:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_get_indices(self, es_helper):
@@ -1728,8 +1728,8 @@ class TestIntegrationSuperSearch:
         index_name = "testsocorro_module"
         with settings.override(
             **{
-                "CRASH_DESTINATIONS.es.options.index": index_name,
-                "CRASH_DESTINATIONS.es.options.index_regex": f"^{index_name}$",
+                "ES_STORAGE.options.index": index_name,
+                "ES_STORAGE.options.index_regex": f"^{index_name}$",
             }
         ):
             crashstorage = self.build_crashstorage()

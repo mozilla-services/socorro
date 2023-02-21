@@ -3,10 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from socorro import settings
-from socorro.lib.libdatetime import utc_now
-from socorro.libclass import build_instance
 from socorro.external.es.super_search_fields import FIELDS
 from socorro.external.es.supersearch import SuperSearch
+from socorro.lib.libdatetime import utc_now
+from socorro.libclass import build_instance
+from socorro.lib.libooid import create_new_ooid
 
 
 class TestIntegrationAnalyzers:
@@ -15,7 +16,7 @@ class TestIntegrationAnalyzers:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_semicolon_keywords(self, es_helper):
@@ -28,8 +29,8 @@ class TestIntegrationAnalyzers:
         crashstorage = self.build_crashstorage()
         api = SuperSearch(crashstorage=crashstorage)
         now = utc_now()
-        crash_id_1 = "936ce666-ff3b-4c7a-9674-367fe2230212"
-        crash_id_2 = "b39a6e4a-1680-4968-99bd-272286230212"
+        crash_id_1 = create_new_ooid()
+        crash_id_2 = create_new_ooid()
 
         value1 = "/path/to/dll;;foo;C:\\bar\\boo"
         es_helper.index_crash(
