@@ -11,6 +11,8 @@ import pytest
 from socorro.external.boto.crashstorage import build_keys, dict_to_str
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
 from socorro.libclass import build_instance_from_settings
+from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.lib.libooid import create_new_ooid
 
 
 CRASHSTORAGE_SETTINGS = {
@@ -80,123 +82,124 @@ class TestBotoS3CrashStorage:
     def test_save_raw_crash_no_dumps(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        original_raw_crash = {"submitted_timestamp": date_to_string(now)}
         s3_helper.create_bucket(bucket)
 
         # Run save_raw_crash
         crashstorage.save_raw_crash(
-            raw_crash={"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            raw_crash=original_raw_crash,
             # This is an empty set of dumps--no dumps!
             dumps=MemoryDumpsMapping(),
-            crash_id="0bba929f-8721-460c-dead-a43c20071027",
+            crash_id=crash_id,
         )
 
         # Verify the raw_crash made it to the right place and has the right
         # contents
         raw_crash = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
         )
 
-        assert json.loads(raw_crash) == {
-            "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
-        }
+        assert json.loads(raw_crash) == original_raw_crash
 
-        # Verify dump_names made it to the right place and has the right
-        # contents
+        # Verify dump_names made it to the right place and has the right contents
         dump_names = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/dump_names/{crash_id}",
         )
         assert json.loads(dump_names) == []
 
     def test_save_raw_crash_with_dumps(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        original_raw_crash = {"submitted_timestamp": date_to_string(now)}
         s3_helper.create_bucket(bucket)
 
         # Run save_raw_crash
         crashstorage.save_raw_crash(
-            raw_crash={"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            raw_crash=original_raw_crash,
             dumps=MemoryDumpsMapping(
                 {"dump": b"fake dump", "content_dump": b"fake content dump"}
             ),
-            crash_id="0bba929f-8721-460c-dead-a43c20071027",
+            crash_id=crash_id,
         )
 
         # Verify the raw_crash made it to the right place and has the right contents
         raw_crash = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
         )
 
-        assert json.loads(raw_crash) == {
-            "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"
-        }
+        assert json.loads(raw_crash) == original_raw_crash
 
         # Verify dump_names made it to the right place and has the right
         # contents
         dump_names = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/dump_names/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/dump_names/{crash_id}",
         )
         assert sorted(json.loads(dump_names)) == ["content_dump", "dump"]
 
         # Verify dumps
         dump = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/dump/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/dump/{crash_id}",
         )
         assert dump == b"fake dump"
 
         content_dump = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/content_dump/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/content_dump/{crash_id}",
         )
         assert content_dump == b"fake content dump"
 
     def test_save_processed_crash(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        original_raw_crash = {"submitted_timestamp": date_to_string(now)}
+        original_processed_crash = {
+            "uuid": crash_id,
+            "completed_datetime": date_to_string(now),
+            "signature": "now_this_is_a_signature",
+        }
 
+        s3_helper.create_bucket(bucket)
         crashstorage.save_processed_crash(
-            raw_crash={"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
-            processed_crash={
-                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completed_datetime": "2012-04-08 10:56:50.902884",
-                "signature": "now_this_is_a_signature",
-            },
+            raw_crash=original_raw_crash,
+            processed_crash=original_processed_crash,
         )
 
         # Verify processed crash is saved
         processed_crash = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/processed_crash/{crash_id}",
         )
-        assert json.loads(processed_crash) == {
-            "signature": "now_this_is_a_signature",
-            "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-            "completed_datetime": "2012-04-08 10:56:50.902884",
-        }
+        assert json.loads(processed_crash) == original_processed_crash
         # Verify nothing else got saved
-        assert s3_helper.list(bucket_name=bucket) == [
-            "v1/processed_crash/0bba929f-8721-460c-dead-a43c20071027"
-        ]
+        assert s3_helper.list(bucket_name=bucket) == [f"v1/processed_crash/{crash_id}"]
 
     def test_get_raw_crash(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        original_raw_crash = {"submitted_timestamp": date_to_string(now)}
+
         s3_helper.create_bucket(bucket)
-
-        raw_crash = {"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"}
-
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/raw_crash/20120408/936ce666-ff3b-4c7a-9674-367fe2120408",
-            data=dict_to_str(raw_crash).encode("utf-8"),
+            key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
+            data=dict_to_str(original_raw_crash).encode("utf-8"),
         )
 
-        result = crashstorage.get_raw_crash("936ce666-ff3b-4c7a-9674-367fe2120408")
+        result = crashstorage.get_raw_crash(crash_id)
+        # NOTE(willkg): the raw crash was migrated to version 2 of the structure
         expected = {
             "metadata": {
                 "collector_notes": [],
@@ -205,7 +208,7 @@ class TestBotoS3CrashStorage:
                 "payload": "unknown",
                 "payload_compressed": "0",
             },
-            "submitted_timestamp": "2013-01-09T22:21:18.646733+00:00",
+            "submitted_timestamp": original_raw_crash["submitted_timestamp"],
             "version": 2,
         }
         assert result == expected
@@ -213,95 +216,97 @@ class TestBotoS3CrashStorage:
     def test_get_raw_crash_not_found(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         with pytest.raises(CrashIDNotFound):
-            crashstorage.get_raw_crash("0bba929f-dead-dead-dead-a43c20071027")
+            crashstorage.get_raw_crash(crash_id)
 
     def test_get_raw_dump(self, s3_helper):
         """test fetching the raw dump without naming it"""
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
         )
 
-        result = crashstorage.get_raw_dump("936ce666-ff3b-4c7a-9674-367fe2120408")
+        result = crashstorage.get_raw_dump(crash_id)
         assert result == b"this is a raw dump"
 
     def test_get_raw_dump_not_found(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         with pytest.raises(CrashIDNotFound):
-            crashstorage.get_raw_dump("0bba929f-dead-dead-dead-a43c20071027")
+            crashstorage.get_raw_dump(crash_id)
 
     def test_get_raw_dump_upload_file_minidump(self, s3_helper):
         """test fetching the raw dump, naming it 'upload_file_minidump'"""
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
         )
 
-        result = crashstorage.get_raw_dump(
-            "936ce666-ff3b-4c7a-9674-367fe2120408", name="upload_file_minidump"
-        )
+        result = crashstorage.get_raw_dump(crash_id, name="upload_file_minidump")
         assert result == b"this is a raw dump"
 
     def test_get_raw_dump_empty_string(self, s3_helper):
         """test fetching the raw dump, naming it with empty string"""
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
         )
 
-        result = crashstorage.get_raw_dump(
-            "936ce666-ff3b-4c7a-9674-367fe2120408", name=""
-        )
+        result = crashstorage.get_raw_dump(crash_id, name="")
         assert result == b"this is a raw dump"
 
     def test_get_dumps(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump_names/{crash_id}",
             data=b'["dump", "content_dump", "city_dump"]',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump/{crash_id}",
             data=b'this is "dump", the first one',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/content_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/content_dump/{crash_id}",
             data=b'this is "content_dump", the second one',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/city_dump/{crash_id}",
             data=b'this is "city_dump", the last one',
         )
 
-        result = crashstorage.get_dumps("936ce666-ff3b-4c7a-9674-367fe2120408")
+        result = crashstorage.get_dumps(crash_id)
         assert result == {
             "dump": b'this is "dump", the first one',
             "content_dump": b'this is "content_dump", the second one',
@@ -311,40 +316,41 @@ class TestBotoS3CrashStorage:
     def test_get_dumps_not_found(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         with pytest.raises(CrashIDNotFound):
-            crashstorage.get_dumps("0bba929f-dead-dead-dead-a43c20071027")
+            crashstorage.get_dumps(crash_id)
 
     def test_get_dumps_as_files(self, s3_helper, tmp_path):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump_names/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump_names/{crash_id}",
             data=b'["dump", "content_dump", "city_dump"]',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/dump/{crash_id}",
             data=b'this is "dump", the first one',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/content_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/content_dump/{crash_id}",
             data=b'this is "content_dump", the second one',
         )
         s3_helper.upload_fileobj(
             bucket_name=bucket,
-            key="v1/city_dump/936ce666-ff3b-4c7a-9674-367fe2120408",
+            key=f"v1/city_dump/{crash_id}",
             data=b'this is "city_dump", the last one',
         )
 
         result = crashstorage.get_dumps_as_files(
-            crash_id="936ce666-ff3b-4c7a-9674-367fe2120408",
-            tmpdir=str(tmp_path),
+            crash_id=crash_id, tmpdir=str(tmp_path)
         )
 
         # We don't care much about the mocked internals as the bulk of that function is
@@ -352,15 +358,15 @@ class TestBotoS3CrashStorage:
         expected = {
             "content_dump": os.path.join(
                 str(tmp_path),
-                "936ce666-ff3b-4c7a-9674-367fe2120408.content_dump.TEMPORARY.dump",
+                f"{crash_id}.content_dump.TEMPORARY.dump",
             ),
             "city_dump": os.path.join(
                 str(tmp_path),
-                "936ce666-ff3b-4c7a-9674-367fe2120408.city_dump.TEMPORARY.dump",
+                f"{crash_id}.city_dump.TEMPORARY.dump",
             ),
             "upload_file_minidump": os.path.join(
                 str(tmp_path),
-                "936ce666-ff3b-4c7a-9674-367fe2120408.upload_file_minidump.TEMPORARY.dump",
+                f"{crash_id}.upload_file_minidump.TEMPORARY.dump",
             ),
         }
         assert result == expected
@@ -368,7 +374,7 @@ class TestBotoS3CrashStorage:
     def test_get_processed_crash(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        crash_id = "936ce666-ff3b-4c7a-9674-367fe2120408"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         processed_crash = {
@@ -392,24 +398,28 @@ class TestBotoS3CrashStorage:
     def test_get_processed_not_found(self, s3_helper):
         crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
         bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
-        s3_helper.create_bucket(bucket)
+        crash_id = create_new_ooid()
 
+        s3_helper.create_bucket(bucket)
         with pytest.raises(CrashIDNotFound):
-            crashstorage.get_processed_crash("0bba929f-dead-dead-dead-a43c20071027")
+            crashstorage.get_processed_crash(crash_id)
 
 
 class TestTelemetryBotoS3CrashStorage:
     def test_save_processed_crash(self, s3_helper):
         crashstorage = build_instance_from_settings(TELEMETRY_SETTINGS)
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        original_raw_crash = {"submitted_timestamp": date_to_string(now)}
         s3_helper.create_bucket(bucket)
 
         # Run save_processed_crash
         crashstorage.save_processed_crash(
-            raw_crash={"submitted_timestamp": "2013-01-09T22:21:18.646733+00:00"},
+            raw_crash=original_raw_crash,
             processed_crash={
-                "uuid": "0bba929f-8721-460c-dead-a43c20071027",
-                "completed_datetime": "2012-04-08 10:56:50.902884",
+                "uuid": crash_id,
+                "completed_datetime": date_to_string(now),
                 "signature": "now_this_is_a_signature",
                 "os_name": "Linux",
                 "some_random_key": "should not appear",
@@ -435,12 +445,12 @@ class TestTelemetryBotoS3CrashStorage:
         # Get the crash data we just saved from the bucket and verify it's contents
         crash_data = s3_helper.download_fileobj(
             bucket_name=bucket,
-            key="v1/crash_report/20071027/0bba929f-8721-460c-dead-a43c20071027",
+            key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
         )
         assert json.loads(crash_data) == {
             "platform": "Linux",
             "signature": "now_this_is_a_signature",
-            "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+            "uuid": crash_id,
             "json_dump": {
                 "crash_info": {
                     "address": "0x6357737b",
@@ -460,13 +470,13 @@ class TestTelemetryBotoS3CrashStorage:
     def test_get_processed_crash(self, s3_helper):
         crashstorage = build_instance_from_settings(TELEMETRY_SETTINGS)
         bucket = TELEMETRY_SETTINGS["options"]["bucket"]
-        crash_id = "0bba929f-8721-460c-dead-a43c20071027"
+        crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
         crash_data = {
             "platform": "Linux",
             "signature": "now_this_is_a_signature",
-            "uuid": "0bba929f-8721-460c-dead-a43c20071027",
+            "uuid": crash_id,
         }
 
         # Save the data to S3 so we have something to get

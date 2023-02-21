@@ -26,7 +26,7 @@ class TestS3ConnectionContext:
         """Test saving a file and make sure it's there."""
         conn = build_instance_from_settings(S3_SETTINGS)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
+        bucket = s3_helper.get_crashstorage_bucket()
         path = "/test/testfile.txt"
         file_data = b"test file contents"
 
@@ -46,7 +46,7 @@ class TestS3ConnectionContext:
         """Test loading a file that isn't there."""
         conn = build_instance_from_settings(S3_SETTINGS)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
+        bucket = s3_helper.get_crashstorage_bucket()
         path = "/test/testfile.txt"
 
         s3_helper.create_bucket(bucket)
@@ -57,7 +57,7 @@ class TestS3ConnectionContext:
         """Test loading a file that isn't there."""
         conn = build_instance_from_settings(S3_SETTINGS)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
+        bucket = s3_helper.get_crashstorage_bucket()
         path = "/test/testfile.txt"
         file_data = b"test file contents"
 
