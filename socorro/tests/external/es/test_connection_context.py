@@ -11,7 +11,7 @@ class TestConnectionContext:
     def build_conn(self):
         return build_instance(
             class_path="socorro.external.es.connection_context.ConnectionContext",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_create_index(self, es_helper):

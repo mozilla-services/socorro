@@ -96,7 +96,7 @@ class TestIntegrationESCrashStorage:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_index_crash(self, es_helper):
@@ -245,7 +245,7 @@ class TestESCrashStorage:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_indexing_success(self, es_helper):

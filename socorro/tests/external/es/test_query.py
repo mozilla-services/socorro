@@ -22,7 +22,7 @@ class TestIntegrationQuery:
     def build_crashstorage(self):
         return build_instance(
             class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.CRASH_DESTINATIONS["es"]["options"],
+            kwargs=settings.ES_STORAGE["options"],
         )
 
     def test_get(self, es_helper):

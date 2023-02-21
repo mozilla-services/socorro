@@ -179,9 +179,7 @@ class ElasticsearchHelper:
     """
 
     def __init__(self):
-        self._crashstorage = build_instance_from_settings(
-            settings.CRASH_DESTINATIONS["es"]
-        )
+        self._crashstorage = build_instance_from_settings(settings.ES_STORAGE)
         self.conn = self._crashstorage.client
 
     def get_index_template(self):
@@ -223,7 +221,7 @@ class ElasticsearchHelper:
 
     def get_url(self):
         """Returns the Elasticsearch url."""
-        return settings.CRASH_DESTINATIONS["es"]["options"]["url"]
+        return settings.ES_STORAGE["options"]["url"]
 
     def refresh(self):
         self.conn.refresh()
