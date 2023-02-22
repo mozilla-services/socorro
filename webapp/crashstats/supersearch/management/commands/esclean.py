@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = "Delete expired Elasticsearch indices."
 
     def handle(self, **options):
-        es = build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
+        es = build_instance_from_settings(settings.ES_STORAGE)
         indices = es.delete_expired_indices()
         if indices:
             self.stdout.write("Deleting expired crash report indices.")

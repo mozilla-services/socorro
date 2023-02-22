@@ -117,9 +117,7 @@ class SuperSearch(ESSocorroMiddleware):
         )
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["es"]
-        )
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
         return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
     def _get_extended_params(self):
@@ -222,9 +220,7 @@ class SuperSearchUnredacted(SuperSearch):
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["es"]
-        )
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
         return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
     def get(self, **kwargs):
@@ -275,7 +271,5 @@ class Query(ESSocorroMiddleware):
     possible_params = ("indices",)
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["es"]
-        )
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
         return query.Query(crashstorage=s3_crash_dest)

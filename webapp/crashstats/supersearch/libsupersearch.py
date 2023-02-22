@@ -60,9 +60,7 @@ class SuperSearchStatusModel:
     filters = []
 
     def __init__(self):
-        self.es_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["es"]
-        )
+        self.es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
 
     def get_connection(self):
         with self.es_crash_dest.client() as conn:

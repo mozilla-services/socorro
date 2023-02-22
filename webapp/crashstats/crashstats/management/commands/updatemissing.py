@@ -23,9 +23,7 @@ class Command(BaseCommand):
 
     def check_past_missing(self):
         """Check the table for missing crashes and check to see if they exist."""
-        s3_crash_dest = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["s3"]
-        )
+        s3_crash_dest = build_instance_from_settings(socorro_settings.S3_STORAGE)
 
         supersearch = SuperSearchUnredacted()
 

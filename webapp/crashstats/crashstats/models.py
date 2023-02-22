@@ -542,12 +542,9 @@ class TelemetryCrash(SocorroMiddleware):
     delete = None
 
     def get_implementation(self):
+        s3_settings = socorro_settings.TELEMETRY_STORAGE["options"]
         # FIXME(willkg): change this to BotoS3CrashStorage
-        s3_settings = socorro_settings.CRASH_DESTINATIONS["telemetry"]["options"]
         return TelemetryCrashData(**s3_settings)
-
-        telemetry_settings = socorro_settings.CRASH_DESTINATIONS["telemetry"]
-        return build_instance_from_settings(telemetry_settings)
 
 
 class PermissionsReducerError(Exception):
@@ -631,7 +628,7 @@ class ProcessedCrash(SocorroMiddleware):
 
     def get_implementation(self):
         # FIXME(willkg): change this to BotoS3CrashStorage
-        s3_settings = socorro_settings.CRASH_DESTINATIONS["s3"]["options"]
+        s3_settings = socorro_settings.S3_STORAGE["options"]
         return SimplifiedCrashData(**s3_settings)
 
     def get(self, crash_id, dont_cache=False, refresh_cache=False):
@@ -739,8 +736,8 @@ class RawCrash(SocorroMiddleware):
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
 
     def get_implementation(self):
+        s3_settings = socorro_settings.S3_STORAGE["options"]
         # FIXME(willkg): change this to BotoS3CrashStorage
-        s3_settings = socorro_settings.CRASH_DESTINATIONS["s3"]["options"]
         return SimplifiedCrashData(**s3_settings)
 
     def public_keys(self):
