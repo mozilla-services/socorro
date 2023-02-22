@@ -286,9 +286,7 @@ def search_custom(request, default_context=None):
         except BadArgumentError as e:
             error = e
 
-    es_crashstorage = build_instance_from_settings(
-        socorro_settings.CRASH_DESTINATIONS["es"]
-    )
+    es_crashstorage = build_instance_from_settings(socorro_settings.ES_STORAGE)
 
     possible_indices = []
     for index in es_crashstorage.get_indices():

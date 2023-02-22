@@ -414,9 +414,7 @@ class TestProcessedCrash:
         }
 
         key = s3_build_keys("processed_crash", crash_id)[0]
-        crashstorage = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["s3"]
-        )
+        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
         data = dict_to_str(processed_crash).encode("utf-8")
         s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
 
@@ -452,9 +450,7 @@ class TestRawCrash:
         }
 
         key = s3_build_keys("raw_crash", crash_id)[0]
-        crashstorage = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["s3"]
-        )
+        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
         data = dict_to_str(raw_crash).encode("utf-8")
         s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
 
@@ -479,9 +475,7 @@ class TestRawCrash:
         dump = b"abcde"
 
         key = s3_build_keys("dump", crash_id)[0]
-        crashstorage = build_instance_from_settings(
-            socorro_settings.CRASH_DESTINATIONS["s3"]
-        )
+        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
         s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=dump)
 
         r = api.get(crash_id=crash_id, format="raw", name="upload_file_minidump")

@@ -77,9 +77,7 @@ def check_elasticsearch(supersearch, crash_ids):
 def check_crashids_for_date(firstchars_chunk, date):
     """Check crash ids for a given firstchars and date"""
     s3_crash_source = build_instance_from_settings(socorro_settings.CRASH_SOURCE)
-    s3_crash_dest = build_instance_from_settings(
-        socorro_settings.CRASH_DESTINATIONS["s3"]
-    )
+    s3_crash_dest = build_instance_from_settings(socorro_settings.S3_STORAGE)
 
     supersearch = SuperSearchUnredacted()
 
