@@ -48,7 +48,7 @@ semver==2.13.0
 sentry-sdk==1.14.0
 statsd==4.0.1
 urlwait==1.0
-werkzeug==2.2.2
+werkzeug==2.2.3
 whitenoise==6.3.0
 
 # NOTE(willkg): Wait to upgrade these until after we split out flake8.
