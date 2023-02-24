@@ -495,22 +495,21 @@ class Test_report_index:
 
     def test_raw_crash_unicode_key(self, client, db, s3_helper, user_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
-        raw_crash["Prénom"] = "Peter"
+        # NOTE(willkg): The collector doesn't remove non-ascii keys currently. At some
+        # point, it probably should.
+        raw_crash["Pr\u00e9nom"] = "Peter"
         upload_crash_data(
             s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        # Be logged in with view_pii to avoid allowlisting
+        # Log in with protected data access to view all data
         user = user_helper.create_protected_user()
         client.force_login(user)
 
         url = reverse("crashstats:report_index", args=(crash_id,))
         response = client.get(url)
         assert response.status_code == 200
-        # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
-        # the client output.
-        # NOTE(willkg): the right side should be binary format
-        assert "Prénom".encode() in response.content
+        assert "Pr\u00e9nom" in smart_str(response.content)
 
     def test_additional_raw_dump_links(self, client, db, s3_helper, user_helper):
         json_dump = {
