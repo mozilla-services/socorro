@@ -371,12 +371,19 @@ class TestViews:
         assert "term_counts" in struct
         assert len(struct["term_counts"]) == 3
 
-    def test_signature_comments_no_permission(self, client, db):
+    def test_signature_comments_permissions(self, client, db, es_helper, user_helper):
         """Verify comments are not viewable without view_pii."""
         url = reverse("signature:signature_comments")
 
         response = client.get(url, {"signature": "whatever"})
         assert response.status_code == 403
+
+        # Log in with user with protected data access
+        user = user_helper.create_protected_user()
+        client.force_login(user)
+
+        response = client.get(url, {"signature": "whatever"})
+        assert response.status_code == 200
 
     def test_signature_comments(self, client, db, es_helper, user_helper):
         def build_crash_data(crash_id, **params):
@@ -423,16 +430,8 @@ class TestViews:
         es_helper.refresh()
 
         url = reverse("signature:signature_comments")
-
-        # Anonymous users can't see comments
-        response = client.get(url, {"signature": TEST_SIGNATURE, "product": "Firefox"})
-        assert response.status_code == 403
-
-        # Log in with user with protected data access
         user = user_helper.create_protected_user()
         client.force_login(user)
-
-        # Test with results.
         response = client.get(url, {"signature": TEST_SIGNATURE, "product": "Firefox"})
         assert response.status_code == 200
         assert "Crash ID" in smart_str(response.content)
