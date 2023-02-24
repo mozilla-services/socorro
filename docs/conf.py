@@ -36,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 extensions = [
     'sphinx.ext.graphviz',
     "exts.adr_log",
+    "everett.sphinxext",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -54,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Socorro'
-copyright = '2013-2022 Mozilla Foundation'
+copyright = '2013-2023 Mozilla Foundation'
 author = 'Socorro team'
 
 # The version info for the project you're documenting, acts as replacement for

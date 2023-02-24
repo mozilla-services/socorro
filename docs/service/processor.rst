@@ -34,8 +34,8 @@ to symbolicate stacks. Mozilla's crash ingestion pipeline points to the Mozilla
 Symbols Server which holds symbols for all our product builds.
 
 The stackwalker is set up to store temporary files it generates when
-downloading SYM files in ``symbol_tmp_path`` and cache SYM files that have been
-completely downloaded for a while in ``symbol_cache_path``. SYM files are big,
+downloading SYM files in ``SYMBOL_TMP_PATH`` and cache SYM files that have been
+completely downloaded for a while in ``SYMBOL_CACHE_PATH``. SYM files are big,
 so you want to volume mount those paths into the Docker container.
 
 

@@ -22,7 +22,7 @@ TOOL_ENV = _config(
     parser=bool,
     doc=(
         "Whether or not this is running in a tool environment and should ignore "
-        + "required configuration."
+        "required configuration."
     ),
 )
 if TOOL_ENV:
@@ -120,7 +120,10 @@ PROCESSOR = {
 AWS_ENDPOINT_URL = _config(
     "AWS_ENDPOINT_URL",
     default="",
-    doc="Endpoint url for AWS SQS/S3 in the local dev environment.",
+    doc=(
+        "Endpoint url for AWS SQS/S3 in the local dev environment. "
+        "Don't set this in server environments."
+    ),
 )
 
 # Crash report processing queue configuration
@@ -224,7 +227,7 @@ TELEMETRY_STORAGE = {
             default="",
             doc=(
                 "Endpoint url for AWS S3 for the telemetry bucket. This is only "
-                + "used in the local dev environment."
+                "used in the local dev environment."
             ),
         ),
     },
@@ -249,7 +252,7 @@ CACHE_MANAGER_LOGGING_LEVEL = _config(
     default="INFO",
     doc=(
         "Default logging level for the cache manager. Should be one of INFO, DEBUG, "
-        + "WARNING, ERROR."
+        "WARNING, ERROR."
     ),
 )
 SYMBOLS_CACHE_PATH = _config(
@@ -263,7 +266,7 @@ SYMBOLS_CACHE_MAX_SIZE = _config(
     parser=int,
     doc=(
         "Max size (bytes) of symbols cache. You can use _ to group digits for "
-        + "legibility."
+        "legibility."
     ),
 )
 

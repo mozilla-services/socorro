@@ -83,6 +83,7 @@ clean:  ## | Remove all build, test, coverage, and Python artifacts.
 
 .PHONY: docs
 docs: my.env .docker-build  ## | Generate Sphinx HTML documetation.
+	${DC} run --rm --user ${SOCORRO_UID} app shell make -C docs/ clean
 	${DC} run --rm --user ${SOCORRO_UID} app shell make -C docs/ html
 
 .PHONY: lint
