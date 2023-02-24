@@ -6,7 +6,7 @@
 
 # Script to upload schema to Telemetry crash storage location.
 #
-# Usage: socorro-cmd upload_telemetry_schema
+# Usage: python bin/cmd upload_telemetry_schema
 
 import json
 
