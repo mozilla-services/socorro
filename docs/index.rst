@@ -25,6 +25,7 @@ and Super Search is located at `<https://crash-stats.mozilla.org/documentation/>
    :maxdepth: 1
 
    dev
+   configuration
    contributing
    service/index
    flows/index

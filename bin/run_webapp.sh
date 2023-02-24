@@ -16,6 +16,7 @@
 set -euxo pipefail
 
 PORT=${PORT:-"8000"}
+GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-"300"}
 GUNICORN_WORKERS=${GUNICORN_WORKERS:-"1"}
 GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS:-"sync"}
 GUNICORN_MAX_REQUESTS=${GUNICORN_MAX_REQUESTS:-"10000"}
@@ -33,6 +34,7 @@ if [ "${1:-}" == "--dev" ]; then
 else
     ${CMDPREFIX} gunicorn \
         --pythonpath /app/webapp/ \
+        --timeout "${GUNICORN_TIMEOUT}" \
         --workers="${GUNICORN_WORKERS}" \
         --worker-class="${GUNICORN_WORKER_CLASS}" \
         --max-requests="${GUNICORN_MAX_REQUESTS}" \
