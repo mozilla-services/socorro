@@ -54,4 +54,4 @@ RUN cd /app/webapp/ && SECRET_KEY=fakekey python manage.py collectstatic --noinp
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.
-ENTRYPOINT ["/app/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/bin/entrypoint.sh"]
