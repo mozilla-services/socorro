@@ -114,6 +114,7 @@ mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::detail::IntrinsicMemoryOps
 mozilla::detail::MutexImpl
+mozilla::detail::RunnableMethodImpl<T>::RunnableMethodImpl
 mozilla::detail::ThreadLocalNativeStorage<T>::get
 mozilla::detail::ThreadLocal<T>::get
 mozilla::dom::ThreadSafeRequestHandle::GetContext
@@ -132,6 +133,7 @@ mozilla::MozPromise<T>::ThenCommand<T>::Track
 mozilla::MozPromise<T>::ThenInternal
 mozilla::MozPromise<T>::ThenValueBase::AssertIsDead
 mozilla::net::ShutdownEvent::PostAndWait
+mozilla::NewRunnableMethod
 mozilla::OffTheBooksCondVar::Wait
 mozilla::OffTheBooksMutex::Lock
 mozilla::RangeBoundaryBase<T>::operator
@@ -142,7 +144,9 @@ mozilla::ThreadEventQueue
 mozilla::ThreadSafeAutoRefCnt
 mozilla::UniquePtr
 mozilla::widget::WlCrashHandler
+mozilla::wr::RenderThread::AddRef
 nsQueryObject<T>::operator
+nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 nsThread::GetEvent
 mozilla::PrioritizedEventQueue<T>::GetEvent
 nsThread::ProcessNextEvent
