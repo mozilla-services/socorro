@@ -134,6 +134,7 @@ mozilla::MozPromise<T>::ThenValueBase::AssertIsDead
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::OffTheBooksCondVar::Wait
 mozilla::OffTheBooksMutex::Lock
+mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::TaskQueue::
@@ -154,6 +155,7 @@ nvmap@0x
 objc_msgLookupSuper2
 objc_terminate
 org\.mozilla\.f.*\.apk@0x
+operator==
 panic_abort::
 PR_WaitCondVar
 __psynch_cvwait
