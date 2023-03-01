@@ -167,9 +167,11 @@ Follow these steps:
    annotations.
 
    **If the annotation is category 3 or 4, it will need to undergo Sensitive Data
-   Review. See `Sensitive Data Review
+   Review.**
+
+   See `Sensitive Data Review
    <https://wiki.mozilla.org/index.php?title=Data_Collection#Step_3:_Sensitive_Data_Collection_Review_Process>`__
-   for more details.**
+   for more details.
 
 If you need any help with filing a data review request, ask on `#crashreporting
 on Matrix <https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`__.
