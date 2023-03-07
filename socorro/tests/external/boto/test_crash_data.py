@@ -20,7 +20,7 @@ CRASHDATA_SETTINGS = {
         "region": os.environ["CRASHSTORAGE_S3_REGION"],
         "access_key": os.environ["CRASHSTORAGE_S3_ACCESS_KEY"],
         "secret_access_key": os.environ["CRASHSTORAGE_S3_SECRET_ACCESS_KEY"],
-        "endpoint_url": os.environ["AWS_ENDPOINT_URL"],
+        "endpoint_url": os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
     },
 }
 
@@ -31,7 +31,7 @@ TELEMETRY_SETTINGS = {
         "region": os.environ["TELEMETRY_S3_REGION"],
         "access_key": os.environ["TELEMETRY_S3_ACCESS_KEY"],
         "secret_access_key": os.environ["TELEMETRY_S3_SECRET_ACCESS_KEY"],
-        "endpoint_url": os.environ["AWS_ENDPOINT_URL"],
+        "endpoint_url": os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
     },
 }
 

@@ -19,7 +19,7 @@ echo ">>> set up environment"
 DATABASE_URL="${DATABASE_URL:-}"
 SENTRY_DSN="${SENTRY_DSN:-}"
 ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-}"
-AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-}"
+LOCAL_DEV_AWS_ENDPOINT_URL="${LOCAL_DEV_AWS_ENDPOINT_URL:-}"
 
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
@@ -30,7 +30,7 @@ echo ">>> wait for services to be ready"
 urlwait "${DATABASE_URL}"
 urlwait "${ELASTICSEARCH_URL}"
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
-python ./bin/waitfor.py --verbose "${AWS_ENDPOINT_URL}health"
+python ./bin/waitfor.py --verbose "${LOCAL_DEV_AWS_ENDPOINT_URL}health"
 
 echo ">>> build sqs things and db things"
 

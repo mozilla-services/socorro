@@ -22,7 +22,7 @@ QUEUE_SETTINGS = {
         "region": os.environ["SQS_REGION"],
         "access_key": os.environ["SQS_ACCESS_KEY"],
         "secret_access_key": os.environ["SQS_SECRET_ACCESS_KEY"],
-        "endpoint_url": os.environ["AWS_ENDPOINT_URL"],
+        "endpoint_url": os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
     },
 }
 

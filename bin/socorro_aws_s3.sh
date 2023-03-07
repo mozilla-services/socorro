@@ -48,6 +48,6 @@ aws_secret_access_key = ${CRASHSTORAGE_S3_SECRET_ACCESS_KEY}
 EOF
 fi
 
-AWSOPTIONS="--endpoint-url=${AWS_ENDPOINT_URL}"
+AWSOPTIONS="--endpoint-url=${LOCAL_DEV_AWS_ENDPOINT_URL}"
 
 HOME=/tmp aws ${AWSOPTIONS} s3 $@

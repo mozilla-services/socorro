@@ -100,7 +100,7 @@ class S3Helper:
         client = session.client(
             service_name="s3",
             config=Config(s3={"addressing_style": "path"}),
-            endpoint_url=os.environ["AWS_ENDPOINT_URL"],
+            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
         )
         return client
 
@@ -324,7 +324,7 @@ class SQSHelper:
         client = session.client(
             service_name="sqs",
             region_name=os.environ["SQS_REGION"],
-            endpoint_url=os.environ["AWS_ENDPOINT_URL"],
+            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
         )
         return client
 
