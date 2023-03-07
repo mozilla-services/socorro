@@ -117,8 +117,8 @@ PROCESSOR = {
     ),
 }
 
-AWS_ENDPOINT_URL = _config(
-    "AWS_ENDPOINT_URL",
+LOCAL_DEV_AWS_ENDPOINT_URL = _config(
+    "LOCAL_DEV_AWS_ENDPOINT_URL",
     default="",
     doc=(
         "Endpoint url for AWS SQS/S3 in the local dev environment. "
@@ -152,7 +152,7 @@ QUEUE = {
             doc="SQS secret access key.",
         ),
         "region": _config("SQS_REGION", default="", doc="SQS region."),
-        "endpoint_url": AWS_ENDPOINT_URL,
+        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
 
@@ -180,7 +180,7 @@ S3_STORAGE = {
             default="",
             doc="S3 region for crash report data.",
         ),
-        "endpoint_url": AWS_ENDPOINT_URL,
+        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
 
@@ -222,14 +222,7 @@ TELEMETRY_STORAGE = {
             doc="S3 secret access key for telemetry bucket.",
         ),
         "region": _config("TELEMETRY_S3_REGION", default="", doc="S3 region."),
-        "endpoint_url": _config(
-            "TELEMETRY_S3_ENDPOINT_URL",
-            default="",
-            doc=(
-                "Endpoint url for AWS S3 for the telemetry bucket. This is only "
-                "used in the local dev environment."
-            ),
-        ),
+        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
 
