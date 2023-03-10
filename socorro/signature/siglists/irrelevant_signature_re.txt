@@ -12,6 +12,7 @@ alloc::alloc::__alloc_error_handler::__rg_oom
 alloc::alloc::handle_alloc_error
 alloc::vec::impl
 \(anonymous namespace\)::WriteFatalLogAndAbort
+AnnotateMozCrashReason
 ashmem
 __ascii_stricmp
 __assert
@@ -75,6 +76,8 @@ _guard_dispatch_icall_nop
 guard_dispatch_icall_nop
 # NOTE(willkg): we want to skip handle_error but not handle_errorf
 handle_error$
+IPC::EnumSerializer<T>::Write
+IPC::WriteParam
 js::gc::CellWithTenuredGCPointer<T>::headerPtr
 JS::loader::ScriptLoadRequest::GetWorkerLoadContext
 JSObject::nonCCWRealm
@@ -113,10 +116,12 @@ mozilla::detail::BaseAutoLock
 mozilla::detail::BaseMonitorAutoLock
 mozilla::detail::ConditionVariableImpl
 mozilla::detail::IntrinsicMemoryOps
+mozilla::detail::MemoryOperations
 mozilla::detail::MutexImpl
 mozilla::detail::RunnableMethodImpl<T>::RunnableMethodImpl
 mozilla::detail::ThreadLocalNativeStorage<T>::get
 mozilla::detail::ThreadLocal<T>::get
+mozilla::dom::Optional_base<T>::Construct<T>
 mozilla::dom::ThreadSafeRequestHandle::GetContext
 mozilla::gfx::Log<
 mozilla::ipc::IPDLParamTraits<T>::Write
@@ -136,6 +141,9 @@ mozilla::net::ShutdownEvent::PostAndWait
 mozilla::NewRunnableMethod
 mozilla::OffTheBooksCondVar::Wait
 mozilla::OffTheBooksMutex::Lock
+mozilla::PodAssign
+mozilla::PodCopy
+mozilla::PodZero
 mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
 mozilla::TaskController::GetRunnableForMTTask
