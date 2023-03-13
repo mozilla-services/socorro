@@ -110,6 +110,7 @@ mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
 mozcrt19.dll@0x
 mozilla::AlignedBuffer<T>::Data
+mozilla::ArrayIterator<T>
 mozilla::Atomic<T>::Atomic
 mozilla::detail::Atomic
 mozilla::detail::BaseAutoLock
@@ -202,6 +203,7 @@ SleepConditionVariableSRW
 __stack_chk_fail
 std::__
 std::alloc::rust_oom
+std::all_of
 std::io::stdio::_eprint
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
