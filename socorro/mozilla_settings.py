@@ -16,6 +16,13 @@ from everett.manager import ConfigManager, ListOf
 _config = ConfigManager.basic_config()
 
 
+def int_or_none(val):
+    """If the value is an empty string, then return None"""
+    if val.strip() == "":
+        return None
+    return int(val)
+
+
 TOOL_ENV = _config(
     "TOOL_ENV",
     default="False",
@@ -92,13 +99,13 @@ PROCESSOR = {
             "number_of_threads": _config(
                 "PROCESSOR_NUMBER_OF_THREADS",
                 default="4",
-                parser=int,
+                parser=int_or_none,
                 doc="Number of worker threads for the processor.",
             ),
             "maximum_queue_size": _config(
                 "PROCESSOR_MAXIMUM_QUEUE_SIZE",
                 default="8",
-                parser=int,
+                parser=int_or_none,
                 doc="Number of items to queue up from the processing queues.",
             ),
         },
@@ -256,7 +263,7 @@ SYMBOLS_CACHE_PATH = _config(
 SYMBOLS_CACHE_MAX_SIZE = _config(
     "SYMBOLS_CACHE_MAX_SIZE",
     default=str(1024 * 1024 * 1024),
-    parser=int,
+    parser=int_or_none,
     doc=(
         "Max size (bytes) of symbols cache. You can use _ to group digits for "
         "legibility."
@@ -287,7 +294,7 @@ STACKWALKER = {
     "kill_timeout": _config(
         "STACKWALKER_KILL_TIMEOUT",
         default="120",
-        parser=int,
+        parser=int_or_none,
         doc="Timeout in seconds before the stackwalker is killed.",
     ),
     "symbols_urls": _config(

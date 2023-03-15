@@ -81,6 +81,8 @@ class DiskCacheManager:
 
         self.cachepath = pathlib.Path(settings.SYMBOLS_CACHE_PATH).resolve()
         self.max_size = settings.SYMBOLS_CACHE_MAX_SIZE
+        if self.max_size is None:
+            raise ValueError("SYMBOLS_CACHE_MAX_SIZE must have non-None value")
 
         # Set up attributes for cache monitoring; these get created in the generator
         self.lru = LastUpdatedOrderedDict()

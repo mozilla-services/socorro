@@ -49,6 +49,15 @@ class ThreadedTaskManager(TaskManager):
         :arg task_func: a function that will accept the args and kwargs yielded
             by the job_source_iterator
         """
+
+        # If number of threads is None, set it to default
+        if number_of_threads is None:
+            number_of_threads = 4
+
+        # If maximum queue size is None, set it to default
+        if maximum_queue_size is None:
+            maximum_queue_size = 8
+
         super().__init__(
             idle_delay=idle_delay,
             quit_on_empty_queue=quit_on_empty_queue,
