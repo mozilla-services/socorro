@@ -198,7 +198,7 @@ class DiskCacheManager:
             # there
             timeout = 0
         else:
-            timeout = 1000
+            timeout = 500
 
         self.inotify = INotify(nonblocking=nonblocking)
 
@@ -228,6 +228,10 @@ class DiskCacheManager:
                         self.logger.debug("EVENT: %s: %s", event, flags_list)
 
                         if flags.IGNORED in event_flags:
+                            continue
+
+                        if flags.Q_OVERFLOW in event_flags:
+                            METRICS.incr("q_overflow")
                             continue
 
                         dir_path = self.watches.inv[event.wd]
