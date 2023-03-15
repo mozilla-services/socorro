@@ -222,37 +222,39 @@ class DiskCacheManager:
                 try:
                     for event in self.inotify.read(timeout=timeout):
                         processed_events = True
-                        event_flags = flags.from_mask(event.mask)
+                        event_mask = event.mask
 
-                        flags_list = ", ".join([str(flag) for flag in event_flags])
-                        self.logger.debug("EVENT: %s: %s", event, flags_list)
+                        # flags_list = ", ".join(
+                        #     [str(flag) for flag in flags.from_mask(event_mask)]
+                        # )
+                        # self.logger.debug("EVENT: %s: %s", event, flags_list)
 
-                        if flags.IGNORED in event_flags:
+                        if flags.IGNORED & event_mask:
                             continue
 
-                        if flags.Q_OVERFLOW in event_flags:
+                        if flags.Q_OVERFLOW & event_mask:
                             METRICS.incr("q_overflow")
                             continue
 
                         dir_path = self.watches.inv[event.wd]
                         path = os.path.join(dir_path, event.name)
 
-                        if flags.ISDIR in event_flags:
+                        if flags.ISDIR & event_mask:
                             # Handle directory events which update our watch lists
-                            if flags.CREATE in event_flags:
+                            if flags.CREATE & event_mask:
                                 self.add_watch(path)
 
                                 # This is a new directory to watch, so we should add the
                                 # contents to our LRU and watches
                                 self.inventory_existing(path)
 
-                            if flags.DELETE_SELF in event_flags:
+                            if flags.DELETE_SELF & event_mask:
                                 if path in self.watches:
                                     self.remove_watch(path)
 
                         else:
                             # Handle file events which update our LRU cache
-                            if flags.CREATE in event_flags:
+                            if flags.CREATE & event_mask:
                                 if path not in self.lru:
                                     try:
                                         size = os.stat(path).st_size
@@ -265,13 +267,21 @@ class DiskCacheManager:
                                     self.lru[path] = size
                                     self.total_size += size
 
-                            elif flags.ACCESS in event_flags:
+                            elif flags.ACCESS & event_mask:
                                 if path in self.lru:
                                     self.lru.touch(path)
 
-                            elif flags.MODIFY in event_flags:
+                            elif flags.MODIFY & event_mask:
                                 size = self.lru[path]
-                                new_size = os.stat(path).st_size
+                                try:
+                                    new_size = os.stat(path).st_size
+                                except FileNotFoundError:
+                                    # The file was modified and deleted in rapid
+                                    # succession, so we treat it as a delete
+                                    size = self.lru.pop(path)
+                                    self.total_size -= size
+                                    continue
+
                                 if size != new_size:
                                     self.total_size -= size
                                     self.make_room(new_size)
@@ -279,7 +289,7 @@ class DiskCacheManager:
 
                                 self.lru[path] = new_size
 
-                            elif flags.DELETE in event_flags:
+                            elif flags.DELETE & event_mask:
                                 if path in self.lru:
                                     # NOTE(willkg): DELETE can be triggered by an
                                     # external thing or by the disk cache manager, so it
@@ -287,16 +297,21 @@ class DiskCacheManager:
                                     size = self.lru.pop(path)
                                     self.total_size -= size
 
-                            elif flags.MOVED_TO in event_flags:
+                            elif flags.MOVED_TO & event_mask:
                                 if path not in self.lru:
                                     # If the path isn't in self.lru, then treat this
                                     # like a create
-                                    size = os.stat(path).st_size
+                                    try:
+                                        size = os.stat(path).st_size
+                                    except FileNotFoundError:
+                                        # The file was created and deleted in rapid
+                                        # succession, so we can ignore it
+                                        continue
                                     self.make_room(size)
                                     self.lru[path] = size
                                     self.total_size += size
 
-                            elif flags.MOVED_FROM in event_flags:
+                            elif flags.MOVED_FROM & event_mask:
                                 if path in self.lru:
                                     # If it was moved out of this directory, then treat
                                     # it like a DELETE
