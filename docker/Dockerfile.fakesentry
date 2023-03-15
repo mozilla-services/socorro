@@ -1,4 +1,4 @@
-FROM python:3.10.8-alpine3.16@sha256:d17cfece24cb5d0432b37c138f307a19dd461b88aded1fc6981ef5c997c74de1
+FROM python:3.10.8-alpine3.16@sha256:7f0ea9ea95d32db6ee8f4973aa76d777923b0cdd83ebec6fd63a20fc7d08f4cf
 
 ARG groupid=5000
 ARG userid=5000

@@ -3,7 +3,7 @@
 # =========================================================================
 
 # https://hub.docker.com/_/python
-FROM python:3.9.16-slim@sha256:e23b65d2ed7cbb4f9975bcc46421470ca670e8e47744fe4b03eb94d39311ad24
+FROM python:3.9.16-slim@sha256:7f0ea9ea95d32db6ee8f4973aa76d777923b0cdd83ebec6fd63a20fc7d08f4cf
 
 # Set up user and group
 ARG groupid=10001
