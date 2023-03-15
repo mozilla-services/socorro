@@ -216,6 +216,11 @@ class MinidumpStackwalkRule(Rule):
         symbol_cache_path="/tmp/symbols",
     ):
         super().__init__()
+
+        # If kill_timeout is None, set it to 600--the default
+        if kill_timeout is None:
+            kill_timeout = 600
+
         self.dump_field = dump_field
         self.symbols_urls = symbols_urls or []
         self.command_path = command_path
