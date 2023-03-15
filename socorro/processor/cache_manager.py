@@ -250,7 +250,13 @@ class DiskCacheManager:
                             # Handle file events which update our LRU cache
                             if flags.CREATE in event_flags:
                                 if path not in self.lru:
-                                    size = os.stat(path).st_size
+                                    try:
+                                        size = os.stat(path).st_size
+                                    except FileNotFoundError:
+                                        # The file was created and deleted in rapid
+                                        # succession, so we can ignore it
+                                        continue
+
                                     self.make_room(size)
                                     self.lru[path] = size
                                     self.total_size += size
