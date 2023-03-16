@@ -70,7 +70,7 @@ LOGGING_LEVEL = _config(
 # Markus configuration for metrics
 MARKUS_BACKENDS = [
     {
-        "class": "markus.backends.statsd.StatsdMetrics",
+        "class": "markus.backends.datadog.DatadogMetrics",
         "options": {
             "statsd_host": _config(
                 "STATSD_HOST",
