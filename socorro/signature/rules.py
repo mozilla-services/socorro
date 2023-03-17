@@ -145,8 +145,9 @@ class CSignatureTool:
 
     def normalize_cpp_function(self, function, line):
         """Normalizes a single cpp frame with a function"""
-        # Drop member function cv/ref qualifiers like const, const&, &, and &&
-        for ref in ("const", "const&", "&&", "&"):
+        # Drop member function cv/ref qualifiers like const, const&, const &,
+        # &, and &&
+        for ref in ("const", "const&", "const &", "&&", "&"):
             if function.endswith(ref):
                 function = function[: -len(ref)].strip()
 
