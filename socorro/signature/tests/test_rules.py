@@ -365,6 +365,11 @@ class TestCSignatureTool:
                 "23",  # noqa
                 "mozilla::jni::GlobalRef<T>::operator=",
             ),
+            (
+                "mozilla::Maybe<unsigned long>::value() const &",
+                "23",  # noqa
+                "mozilla::Maybe<T>::value",
+            ),
             # Normalize anonymous namespace
             ("`anonymous namespace'::foo", "23", "(anonymous namespace)::foo"),
             ("(anonymous namespace)::foo", "23", "(anonymous namespace)::foo"),
