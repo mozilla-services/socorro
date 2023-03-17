@@ -3,13 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """
-This defines the DiskCacheManager application. It's designed to run as
-a standalone application separate from the rest of the processor.
+This defines the DiskCacheManager application. It's designed to run as a standalone
+application separate from the rest of the processor.
 
-It keeps track of files in a directory and evicts files least recently
-used in order to keep the total size under a max number.
+It keeps track of files in a directory and evicts files least recently used in order to
+keep the total size under a max number.
 
 It uses inotify to cheaply watch the files.
+
+It pulls all its configuration from socorro.settings.
 
 To run::
 
@@ -91,14 +93,18 @@ class DiskCacheManager:
         self._generator = None
         self.inotify = None
         self.watch_flags = (
-            flags.ACCESS
-            | flags.CREATE
+            flags.CREATE
             | flags.DELETE
             | flags.DELETE_SELF
             | flags.MODIFY
             | flags.MOVED_FROM
             | flags.MOVED_TO
+            | flags.OPEN
         )
+
+        # If the logging level is DEBUG, then we'll treat that as meaning we should be
+        # in verbose mode and emit additional run information
+        self.is_verbose = settings.CACHE_MANAGER_LOGGING_LEVEL == "DEBUG"
 
     def set_up(self):
         set_up_logging(
@@ -185,7 +191,12 @@ class DiskCacheManager:
             rm_path, rm_size = self.lru.pop_oldest()
             total_size -= rm_size
             removed += rm_size
-            os.remove(rm_path)
+            try:
+                os.remove(rm_path)
+            except FileNotFoundError:
+                # If there was an OSError, then this file is gone already. We need to
+                # update our bookkeping, so continue.
+                pass
             self.logger.debug("evicted %s %s", rm_path, f"{rm_size:,d}")
             METRICS.incr("evict")
 
@@ -193,6 +204,9 @@ class DiskCacheManager:
 
     def _event_generator(self, nonblocking=False):
         """Returns a generator of inotify events."""
+        is_verbose = self.is_verbose
+        logger = self.logger
+
         if nonblocking:
             # NOTE(willkg): Timeout of 0 should return immediately if there's nothing
             # there
@@ -208,11 +222,9 @@ class DiskCacheManager:
         self.total_size = 0
         self.inventory_existing(path=self.cachepath)
 
-        self.logger.info(
-            "found %s files (%s bytes)", len(self.lru), f"{self.total_size:,d}"
-        )
+        logger.info("found %s files (%s bytes)", len(self.lru), f"{self.total_size:,d}")
+        logger.info("entering loop")
 
-        self.logger.info("entering loop")
         self.running = True
         processed_events = False
         num_unhandled_errors = 0
@@ -224,10 +236,11 @@ class DiskCacheManager:
                         processed_events = True
                         event_mask = event.mask
 
-                        # flags_list = ", ".join(
-                        #     [str(flag) for flag in flags.from_mask(event_mask)]
-                        # )
-                        # self.logger.debug("EVENT: %s: %s", event, flags_list)
+                        if is_verbose:
+                            flags_list = ", ".join(
+                                [str(flag) for flag in flags.from_mask(event_mask)]
+                            )
+                            logger.debug("EVENT: %s: %s", event, flags_list)
 
                         if flags.IGNORED & event_mask:
                             continue
@@ -267,7 +280,7 @@ class DiskCacheManager:
                                     self.lru[path] = size
                                     self.total_size += size
 
-                            elif flags.ACCESS & event_mask:
+                            elif flags.OPEN & event_mask:
                                 if path in self.lru:
                                     self.lru.touch(path)
 
@@ -319,20 +332,23 @@ class DiskCacheManager:
                                     self.total_size -= size
 
                             else:
-                                self.logger.debug("ignored %s %s", path, event)
+                                if is_verbose:
+                                    logger.debug("ignored %s %s", path, event)
 
                 except Exception:
-                    self.logger.exception("Exception thrown while handling events.")
+                    logger.exception("Exception thrown while handling events.")
 
                     # If there are more than 10 unhandled errors, it's probably
                     # something seriously wrong and the loop should terminate
                     num_unhandled_errors += 1
                     if num_unhandled_errors >= MAX_ERRORS:
-                        self.logger.error("Exceeded maximum number of errors.")
+                        logger.error("Exceeded maximum number of errors.")
                         raise
 
-                if processed_events:
-                    self.logger.debug(
+                # Only do this work if in verbose mode; we get disk usage metrics via
+                # other methods in server environments
+                if is_verbose and processed_events:
+                    logger.debug(
                         "lru: count %d, size %s",
                         len(self.lru),
                         f"{self.total_size:,d}",
