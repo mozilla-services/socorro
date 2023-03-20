@@ -262,7 +262,8 @@ SYMBOLS_CACHE_PATH = _config(
 )
 SYMBOLS_CACHE_MAX_SIZE = _config(
     "SYMBOLS_CACHE_MAX_SIZE",
-    default=str(1024 * 1024 * 1024),
+    # default="4_294_967_296",
+    default="42_949_672_960",  # 40gb -- temporary until we set it in config
     parser=int_or_none,
     doc=(
         "Max size (bytes) of symbols cache. You can use _ to group digits for "

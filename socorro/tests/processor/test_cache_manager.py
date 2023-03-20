@@ -311,7 +311,10 @@ BROKEN_EVENT = {
         "sys.argv": ANY,
     },
     "level": "error",
-    "logentry": {"message": "Exception thrown while handling events.", "params": []},
+    "logentry": {
+        "message": "Exception thrown while handling events: %s",
+        "params": ["Exception('intentional exception')"],
+    },
     "logger": "socorro.processor.cache_manager.DiskCacheManager",
     "modules": ANY,
     "platform": "python",
