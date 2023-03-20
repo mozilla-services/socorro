@@ -160,8 +160,16 @@ class DiskCacheManager:
             self.watches[path] = wd
 
     def remove_watch(self, path):
+        """Remove a watch
+
+        :arg path: the absolute path to the directory to remove a watch from
+
+        :raises OSError:
+
+        """
         if path in self.watches:
             del self.watches[path]
+            self.inotify.rm_watch(self.watches[path])
 
     def inventory_existing(self, path):
         """Add contents of path to LRU
@@ -259,7 +267,17 @@ class DiskCacheManager:
                             flags_list = ", ".join(
                                 [str(flag) for flag in flags.from_mask(event_mask)]
                             )
-                            logger.debug("EVENT: %s: %s", event, flags_list)
+                            if event.wd > 0:
+                                dir_path = self.watches.inv[event.wd]
+                            else:
+                                dir_path = ""
+                            logger.debug(
+                                "EVENT: PATH:%s/%s %s: %s",
+                                dir_path,
+                                event.name,
+                                event,
+                                flags_list,
+                            )
 
                         if flags.IGNORED & event_mask:
                             continue
@@ -285,7 +303,10 @@ class DiskCacheManager:
 
                             if flags.DELETE_SELF & event_mask:
                                 if path in self.watches:
-                                    self.remove_watch(path)
+                                    try:
+                                        self.remove_watch(path)
+                                    except OSError:
+                                        continue
 
                         else:
                             # Handle file events which update our LRU cache
@@ -355,10 +376,10 @@ class DiskCacheManager:
 
                             else:
                                 if is_verbose:
-                                    logger.debug("ignored %s %s", path, event)
+                                    logger.debug("unhandled event: %s %s", path, event)
 
-                except Exception:
-                    logger.exception("Exception thrown while handling events.")
+                except Exception as exc:
+                    logger.exception("Exception thrown while handling events: %s", exc)
 
                     # If there are more than 10 unhandled errors, it's probably
                     # something seriously wrong and the loop should terminate
