@@ -146,6 +146,15 @@ class DiskCacheManager:
         settings.log_settings(logger=self.logger)
 
     def add_watch(self, path):
+        """Add a watch
+
+        :arg path: the absolute path to the directory to add a watch to
+
+        :raises OSError: if inotify was unable to add the watch, possibly because
+            the file does not exist
+
+        """
+        path = str(path)
         if path not in self.watches:
             wd = self.inotify.add_watch(path, self.watch_flags)
             self.watches[path] = wd
@@ -167,18 +176,26 @@ class DiskCacheManager:
 
         """
         cachepath = str(path)
-        self.add_watch(cachepath)
+
         for base, dirs, files in os.walk(cachepath):
             for dir_ in dirs:
                 path = os.path.join(base, dir_)
                 if path not in self.watches:
-                    self.add_watch(path)
-                    self.logger.debug("adding watch: %s", path)
+                    try:
+                        self.add_watch(path)
+                        self.logger.debug("adding watch: %s", path)
+                    except OSError:
+                        self.logger.debug("unable to add watch %s", path)
 
             for fn in files:
                 path = os.path.join(base, fn)
                 if path not in self.lru:
-                    size = os.stat(path).st_size
+                    # Add the file if it's there. If not, ignore the error and move
+                    # on.
+                    try:
+                        size = os.stat(path).st_size
+                    except OSError:
+                        continue
                     self.lru[path] = size
                     self.total_size += size
                     self.logger.debug("adding file: %s (%s)", path, f"{size:,d}")
@@ -220,7 +237,9 @@ class DiskCacheManager:
         self.watches = OneToOne()
         self.lru = LastUpdatedOrderedDict()
         self.total_size = 0
-        self.inventory_existing(path=self.cachepath)
+
+        self.add_watch(self.cachepath)
+        self.inventory_existing(self.cachepath)
 
         logger.info("found %s files (%s bytes)", len(self.lru), f"{self.total_size:,d}")
         logger.info("entering loop")
@@ -255,7 +274,10 @@ class DiskCacheManager:
                         if flags.ISDIR & event_mask:
                             # Handle directory events which update our watch lists
                             if flags.CREATE & event_mask:
-                                self.add_watch(path)
+                                try:
+                                    self.add_watch(path)
+                                except OSError:
+                                    continue
 
                                 # This is a new directory to watch, so we should add the
                                 # contents to our LRU and watches
