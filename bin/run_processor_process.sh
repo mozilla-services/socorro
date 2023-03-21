@@ -12,5 +12,7 @@
 
 set -euo pipefail
 
+export PROCESS_NAME=processor
+
 # Run the processor
 python socorro/processor/processor_app.py

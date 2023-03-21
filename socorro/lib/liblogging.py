@@ -4,6 +4,7 @@
 
 import logging
 import logging.config
+import os
 import socket
 
 
@@ -19,13 +20,26 @@ def set_up_logging(
             record.host_id = host_id
             return True
 
+    class AddProcessName(logging.Filter):
+        process_name = os.environ.get("PROCESS_NAME", "main")
+
+        def filter(self, record):
+            record.processname = self.process_name
+            return True
+
     logging_config = {
         "version": 1,
         "disable_existing_loggers": False,
-        "filters": {"add_hostid": {"()": AddHostID}},
+        "filters": {
+            "add_hostid": {"()": AddHostID},
+            "add_processname": {"()": AddProcessName},
+        },
         "formatters": {
             "socorroapp": {
-                "format": "%(asctime)s %(levelname)s - %(name)s - %(threadName)s - %(message)s"
+                "format": (
+                    "%(asctime)s %(levelname)s - %(processname)s - "
+                    "%(name)s - %(threadName)s - %(message)s"
+                ),
             },
             "mozlog": {
                 "()": "dockerflow.logging.JsonLogFormatter",
@@ -33,12 +47,16 @@ def set_up_logging(
             },
         },
         "handlers": {
-            "console": {"class": "logging.StreamHandler", "formatter": "socorroapp"},
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "socorroapp",
+                "filters": ["add_processname"],
+            },
             "mozlog": {
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "mozlog",
-                "filters": ["add_hostid"],
+                "filters": ["add_hostid", "add_processname"],
             },
         },
     }
