@@ -308,6 +308,7 @@ BROKEN_EVENT = {
     },
     "extra": {
         "asctime": ANY,
+        "processname": "main",
         "sys.argv": ANY,
     },
     "level": "error",

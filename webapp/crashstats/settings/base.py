@@ -224,7 +224,9 @@ LOGGING = {
         },
     },
     "formatters": {
-        "socorroapp": {"format": "%(asctime)s %(levelname)s - %(name)s - %(message)s"},
+        "socorroapp": {
+            "format": "%(asctime)s %(levelname)s - webapp - %(name)s - %(message)s"
+        },
         "mozlog": {
             "()": "dockerflow.logging.JsonLogFormatter",
             "logger_name": "socorro",

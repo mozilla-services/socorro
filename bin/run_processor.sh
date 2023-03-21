@@ -18,5 +18,6 @@ PROCESSOR_WORKERS=${PROCESSOR_WORKERS:-"1"}
 honcho \
     --procfile /app/processor/Procfile \
     --app-root /app \
+    --no-prefix \
     start \
     --concurrency "processor=${PROCESSOR_WORKERS}"
