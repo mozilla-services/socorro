@@ -6,21 +6,27 @@
 Settings for Mozilla's crash ingestion pipeline.
 """
 
+import functools
 import os
 import socket
 import tempfile
 
-from everett.manager import ConfigManager, ListOf
+from everett.manager import ConfigManager, ListOf, parse_data_size, parse_time_period
 
 
 _config = ConfigManager.basic_config()
 
 
-def int_or_none(val):
+def or_none(parser):
     """If the value is an empty string, then return None"""
-    if val.strip() == "":
-        return None
-    return int(val)
+
+    @functools.wraps(parser)
+    def _or_none(val):
+        if val.strip() == "":
+            return None
+        return parser(val)
+
+    return _or_none
 
 
 TOOL_ENV = _config(
@@ -99,13 +105,13 @@ PROCESSOR = {
             "number_of_threads": _config(
                 "PROCESSOR_NUMBER_OF_THREADS",
                 default="4",
-                parser=int_or_none,
+                parser=or_none(int),
                 doc="Number of worker threads for the processor.",
             ),
             "maximum_queue_size": _config(
                 "PROCESSOR_MAXIMUM_QUEUE_SIZE",
                 default="8",
-                parser=int_or_none,
+                parser=or_none(int),
                 doc="Number of items to queue up from the processing queues.",
             ),
         },
@@ -262,12 +268,12 @@ SYMBOLS_CACHE_PATH = _config(
 )
 SYMBOLS_CACHE_MAX_SIZE = _config(
     "SYMBOLS_CACHE_MAX_SIZE",
-    # default="4_294_967_296",
-    default="42_949_672_960",  # 40gb -- temporary until we set it in config
-    parser=int_or_none,
+    # default="4gb",
+    default="40gb",  # temporary until we set it in infra configuration
+    parser=or_none(parse_data_size),
     doc=(
         "Max size (bytes) of symbols cache. You can use _ to group digits for "
-        "legibility."
+        "legibility. You can use units like kb, mb, gb, tb, etc."
     ),
 )
 
@@ -294,8 +300,8 @@ STACKWALKER = {
     "dump_field": "upload_file_minidump",
     "kill_timeout": _config(
         "STACKWALKER_KILL_TIMEOUT",
-        default="120",
-        parser=int_or_none,
+        default="2m",
+        parser=or_none(parse_time_period),
         doc="Timeout in seconds before the stackwalker is killed.",
     ),
     "symbols_urls": _config(

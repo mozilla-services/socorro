@@ -17,7 +17,7 @@ django-session-csrf==0.7.1
 dj-database-url==1.2.0
 dockerflow==2022.8.0
 enforce-typing==1.0.0.post1
-everett==3.1.0
+everett==3.2.0
 fillmore==1.0.0
 freezegun==1.2.2
 glom==23.1.1
