@@ -66,7 +66,7 @@ Checklist
 
       -stage/-prod:
 
-      1. See Mana
+      1. See Confluence
 
 
     Collector (Antenna)
@@ -109,10 +109,11 @@ Checklist
 
     * Check Grafana "processor.s3.save_processed_crash"
 
-    Submit a crash or reprocess a crash. Wait a few minutes. Verify the crash
-    was processed and made it to S3 and Elasticsearch.
+    * Check Grafana "processor.telemetry.save_processed_crash"
 
-    Use the VerifyCrash API.
+    Submit a crash or reprocess a crash. Wait a few minutes. Use the
+    CrashVerify API to verify the crash was processed and saved in all crash
+    storage destinations.
 
 
     Webapp
