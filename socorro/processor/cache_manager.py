@@ -220,11 +220,19 @@ class DiskCacheManager:
             total_size -= rm_size
             removed += rm_size
             try:
+                # Delete the evicted file
                 os.remove(rm_path)
             except FileNotFoundError:
                 # If there was an OSError, then this file is gone already. We need to
                 # update our bookkeping, so continue.
                 pass
+            try:
+                # Attempt to prune empty directories. This will trigger DELETE | ISDIR
+                # events and get cleaned up by the event loop.
+                os.removedirs(os.path.dirname(rm_path))
+            except OSError:
+                continue
+
             self.logger.debug("evicted %s %s", rm_path, f"{rm_size:,d}")
             METRICS.incr("evict")
 
@@ -330,7 +338,14 @@ class DiskCacheManager:
                                         Event(created_wd, sub_event_flags, None, name),
                                     )
 
-                            if flags.DELETE_SELF & event_mask:
+                            elif flags.DELETE_SELF & event_mask:
+                                if path in self.watches:
+                                    try:
+                                        self.remove_watch(path)
+                                    except OSError:
+                                        continue
+
+                            elif flags.DELETE & event_mask:
                                 if path in self.watches:
                                     try:
                                         self.remove_watch(path)
