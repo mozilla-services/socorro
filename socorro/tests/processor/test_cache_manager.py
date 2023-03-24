@@ -255,6 +255,53 @@ def test_nested_directories(cm, tmp_path):
     assert cm.lru == {str(file2): 4, str(file3): 2}
 
 
+def test_nested_directories_evict(cm, tmp_path):
+    cm.run_once()
+    assert cm.lru == {}
+
+    dir1 = tmp_path / "dir1"
+    dir1.mkdir()
+
+    # Run to pick up the new subdirectory and watch it
+    cm.run_once()
+
+    subdir1 = dir1 / "subdir1"
+    subdir1.mkdir()
+
+    subdir2 = dir1 / "subdir2"
+    subdir2.mkdir()
+
+    # Run to pick up new subsubdirectories and watch them
+    cm.run_once()
+
+    # Create two files in the subsubdirectory with 9 bytes
+    file1 = subdir1 / "file1.symc"
+    file1.write_bytes(b"abcde")
+
+    file2 = subdir2 / "file2.symc"
+    file2.write_bytes(b"abcd")
+
+    cm.run_once()
+    assert cm.lru == {str(file1): 5, str(file2): 4}
+
+    # Add a new file with 2 bytes that puts it over the edge
+    file3 = dir1 / "file3.symc"
+    file3.write_bytes(b"ab")
+
+    # Run to handle CREATE file3 which kicks off the eviction
+    cm.run_once()
+
+    # Run to handle DELETE | ISDIR for subdir1
+    cm.run_once()
+    assert cm.lru == {str(file2): 4, str(file3): 2}
+    assert list(cm.watches.keys()) == [
+        str(tmp_path),
+        str(dir1),
+        # subdir1 is out because there are no files in it
+        str(subdir2),
+    ]
+
+
 # NOTE(willkg): If this changes, we should update it and look for new things that should
 # be scrubbed. Use ANY for things that change between tests.
 BROKEN_EVENT = {
