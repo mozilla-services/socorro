@@ -202,6 +202,7 @@ SkyLight
 SleepConditionVariableSRW
 __stack_chk_fail
 std::__
+std::alloc::_::__rg_oom
 std::alloc::rust_oom
 std::all_of
 std::io::stdio::_eprint
