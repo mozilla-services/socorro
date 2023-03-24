@@ -30,7 +30,7 @@ import traceback
 from boltons.dictutils import OneToOne
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
-from inotify_simple import INotify, flags
+from inotify_simple import INotify, flags, Event
 import markus
 
 from socorro import settings
@@ -150,6 +150,8 @@ class DiskCacheManager:
 
         :arg path: the absolute path to the directory to add a watch to
 
+        :returns: the watch descriptor for the path
+
         :raises OSError: if inotify was unable to add the watch, possibly because
             the file does not exist
 
@@ -158,6 +160,7 @@ class DiskCacheManager:
         if path not in self.watches:
             wd = self.inotify.add_watch(path, self.watch_flags)
             self.watches[path] = wd
+        return self.watches[path]
 
     def remove_watch(self, path):
         """Remove a watch
@@ -259,7 +262,10 @@ class DiskCacheManager:
         try:
             while self.running:
                 try:
-                    for event in self.inotify.read(timeout=timeout):
+                    events = self.inotify.read(timeout=timeout)
+                    while events:
+                        event = events.pop(0)
+
                         processed_events = True
                         event_mask = event.mask
 
@@ -293,13 +299,35 @@ class DiskCacheManager:
                             # Handle directory events which update our watch lists
                             if flags.CREATE & event_mask:
                                 try:
-                                    self.add_watch(path)
+                                    created_wd = self.add_watch(path)
                                 except OSError:
                                     continue
 
-                                # This is a new directory to watch, so we should add the
-                                # contents to our LRU and watches
-                                self.inventory_existing(path)
+                                # This is a new directory to watch, so we add faked
+                                # events for subdirectories and files
+                                for name in os.listdir(path):
+                                    sub_path = os.path.join(path, name)
+
+                                    if os.path.isdir(sub_path):
+                                        if sub_path in self.watches:
+                                            # If it's already being watched somehow,
+                                            # skip it
+                                            continue
+                                        sub_event_flags = flags.CREATE | flags.ISDIR
+                                    elif os.path.isfile(sub_path):
+                                        if sub_path in self.lru:
+                                            # If it's already in the lru somehow, skip
+                                            # it
+                                            continue
+                                        sub_event_flags = flags.CREATE
+                                    else:
+                                        # If this isn't a file or dir, then skip it
+                                        continue
+
+                                    events.insert(
+                                        0,
+                                        Event(created_wd, sub_event_flags, None, name),
+                                    )
 
                             if flags.DELETE_SELF & event_mask:
                                 if path in self.watches:
