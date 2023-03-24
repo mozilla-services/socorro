@@ -196,7 +196,7 @@ class DiskCacheManager:
                         self.add_watch(path)
                         self.logger.debug("adding watch: %s", path)
                     except OSError:
-                        self.logger.debug("unable to add watch %s", path)
+                        self.logger.exception("unable to add watch %s", path)
 
             for fn in files:
                 path = os.path.join(base, fn)
@@ -301,6 +301,7 @@ class DiskCacheManager:
                                 try:
                                     created_wd = self.add_watch(path)
                                 except OSError:
+                                    logger.exception("add watch error for %s", path)
                                     continue
 
                                 # This is a new directory to watch, so we add faked
