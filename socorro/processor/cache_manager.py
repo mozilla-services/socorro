@@ -171,8 +171,8 @@ class DiskCacheManager:
 
         """
         if path in self.watches:
-            del self.watches[path]
-            self.inotify.rm_watch(self.watches[path])
+            wd = self.watches.pop(path)
+            self.inotify.rm_watch(wd)
 
     def inventory_existing(self, path):
         """Add contents of path to LRU
