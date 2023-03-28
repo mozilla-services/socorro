@@ -32,6 +32,8 @@ core::option::Option<T>
 core::panicking::
 core::ptr::write
 core::ptr::mut_ptr
+core::result::impl\$
+core::result::Result<T>
 core::slice::index
 core::sync::atomic::
 CrashReporter::TerminateHandler
