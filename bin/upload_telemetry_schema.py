@@ -15,7 +15,7 @@ import markus
 
 from socorro import settings
 from socorro.libclass import build_instance_from_settings
-from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
+from socorro.schemas import get_file_content
 
 
 METRICS = markus.get_metrics("processor")
@@ -47,11 +47,12 @@ def upload(ctx, destination_key):
     whole ingestion process has to halt/pause anyway.
 
     """
-    telemetry_settings = settings.CRASH_DESTINATIONS["telemetry"]
-    crashstorage = build_instance_from_settings(telemetry_settings)
+    crashstorage = build_instance_from_settings(settings.TELEMETRY_STORAGE)
 
-    data = json.dumps(TELEMETRY_SOCORRO_CRASH_SCHEMA, indent=2, sort_keys=True)
+    schema = get_file_content("telemetry_socorro_crash.json")
+    data = json.dumps(schema, indent=2, sort_keys=True)
 
+    click.echo(f"Saving schema to {destination_key!r} in {crashstorage.bucket!r}")
     crashstorage.save_file(path=destination_key, data=data.encode("utf-8"))
     click.echo("Success: Schema uploaded!")
 
