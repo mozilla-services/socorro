@@ -71,7 +71,7 @@ Setup quickstart
 
    That will build the app Docker image required for development.
 
-5. Initialize Postgres, Elasticsearch, S3, and Pub/Sub.
+5. Initialize Postgres, Elasticsearch, S3, and SQS.
 
    Then you need to set up services. To do that, run:
 
