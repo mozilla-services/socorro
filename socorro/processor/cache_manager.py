@@ -282,7 +282,10 @@ class DiskCacheManager:
                                 [str(flag) for flag in flags.from_mask(event_mask)]
                             )
                             if event.wd > 0:
-                                dir_path = self.watches.inv[event.wd]
+                                try:
+                                    dir_path = self.watches.inv[event.wd]
+                                except KeyError:
+                                    dir_path = ""
                             else:
                                 dir_path = ""
                             logger.debug(
@@ -300,7 +303,13 @@ class DiskCacheManager:
                             METRICS.incr("q_overflow")
                             continue
 
-                        dir_path = self.watches.inv[event.wd]
+                        try:
+                            dir_path = self.watches.inv[event.wd]
+                        except KeyError:
+                            # If there's a key error, it means that this wd is no longer
+                            # being tracked, so we can ignore this event
+                            continue
+
                         path = os.path.join(dir_path, event.name)
 
                         if flags.ISDIR & event_mask:
