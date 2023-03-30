@@ -1,6 +1,6 @@
 attrs==22.2.0
 awscli==1.27.61
-black==23.1.0
+black==23.3.0
 boltons==21.0.0
 boto3==1.26.61
 click==8.1.3
