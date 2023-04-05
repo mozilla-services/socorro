@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import json
 from unittest.mock import ANY
 
 import freezegun
+from fillmore.test import diff_event
 
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.processor_app import ProcessorApp
@@ -37,7 +37,7 @@ RULE_ERROR_EVENT = {
     "exception": {
         "values": [
             {
-                "mechanism": None,
+                "mechanism": {"handled": True, "type": "generic"},
                 "module": None,
                 "stacktrace": {
                     "frames": [
@@ -131,12 +131,9 @@ class TestPipeline:
 
             (event,) = sentry_client.events
 
-            # If this test fails, this will print out the new event that you can copy
-            # and paste and then edit above
-            print(json.dumps(event, indent=4, sort_keys=True))
-
-            # Assert that there are no frame-local variables
-            assert event == RULE_ERROR_EVENT
+            # Assert that the event is what we expected
+            differences = diff_event(event, RULE_ERROR_EVENT)
+            assert differences == []
 
     def test_process_crash_existing_processed_crash(self, tmp_path):
         raw_crash = {"uuid": "1"}

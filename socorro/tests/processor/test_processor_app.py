@@ -2,10 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import json
 from unittest import mock
 from unittest.mock import ANY
 
+from fillmore.test import diff_event
 from markus.testing import MetricsMock
 import pytest
 
@@ -159,7 +159,7 @@ TRANSFORM_GET_ERROR = {
     "exception": {
         "values": [
             {
-                "mechanism": None,
+                "mechanism": {"handled": True, "type": "generic"},
                 "module": None,
                 "stacktrace": {
                     "frames": [
@@ -179,7 +179,6 @@ TRANSFORM_GET_ERROR = {
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "__call__",
-                            "in_app": True,
                             "lineno": ANY,
                             "module": "unittest.mock",
                             "post_context": ANY,
@@ -190,7 +189,6 @@ TRANSFORM_GET_ERROR = {
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "_mock_call",
-                            "in_app": True,
                             "lineno": ANY,
                             "module": "unittest.mock",
                             "post_context": ANY,
@@ -201,7 +199,6 @@ TRANSFORM_GET_ERROR = {
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "_execute_mock_call",
-                            "in_app": True,
                             "lineno": ANY,
                             "module": "unittest.mock",
                             "post_context": ANY,
@@ -260,12 +257,9 @@ def test_transform_get_error(processor_settings, sentry_helper, caplogpp):
 
         (event,) = sentry_client.events
 
-        # If this test fails, this will print out the new event that you can copy
-        # and paste and then edit above
-        print(json.dumps(event, indent=4, sort_keys=True))
-
-        # Assert that there are no frame-local variables
-        assert event == TRANSFORM_GET_ERROR
+        # Assert that the event is what we expected
+        differences = diff_event(event, TRANSFORM_GET_ERROR)
+        assert differences == []
 
         # Assert that the logger logged the appropriate thing
         logging_msgs = [rec.message for rec in caplogpp.records]
