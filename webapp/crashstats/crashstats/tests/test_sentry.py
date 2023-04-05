@@ -4,9 +4,9 @@
 
 # This tests whether sentry is set up correctly in the webapp.
 
-import json
 from unittest.mock import ANY
 
+from fillmore.test import diff_event
 from markus.testing import MetricsMock
 from werkzeug.test import Client
 
@@ -51,7 +51,7 @@ BROKEN_EVENT = {
                             "context_line": ANY,
                             "filename": "django/core/handlers/exception.py",
                             "function": "inner",
-                            "in_app": True,
+                            "in_app": False,
                             "lineno": ANY,
                             "module": "django.core.handlers.exception",
                             "post_context": ANY,
@@ -62,7 +62,7 @@ BROKEN_EVENT = {
                             "context_line": ANY,
                             "filename": "django/core/handlers/base.py",
                             "function": "_get_response",
-                            "in_app": True,
+                            "in_app": False,
                             "lineno": ANY,
                             "module": "django.core.handlers.base",
                             "post_context": ANY,
@@ -173,11 +173,8 @@ def test_sentry_scrubbing(sentry_helper, transactional_db):
         # Drop the "_meta" bit because we don't want to compare that.
         del event["_meta"]
 
-        # If this test fails, this will print out the new event that you can copy and
-        # paste and then edit above
-        print(json.dumps(event, indent=4, sort_keys=True))
-
-        assert event == BROKEN_EVENT
+        differences = diff_event(event, BROKEN_EVENT)
+        assert differences == []
 
 
 def test_count_sentry_scrub_error():
