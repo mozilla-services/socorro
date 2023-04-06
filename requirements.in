@@ -46,17 +46,15 @@ pytest-env==0.8.1
 python-decouple==3.8
 requests==2.28.2
 requests-mock==1.10.0
+ruff==0.0.261
 semver==3.0.0
 sentry-sdk==1.19.1
+sphinx==4.4.0
+sphinx_rtd_theme==1.0.0
 statsd==4.0.1
 urlwait==1.0
 werkzeug==2.2.3
 whitenoise==6.4.0
-
-# NOTE(willkg): Wait to upgrade these until after we split out flake8.
-flake8==6.0.0
-sphinx==4.4.0
-sphinx_rtd_theme==1.0.0
 
 # NOTE(willkg): We need this until we update to Python 3.10.
 importlib-metadata==6.0.0

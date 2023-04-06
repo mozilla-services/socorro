@@ -286,10 +286,6 @@ fillmore==1.1.0 \
     --hash=sha256:68b2aa27340725026d7be1e4e96c3ec3ef954f66410e1cb65d0d85a692f0fdc1 \
     --hash=sha256:8afe5fa0f59d99bc10f2996d23755860dd8b8f1aebe96c34fd5d0e5e1c2e0771
     # via -r requirements.in
-flake8==6.0.0 \
-    --hash=sha256:3833794e27ff64ea4e9cf5d410082a8b97ff1a06c16aa3d2027339cd0f1195c7 \
-    --hash=sha256:c61007e76655af75e6785a931f452915b371dc48f56efd765247c8fe68f2b181
-    # via -r requirements.in
 freezegun==1.2.2 \
     --hash=sha256:cd22d1ba06941384410cd967d8a99d5ae2442f57dfafeff2fda5de8dc5c05446 \
     --hash=sha256:ea1b963b993cb9ea195adbd893a48d573fda951b0da64f60883d7e988b606c9f
@@ -501,10 +497,6 @@ markus==4.2.0 \
     --hash=sha256:156398b7de56db4e8ef420a80fcce1c49b6d3d41405874a3e128cb209cf4bfd8 \
     --hash=sha256:9dd41ce53b25a3e806b0d065808fec00c4ec945e80cf5a72431bf9b61b44d7fb
     # via -r requirements.in
-mccabe==0.7.0 \
-    --hash=sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325 \
-    --hash=sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e
-    # via flake8
 mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
@@ -628,18 +620,10 @@ pyasn1-modules==0.2.8 \
     --hash=sha256:905f84c712230b2c592c19470d3ca8d552de726050d1d1716282a1f6146be65e \
     --hash=sha256:a50b808ffeb97cb3601dd25981f6b016cbb3d31fbf57a8b8a87428e6158d0c74
     # via oauth2client
-pycodestyle==2.10.0 \
-    --hash=sha256:347187bdb476329d98f695c213d7295a846d1152ff4fe9bacb8a9590b8ee7053 \
-    --hash=sha256:8a4eaf0d0495c7395bdab3589ac2db602797d76207242c17d470186815706610
-    # via flake8
 pycparser==2.21 \
     --hash=sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9 \
     --hash=sha256:e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206
     # via cffi
-pyflakes==3.0.1 \
-    --hash=sha256:ec55bf7fe21fff7f1ad2f7da62363d749e2a470500eab1b555334b67aa1ef8cf \
-    --hash=sha256:ec8b276a6b60bd80defed25add7e439881c19e64850afd9b346283d4165fd0fd
-    # via flake8
 pygments==2.14.0 \
     --hash=sha256:b3ed06a9e8ac9a9aae5a6f5dbe78a8a58655d17b43b93c078f094ddc476ae297 \
     --hash=sha256:fa7bd7bd2771287c0de303af8bfdfc731f51bd2c6a47ab69d117138893b82717
@@ -768,6 +752,25 @@ rsa==4.7.2 \
     # via
     #   awscli
     #   oauth2client
+ruff==0.0.261 \
+    --hash=sha256:0fbc689c23609edda36169c8708bb91bab111d8f44cb4a88330541757770ab30 \
+    --hash=sha256:2dba68a9e558ab33e6dd5d280af798a2d9d3c80c913ad9c8b8e97d7b287f1cc9 \
+    --hash=sha256:39abd02342cec0c131b2ddcaace08b2eae9700cab3ca7dba64ae5fd4f4881bd0 \
+    --hash=sha256:4bcec45abdf65c1328a269cf6cc193f7ff85b777fa2865c64cf2c96b80148a2c \
+    --hash=sha256:581e64fa1518df495ca890a605ee65065101a86db56b6858f848bade69fc6489 \
+    --hash=sha256:6624a966c4a21110cee6780333e2216522a831364896f3d98f13120936eff40a \
+    --hash=sha256:6c5f397ec0af42a434ad4b6f86565027406c5d0d0ebeea0d5b3f90c4bf55bc82 \
+    --hash=sha256:8dbd0cee5a81b0785dc0feeb2640c1e31abe93f0d77c5233507ac59731a626f1 \
+    --hash=sha256:8fa98e747e0fe185d65a40b0ea13f55c492f3b5f9a032a1097e82edaddb9e52e \
+    --hash=sha256:aaa4f52a6e513f8daa450dac4859e80390d947052f592f0d8e796baab24df2fc \
+    --hash=sha256:c1c715b0d1e18f9c509d7c411ca61da3543a4aa459325b1b1e52b8301d65c6d2 \
+    --hash=sha256:cc970f6ece0b4950e419f0252895ee42e9e8e5689c6494d18f5dc2c6ebb7f798 \
+    --hash=sha256:d1293acc64eba16a11109678dc4743df08c207ed2edbeaf38b3e10eb2597321b \
+    --hash=sha256:d2eddc60ae75fc87f8bb8fd6e8d5339cf884cd6de81e82a50287424309c187ba \
+    --hash=sha256:d95596e2f4cafead19a6d1ec0b86f8fda45ba66fe934de3956d71146a87959b3 \
+    --hash=sha256:daff64b4e86e42ce69e6367d63aab9562fc213cd4db0e146859df8abc283dba0 \
+    --hash=sha256:f268d52a71bf410aa45c232870c17049df322a7d20e871cfe622c9fc784aab7b
+    # via -r requirements.in
 s3transfer==0.6.0 \
     --hash=sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd \
     --hash=sha256:2ed07d3866f523cc561bf4a00fc5535827981b117dd7876f036b0c1aca42c947
