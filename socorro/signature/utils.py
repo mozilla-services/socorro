@@ -306,7 +306,7 @@ def drop_prefix_and_return_type(function):
     # The current token we're building
     current = []
 
-    for i, char in enumerate(function):
+    for _, char in enumerate(function):
         if char in OPEN:
             levels.append(char)
             current.append(char)

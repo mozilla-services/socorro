@@ -65,7 +65,7 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             # crashstorage is too revealing as exception message
             # contains information about buckets and prefix keys.
             # Re-wrap it here so the message is just the crash ID.
-            raise CrashIDNotFound(params["uuid"])
+            raise CrashIDNotFound(params["uuid"]) from cidnf
 
 
 class TelemetryCrashData(TelemetryBotoS3CrashStorage):
@@ -87,4 +87,4 @@ class TelemetryCrashData(TelemetryBotoS3CrashStorage):
             # crashstorage is too revealing as exception message contains
             # information about buckets and prefix keys. Re-wrap it here so the
             # message is just the crash ID.
-            raise CrashIDNotFound(params["uuid"])
+            raise CrashIDNotFound(params["uuid"]) from cidnf

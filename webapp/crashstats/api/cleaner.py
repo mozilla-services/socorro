@@ -53,7 +53,7 @@ class Cleaner:
                 if result_key == self.ANY:
                     if isinstance(allowlist, (list, tuple)):
                         if isinstance(result, dict):
-                            for key, thing in result.items():
+                            for _, thing in result.items():
                                 if isinstance(thing, dict):
                                     self._scrub_item(thing, allowlist)
                                 elif isinstance(thing, (list, tuple)):
@@ -79,7 +79,7 @@ class Cleaner:
                 # which fields are being left out
                 if self.debug:
                     msg = "Skipping %r" % (key,)
-                    warnings.warn(msg)
+                    warnings.warn(msg, stacklevel=2)
                 del data[key]
 
     def _scrub_list(self, sequence, allowlist):

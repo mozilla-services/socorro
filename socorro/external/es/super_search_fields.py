@@ -410,7 +410,7 @@ def apply_schema_properties(fields, schema):
     """
     default_permissions = schema["default_permissions"]
 
-    for key, val in fields.items():
+    for val in fields.values():
         source_key = get_source_key(val)
         if not source_key or not source_key.startswith("processed_crash."):
             continue

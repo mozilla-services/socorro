@@ -199,10 +199,10 @@ class S3Connection:
         try:
             resp = self.client.get_object(Bucket=bucket, Key=path)
             return resp["Body"].read()
-        except self.client.exceptions.NoSuchKey:
+        except self.client.exceptions.NoSuchKey as exc:
             raise KeyNotFound(
                 f"(bucket={bucket!r} key={path}) not found, no value returned"
-            )
+            ) from exc
 
     def list_objects_paginator(self, bucket, prefix):
         """Returns S3 client paginator of objects with key prefix in bucket
@@ -232,13 +232,13 @@ class S3Connection:
         """
         try:
             return self.client.head_object(Bucket=bucket, Key=key)
-        except self.client.exceptions.NoSuchKey:
+        except self.client.exceptions.NoSuchKey as exc:
             raise KeyNotFound(
                 f"(bucket={bucket!r} key={key}) not found, no value returned"
-            )
+            ) from exc
         except self.client.exceptions.ClientError as exc:
             if "404" in str(exc):
                 raise KeyNotFound(
                     f"(bucket={bucket!r} key={key}) not found, no value returned"
-                )
+                ) from exc
             raise

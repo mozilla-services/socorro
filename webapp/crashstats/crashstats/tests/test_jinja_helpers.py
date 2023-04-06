@@ -663,7 +663,7 @@ class Test_generate_create_bug_url:
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
 
-        for text, template in product.bug_links:
+        for _, template in product.bug_links:
             # If there's an error in the template, it'll raise an exception here
             generate_create_bug_url(req, template, raw_crash, report, {}, 0)
 

@@ -82,10 +82,10 @@ def get_signature_list_content(name, source=INCLUDED):
 
             try:
                 re.compile(line)
-            except Exception as ex:
+            except Exception as exc:
                 raise BadRegularExpressionLineError(
-                    "Regex error: {} in file {} at line {}".format(str(ex), filepath, i)
-                )
+                    f"Regex error: {exc} in file {filepath} at line {i}"
+                ) from exc
 
             lines.append(line)
 

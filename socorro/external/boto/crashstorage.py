@@ -261,7 +261,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             a_dump = self.load_file(path)
             return a_dump
         except self.connection.KeyNotFound as exc:
-            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps(self, crash_id):
         """Get all the dump files for a given crash id.
@@ -284,7 +284,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 dumps[dump_name] = self.load_file(path)
             return dumps
         except self.connection.KeyNotFound as exc:
-            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps_as_files(self, crash_id, tmpdir):
         """Get the dump files for given crash id and save them to tmp.
@@ -315,7 +315,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             processed_crash_as_string = self.load_file(path)
             return json.loads(processed_crash_as_string)
         except self.connection.KeyNotFound as exc:
-            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
 
 class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
@@ -398,4 +398,4 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
             crash_report_as_str = self.load_file(path)
             return json.loads(crash_report_as_str)
         except self.connection.KeyNotFound as exc:
-            raise CrashIDNotFound(f"{crash_id} not found: {exc}")
+            raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc

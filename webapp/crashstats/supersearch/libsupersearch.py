@@ -38,7 +38,7 @@ def convert_permissions(fields):
         ]
         return [perm for perm in new_permissions if perm]
 
-    for key, val in fields.items():
+    for val in fields.values():
         val["permissions_needed"] = _convert(val["permissions_needed"])
 
     return fields

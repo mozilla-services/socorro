@@ -235,7 +235,7 @@ def validate_and_test(ctx, crashdir):
     keys_not_in_doc = set()
     for key, type_ in schema_key_logger.keys:
         is_in_reduced_keys = False
-        for reduced_key, reduced_type_ in reduced_keys.keys:
+        for reduced_key, _ in reduced_keys.keys:
             if match_key(key, reduced_key):
                 is_in_reduced_keys = True
                 break

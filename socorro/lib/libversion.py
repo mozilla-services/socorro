@@ -91,5 +91,5 @@ def generate_semver(version):
 
     except (ValueError, IndexError, TypeError) as exc:
         raise VersionParseError(
-            "Version %s does not parse: %s" % (repr(orig_version), str(exc))
-        )
+            f"Version {orig_version!r} does not parse: {exc}"
+        ) from exc

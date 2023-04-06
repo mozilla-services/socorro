@@ -88,12 +88,12 @@ def dockerflow_heartbeat(request):
     try:
         cache.set(cache_key, 1, 10)
     except Exception as exc:
-        raise HeartbeatException(f"cache.set failed: {exc}")
+        raise HeartbeatException(f"cache.set failed: {exc}") from exc
 
     try:
         val = cache.get(cache_key)
     except Exception as exc:
-        raise HeartbeatException(f"cache.get failed: {exc}")
+        raise HeartbeatException(f"cache.get failed: {exc}") from exc
 
     if not val:
         raise HeartbeatException(f"cache.get failed: {cache_key} not available")
@@ -101,7 +101,7 @@ def dockerflow_heartbeat(request):
     try:
         cache.delete(cache_key)
     except Exception as exc:
-        raise HeartbeatException(f"cache.delete failed: {exc}")
+        raise HeartbeatException(f"cache.delete failed: {exc}") from exc
 
     es = build_instance_from_settings(socorro_settings.ES_STORAGE)
 
@@ -110,7 +110,7 @@ def dockerflow_heartbeat(request):
         with es.client() as conn:
             conn.info()
     except Exception as exc:
-        raise HeartbeatException(f"es.info failed: {exc}")
+        raise HeartbeatException(f"es.info failed: {exc}") from exc
 
     supersearch = SuperSearch()
     supersearch.cache_seconds = 0
@@ -122,7 +122,7 @@ def dockerflow_heartbeat(request):
             _facets_size=1,
         )
     except Exception as exc:
-        raise HeartbeatException(f"supersearch failed: {exc}")
+        raise HeartbeatException(f"supersearch failed: {exc}") from exc
 
     if results.get("errors"):
         raise HeartbeatException(f"supersearch failed: {results['errors']}")

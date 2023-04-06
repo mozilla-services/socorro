@@ -237,7 +237,7 @@ class TestViews:
         limit = int(re.findall(r"(\d+)", settings.RATELIMIT_SUPERSEARCH)[0])
         params = {"product": "Firefox"}
         # Double to avoid rate limiting window issues. bug 1148470
-        for i in range(limit * 2):
+        for _ in range(limit * 2):
             client.get(url, params)
         # NOTE(willkg): this way of denoting AJAX requests may not work with all
         # JS frameworks

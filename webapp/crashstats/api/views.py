@@ -482,9 +482,9 @@ def handle_ratelimit(fun):
     def _handle_ratelimit(*args, **kwargs):
         try:
             return fun(*args, **kwargs)
-        except Ratelimited:
+        except Ratelimited as exc:
             # If the view is rate limited, we throw a 429.
-            raise Throttled()
+            raise Throttled() from exc
 
     return _handle_ratelimit
 

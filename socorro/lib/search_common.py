@@ -184,14 +184,14 @@ class SearchBase:
                     # ensure the right data type
                     try:
                         value = convert_to_type(value, param.data_type)
-                    except ValueError:
+                    except ValueError as exc:
                         raise BadArgumentError(
                             param.name,
                             msg=(
                                 "Bad value for parameter %s: not a valid %s"
                                 % (param.name, param.data_type)
                             ),
-                        )
+                        ) from exc
 
                     if param.name not in parameters:
                         parameters[param.name] = []

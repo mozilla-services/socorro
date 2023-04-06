@@ -492,11 +492,11 @@ class SocorroMiddleware(SocorroCommon):
                     try:
                         # test if it can be cast
                         param["type"](value)
-                    except (TypeError, ValueError):
+                    except (TypeError, ValueError) as exc:
                         raise ParameterTypeError(
                             "Expected %s to be a %s not %s"
                             % (name, param["type"], type(value))
-                        )
+                        ) from exc
             if isinstance(value, datetime.datetime):
                 value = value.isoformat()
             elif isinstance(value, datetime.date):

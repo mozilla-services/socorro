@@ -152,8 +152,8 @@ class TestExternalCommon:
                 conv = {"one": 1, "two": 2, "three": 3}
                 try:
                     return conv[value]
-                except KeyError:
-                    raise ValueError("No idea?!")
+                except KeyError as exc:
+                    raise ValueError("No idea?!") from exc
 
         # Define a set of filters with some types being non-trivial types
         # but instead a custom validator.
