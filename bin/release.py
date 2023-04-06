@@ -12,8 +12,11 @@ both.
 
 This requires Python 3 to run.
 
+If you want to use ``pyproject.toml`` and you're using Python <3.11, this also
+requires the tomli library.
+
 repo: https://github.com/willkg/socorro-release/
-sha: a3c6e973dd90ecd8a805747c5a5346bf45cb88d4
+sha: 00595aab0ec5f501d5c828bafb6d31be83c71066
 
 """
 
@@ -47,6 +50,8 @@ DEFAULT_CONFIG = {
     "github_project": "",
     # The name of the main branch
     "main_branch": "",
+    # The tag structure using datetime formatting markers
+    "tag_name_template": "%Y.%m.%d",
 }
 
 LINE = "=" * 80
@@ -55,26 +60,50 @@ LINE = "=" * 80
 def get_config():
     """Generates configuration.
 
-    This tries to pull from the [tool:release] section of a setup.cfg in the
-    working directory. If that doesn't exist, then it uses defaults.
+    This tries to pull configuration from:
+
+    1. the ``[tool.release]`` table from a ``pyproject.toml`` file, OR
+    2. the ``[tool:release]`` section of a ``setup.cfg`` file
+
+    If neither exist, then it uses defaults.
 
     :returns: configuration dict
 
     """
     my_config = dict(DEFAULT_CONFIG)
 
-    if not os.path.exists("setup.cfg"):
-        return my_config
+    if os.path.exists("pyproject.toml"):
+        if sys.version_info >= (3, 11):
+            import tomllib
+        else:
+            try:
+                import tomli as tomllib
+            except ImportError:
+                print(
+                    "For Python <3.11, you need to install tomli to work with pyproject.toml "
+                    + "files."
+                )
+                tomllib = None
 
-    config = configparser.ConfigParser()
-    config.read("setup.cfg")
+        if tomllib is not None:
+            with open("pyproject.toml", "rb") as fp:
+                data = tomllib.load(fp)
 
-    if "tool:release" not in config:
-        return my_config
+            config_data = data.get("tool", {}).get("release", {})
+            if config_data:
+                for key, default_val in my_config.items():
+                    my_config[key] = config_data.get(key, default_val)
 
-    config = config["tool:release"]
-    for key in my_config.keys():
-        my_config[key] = config.get(key, "")
+    if os.path.exists("setup.cfg"):
+        config = configparser.ConfigParser()
+        config.read("setup.cfg")
+
+        if "tool:release" in config:
+            config = config["tool:release"]
+            for key, default_val in my_config.items():
+                my_config[key] = config.get(key, default_val)
+
+            return my_config
 
     return my_config
 
@@ -226,8 +255,13 @@ def run():
     # This makes it possible to specify or override configuration with command
     # line arguments.
     for key, val in config.items():
-        key = key.replace("_", "-")
-        parser.add_argument(f"--{key}", default=val)
+        key_arg = key.replace("_", "-")
+        default_val = val.replace("%", "%%")
+        parser.add_argument(
+            f"--{key_arg}",
+            default=val,
+            help=f"override configuration {key}; defaults to {default_val!r}",
+        )
 
     subparsers = parser.add_subparsers(dest="cmd")
     subparsers.required = True
@@ -238,7 +272,9 @@ def run():
         "--with-bug", dest="bug", help="Bug for this deploy if any."
     )
     make_tag_parser.add_argument(
-        "--with-tag", dest="tag", help="Tag to use; defaults to figuring out the tag."
+        "--with-tag",
+        dest="tag",
+        help="Tag to use; defaults to figuring out the tag using tag_name_template.",
     )
 
     args = parser.parse_args()
@@ -246,10 +282,14 @@ def run():
     github_project = args.github_project
     github_user = args.github_user
     main_branch = args.main_branch
+    tag_name_template = args.tag_name_template
 
     if not github_project or not github_user or not main_branch:
         print("main_branch, github_project, and github_user are required.")
-        print("Either set them in setup.cfg or specify them as command line arguments.")
+        print(
+            "Either set them in pyproject.toml/setup.cfg or specify them as command "
+            + "line arguments."
+        )
         return 1
 
     # Let's make sure we're up-to-date and on main branch
@@ -327,13 +367,18 @@ def run():
     if args.cmd == "make-tag" and args.tag:
         tag_name = args.tag
     else:
-        tag_name = datetime.datetime.now().strftime("%Y.%m.%d")
+        tag_name = datetime.datetime.now().strftime(tag_name_template)
 
-    # If it's already taken, append a -N
+    # If there's already a tag, then increment the -N until we find a tag name
+    # that doesn't exist, yet
     existing_tags = check_output(f'git tag -l "{tag_name}*"').splitlines()
     if existing_tags:
-        index = len([x for x in existing_tags if x.startswith(tag_name)]) + 1
-        tag_name = f"{tag_name}-{index}"
+        tag_name_attempt = tag_name
+        index = 2
+        while tag_name_attempt in existing_tags:
+            tag_name_attempt = f"{tag_name}-{index}"
+            index += 1
+        tag_name = tag_name_attempt
 
     if args.cmd == "make-bug":
         make_bug(
