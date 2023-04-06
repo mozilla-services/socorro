@@ -83,7 +83,7 @@ def main(argv=None):
     source_dir = os.path.join(
         os.path.dirname(__file__), os.pardir, "socorro", "signature"
     )
-    for dirpath, dirnames, filenames in os.walk(source_dir):
+    for dirpath, _, filenames in os.walk(source_dir):
         relative_dirpath = dirpath[len(source_dir) :].lstrip(os.sep)
 
         for fn in filenames:

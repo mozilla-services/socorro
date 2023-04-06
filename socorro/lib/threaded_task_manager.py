@@ -79,7 +79,7 @@ class ThreadedTaskManager(TaskManager):
         """
         self.logger.debug("start")
         # start each of the task threads.
-        for x in range(self.number_of_threads):
+        for _ in range(self.number_of_threads):
             # each thread is given the config object as well as a reference to
             # this manager class.  The manager class is where the queue lives
             # and the task threads will refer to it to get their next jobs.
@@ -159,7 +159,7 @@ class ThreadedTaskManager(TaskManager):
         all the worker threads to end.
 
         """
-        for x in range(self.number_of_threads):
+        for _ in range(self.number_of_threads):
             self.task_queue.put(STOP_TOKEN)
         self.logger.debug("waiting for standard worker threads to stop")
         for t in self.thread_list:

@@ -566,7 +566,7 @@ class ESCrashStorage(CrashStorageBase):
         # Submit the crash for indexing.
         # Don't retry more than 5 times. That is to avoid infinite loops in
         # case of an unhandled exception.
-        for attempt in range(5):
+        for _ in range(5):
             try:
                 with self.client() as conn:
                     return self._index_crash(
@@ -625,9 +625,9 @@ class ESCrashStorage(CrashStorageBase):
                     raise
 
                 if field_name.endswith(".full"):
-                    # Remove the `.full` at the end, that is a special mapping
-                    # construct that is not part of the real field name.
-                    field_name = field_name.rstrip(".full")
+                    # Remove the `.full` at the end, that is a special mapping construct
+                    # that is not part of the real field name.
+                    field_name = field_name.removesuffix(".full")
 
                 # Now remove that field from the document before trying again.
                 field_path = field_name.split(".")

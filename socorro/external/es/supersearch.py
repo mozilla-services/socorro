@@ -105,8 +105,8 @@ class SuperSearch(SearchBase):
     def get_field_name(self, value, full=True):
         try:
             field_ = self.all_fields[value]
-        except KeyError:
-            raise BadArgumentError(value, msg=f"Unknown field {value!r}")
+        except KeyError as exc:
+            raise BadArgumentError(value, msg=f"Unknown field {value!r}") from exc
 
         if not field_["is_returned"]:
             # Returning this field is not allowed.
@@ -199,7 +199,7 @@ class SuperSearch(SearchBase):
         filters = []
         histogram_intervals = {}
 
-        for field, sub_params in params.items():
+        for sub_params in params.values():
             sub_filters = None
             for param in sub_params:
                 if param.name.startswith("_"):
@@ -454,24 +454,24 @@ class SuperSearch(SearchBase):
                     shards = None
                     break
 
-            except RequestError as exception:
+            except RequestError as exc:
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 # Not an ElasticsearchParseException exception
                 with suppress(IndexError):
-                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
-                        exception.error
-                    )[-1]
+                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(exc.error)[
+                        -1
+                    ]
                     # Loop over the original parameters to try to figure
                     # out which *key* had the bad input.
                     for key, value in kwargs.items():
                         if value == bad_input:
-                            raise BadArgumentError(key)
+                            raise BadArgumentError(key) from exc
 
                 # If it's a search parse exception, but we don't know what key is the
                 # problem, raise a general BadArgumentError
-                if "Failed to parse source" in str(exception):
-                    raise BadArgumentError("Malformed supersearch query.")
+                if "Failed to parse source" in str(exc):
+                    raise BadArgumentError("Malformed supersearch query.") from exc
 
                 # Re-raise the original exception
                 raise

@@ -102,8 +102,8 @@ def get_product_by_name(name):
     """
     try:
         return [prod for prod in get_products() if prod.name == name][0]
-    except IndexError:
-        raise ProductDoesNotExist(f"{name} does not exist")
+    except IndexError as exc:
+        raise ProductDoesNotExist(f"{name} does not exist") from exc
 
 
 def get_default_product():
@@ -118,8 +118,8 @@ def get_default_product():
     """
     try:
         return get_products()[0]
-    except IndexError:
-        raise ProductDoesNotExist("there are no products")
+    except IndexError as exc:
+        raise ProductDoesNotExist("there are no products") from exc
 
 
 class ProductValidationError(Exception):
@@ -176,12 +176,16 @@ def validate_product_file(fn):
             Product(**json_data)
 
     except json.decoder.JSONDecodeError as jde:
-        raise ProductValidationError(f"product file {fn} can not be decoded: {jde}")
+        raise ProductValidationError(
+            f"product file {fn} can not be decoded: {jde}"
+        ) from jde
 
     except PermissionError as exc:
-        raise ProductValidationError(f"product file {fn} cannot be opened: {exc}")
+        raise ProductValidationError(
+            f"product file {fn} cannot be opened: {exc}"
+        ) from exc
 
     except TypeError as exc:
         raise ProductValidationError(
             f"product file {fn} has invalid fields/values: {exc}"
-        )
+        ) from exc

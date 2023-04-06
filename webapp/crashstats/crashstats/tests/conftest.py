@@ -152,7 +152,6 @@ class BaseTestViews(ProductVersionsMixin, SuperSearchFieldsMock, DjangoTestCase)
     def _create_group_with_permission(self, permissions, group_name="Group"):
         if not isinstance(permissions, list):
             permissions = [permissions]
-        permissions
         appname = "crashstats"
         ct, _ = ContentType.objects.get_or_create(model="", app_label=appname)
         group, _ = Group.objects.get_or_create(name=group_name)

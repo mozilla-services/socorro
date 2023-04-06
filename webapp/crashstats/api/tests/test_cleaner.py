@@ -26,7 +26,7 @@ class TestCleaner:
         }
         cleaner = Cleaner(allowlist, debug=True)
         cleaner.start(data)
-        p_warn.assert_called_with("Skipping 'baz'")
+        p_warn.assert_called_with("Skipping 'baz'", stacklevel=2)
 
     def test_all_dict_data(self):
         allowlist = {Cleaner.ANY: ("foo", "bar")}

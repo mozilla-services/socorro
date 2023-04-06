@@ -26,7 +26,7 @@ def describe_friendly_type(type_):
         return "Date and time"
     if type_ is bool:
         return "Boolean"
-    warnings.warn("Don't know how to describe type %r" % type_)
+    warnings.warn(f"Don't know how to describe type {type_!r}", stacklevel=2)
     return type_
 
 

@@ -26,7 +26,7 @@ class TestTopCrasherViews:
         # Index crash data for signature with associated bugs
         crash_data = []
         now = utc_now() - datetime.timedelta(days=1)
-        for i in range(15):
+        for _ in range(15):
             crash_data.append(
                 {
                     "date_processed": now,
@@ -69,7 +69,7 @@ class TestTopCrasherViews:
         # Index crashes with signature with first build date
         crash_data = []
         now = utc_now() - datetime.timedelta(days=1)
-        for i in range(55):
+        for _ in range(55):
             crash_data.append(
                 {
                     "date_processed": now,
@@ -139,7 +139,7 @@ class TestTopCrasherViews:
         crash_data = []
 
         # Startup crash data--all are startup_crash=True
-        for i in range(55):
+        for _ in range(55):
             crash_data.append(
                 build_crash_data(
                     product="Firefox",
@@ -160,7 +160,7 @@ class TestTopCrasherViews:
             )
 
         # Not startup crash data--none are startup_crash
-        for i in range(55):
+        for _ in range(55):
             crash_data.append(
                 build_crash_data(
                     product="Firefox",
@@ -202,7 +202,7 @@ class TestTopCrasherViews:
         crash_data = []
         # Use yesterday so featured versions picks up the crash reports
         now = utc_now() - datetime.timedelta(days=1)
-        for i in range(105):
+        for _ in range(105):
             crash_data.append(
                 {
                     "date_processed": now,

@@ -643,8 +643,8 @@ def build_default_context(product_name=None, versions=None):
             product = productlib.get_default_product()
         else:
             product = productlib.get_product_by_name(product_name)
-    except productlib.ProductDoesNotExist:
-        raise http.Http404("Not a recognized product")
+    except productlib.ProductDoesNotExist as exc:
+        raise http.Http404("Not a recognized product") from exc
 
     context["product"] = product
 

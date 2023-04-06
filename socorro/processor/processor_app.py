@@ -248,7 +248,7 @@ class ProcessorApp:
         destinations = []
         for key in settings.CRASH_DESTINATIONS_ORDER:
             dest_obj = build_instance_from_settings(settings.CRASH_DESTINATIONS[key])
-            setattr(dest_obj, "crash_destination_name", key)
+            dest_obj.crash_destination_name = key
             destinations.append(dest_obj)
         self.destinations = destinations
 

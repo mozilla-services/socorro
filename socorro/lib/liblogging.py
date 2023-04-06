@@ -11,9 +11,12 @@ import socket
 def set_up_logging(
     local_dev_env=False,
     logging_level="INFO",
-    host_id=socket.gethostname(),
+    host_id=None,
 ):
     """Initialize Python logging."""
+
+    if host_id is None:
+        host_id = socket.gethostname()
 
     class AddHostID(logging.Filter):
         def filter(self, record):

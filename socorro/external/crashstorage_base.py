@@ -264,20 +264,20 @@ class InMemoryCrashStorage(CrashStorageBase):
     def get_raw_crash(self, crash_id):
         try:
             return self._raw_crash_data[crash_id]
-        except KeyError:
-            raise CrashIDNotFound(f"{crash_id} not found")
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def get_raw_dump(self, crash_id, name):
         try:
             return self._dumps[crash_id][name]
-        except KeyError:
-            raise CrashIDNotFound(f"{crash_id} not found")
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def get_dumps(self, crash_id):
         try:
             return self._dumps[crash_id]
-        except KeyError:
-            raise CrashIDNotFound(f"{crash_id} not found")
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def get_dumps_as_files(self, crash_id, tmpdir):
         try:
@@ -286,14 +286,14 @@ class InMemoryCrashStorage(CrashStorageBase):
                 temp_path=str(tmpdir),
                 dump_file_suffix=".dump",
             )
-        except KeyError:
-            raise CrashIDNotFound(f"{crash_id} not found")
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def get_processed_crash(self, crash_id):
         try:
             return self._processed_crash_data[crash_id]
-        except KeyError:
-            raise CrashIDNotFound(f"{crash_id} not found")
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def remove(self, crash_id):
         with suppress(KeyError):

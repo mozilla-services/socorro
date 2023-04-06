@@ -128,8 +128,8 @@ def check_type(param, datatype):
     if getattr(datatype, "clean", None) and callable(datatype.clean):
         try:
             return datatype.clean(param)
-        except ValueError:
-            raise BadArgumentError(param)
+        except ValueError as exc:
+            raise BadArgumentError(param) from exc
 
     elif isinstance(datatype, str):
         # You've given it something like `'bool'` as a string.

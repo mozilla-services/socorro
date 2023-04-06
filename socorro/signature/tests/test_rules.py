@@ -43,10 +43,10 @@ def test_fix_missing_module(frame, expected_function):
 class TestCSignatureTool:
     @staticmethod
     def setup_config_c_sig_tool(
-        ig=["ignored1"],
-        pr=["pre1", "pre2"],
-        si=["fnNeedNumber"],
-        td=[r"foo32\.dll.*"],
+        ig=("ignored1",),
+        pr=("pre1", "pre2"),
+        si=("fnNeedNumber",),
+        td=(r"foo32\.dll.*",),
         ss=("sentinel", ("sentinel2", lambda x: "ff" in x)),
     ):
         tool = rules.CSignatureTool()

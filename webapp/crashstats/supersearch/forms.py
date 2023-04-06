@@ -115,5 +115,5 @@ class QueryForm(forms.Form):
     def clean_query(self):
         try:
             return json.loads(self.cleaned_data["query"])
-        except ValueError as x:
-            raise forms.ValidationError(x)
+        except ValueError as exc:
+            raise forms.ValidationError(exc) from exc

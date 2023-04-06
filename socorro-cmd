@@ -144,7 +144,7 @@ def build_epilog():
     output.append("\n")
     for group in COMMANDS:
         output.append(f"{group.name}:")
-        for cmd, runner in group:
+        for cmd, _ in group:
             output.append(f"  {cmd}")
         output.append("\n")
 

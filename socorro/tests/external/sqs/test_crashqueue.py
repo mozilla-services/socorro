@@ -71,7 +71,7 @@ class TestSQSCrashQueue:
         assert second_new_crashes == []
 
         # Now ack the crash_id and we don't get it again
-        for args, kwargs in new_crashes:
+        for _, kwargs in new_crashes:
             kwargs["finished_func"]()
 
         time.sleep(sqs_helper.visibility_timeout + 1)

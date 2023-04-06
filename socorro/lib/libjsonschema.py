@@ -83,7 +83,7 @@ def resolve_reference(root_schema, schema, ref):
     for key, val in schema.items():
         if key == "$ref":
             continue
-        new_schema[key] = copy.deepcopy(schema[key])
+        new_schema[key] = copy.deepcopy(val)
 
     return new_schema
 
@@ -323,7 +323,7 @@ class JsonSchemaReducer:
 
                 new_doc[name] = self._traverse(
                     schema_part=schema_property,
-                    document_part=document_part[name],
+                    document_part=document_property,
                     path=path_name,
                     general_path=general_path_name,
                 )

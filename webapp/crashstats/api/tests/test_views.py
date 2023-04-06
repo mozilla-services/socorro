@@ -156,7 +156,7 @@ class TestViews(BaseTestViews):
             current_limit = 3  # see above mentioned settings override
             # Double to avoid
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-            for i in range(current_limit * 2):
+            for _ in range(current_limit * 2):
                 response = self.client.get(
                     url, {"product": "good"}, HTTP_X_REAL_IP="12.12.12.12"
                 )
@@ -179,14 +179,14 @@ class TestViews(BaseTestViews):
             )
             assert response.status_code == 200
 
-            for i in range(current_limit):
+            for _ in range(current_limit):
                 response = self.client.get(url, {"product": "good"})
             assert response.status_code == 200
 
             # But even being logged in has a limit.
             authenticated_limit = 6  # see above mentioned settings override
             assert authenticated_limit > current_limit
-            for i in range(authenticated_limit * 2):
+            for _ in range(authenticated_limit * 2):
                 response = self.client.get(url, {"product": "good"})
             # Even if you're authenticated - sure the limit is higher -
             # eventually you'll run into the limit there too.
@@ -210,7 +210,6 @@ class TestProcessedCrashAPI(BaseTestViews):
             "process_type": "parent",
             "product": "WaterWolf",
             "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-            "release_channel": "nightly",
             "release_channel": "nightly",
             "signature": "FakeSignature1",
             "success": True,
