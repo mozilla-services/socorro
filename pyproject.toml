@@ -17,3 +17,12 @@ docstring-quotes = "double"
 line-length = 88
 # Need to keep using Python 3.7 until socorro-siggen drops support for it
 target-version = ["py37"]
+
+
+[tool.release]
+github_user = "mozilla-services"
+github_project = "socorro"
+bugzilla_product = "Socorro"
+bugzilla_component = "Infra"
+main_branch = "main"
+tag_name_template = "%Y.%m.%d"
