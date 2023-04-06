@@ -1,0 +1,19 @@
+[tool.ruff]
+# Enable pycodestyle (E), pyflakes (F), and bugbear (B) rules
+select = ["E", "F", "B"]
+
+# Ignore line length violations--Black handles those
+line-length = 88
+ignore = ["E501"]
+
+# Need to keep using Python 3.7 until socorro-siggen drops support for it
+target-version = "py37"
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+
+[tool.black]
+line-length = 88
+# Need to keep using Python 3.7 until socorro-siggen drops support for it
+target-version = ["py37"]
