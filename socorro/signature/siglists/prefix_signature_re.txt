@@ -52,6 +52,7 @@ ___forwarding___
 __forwarding_prep_0___
 __fsetlocking
 CCGraphBuilder::NoteXPCOMChild
+Gecko_AppendCString
 Gecko_FinalizeCString
 Gecko_SetLengthCString
 getanswer
