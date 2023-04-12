@@ -152,6 +152,7 @@ nsTSubstring<.*>::
 NS_QuickSort
 NSS
 nss
+nsStringBuffer::
 nsTArray<
 nsTArray_base<
 nsTArray_Impl<
