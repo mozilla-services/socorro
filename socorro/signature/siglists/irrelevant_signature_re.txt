@@ -46,6 +46,7 @@ dalvik-jit-code-cache
 dalvik-LinearAlloc
 data@app@org\.mozilla\.f.*\.apk@classes\.dex@0x
 DebugBreak
+do_AddRef
 __entry_from_strcat_in_strcpy
 enum\$<T>::
 enum2\$<T>::
