@@ -16,7 +16,7 @@ If you want to use ``pyproject.toml`` and you're using Python <3.11, this also
 requires the tomli library.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 00595aab0ec5f501d5c828bafb6d31be83c71066
+sha: babc20faf391248d33bd5a317cc370733bf1dfe6
 
 """
 
@@ -318,10 +318,9 @@ def run():
     )
 
     # Figure out the most recent tag details
-    last_tag = check_output(
-        "git for-each-ref --sort=-taggerdate --count=1 --format %(tag) refs/tags"
-    )
-    if last_tag:
+    all_tags = check_output("git tag --list --sort=-creatordate").splitlines()
+    if all_tags:
+        last_tag = all_tags[0]
         last_tag_message = check_output(f'git tag -l --format="%(contents)" {last_tag}')
         print(f">>> Last tag was: {last_tag}")
         print(">>> Message:")
