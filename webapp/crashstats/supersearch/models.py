@@ -4,7 +4,7 @@
 
 import copy
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
     SUPERSEARCH_FIELDS,
@@ -78,7 +78,7 @@ def validate_products(product_value):
         product_value = [product_value]
 
     # Do some data validation here before we go further to reduce efforts
-    valid_products = {product.name for product in productlib.get_products()}
+    valid_products = {product.name for product in libproduct.get_products()}
     invalid_products = set(product_value) - valid_products
     if invalid_products:
         invalid_products_str = ", ".join(invalid_products)

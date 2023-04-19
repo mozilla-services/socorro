@@ -13,7 +13,7 @@ from django.urls import reverse
 from csp.decorators import csp_update
 from socorro.lib import BadArgumentError
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.crashstats.utils import SignatureStats, render_exception, urlencode_obj
@@ -381,7 +381,7 @@ def signature_correlations(request, params):
         elif all("esr" in version for version in params["version"]):
             context["channel"] = "esr"
 
-    default_product_name = productlib.get_default_product().name
+    default_product_name = libproduct.get_default_product().name
     product_name = params.get("product") or default_product_name
     if isinstance(product_name, (list, tuple)):
         product_name = product_name[0]

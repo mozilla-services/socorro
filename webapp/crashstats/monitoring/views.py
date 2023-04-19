@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.shortcuts import render
 from django.utils import timezone
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
@@ -116,7 +116,7 @@ def dockerflow_heartbeat(request):
     supersearch.cache_seconds = 0
     try:
         results = supersearch.get(
-            product=productlib.get_default_product().name,
+            product=libproduct.get_default_product().name,
             _results_number=1,
             _columns=["uuid"],
             _facets_size=1,

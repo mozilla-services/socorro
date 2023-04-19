@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.monitoring.views import HeartbeatException
@@ -97,7 +97,7 @@ class TestDockerflowHeartbeatViews:
 
         def mocked_supersearch_get(*args, **kwargs):
             searches.append(kwargs)
-            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["product"] == libproduct.get_default_product().name
             assert kwargs["_results_number"] == 1
             assert kwargs["_columns"] == ["uuid"]
             return {
@@ -125,7 +125,7 @@ class TestDockerflowHeartbeatViews:
 
         def mocked_supersearch_get(*args, **kwargs):
             searches.append(kwargs)
-            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["product"] == libproduct.get_default_product().name
             assert kwargs["_results_number"] == 1
             assert kwargs["_columns"] == ["uuid"]
             return {
