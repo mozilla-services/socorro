@@ -558,48 +558,55 @@ def get_version_context_for_product(product):
     versions = get_versions_for_product(product, use_cache=False)
 
     featured_versions = []
+    for item in product.featured_versions:
+        if item == "auto":
+            # Add automatically determined featured versions based on what crash reports have
+            # been collected
 
-    # Add automatically determined featured versions based on what crash reports have
-    # been collected
-    if "auto" in product.featured_versions:
-        # Map of (major, minor) -> list of (key (str), versions (str)) so we can get the
-        # most recent version of the last three major versions which we'll assume are
-        # "featured versions".
-        major_minor_to_versions = OrderedDict()
-        for version in versions:
-            # In figuring for featured versions, we don't want to include the
-            # catch-all-betas X.Yb faux version or ESR versions
-            if version.endswith(("b", "esr")):
-                continue
+            # Map of (major, minor) -> list of (key (str), versions (str)) so we can get the
+            # most recent version of the last three major versions which we'll assume are
+            # "featured versions".
+            major_minor_to_versions = OrderedDict()
+            for version in versions:
+                # In figuring for featured versions, we don't want to include the
+                # catch-all-betas X.Yb faux version or ESR versions
+                if version.endswith(("b", "esr")):
+                    continue
 
-            try:
-                semver = generate_semver(version)
-                major_minor_key = (semver.major, semver.minor)
-                major_minor_to_versions.setdefault(major_minor_key, []).append(version)
-            except VersionParseError:
-                # If this doesn't parse, then skip it
-                continue
+                try:
+                    semver = generate_semver(version)
+                    major_minor_key = (semver.major, semver.minor)
+                    major_minor_to_versions.setdefault(major_minor_key, []).append(
+                        version
+                    )
+                except VersionParseError:
+                    # If this doesn't parse, then skip it
+                    continue
 
-        # The featured versions is the most recent 3 of the list of recent versions
-        # for each major version. Since versions were sorted when we went through
-        # them, the most recent one is in index 0.
-        featured_versions = [values[0] for values in major_minor_to_versions.values()]
-        featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
-        featured_versions = featured_versions[:3]
+            # The featured versions is the most recent 3 of the list of recent versions
+            # for each major version. Since versions were sorted when we went through
+            # them, the most recent one is in index 0.
+            auto_versions = [values[0] for values in major_minor_to_versions.values()]
+            auto_versions.sort(key=lambda v: generate_semver(v), reverse=True)
+            featured_versions.extend(auto_versions[:3])
 
-    # Add manually added featured versions
-    for featured_version in reversed(product.featured_versions):
-        if featured_version == "auto":
-            continue
+        elif item == "product_details":
+            # Add product-details version file versions
+            pass
 
-        # Move the featured_version to the beginning of the versions list; this way
-        # featured versions are displayed in the order specified in the product details
-        # file
-        if featured_version in versions:
-            versions.remove(featured_version)
-        versions.insert(0, featured_version)
+        else:
+            # Add manually added featured versions that aren't already in featured
+            # versions
+            if item not in featured_versions:
+                featured_versions.append(item)
 
-        featured_versions.append(featured_version)
+    # Move the featured_version to the beginning of the versions list; this way featured
+    # versions are displayed in the order specified in the product details file
+    for item in featured_versions:
+        if item in versions:
+            versions.remove(item)
+
+        versions.insert(0, item)
 
     # Generate the version data the context needs
     ret = [
