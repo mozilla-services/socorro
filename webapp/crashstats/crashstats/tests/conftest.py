@@ -11,7 +11,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats.signals import PERMISSIONS
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from crashstats.supersearch.libsupersearch import SUPERSEARCH_FIELDS
@@ -65,8 +65,8 @@ class ProductVersionsMixin:
         cache.clear()
 
         # Hard-code products for testing
-        productlib._PRODUCTS = [
-            productlib.Product(
+        libproduct._PRODUCTS = [
+            libproduct.Product(
                 name="WaterWolf",
                 description="Test browser",
                 home_page_sort=1,
@@ -75,7 +75,7 @@ class ProductVersionsMixin:
                 bug_links=[["WaterWolf", "create-waterwolf-bug"]],
                 product_home_links=[["link", "http://example.com/"]],
             ),
-            productlib.Product(
+            libproduct.Product(
                 name="NightTrain",
                 description="",
                 home_page_sort=2,
@@ -84,7 +84,7 @@ class ProductVersionsMixin:
                 bug_links=[["NightTrain", "create-nighttrain-bug"]],
                 product_home_links=[],
             ),
-            productlib.Product(
+            libproduct.Product(
                 name="SeaMonkey",
                 description="",
                 home_page_sort=3,
@@ -103,7 +103,7 @@ class ProductVersionsMixin:
         self.set_product_versions(["20.0", "19.1", "19.0", "18.0"])
 
     def tearDown(self):
-        productlib._PRODUCTS = []
+        libproduct._PRODUCTS = []
         self.mock_gvfp_patcher.stop()
         super().tearDown()
 

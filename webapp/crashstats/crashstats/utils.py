@@ -24,7 +24,7 @@ from django.utils.functional import cached_property
 
 from glom import glom
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
 from socorro.lib.libversion import generate_semver, VersionParseError
@@ -464,7 +464,7 @@ def get_versions_for_product(product, use_cache=True):
 
     """
     if isinstance(product, str):
-        product = productlib.get_product_by_name(product)
+        product = libproduct.get_product_by_name(product)
 
     if use_cache:
         key = "get_versions_for_product:%s" % product.name.lower().replace(" ", "")
@@ -635,15 +635,15 @@ def build_default_context(product_name=None, versions=None):
     context = {}
 
     # Build product information
-    all_products = productlib.get_products()
+    all_products = libproduct.get_products()
     context["products"] = all_products
 
     try:
         if not product_name:
-            product = productlib.get_default_product()
+            product = libproduct.get_default_product()
         else:
-            product = productlib.get_product_by_name(product_name)
-    except productlib.ProductDoesNotExist as exc:
+            product = libproduct.get_product_by_name(product_name)
+    except libproduct.ProductDoesNotExist as exc:
         raise http.Http404("Not a recognized product") from exc
 
     context["product"] = product

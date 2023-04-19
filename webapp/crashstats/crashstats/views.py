@@ -19,7 +19,7 @@ from django.views.decorators.http import require_GET
 
 from csp.decorators import csp_update
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import forms, models, utils
 from crashstats.crashstats.decorators import track_view, pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
@@ -132,10 +132,10 @@ def report_index(request, crash_id, default_context=None):
         context["report"]["current_signature"] = generate_signature(context["report"])
 
     try:
-        context["product_details"] = productlib.get_product_by_name(
+        context["product_details"] = libproduct.get_product_by_name(
             context["report"]["product"]
         )
-    except productlib.ProductDoesNotExist:
+    except libproduct.ProductDoesNotExist:
         context["product_details"] = {}
 
     # For C++/Rust crashes

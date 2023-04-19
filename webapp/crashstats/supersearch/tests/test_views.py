@@ -54,7 +54,7 @@ class TestViews:
         response = client.get(url)
         assert response.status_code == 200
         data = json.loads(response.content)
-        # Assert product names in response; these come from productlib
+        # Assert product names in response; these come from libproduct
         assert "Firefox" in data["product"]["values"]
         assert "Focus" in data["product"]["values"]
         assert "Fenix" in data["product"]["values"]

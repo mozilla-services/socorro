@@ -17,7 +17,7 @@ from markus.testing import MetricsMock
 import pyquery
 import pytest
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.api.views import (
     api_models_and_names,
     is_valid_model_class,
@@ -118,7 +118,7 @@ class TestViews(BaseTestViews):
         """Verifies Cache-Control header for models that cache results"""
         url = reverse("api:model_wrapper", args=("NoOp",))
         response = self.client.get(
-            url, {"product": productlib.get_default_product().name}
+            url, {"product": libproduct.get_default_product().name}
         )
         assert response.status_code == 200
         assert response["Cache-Control"]

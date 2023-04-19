@@ -12,7 +12,7 @@ from django.conf import settings
 from django import http
 from django.shortcuts import render
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.supersearch.models import SuperSearch, SuperSearchFields
 from socorro.lib.libdockerflow import get_version_info, get_release_name
@@ -282,7 +282,7 @@ def get_valid_version(active_versions, product_name):
 def supersearch_home(request, default_context=None):
     context = default_context or {}
 
-    product_name = productlib.get_default_product().name
+    product_name = libproduct.get_default_product().name
     context["product_name"] = product_name
     context["version"] = get_valid_version(context["active_versions"], product_name)
 
@@ -294,7 +294,7 @@ def supersearch_home(request, default_context=None):
 def supersearch_examples(request, default_context=None):
     context = default_context or {}
 
-    product_name = productlib.get_default_product().name
+    product_name = libproduct.get_default_product().name
     context["product_name"] = product_name
     context["version"] = get_valid_version(context["active_versions"], product_name)
     context["today"] = datetime.datetime.utcnow().date()

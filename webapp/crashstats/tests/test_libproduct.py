@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""Tests for productlib utilities and product_details files"""
+"""Tests for libproduct utilities and product_details files"""
 
 import pytest
 
-from crashstats.productlib import (
+from crashstats.libproduct import (
     get_product_files,
     validate_product_file,
 )

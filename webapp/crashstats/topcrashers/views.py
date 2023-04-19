@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from session_csrf import anonymous_csrf
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
     check_days_parameter,
@@ -125,8 +125,8 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         tcbs_mode = "realtime"
 
     try:
-        product = productlib.get_product_by_name(product_name)
-    except productlib.ProductDoesNotExist:
+        product = libproduct.get_product_by_name(product_name)
+    except libproduct.ProductDoesNotExist:
         return http.HttpResponseBadRequest("Unrecognized product")
 
     context["product"] = product
