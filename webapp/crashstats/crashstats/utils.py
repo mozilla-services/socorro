@@ -446,6 +446,12 @@ def enhance_addons(raw_crash, processed_crash):
     return ret
 
 
+def drop_beta_num(version):
+    if "b" in version:
+        return version[: version.find("b") + 1]
+    return version
+
+
 def get_versions_for_product(product, use_cache=True):
     """Returns list of recent version strings for specified product
 
@@ -518,7 +524,7 @@ def get_versions_for_product(product, use_cache=True):
 
             # Add X.Yb to betas set
             if "b" in version:
-                beta_version = version[: version.find("b") + 1]
+                beta_version = drop_beta_num(version)
                 versions.add((generate_semver(beta_version), beta_version))
         except VersionParseError:
             pass
@@ -532,6 +538,39 @@ def get_versions_for_product(product, use_cache=True):
         cache.set(key, versions, timeout=(60 * 60) + random.randint(60, 120))
 
     return versions
+
+
+def get_version_json_data(url, use_cache=True):
+    """Return data at version json url.
+
+    Results for HTTP 200 responses are cached for an hour.
+
+    :arg url: the url to a json-encoded version file
+    :arg use_cache: whether or not to pull results from cache
+
+    :returns: dict
+
+    """
+    if not url:
+        return {}
+
+    if use_cache:
+        key = "get_version_json:%s" % "".join([c for c in url if c.isalnum()])
+        ret = cache.get(key)
+        if ret is not None:
+            return ret
+
+    try:
+        data = libproduct.get_version_json_data(url)
+    except libproduct.VersionDataError as exc:
+        logger.error("fetching %s kicked up error: %s", url, exc)
+        data = {}
+
+    if use_cache:
+        # Cache value for an hour plus a fudge factor in seconds
+        cache.set(key, data, timeout=(60 * 60) + random.randint(60, 120))
+
+    return data
 
 
 def get_version_context_for_product(product):
@@ -590,11 +629,26 @@ def get_version_context_for_product(product):
             auto_versions.sort(key=lambda v: generate_semver(v), reverse=True)
             featured_versions.extend(auto_versions[:3])
 
-        elif item == "product_details":
-            # Add product-details version file versions
-            pass
-
         else:
+            # See if the item is from version data
+            version_json_key, version_path = item.split(".", 2)
+            version_json_url = product.version_json_urls.get(version_json_key)
+            if version_json_url:
+                data = get_version_json_data(version_json_url, use_cache=False)
+                if data:
+                    version = glom(data, version_path, default="")
+                    if version:
+                        # Add X.Yb to the set
+                        if "b" in version:
+                            beta_version = drop_beta_num(version)
+                            if beta_version not in featured_versions:
+                                featured_versions.append(beta_version)
+
+                        if version not in featured_versions:
+                            featured_versions.append(version)
+
+                        continue
+
             # Add manually added featured versions that aren't already in featured
             # versions
             if item not in featured_versions:

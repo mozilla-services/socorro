@@ -591,3 +591,17 @@ def test_parse_graphics_devices_iterable__pci_ids():
 )
 def test_enhance_addons(raw, processed, expected):
     assert utils.enhance_addons(raw, processed) == expected
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        # Don't drop non-beta numbers
+        ("113.0a1", "113.0a1"),
+        # Drop beta numbers
+        ("113.0b5", "113.0b"),
+        ("113.0b11", "113.0b"),
+    ],
+)
+def test_drop_beta_num(data, expected):
+    assert utils.drop_beta_num(data) == expected
