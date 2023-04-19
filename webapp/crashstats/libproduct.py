@@ -6,14 +6,17 @@
 Classes and functions for product settings.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import pathlib
-from typing import List
+from typing import Dict, List
+
+from enforce_typing import enforce_types
+import requests
 
 from django.conf import settings
 
-from enforce_typing import enforce_types
+from socorro.lib.librequests import session_with_retries
 
 
 @enforce_types
@@ -31,17 +34,20 @@ class Product:
     # The list of featured versions on the product page and version drop down; if this
     # has "auto", then it'll automatically generate the list and append any other
     # entries
-    featured_versions: List[int]
+    featured_versions: List[int] = field(default_factory=list)
+
+    # Map of key to url pointing to JSON file
+    version_json_urls: Dict[str, str] = field(default_factory=dict)
 
     # Whether or not this product has data in Buildhub
-    in_buildhub: bool
+    in_buildhub: bool = field(default=False)
 
     # The list of [link name, link url] bug links for creating new bugs from the report
     # view of a crash report
-    bug_links: List[List[str]]
+    bug_links: List[List[str]] = field(default_factory=list)
 
-    # List of [link name, link url] links to display on the product hom epage
-    product_home_links: List[List[str]]
+    # List of [link name, link url] links to display on the product home page
+    product_home_links: List[List[str]] = field(default_factory=list)
 
 
 # In-memory cache of products files so we're not parsing them over-and-over
@@ -106,6 +112,31 @@ def get_product_by_name(name):
         raise ProductDoesNotExist(f"{name} does not exist") from exc
 
 
+class VersionDataError(Exception):
+    """Denotes an error with retrieving version data"""
+
+
+def get_version_json_data(url):
+    """Retrieves JSON encoded data at specified url.
+
+    :arg url: the url to fetch
+
+    :returns: data as a dict
+
+    :raises VersionDataError: for errors
+
+    """
+    session = session_with_retries()
+    resp = session.get(url)
+    if resp.status_code == 200:
+        try:
+            return resp.json()
+        except requests.exceptions.JSONDecodeError as exc:
+            raise VersionDataError(f"url {url} has invalid JSON") from exc
+
+    raise VersionDataError(f"url {url} returned {resp.status_code}")
+
+
 def get_default_product():
     """Returns the default product
 
@@ -149,7 +180,7 @@ def validate_product_file(fn):
 
             # Type validation doesn't verify the shape of bug_links, so we need to do
             # that manually
-            for item in json_data["bug_links"]:
+            for item in json_data.get("bug_links", []):
                 if len(item) != 2:
                     raise ProductValidationError(
                         f"product file {fn} has invalid bug_links: {item!r}"
@@ -162,7 +193,7 @@ def validate_product_file(fn):
                 # NOTE(willkg): This doesn't verify templates are well formed. That's
                 # handled in a test in the code that uses the template.
 
-            for item in json_data["product_home_links"]:
+            for item in json_data.get("product_home_links", []):
                 if len(item) != 2:
                     raise ProductValidationError(
                         f"product file {fn} has invalid product_home_links: {item!r}"
@@ -171,6 +202,11 @@ def validate_product_file(fn):
                     raise ProductValidationError(
                         f"product file {fn} has invalid product_home_links: {item!r}"
                     )
+
+            # Verify featured version data
+            version_json_urls = json_data.get("version_json_urls", {})
+            for version_url in version_json_urls.values():
+                get_version_json_data(version_url)
 
             # Try to build a Product out of it
             Product(**json_data)
