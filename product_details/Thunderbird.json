@@ -2,7 +2,14 @@
   "name": "Thunderbird",
   "description": "Email client",
   "home_page_sort": 80,
-  "featured_versions": ["auto"],
+  "featured_versions": [
+    "product_details.LATEST_THUNDERBIRD_VERSION",
+    "product_details.LATEST_THUNDERBIRD_DEVEL_VERSION",
+    "product_details.LATEST_THUNDERBIRD_NIGHTLY_VERSION"
+  ],
+  "version_json_urls": {
+    "product_details": "https://product-details.mozilla.org/1.0/thunderbird_versions.json"
+  },
   "in_buildhub": true,
   "bug_links": [
     [
