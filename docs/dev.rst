@@ -252,7 +252,7 @@ To run the reformatter:
 We're using:
 
 * `black <https://black.readthedocs.io/en/stable/>`_:  code formatting
-* `flake8 <https://flake8.pycqa.org/en/latest/>`_: linting
+* `ruff <https://beta.ruff.rs/docs/>`_: linting
 
 
 HTML conventions
