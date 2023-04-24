@@ -6,9 +6,6 @@
 # repo. If you need to override a setting locally, use .env or environment
 # variables.
 
-# Ignore unused imports when linting. Otherwise flake8 balks at NPM_FILE_PATTERNS.
-# flake8: noqa: F401
-
 import logging
 import os
 import re
@@ -16,8 +13,10 @@ import socket
 
 from decouple import config, Csv
 import dj_database_url
-from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
-from socorro.lib.libdockerflow import get_release_name
+
+# NOTE(willkg): Need this on a separate line so we can ignore the unused import
+from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
+from crashstats.settings.bundles import PIPELINE_CSS, PIPELINE_JS
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
