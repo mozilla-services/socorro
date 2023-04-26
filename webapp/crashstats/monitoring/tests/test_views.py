@@ -16,7 +16,7 @@ from django.utils.encoding import smart_str
 from crashstats import libproduct
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
-from crashstats.monitoring.views import HeartbeatException
+from crashstats.monitoring.views import HeartbeatException, IntentionalException
 from crashstats.supersearch.models import SuperSearch
 
 
@@ -170,5 +170,5 @@ class TestDockerflowVersionView:
 
 class TestBroken:
     def test_broken(self, client):
-        with pytest.raises(Exception):
+        with pytest.raises(IntentionalException):
             client.get(reverse("monitoring:broken"))

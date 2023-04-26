@@ -78,6 +78,10 @@ SAMPLE_RAW_CRASH = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
 REMOVED_VALUE = object()
 
 
+class FakeException(Exception):
+    pass
+
+
 class TestIsValidKey:
     @pytest.mark.parametrize(
         "key", ["a", "abc", "ABC", "AbcDef", "Abc_Def", "Abc-def" "Abc-123-def"]
@@ -268,8 +272,8 @@ class TestESCrashStorage:
                 crash_id=None,
             )
             # Failed indexing
-            mock_connection.index.side_effect = Exception
-            with pytest.raises(Exception):
+            mock_connection.index.side_effect = FakeException
+            with pytest.raises(FakeException):
                 crashstorage._index_crash(
                     connection=mock_connection,
                     es_index=None,
