@@ -43,7 +43,7 @@ BROKEN_EVENT = {
         "values": [
             {
                 "mechanism": {"handled": False, "type": "django"},
-                "module": None,
+                "module": "crashstats.monitoring.views",
                 "stacktrace": {
                     "frames": [
                         {
@@ -81,8 +81,8 @@ BROKEN_EVENT = {
                         },
                     ]
                 },
-                "type": "Exception",
-                "value": "intentional exception",
+                "type": "IntentionalException",
+                "value": "",
             }
         ]
     },

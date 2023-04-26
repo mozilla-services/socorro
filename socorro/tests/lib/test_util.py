@@ -7,6 +7,10 @@ import pytest
 from socorro.lib.util import retry, MaxAttemptsError
 
 
+class FakeException(Exception):
+    pass
+
+
 def make_fake_sleep():
     sleeps = []
 
@@ -28,30 +32,25 @@ class Test_retry:
         assert some_thing() == 1
 
     def test_retryable_exceptions(self):
-        # This will fail on the first attempt and raise MyException because MyException
-        # is not in the list of retryable exceptions
-        class MyException(Exception):
-            pass
-
         fake_sleep = make_fake_sleep()
 
         @retry(retryable_exceptions=ValueError, sleep_function=make_fake_sleep)
         def some_thing():
-            raise MyException
+            raise FakeException
 
-        with pytest.raises(MyException):
+        with pytest.raises(FakeException):
             some_thing()
         assert fake_sleep.sleeps == []
 
-        # This will fail on the first attempt because MyException is not in the list of
-        # retryable exceptions
+        # This will fail on the first attempt because FakeException is not in the list
+        # of retryable exceptions
         fake_sleep = make_fake_sleep()
 
         @retry(retryable_exceptions=[ValueError, IndexError], sleep_function=fake_sleep)
         def some_thing():
-            raise MyException
+            raise FakeException
 
-        with pytest.raises(MyException):
+        with pytest.raises(FakeException):
             some_thing()
         assert fake_sleep.sleeps == []
 
@@ -116,9 +115,9 @@ class Test_retry:
 
         @retry(sleep_function=fake_sleep)
         def some_thing():
-            raise Exception
+            raise FakeException()
 
-        with pytest.raises(Exception):
+        with pytest.raises(MaxAttemptsError):
             some_thing()
 
         assert fake_sleep.sleeps == [1, 1, 1, 1, 1]
@@ -131,8 +130,8 @@ class Test_retry:
 
         @retry(wait_time_generator=waits, sleep_function=fake_sleep)
         def some_thing():
-            raise Exception
+            raise FakeException()
 
-        with pytest.raises(Exception):
+        with pytest.raises(MaxAttemptsError):
             some_thing()
         assert fake_sleep.sleeps == [1, 1, 2, 2, 1, 1]

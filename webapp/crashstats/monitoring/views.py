@@ -136,9 +136,13 @@ def dockerflow_lbheartbeat(request):
     return {"ok": True}
 
 
+class IntentionalException(Exception):
+    pass
+
+
 def broken(request):
     """Throws an error to test Sentry connetivity."""
-    raise Exception("intentional exception")
+    raise IntentionalException()
 
 
 @permission_required("crashstats.view_pii")
