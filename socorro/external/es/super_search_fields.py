@@ -1836,6 +1836,22 @@ FIELDS = {
             "type": "string",
         },
     },
+    "quota_manager_shutdown_timeout": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": True,
+        "in_database_name": "quota_manager_shutdown_timeout",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "quota_manager_shutdown_timeout",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {
+            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
+            "index": "analyzed",
+            "type": "string",
+        },
+    },
     "reason": {
         "data_validation_type": "str",
         "form_field_choices": [],

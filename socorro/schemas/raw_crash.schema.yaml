@@ -832,6 +832,39 @@ properties:
     type: string
     permissions: ["public"]
 
+  QuotaManagerShutdownTimeout:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1672369#c9
+    description: |
+      This annotation is present if the quota manager shutdown (resp. the
+      shutdown of the quota manager clients) was not finished in time and the
+      browser was crashed instead of waiting for the shutdown to finish. The
+      status of objects which were blocking completion of the shutdown when
+      reaching the timeout is contained in the annotation.
+
+      In the case of IndexedDB, objects are divided into three groups:
+      FactoryOperations, LiveDatabases and DatabaseMaintenances.
+
+      In the case of LocalStorage, objects are divided into three groups:
+      PrepareDatastoreOperations, Datastores and LiveDatabases.
+
+      In the case of Cache API, objects are in one group only:
+      Managers.
+
+      Each group is reported separately and contains the number of objects in
+      the group and the status of individual objects in the group (duplicate
+      entries are removed): "GroupName: N (objectStatus1, objectStatus2, ...)"
+      where N is the number of objects in the group.
+
+      The status of individual objects is constructed by taking selected object
+      properties. Properties which contain origin strings are anonymized.
+
+      In addition, intermediate steps are recorded for change events after
+      shutdown started. These include the time difference and the type of
+      object.
+    type: string
+    permissions: ["public"]
+
   ReleaseChannel:
     data_reviews:
       - unknown
