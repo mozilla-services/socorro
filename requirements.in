@@ -1,4 +1,4 @@
-attrs==22.2.0
+attrs==23.1.0
 awscli==1.27.106
 black==23.3.0
 boltons==23.0.0
