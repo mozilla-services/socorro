@@ -268,17 +268,9 @@ class TestCPUInfoRule:
 
     def test_cpu_microcode_version_from_stackwalker(self, tmp_path):
         raw_crash = {"CPUMicrocodeVersion": "ignored value"}
-        processed_crash = {"json_dump": {"system_info": {"cpu_microcode_version": 66}}}
-        dumps = {}
-        status = Status()
-
-        rule = CPUInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-        assert processed_crash["cpu_microcode_version"] == "0x42"
-
-    def test_cpu_microcode_version_from_annotation(self, tmp_path):
-        raw_crash = {"CPUMicrocodeVersion": "0x42"}
-        processed_crash = {}
+        processed_crash = {
+            "json_dump": {"system_info": {"cpu_microcode_version": "0x42"}}
+        }
         dumps = {}
         status = Status()
 

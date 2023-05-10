@@ -450,7 +450,9 @@ definitions:
           cpu_microcode_version:
             description: >
               The version number of the microcode running on the CPU.
-            type: ["integer", "null"]
+            # NOTE(willkg): We can change this to string/null in November 2023
+            # when the old data has expired.
+            type: ["integer", "string", "null"]
             permissions: ["public"]
           os:
             description: The flavor of operating system.
