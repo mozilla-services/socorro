@@ -34,22 +34,48 @@ class CrashingThreadInfoRule(Rule):
         return processed_crash.get("json_dump", None) is not None
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        processed_crash["crashing_thread"] = glom.glom(
-            processed_crash, "json_dump.crash_info.crashing_thread", default=None
-        )
-        if processed_crash["crashing_thread"] is None:
+        crash_info = glom.glom(processed_crash, "json_dump.crash_info", default={})
+
+        crashing_thread = crash_info.get("crashing_thread")
+        processed_crash["crashing_thread"] = crashing_thread
+        if crashing_thread is None:
             status.add_note("mdsw did not identify the crashing thread")
 
         processed_crash["crashing_thread_name"] = glom.glom(
-            processed_crash, "json_dump.crashing_thread.thread_name", default=None
+            processed_crash,
+            "json_dump.crashing_thread.thread_name",
+            default=None,
         )
-        processed_crash["address"] = glom.glom(
-            processed_crash, "json_dump.crash_info.address", default=None
-        )
+        processed_crash["reason"] = crash_info.get("type", "")
 
-        processed_crash["reason"] = glom.glom(
-            processed_crash, "json_dump.crash_info.type", default=""
-        )
+        # If the crash_info.adjusted_address is not present or is null then the crashing
+        # address is crash_info.address.
+        #
+        # If crash_info.adjusted_address is present and if the
+        # crash_info.adjusted_address.kind field is null-pointer then consider
+        # crash_info.address to be NULL (either 0x00000000 or 0x0000000000000000
+        # depending on the pointer size).
+        #
+        # If crash_info.adjusted_address is present and if the
+        # crash_info.adjusted_address.kind field is non-canonical then use
+        # crash_info.adjusted_address.address instead of crash_info.address for the
+        # crashing address.
+        address = crash_info.get("address")
+        adjusted_address = crash_info.get("adjusted_address")
+
+        if adjusted_address is not None:
+            kind = adjusted_address.get("kind")
+            if kind == "null-pointer":
+                # Infer the width from the previous address value
+                if address and len(address) == 18:
+                    address = "0x0000000000000000"
+                else:
+                    address = "0x00000000"
+
+            elif kind == "non-canonical" and adjusted_address.get("address"):
+                address = adjusted_address["address"]
+
+        processed_crash["address"] = address
 
 
 class MinidumpSha256HashRule(Rule):
