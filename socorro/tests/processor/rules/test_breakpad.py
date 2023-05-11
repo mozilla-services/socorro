@@ -7,6 +7,7 @@ import json
 from unittest import mock
 
 from markus.testing import MetricsMock
+import pytest
 
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
 from socorro.processor.pipeline import Status
@@ -75,7 +76,7 @@ canonical_standard_raw_crash = {
 
 canonical_stackwalker_output = {
     "crash_info": {
-        "address": "0x0",
+        "address": "0x0000000000000000",
         "crashing_thread": 0,
         "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     },
@@ -167,60 +168,189 @@ canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
 class TestCrashingThreadInfoRule:
-    def test_valid_data(self, tmp_path):
+    @pytest.mark.parametrize(
+        "json_dump, expected",
+        [
+            # Test basic case
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # json_dump is missing
+            (
+                None,
+                {},
+            ),
+            # empty json_dump
+            (
+                {},
+                {
+                    "crashing_thread": None,
+                    "crashing_thread_name": None,
+                    "address": None,
+                    "reason": "",
+                },
+            ),
+        ],
+    )
+    def test_scenarios(self, tmp_path, json_dump, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {
-            "json_dump": {
-                "crash_info": {
-                    "crashing_thread": 0,
-                    "address": "0x0",
-                    "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                },
-                "crashing_thread": {
-                    "thread_name": "MainThread",
-                },
-            }
-        }
+        if json_dump is None:
+            processed_crash = {}
+        else:
+            processed_crash = {"json_dump": json_dump}
+            expected["json_dump"] = json_dump
         validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
         status = Status()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert processed_crash["crashing_thread"] == 0
-        assert processed_crash["crashing_thread_name"] == "MainThread"
-        assert processed_crash["address"] == "0x0"
-        assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
+        assert processed_crash == expected
 
-    def test_json_dump_missing(self, tmp_path):
-        """If there's no dump data, then this rule doesn't do anything"""
+    @pytest.mark.parametrize(
+        "json_dump, expected",
+        [
+            # use "address" value if "adjusted_address" doesn't exist
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # use "address" value if "adjusted_address" is null
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "adjusted_address": None,
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # use null (32-bit) if adjusted_address.kind is "null-pointer"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00000048",
+                        "adjusted_address": {
+                            "kind": "null-pointer",
+                            "offset": "0x00000048",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00000000",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+            # use null (64-bit) if adjusted_address.kind is "null-pointer"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x0000000000000048",
+                        "adjusted_address": {
+                            "kind": "null-pointer",
+                            "offset": "0x0000000000000048",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x0000000000000000",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+            # use adjusted_address.address if adjusted_address.kind is "non-canonical"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0xffffffffffffffff",
+                        "adjusted_address": {
+                            "address": "0xe5e5e5e5e5e5e61d",
+                            "kind": "non-canonical",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0xe5e5e5e5e5e5e61d",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+        ],
+    )
+    def test_address_scenarios(self, tmp_path, json_dump, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {}
-        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+        if json_dump is None:
+            processed_crash = {}
+        else:
+            processed_crash = {"json_dump": json_dump}
+            expected["json_dump"] = json_dump
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
         status = Status()
 
         rule = CrashingThreadInfoRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert processed_crash == {}
-        assert status.notes == []
-
-    def test_empty_json_dump(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {"json_dump": {}}
-        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
-        status = Status()
-
-        rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-
-        assert processed_crash["crashing_thread"] is None
-        assert processed_crash["crashing_thread_name"] is None
-        assert processed_crash["address"] is None
-        assert processed_crash["reason"] == ""
+        assert processed_crash == expected
 
 
 class TestTruncateStacksRule:
@@ -453,7 +583,7 @@ class ProcessCompletedMock:
 MINIMAL_STACKWALKER_OUTPUT = {
     "status": "OK",
     "crash_info": {
-        "address": "0x0",
+        "address": "0x0000000000000000",
         "assertion": None,
         "crashing_thread": 0,
         "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
