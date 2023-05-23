@@ -44,7 +44,7 @@ pytest==7.3.1
 pytest-django==4.5.2
 pytest-env==0.8.1
 python-decouple==3.8
-requests==2.29.0
+requests==2.31.0
 requests-mock==1.10.0
 ruff==0.0.264
 semver==3.0.0
@@ -57,6 +57,7 @@ werkzeug==2.2.3
 whitenoise==6.4.0
 
 # NOTE(willkg): We need this until we update to Python 3.10.
+exceptiongroup==1.1.1
 importlib-metadata==6.0.0
 typing-extensions==4.3.0
 zipp==3.11.0
