@@ -872,7 +872,7 @@ properties:
       The update channel that the product is on. Typically `nightly`, `aurora`,
       `beta`, `release`, or `esr`. This may also be other values like
       `release-cck-partner`.
-    type: string
+    type: ["string", "null"]
     examples:
       - "nightly"
       - "aurora"
