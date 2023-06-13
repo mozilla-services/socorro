@@ -282,6 +282,6 @@ All of this is done in a single S3 bucket.
 
 The "directory" hierarchy of that bucket looks like this:
 
-* ``{prefix}/v2/{name_of_thing}/{entropy}/{date}/{id}``: Raw crash data.
+* ``{prefix}/v1/{name_of_thing}/{date}/{id}``: Raw crash data.
 * ``{prefix}/v1/{name_of_thing}/{id}``: Processed crash data, dumps, dump_names,
   and other things.

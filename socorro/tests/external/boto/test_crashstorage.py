@@ -47,7 +47,6 @@ TELEMETRY_SETTINGS = {
             "0bba929f-8721-460c-dead-a43c20071027",
             [
                 "v1/raw_crash/20071027/0bba929f-8721-460c-dead-a43c20071027",
-                "v2/raw_crash/0bb/20071027/0bba929f-8721-460c-dead-a43c20071027",
             ],
         ),
         (
