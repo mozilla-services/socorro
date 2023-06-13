@@ -155,6 +155,8 @@ def show_bug_link(bug_id):
 
 EXTRA_NEWLINES_RE = re.compile(r"\n\n\n+")
 
+MAX_TITLE_LENGTH = 255
+
 
 @library.global_function
 def generate_create_bug_url(
@@ -214,8 +216,8 @@ def generate_create_bug_url(
     }
 
     # Truncate the title
-    if len(kwargs["title"]) > 255:
-        kwargs["title"] = kwargs["title"][: 255 - 3] + "..."
+    if len(kwargs["title"]) > MAX_TITLE_LENGTH:
+        kwargs["title"] = kwargs["title"][: MAX_TITLE_LENGTH - 3] + "..."
 
     # urlencode the values so they work in the url template correctly
     kwargs = {key: quote_plus(value) for key, value in kwargs.items()}

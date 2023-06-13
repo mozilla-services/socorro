@@ -6,7 +6,7 @@ Crash report: {{ full_url(request, "crashstats:report_index", crash_id=uuid ) }}
 {% if java_stack_trace %}
 Java stack trace:
 ```
-{{ java_stack_trace|safe }}
+{{ java_stack_trace|truncate(5000, True)|safe }}
 ```
 {% elif frames %}
 {% if moz_crash_reason %}
