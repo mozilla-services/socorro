@@ -120,7 +120,7 @@ $(document).ready(function () {
     // This avoids adding multiple calls to addExpand which will add multiple links to the
     // same header.
     cells.each(function () {
-      if ($(this).attr('title').length !== $(this).text().length && !isExpandAdded) {
+      if ($(this).attr('title') && $(this).attr('title').length !== $(this).text().length && !isExpandAdded) {
         addExpand($(this).parents('tbody').find('th.signature-column'));
         isExpandAdded = true;
       }
