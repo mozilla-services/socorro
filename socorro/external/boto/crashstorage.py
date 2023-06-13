@@ -71,16 +71,8 @@ def build_keys(name_of_thing, crashid):
 
     """
     if name_of_thing == "raw_crash":
-        # Insert the first 3 chars of the crashid providing some entropy
-        # earlier in the key so that consecutive s3 requests get
-        # distributed across multiple s3 partitions
-        entropy = crashid[:3]
         date = get_datestamp(crashid).strftime("%Y%m%d")
-        return [
-            f"v1/{name_of_thing}/{date}/{crashid}",
-            # NOTE(willkg): This format is deprecated and will be removed in April 2023
-            f"v2/{name_of_thing}/{entropy}/{date}/{crashid}",
-        ]
+        return [f"v1/{name_of_thing}/{date}/{crashid}"]
 
     elif name_of_thing == "crash_report":
         # Crash data from the TelemetryBotoS3CrashStorage
