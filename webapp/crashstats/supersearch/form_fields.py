@@ -153,7 +153,7 @@ class MultiplePrefixedValueField(PrefixedField):
                     )
 
 
-class IntegerField(MultiplePrefixedValueField, forms.IntegerField):
+class NumberField(MultiplePrefixedValueField, forms.IntegerField):
     pass
 
 
@@ -181,8 +181,6 @@ class StringField(MultipleValueField):
     on that field ("contains", "starts with"... ).
 
     """
-
-    pass
 
 
 class BooleanField(forms.CharField):
