@@ -72,8 +72,8 @@ class PrefixedField:
 
         return super().to_python(value)
 
-    def clean(self, *args, **kwargs):
-        cleaned_value = super().clean(*args, **kwargs)
+    def clean(self, value):
+        cleaned_value = super().clean(value)
 
         self.prefixed_value = self.value_to_string(cleaned_value)
         if self.operator is not None and self.prefixed_value is not None:
@@ -109,23 +109,25 @@ class MultiplePrefixedValueField(PrefixedField):
         kwargs["widget"] = forms.SelectMultiple
         super().__init__(*args, **kwargs)
 
-    def clean(self, values, *args, **kwargs):
+    def clean(self, value):
         cleaned_values = []
         prefixed_values = []
         operators = []
 
-        if values is None:
+        if value is None:
             # call the mother classe's clean to do other verifications
-            return super().clean(values, *args, **kwargs)
+            return super().clean(value)
 
-        for value in values:
-            cleaned_value = super().clean(value, *args, **kwargs)
+        for item in value:
+            cleaned_value = super().clean(item)
             if cleaned_value is not None:
                 cleaned_values.append(cleaned_value)
                 prefixed_values.append(self.prefixed_value)
                 operators.append(self.operator)
+
         if operators and cleaned_values:
             self.validate_ordered_values(cleaned_values, operators)
+
         self.prefixed_value = prefixed_values
         return cleaned_values
 
@@ -145,16 +147,43 @@ class MultiplePrefixedValueField(PrefixedField):
             for j, other_value in enumerate(values):
                 if i == j:
                     continue
+
+                # If there's a duplicate for some reason, then continue on
+                if (op, value) == (operators[j], other_value):
+                    continue
+
+                # If one value is "exists" and the other is some filter, that's fine
+                if other_value == "!__null__" or value == "!__null__":
+                    continue
+
+                # If either one is "doesn't exist" and there's a filter, that's invalid
+                if other_value == "__null__" or value == "__null__":
+                    raise forms.ValidationError(
+                        "Can't combine __null__ with other filters"
+                    )
+
                 if not op_function(other_value, value):
                     raise forms.ValidationError(
-                        "Operator combination failed {} {} {}".format(
+                        "Operator combination failed: {} {} {}".format(
                             value, op, other_value
                         )
                     )
 
 
 class NumberField(MultiplePrefixedValueField, forms.IntegerField):
-    pass
+    existence_strings = ["__null__", "!__null__"]
+
+    def to_python(self, value):
+        if value in self.existence_strings:
+            return value
+
+        return super().to_python(value)
+
+    def validate(self, value):
+        if value in self.existence_strings:
+            return
+
+        return forms.IntegerField.validate(self, value)
 
 
 class IsoDateTimeField(forms.DateTimeField):
@@ -184,8 +213,8 @@ class StringField(MultipleValueField):
 
 
 class BooleanField(forms.CharField):
-    truthy_strings = ("__true__", "true", "t", "1", "y", "yes")
-    existence_strings = ("__null__", "!__null__")
+    truthy_strings = ["__true__", "true", "t", "1", "y", "yes"]
+    existence_strings = ["__null__", "!__null__"]
 
     def to_python(self, value):
         """Return None if the value is None. Return 'true' if the value is one

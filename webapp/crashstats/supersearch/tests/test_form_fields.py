@@ -19,11 +19,32 @@ class TestNumberField:
         assert cleaned_value == [13]
         assert field.prefixed_value == [">13"]
 
+    def test_duplicate(self):
+        field = form_fields.NumberField()
+        cleaned_value = field.clean(["<10", "<10"])
+        assert cleaned_value == [10, 10]
+        assert field.prefixed_value == ["<10", "<10"]
+
     def test_not(self):
         field = form_fields.NumberField()
         cleaned_value = field.clean(["!13"])
         assert cleaned_value == [13]
         assert field.prefixed_value == ["!13"]
+
+    def test_null(self):
+        field = form_fields.NumberField()
+        cleaned_value = field.clean(["__null__"])
+        assert cleaned_value == ["__null__"]
+
+    def test_not_null(self):
+        field = form_fields.NumberField()
+        cleaned_value = field.clean(["!__null__"])
+        assert cleaned_value == ["!__null__"]
+
+    def test_not_null_and_filter(self):
+        field = form_fields.NumberField()
+        cleaned_value = field.clean([">10", "!__null__"])
+        assert cleaned_value == [10, "!__null__"]
 
     def test_invalid_combinations(self):
         field = form_fields.NumberField()
@@ -37,8 +58,13 @@ class TestNumberField:
             field.clean(["<10", ">=10"])
         with pytest.raises(ValidationError, match="Operator combination failed"):
             field.clean(["<=10", ">10"])
-        with pytest.raises(ValidationError, match="Operator combination failed"):
-            field.clean(["<10", "<10"])
+
+        # Test doesn't exist with a filter--this is invalid
+        with pytest.raises(ValidationError, match="Can't combine __null__"):
+            field.clean([">10", "__null__"])
+        # Test doesn't exist with a filter--this is invalid
+        with pytest.raises(ValidationError, match="Can't combine __null__"):
+            field.clean(["__null__", ">10"])
 
 
 class TestDateTimeField:
@@ -66,12 +92,17 @@ class TestDateTimeField:
         assert cleaned_value == [dt]
         assert field.prefixed_value == [">=2012-12-31T01:02:03+00:00"]
 
+    def test_duplicate_values(self):
+        field = form_fields.DateTimeField()
+        cleaned_value = field.clean(["<2016-08-10", "<2016-08-10"])
+        dt = datetime.datetime(2016, 8, 10)
+        dt = dt.replace(tzinfo=utc)
+        assert cleaned_value == [dt, dt]
+
     def test_invalid_combinations(self):
         field = form_fields.DateTimeField()
         with pytest.raises(ValidationError):
             field.clean([">2016-08-10", "<2016-08-10"])
-        with pytest.raises(ValidationError):
-            field.clean(["<2016-08-10", "<2016-08-10"])
         with pytest.raises(ValidationError):
             field.clean([">=2016-08-10", "<2016-08-10"])
         with pytest.raises(ValidationError):
