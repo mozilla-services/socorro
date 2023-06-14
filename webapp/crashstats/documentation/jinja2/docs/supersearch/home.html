@@ -156,7 +156,7 @@
         </tr>
         <tr>
           <td>number</td>
-          <td><code></code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code></td>
+          <td><code></code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>__null__</code></td>
           <td>Type for all numbers, underlying data can be float, int, long&hellip; </td>
         </tr>
         <tr>
@@ -166,13 +166,8 @@
         </tr>
         <tr>
           <td>boolean</td>
-          <td><code>__true__</code></td>
+          <td><code>__true__</code>, <code>__null__</code></td>
           <td>Type for fields that can be true or false.</td>
-        </tr>
-        <tr>
-          <td>flag</td>
-          <td><code>__null__</code></td>
-          <td>Type for fields that either have a value (generally <code>1</code>) or are missing.</td>
         </tr>
       </tbody>
     </table>
@@ -279,13 +274,13 @@
         <tr>
           <td>does not exist</td>
           <td><code>__null__</code></td>
-          <td>string, flag</td>
+          <td>string, boolean, number</td>
           <td>
             <p>
               The field is missing or has a null value.
             </p>
             <p>
-              Note: This doesn't work for empty string values.
+              Note: This will not match empty string values.
             </p>
           </td>
         </tr>
