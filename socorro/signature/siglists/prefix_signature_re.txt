@@ -100,6 +100,7 @@ mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
 mozilla::dom::AutoJSAPI::Init
 mozilla::dom::Promise::
+mozilla::dom::syncedcontext::Transaction<T>::Commit
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
