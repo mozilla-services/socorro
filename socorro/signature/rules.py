@@ -642,7 +642,7 @@ class SignatureGenerationRule(Rule):
 class StackOverflowSignature(Rule):
     """Prepends ``stackoverflow``
 
-    See bug #1796389.
+    See `bug #1796389 <https://bugzilla.mozilla.org/show_bug.cgi?id=1796389>`__.
 
     """
 
@@ -668,7 +668,7 @@ class StackOverflowSignature(Rule):
 class OOMSignature(Rule):
     """Prepends ``OOM | <size>`` to signatures for OOM crashes.
 
-    See bug #1007530.
+    See `bug #1007530 <https://bugzilla.mozilla.org/show_bug.cgi?id=1007530>`__.
 
     """
 
@@ -749,7 +749,7 @@ class OOMSignature(Rule):
 class BadHardware(Rule):
     """Prepends ``bad hardware`` to signatures that are from bad hardware.
 
-    See bug #1733904.
+    See `bug #1733904 <https://bugzilla.mozilla.org/show_bug.cgi?id=1733904>`__.
 
     """
 
@@ -777,7 +777,7 @@ class BadHardware(Rule):
 class AbortSignature(Rule):
     """Prepends abort message to signature.
 
-    See bug #803779.
+    See `bug #803779 <https://bugzilla.mozilla.org/show_bug.cgi?id=803779>`__.
 
     """
 
@@ -858,7 +858,7 @@ class SigFixWhitespace(Rule):
 
 
 class SigTruncate(Rule):
-    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters."""
+    """Truncates signatures down to ``SIGNATURE_MAX_LENGTH`` characters."""
 
     def predicate(self, crash_data, result):
         return len(result.signature) > SIGNATURE_MAX_LENGTH
@@ -888,7 +888,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
 
 class SignatureRunWatchDog(Rule):
-    """Prepends "shutdownhang" to signature for shutdown hang crashes."""
+    """Prepends ``shutdownhang`` to signature for shutdown hang crashes."""
 
     def __init__(self):
         super().__init__()
@@ -910,9 +910,10 @@ class SignatureRunWatchDog(Rule):
 
 
 class SignatureShutdownTimeout(Rule):
-    """Replaces signature with async_shutdown_timeout message.
+    """Replaces signature with ``async_shutdown_timeout`` message.
 
-    This supports AsyncShutdownTimeout annotation values with the following structure::
+    This supports ``AsyncShutdownTimeout`` annotation values with the following
+    structure::
 
         {
             "phase": <str>,
@@ -969,7 +970,7 @@ class SignatureShutdownTimeout(Rule):
 class SignatureIPCChannelError(Rule):
     """Stomps on signature with shutdownkill signature
 
-    Either "IPCError-browser | ShutDownKill" or "IPCError-content | ShutDownKill".
+    Either ``IPCError-browser | ShutDownKill`` or ``IPCError-content | ShutDownKill``.
 
     """
 
@@ -989,7 +990,7 @@ class SignatureIPCChannelError(Rule):
 
 
 class SignatureIPCMessageName(Rule):
-    """Appends ipc_message_name to signature."""
+    """Appends ``ipc_message_name`` value to signature."""
 
     def predicate(self, crash_data, result):
         return bool(crash_data.get("ipc_message_name"))
@@ -1005,7 +1006,7 @@ class SignatureIPCMessageName(Rule):
 
 
 class SignatureParentIDNotEqualsChildID(Rule):
-    """Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
+    """Stomp on the signature if ``moz_crash_reason`` is ``parentBuildID != childBuildID``.
 
     In the case where the assertion fails, then the parent buildid and the child buildid are
     different. This causes a lot of strangeness particularly in symbolification, so the signatures

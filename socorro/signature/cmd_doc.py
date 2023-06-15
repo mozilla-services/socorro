@@ -60,7 +60,7 @@ def dedent_docstring(text):
 
 def get_doc(cls):
     return "**Rule: %s**\n\n%s" % (
-        cls.__class__.__name__,
+        cls.__name__,
         dedent_docstring(cls.__doc__),
     )
 
@@ -87,17 +87,16 @@ def main(argv=None):
         fp.write("   \n")
         fp.write("   %s\n" % (" ".join(sys.argv)))
         fp.write("   \n")
-        fp.write("Signature generation rules pipeline\n")
-        fp.write("===================================\n")
+        fp.write("Signature generation ruleset\n")
+        fp.write("============================n")
         fp.write("\n")
         fp.write("\n")
         fp.write(
-            "This is the signature generation pipeline defined at ``%s``:\n"
-            % args.pipeline
+            f"This is the signature generation ruleset defined at ``{args.pipeline}``:\n"
         )
         fp.write("\n")
 
         for i, rule in enumerate(rules):
-            li = "%s. " % (i + 1)
+            li = f"{i+1}. "
             fp.write("%s%s\n" % (li, indent(get_doc(rule), " " * len(li))))
             fp.write("\n")
