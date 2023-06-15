@@ -5,6 +5,7 @@
 import datetime
 import functools
 from pathlib import Path
+import re
 
 import docutils.core
 
@@ -162,8 +163,14 @@ class FieldNotFound(Exception):
     pass
 
 
+# Characters that shouldn't be in the cache key
+BAD_CACHE_KEY_RE = re.compile(r"[^0-9a-zA-Z:\_-]")
+
+
 def generate_field_doc(dataset, field):
     cache_key = f"datadictionary:generate_field_doc:{dataset}:{field}"
+    cache_key = BAD_CACHE_KEY_RE.sub("_", cache_key).strip()
+
     ret = cache.get(cache_key)
     if ret is not None:
         return ret
