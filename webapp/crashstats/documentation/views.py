@@ -4,8 +4,8 @@
 
 import datetime
 import functools
+import hashlib
 from pathlib import Path
-import re
 
 import docutils.core
 
@@ -163,13 +163,20 @@ class FieldNotFound(Exception):
     pass
 
 
-# Characters that shouldn't be in the cache key
-BAD_CACHE_KEY_RE = re.compile(r"[^0-9a-zA-Z:\_-]")
+DATASET_TO_SCHEMA = {
+    "annotation": get_schema("raw_crash.schema.yaml"),
+    "processed": get_schema("processed_crash.schema.yaml"),
+}
 
 
 def generate_field_doc(dataset, field):
-    cache_key = f"datadictionary:generate_field_doc:{dataset}:{field}"
-    cache_key = BAD_CACHE_KEY_RE.sub("_", cache_key).strip()
+    try:
+        schema = DATASET_TO_SCHEMA[dataset]
+    except KeyError as exc:
+        raise DatasetNotFound() from exc
+
+    field_hash = hashlib.md5(field.encode("utf-8")).hexdigest()
+    cache_key = f"datadictionary:generate_field_doc:{dataset}:{field_hash}"
 
     ret = cache.get(cache_key)
     if ret is not None:
@@ -177,13 +184,6 @@ def generate_field_doc(dataset, field):
 
     field_path = field.split("/")
     field_name = field_path[-1]
-
-    if dataset == "annotation":
-        schema = get_schema("raw_crash.schema.yaml")
-    elif dataset == "processed":
-        schema = get_schema("processed_crash.schema.yaml")
-    else:
-        raise DatasetNotFound()
 
     # Find the field item they want to view documentation for
     field_data = schema
