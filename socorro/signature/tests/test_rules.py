@@ -1921,3 +1921,28 @@ class TestSignatureParentIDNotEqualsChildID:
         assert result.notes == [
             'SignatureParentIDNotEqualsChildID: Signature replaced with MOZ_RELEASE_ASSERT, was: "fooo::baar"'  # noqa
         ]
+
+
+class TestHungProcess:
+    def test_predicate_no_match(self):
+        result = generator.Result()
+        result.signature = "hello"
+        rule = rules.HungProcess()
+        assert rule.predicate({}, result) is False
+
+    def test_predicate_match(self):
+        crash_data = {"hang": "ui"}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.HungProcess()
+        assert rule.predicate(crash_data, result) is True
+
+    def test_action_success(self):
+        crash_data = {"hang": "ui"}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.HungProcess()
+        action_result = rule.action(crash_data, result)
+
+        assert action_result is True
+        assert result.signature == "hang: ui | Text"
