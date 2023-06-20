@@ -1028,3 +1028,20 @@ class SignatureParentIDNotEqualsChildID(Rule):
         # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature
         result.set_signature(self.name, "parentBuildID != childBuildID")
         return True
+
+
+class HungProcess(Rule):
+    """Prepends ``hang: <hang_type>`` to the signature of hangs.
+
+    See bug `#1826703 <https://bugzilla.mozilla.org/show_bug.cgi?id=1826703>`__.
+
+    """
+
+    def predicate(self, crash_data, result):
+        hang_type = crash_data.get("hang", None)
+        return hang_type is not None
+
+    def action(self, crash_data, result):
+        hang_type = crash_data.get("hang")
+        result.set_signature(self.name, f"hang: {hang_type} | {result.signature}")
+        return True
