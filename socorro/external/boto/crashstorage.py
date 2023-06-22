@@ -12,7 +12,6 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
-    migrate_raw_crash,
 )
 from socorro.external.boto.connection_context import S3Connection
 from socorro.lib.libjsonschema import JsonSchemaReducer
@@ -232,7 +231,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             try:
                 raw_crash_as_string = self.load_file(path)
                 data = json.loads(raw_crash_as_string)
-                return migrate_raw_crash(data)
+                return data
             except self.connection.KeyNotFound:
                 continue
 

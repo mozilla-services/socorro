@@ -447,6 +447,7 @@ class TestRawCrash:
             "Theme": "classic/1.0",
             "Version": "5.0a1",
             "Vendor": "Mozilla",
+            "version": 2,
         }
 
         key = s3_build_keys("raw_crash", crash_id)[0]

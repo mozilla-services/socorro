@@ -198,17 +198,8 @@ class TestBotoS3CrashStorage:
         )
 
         result = crashstorage.get_raw_crash(crash_id)
-        # NOTE(willkg): the raw crash was migrated to version 2 of the structure
         expected = {
-            "metadata": {
-                "collector_notes": [],
-                "dump_checksums": {},
-                "migrated_from_version_1": True,
-                "payload": "unknown",
-                "payload_compressed": "0",
-            },
             "submitted_timestamp": original_raw_crash["submitted_timestamp"],
-            "version": 2,
         }
         assert result == expected
 

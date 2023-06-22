@@ -14,7 +14,6 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     FileDumpsMapping,
     MemoryDumpsMapping,
-    migrate_raw_crash,
 )
 from socorro.lib.libdatetime import utc_now, JsonDTEncoder
 from socorro.lib.libooid import date_from_ooid, depth_from_ooid
@@ -182,7 +181,6 @@ class FSPermanentStorage(CrashStorageBase):
         with open(path) as f:
             data = json.load(f)
 
-        data = migrate_raw_crash(data)
         return data
 
     def get_raw_dump(self, crash_id, name=None):
