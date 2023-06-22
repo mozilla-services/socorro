@@ -1918,6 +1918,7 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
+    "shutdown_reason": keyword_field(name="shutdown_reason"),
     "signature": {
         "data_validation_type": "str",
         "form_field_choices": [],
