@@ -79,7 +79,11 @@ def timestamp_to_date(timestamp, fmt="%Y-%m-%d %H:%M:%S"):
         #  <span></span>
         return ""
 
-    dt = datetime.datetime.fromtimestamp(float(timestamp))
+    try:
+        dt = datetime.datetime.fromtimestamp(float(timestamp))
+    except OverflowError:
+        return ""
+
     return markupsafe.Markup(
         '<time datetime="{}" class="jstime" data-format="{}">{}</time>'.format(
             dt.isoformat(), fmt, dt.strftime(fmt)
