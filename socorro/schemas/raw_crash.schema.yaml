@@ -915,6 +915,15 @@ properties:
     type: string
     permissions: ["public"]
 
+  ShutdownReason:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1825917
+    description: >
+      One out of `Unknown`, `AppClose`, `AppRestart`, `OSForceClose`,
+      `OSSessionEnd`, `OSShutdown` or `WinUnexpectedMozQuit`.
+    type: string
+    permissions: ["public"]
+
   StartupCrash:
     data_reviews:
       - unknown

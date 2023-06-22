@@ -2871,13 +2871,20 @@ properties:
     permissions: ["public"]
     source_annotation: SafeMode
   shutdown_progress:
-    description: |
+    description: >
       Shutdown step at which the browser crashed, can be set to
       `quit-application`, `profile-change-teardown`, `profile-before-change`,
       `xpcom-will-shutdown` or `xpcom-shutdown`.
     type: string
     permissions: ["public"]
     source_annotation: ShutdownProgress
+  shutdown_reason:
+    description: >
+      One out of `Unknown`, `AppClose`, `AppRestart`, `OSForceClose`,
+      `OSSessionEnd`, `OSShutdown` or `WinUnexpectedMozQuit`.
+    type: string
+    permissions: ["public"]
+    source_annotation: ShutdownReason
   signature:
     description: >
       Crash signature for this crash report containing tags and the first few
