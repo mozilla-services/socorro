@@ -41,6 +41,7 @@ from socorro.processor.rules.mozilla import (
     OutOfMemoryBinaryRule,
     PHCRule,
     PluginRule,
+    ReportTypeRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
@@ -90,6 +91,7 @@ DEFAULT_RULESET = [
     MacCrashInfoRule(),
     MozCrashReasonRule(),
     UtilityActorsNameRule(),
+    ReportTypeRule(),
     # post processing of the processed crash
     CPUInfoRule(),
     DistributionIdRule(),

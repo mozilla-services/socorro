@@ -1097,3 +1097,29 @@ class UtilityActorsNameRule(Rule):
             item.strip() for item in utility_actors_name.split(",") if item.strip()
         ]
         processed_crash["utility_actors_name"] = names
+
+
+class ReportTypeRule(Rule):
+    """Determines the category for the report.
+
+    We get crash reports for different sorts of things. Some are from crashes. Others
+    are from browser hangs, content process hangs, shutdown hangs, etc. This determines
+    the type of the report and fills in the ``report_type`` field.
+
+    Bug #1667997
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        # "crash" is the default type
+        report_type = "crash"
+
+        # NOTE(willkg): This comes from the ipc_channel_error crash annotation
+        if "ipc_channel_error" in processed_crash:
+            report_type = "hang"
+
+        # NOTE(willkg): This comes from the AsyncShutdownTimeout crash annotation
+        if "async_shutdown_timeout" in processed_crash:
+            report_type = "hang"
+
+        processed_crash["report_type"] = report_type

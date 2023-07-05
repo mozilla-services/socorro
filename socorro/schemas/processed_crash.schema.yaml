@@ -2864,6 +2864,12 @@ properties:
     type: string
     permissions: ["protected"]
     source_annotation: RemoteType
+  report_type:
+    description: >
+      Type of the crash report. Can be set to `crash` (the default for reports),
+      `hang`, etc.
+    type: string
+    permissions: ["public"]
   safe_mode:
     description:
       Whether the browser was running in Safe mode.
