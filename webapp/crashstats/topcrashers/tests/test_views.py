@@ -38,6 +38,7 @@ class TestTopCrasherViews:
                     "is_garbage_collecting": False,
                     "os_name": "Linux",
                     "process_type": "parent",
+                    "report_type": "crash",
                     "startup_crash": True,
                     "uptime": 1000,
                 }
@@ -81,6 +82,7 @@ class TestTopCrasherViews:
                     "is_garbage_collecting": False,
                     "os_name": "Linux",
                     "process_type": "parent",
+                    "report_type": "crash",
                     "startup_crash": True,
                     "uptime": 1000,
                 }
@@ -131,6 +133,7 @@ class TestTopCrasherViews:
                 "is_garbage_collecting": False,
                 "os_name": "Linux",
                 "process_type": "parent",
+                "report_type": "crash",
                 "uptime": 500,
             }
             data.update(params)
@@ -214,6 +217,7 @@ class TestTopCrasherViews:
                     "is_garbage_collecting": False,
                     "os_name": "Linux",
                     "process_type": "parent",
+                    "report_type": "crash",
                     "startup_crash": False,
                     "uptime": 500,
                 }
@@ -234,6 +238,90 @@ class TestTopCrasherViews:
         # doesn't throw an error
         response = client.get(url, {"product": "Firefox", "version": "9.5"})
         assert response.status_code == 200
+
+    def test_topcrashers_reporttype(self, client, db, es_helper):
+        crashsignature = "FakeCrashSignature1"
+        hangsignature = "shutdownhang | foo"
+
+        # Index crash and hang crashes
+        crash_data = []
+        now = utc_now() - datetime.timedelta(days=1)
+        for _ in range(5):
+            crash_data.append(
+                {
+                    "date_processed": now,
+                    "uuid": create_new_ooid(timestamp=now),
+                    "signature": crashsignature,
+                    "product": "Firefox",
+                    "version": "1.0",
+                    "dom_fission_enabled": True,
+                    "is_garbage_collecting": False,
+                    "os_name": "Linux",
+                    "process_type": "parent",
+                    "report_type": "crash",
+                    "startup_crash": True,
+                    "uptime": 1000,
+                }
+            )
+        for item in crash_data:
+            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+
+        for _ in range(5):
+            crash_data.append(
+                {
+                    "date_processed": now,
+                    "uuid": create_new_ooid(timestamp=now),
+                    "signature": hangsignature,
+                    "product": "Firefox",
+                    "version": "1.0",
+                    "dom_fission_enabled": True,
+                    "is_garbage_collecting": False,
+                    "os_name": "Linux",
+                    "process_type": "parent",
+                    "report_type": "hang",
+                    "startup_crash": True,
+                    "uptime": 1000,
+                }
+            )
+        for item in crash_data:
+            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+        es_helper.refresh()
+
+        url = reverse("topcrashers:topcrashers")
+
+        # Default yields report_type="crash"
+        response = client.get(url, {"product": "Firefox", "version": "1.0"})
+        assert response.status_code == 200
+        print(response.content.decode("utf-8"))
+        assert crashsignature in smart_str(response.content)
+        assert hangsignature not in smart_str(response.content)
+
+        # Specify report_type="crash" does the same thing
+        response = client.get(
+            url, {"product": "Firefox", "version": "1.0", "_report_type": "crash"}
+        )
+        assert response.status_code == 200
+        print(response.content.decode("utf-8"))
+        assert crashsignature in smart_str(response.content)
+        assert hangsignature not in smart_str(response.content)
+
+        # Specify report_type="hang" shows hangs
+        response = client.get(
+            url, {"product": "Firefox", "version": "1.0", "_report_type": "hang"}
+        )
+        assert response.status_code == 200
+        print(response.content.decode("utf-8"))
+        assert crashsignature not in smart_str(response.content)
+        assert hangsignature in smart_str(response.content)
+
+        # Specify report_type="any" shows crashes and hangs
+        response = client.get(
+            url, {"product": "Firefox", "version": "1.0", "_report_type": "any"}
+        )
+        assert response.status_code == 200
+        print(response.content.decode("utf-8"))
+        assert crashsignature in smart_str(response.content)
+        assert hangsignature in smart_str(response.content)
 
     def test_400_by_bad_days(self, client, db, es_helper):
         url = reverse("topcrashers:topcrashers")

@@ -16,3 +16,4 @@ class TopCrashersForm(BaseForm):
     _facets_size = forms.IntegerField(required=False)
     _tcbs_mode = forms.CharField(required=False)
     _range_type = forms.CharField(required=False)
+    _report_type = forms.CharField(required=False)

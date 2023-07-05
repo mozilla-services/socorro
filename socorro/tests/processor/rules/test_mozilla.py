@@ -2147,3 +2147,52 @@ class TestReportTypeRule:
         rule = ReportTypeRule()
         rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
         assert processed_crash["report_type"] == "hang"
+
+    @pytest.mark.parametrize(
+        "json_dump, expected",
+        [
+            (None, "crash"),
+            ({"crash_info": None}, "crash"),
+            ({"crash_info": {"crashing_thread": None}}, "crash"),
+            ({"crash_info": {"crashing_thread": "jim"}}, "crash"),
+            ({"crash_info": {"crashing_thread": 10}}, "crash"),
+            ({"crash_info": {"crashing_thread": 0}, "threads": None}, "crash"),
+            ({"crash_info": {"crashing_thread": 0}, "threads": []}, "crash"),
+            ({"crash_info": {"crashing_thread": 0}, "threads": [{}]}, "crash"),
+            (
+                {"crash_info": {"crashing_thread": 0}, "threads": [{"frames": [{}]}]},
+                "crash",
+            ),
+            (
+                {
+                    "crash_info": {"crashing_thread": 0},
+                    "threads": [{"frames": [{"function": None}]}],
+                },
+                "crash",
+            ),
+            (
+                {
+                    "crash_info": {"crashing_thread": 0},
+                    "threads": [
+                        {
+                            "frames": [
+                                {
+                                    "function": "mozilla::(anonymous namespace)::RunWatchdog(void*)"
+                                }
+                            ]
+                        }
+                    ],
+                },
+                "hang",
+            ),
+        ],
+    )
+    def test_shutdownhang(self, tmp_path, json_dump, expected):
+        raw_crash = {}
+        processed_crash = {}
+        if json_dump is not None:
+            processed_crash["json_dump"] = json_dump
+
+        rule = ReportTypeRule()
+        rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
+        assert processed_crash["report_type"] == expected

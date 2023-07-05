@@ -1110,16 +1110,34 @@ class ReportTypeRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        # "crash" is the default type
-        report_type = "crash"
-
+    def identify_report_type(self, processed_crash, status):
         # NOTE(willkg): This comes from the ipc_channel_error crash annotation
         if "ipc_channel_error" in processed_crash:
-            report_type = "hang"
+            return "hang"
 
         # NOTE(willkg): This comes from the AsyncShutdownTimeout crash annotation
         if "async_shutdown_timeout" in processed_crash:
-            report_type = "hang"
+            return "hang"
+
+        # If this is a C++/Rust crash and there was a minidump and "RunWatchdog" is in
+        # the crashing thread stack, then it's a hang
+        if "json_dump" in processed_crash:
+            crash_data = processed_crash["json_dump"]
+            try:
+                crash_info = crash_data.get("crash_info") or {}
+                crashing_thread = int(crash_info.get("crashing_thread", 0))
+            except (TypeError, ValueError):
+                crashing_thread = 0
+
+            stack = glom(crash_data, "threads.%d.frames" % crashing_thread, default=[])
+            for frame in stack:
+                if "RunWatchdog" in (frame.get("function") or ""):
+                    return "hang"
+
+        return "crash"
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        # "crash" is the default type
+        report_type = self.identify_report_type(processed_crash, status)
 
         processed_crash["report_type"] = report_type
