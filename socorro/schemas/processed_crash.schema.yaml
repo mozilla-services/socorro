@@ -2866,8 +2866,8 @@ properties:
     source_annotation: RemoteType
   report_type:
     description: >
-      Type of the crash report. Can be set to `crash` (the default for reports),
-      `hang`, etc.
+      Type of the crash report. Can be set to `crash` (the default for reports)
+      and `hang`.
     type: string
     permissions: ["public"]
   safe_mode:
