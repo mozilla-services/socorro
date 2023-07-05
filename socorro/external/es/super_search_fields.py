@@ -1894,6 +1894,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
+    "report_type": keyword_field(name="report_type"),
     "safe_mode": {
         "data_validation_type": "bool",
         "form_field_choices": [],

@@ -33,6 +33,7 @@ from socorro.processor.rules.mozilla import (
     OutOfMemoryBinaryRule,
     PHCRule,
     PluginRule,
+    ReportTypeRule,
     SignatureGeneratorRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
@@ -2105,5 +2106,44 @@ class TestUtilityActorsNameRule:
 
         rule = UtilityActorsNameRule()
         rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
-        print(processed_crash)
         assert processed_crash["utility_actors_name"] == expected
+
+
+class TestReportTypeRule:
+    def test_crash(self, tmp_path):
+        raw_crash = {}
+        processed_crash = {}
+
+        rule = ReportTypeRule()
+        rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
+        assert processed_crash == {"report_type": "crash"}
+
+    def test_ipc_channel_error_is_hang(self, tmp_path):
+        raw_crash = {}
+        processed_crash = {"ipc_channel_error": "ShutDownKill"}
+
+        rule = ReportTypeRule()
+        rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
+        assert processed_crash["report_type"] == "hang"
+
+    def test_async_shutdown_timeout_is_hang(self, tmp_path):
+        raw_crash = {}
+        processed_crash = {
+            "async_shutdown_timeout": (
+                '{"phase":"AddonManager: Waiting to start provider shutdown.",'
+                + '"conditions":[{"name":"EnvironmentAddonBuilder",'
+                + '"state":"Awaiting AddonManagerPrivate.databaseReady",'
+                + '"filename":"resource://gre/modules/TelemetryEnvironment.sys.mjs",'
+                + '"lineNumber":603,"stack":['
+                + '"resource://gre/modules/TelemetryEnvironment.sys.mjs:init:603",'
+                + '"resource://gre/modules/TelemetryEnvironment.sys.mjs:EnvironmentCache:974",'
+                + '"resource://gre/modules/TelemetryEnvironment.sys.mjs:getGlobal:79",'
+                + '"resource://gre/modules/TelemetryEnvironment.sys.mjs:getcurrentEnvironment:86",'
+                + '"resource://gre/modules/TelemetryStartup.sys.mjs:annotateEnvironment:39",'
+                + '"resource://gre/modules/TelemetryStartup.sys.mjs:TelemetryStartup.prototype.observe:28"]}]}'
+            )
+        }
+
+        rule = ReportTypeRule()
+        rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
+        assert processed_crash["report_type"] == "hang"

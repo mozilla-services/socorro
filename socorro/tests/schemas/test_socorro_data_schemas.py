@@ -528,6 +528,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "quota_manager_shutdown_timeout",
     "reason",
     "release_channel",
+    "report_type",
     "safe_mode",
     "shutdown_progress",
     "shutdown_reason",
