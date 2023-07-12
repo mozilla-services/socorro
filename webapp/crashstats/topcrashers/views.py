@@ -125,7 +125,8 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     report_type = form.cleaned_data["_report_type"]
 
     range_type = "build" if range_type == "build" else "report"
-    report_type = report_type or "crash"
+    # FIXME(willkg): default this to "crash" mid August 2023
+    report_type = report_type or "any"
 
     if not tcbs_mode or tcbs_mode not in ("realtime", "byday"):
         tcbs_mode = "realtime"
