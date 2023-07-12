@@ -289,12 +289,13 @@ class TestTopCrasherViews:
 
         url = reverse("topcrashers:topcrashers")
 
-        # Default yields report_type="crash"
+        # FIXME(willkg): default this to "crash" mid August 2023
+        # Default yields report_type="any"
         response = client.get(url, {"product": "Firefox", "version": "1.0"})
         assert response.status_code == 200
         print(response.content.decode("utf-8"))
         assert crashsignature in smart_str(response.content)
-        assert hangsignature not in smart_str(response.content)
+        assert hangsignature in smart_str(response.content)
 
         # Specify report_type="crash" does the same thing
         response = client.get(
