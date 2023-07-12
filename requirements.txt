@@ -275,9 +275,7 @@ everett==3.2.0 \
 exceptiongroup==1.1.1 \
     --hash=sha256:232c37c63e4f682982c8b6459f33a8981039e5fb8756b2074364e5055c498c9e \
     --hash=sha256:d484c3090ba2889ae2928419117447a14daf3c1231d5e30d0aae34f354f01785
-    # via
-    #   -r requirements.in
-    #   pytest
+    # via -r requirements.in
 face==20.1.1 \
     --hash=sha256:3790311a7329e4b0d90baee346eecad54b337629576edf3a246683a5f0d24446 \
     --hash=sha256:7d59ca5ba341316e58cf72c6aff85cca2541cf5056c4af45cb63af9a814bed3e \
@@ -322,9 +320,7 @@ imagesize==1.3.0 \
 importlib-metadata==6.0.0 \
     --hash=sha256:7efb448ec9a5e313a57655d35aa54cd3e01b7e1fbcf72dce1bf06119420f5bad \
     --hash=sha256:e354bedeb60efa6affdcc8ae121b73544a7aa74156d047311948f6d711cd378d
-    # via
-    #   -r requirements.in
-    #   sphinx
+    # via -r requirements.in
 importlib-resources==5.10.0 \
     --hash=sha256:c01b1b94210d9849f286b86bb51bcea7cd56dde0600d8db721d7b81330711668 \
     --hash=sha256:ee17ec648f85480d523596ce49eae8ead87d5631ae1551f913c0100b5edd3437
@@ -753,24 +749,24 @@ rsa==4.7.2 \
     # via
     #   awscli
     #   oauth2client
-ruff==0.0.275 \
-    --hash=sha256:0c4e6468da26f77b90cae35319d310999f471a8c352998e9b39937a23750149e \
-    --hash=sha256:0dbdea02942131dbc15dd45f431d152224f15e1dd1859fcd0c0487b658f60f1a \
-    --hash=sha256:1cc599022fe5ffb143a965b8d659eb64161ab8ab4433d208777eab018a1aab67 \
-    --hash=sha256:22efd9f41af27ef8fb9779462c46c35c89134d33e326c889971e10b2eaf50c63 \
-    --hash=sha256:2c09662112cfa22d7467a19252a546291fd0eae4f423e52b75a7a2000a1894db \
-    --hash=sha256:508b13f7ca37274cceaba4fb3ea5da6ca192356323d92acf39462337c33ad14e \
-    --hash=sha256:5206fc1cd8c1c1deadd2e6360c0dbcd690f1c845da588ca9d32e4a764a402c60 \
-    --hash=sha256:5859ee543b01b7eb67835dfd505faa8bb7cc1550f0295c92c1401b45b42be399 \
-    --hash=sha256:5e6554a072e7ce81eb6f0bec1cebd3dcb0e358652c0f4900d7d630d61691e914 \
-    --hash=sha256:6afb1c4422f24f361e877937e2a44b3f8176774a476f5e33845ebfe887dd5ec2 \
-    --hash=sha256:80043726662144876a381efaab88841c88e8df8baa69559f96b22d4fa216bef1 \
-    --hash=sha256:8347fc16aa185aae275906c4ac5b770e00c896b6a0acd5ba521f158801911998 \
-    --hash=sha256:a19ce3bea71023eee5f0f089dde4a4272d088d5ac0b675867e074983238ccc65 \
-    --hash=sha256:a63a0b645da699ae5c758fce19188e901b3033ec54d862d93fcd042addf7f38d \
-    --hash=sha256:c8ace4d40a57b5ea3c16555f25a6b16bc5d8b2779ae1912ce2633543d4e9b1da \
-    --hash=sha256:d9b264d78621bf7b698b6755d4913ab52c19bd28bee1a16001f954d64c1a1220 \
-    --hash=sha256:ec43658c64bfda44fd84bbea9da8c7a3b34f65448192d1c4dd63e9f4e7abfdd4
+ruff==0.0.277 \
+    --hash=sha256:14a7b2f00f149c5a295f188a643ac25226ff8a4d08f7a62b1d4b0a1dc9f9b85c \
+    --hash=sha256:2d4444c60f2e705c14cd802b55cd2b561d25bf4311702c463a002392d3116b22 \
+    --hash=sha256:2dab13cdedbf3af6d4427c07f47143746b6b95d9e4a254ac369a0edb9280a0d2 \
+    --hash=sha256:323b674c98078be9aaded5b8b51c0d9c424486566fb6ec18439b496ce79e5998 \
+    --hash=sha256:3250b24333ef419b7a232080d9724ccc4d2da1dbbe4ce85c4caa2290d83200f8 \
+    --hash=sha256:3a43fbe026ca1a2a8c45aa0d600a0116bec4dfa6f8bf0c3b871ecda51ef2b5dd \
+    --hash=sha256:3e60605e07482183ba1c1b7237eca827bd6cbd3535fe8a4ede28cbe2a323cb97 \
+    --hash=sha256:468bfb0a7567443cec3d03cf408d6f562b52f30c3c29df19927f1e0e13a40cd7 \
+    --hash=sha256:479864a3ccd8a6a20a37a6e7577bdc2406868ee80b1e65605478ad3b8eb2ba0b \
+    --hash=sha256:6fe81732f788894a00f6ade1fe69e996cc9e485b7c35b0f53fb00284397284b2 \
+    --hash=sha256:734165ea8feb81b0d53e3bf523adc2413fdb76f1264cde99555161dd5a725522 \
+    --hash=sha256:74e4b206cb24f2e98a615f87dbe0bde18105217cbcc8eb785bb05a644855ba50 \
+    --hash=sha256:7baa97c3d7186e5ed4d5d4f6834d759a27e56cf7d5874b98c507335f0ad5aadb \
+    --hash=sha256:88d0f2afb2e0c26ac1120e7061ddda2a566196ec4007bd66d558f13b374b9efc \
+    --hash=sha256:a9879f59f763cc5628aa01c31ad256a0f4dc61a29355c7315b83c2a5aac932b5 \
+    --hash=sha256:f32ec416c24542ca2f9cc8c8b65b84560530d338aaf247a4a78e74b99cd476b4 \
+    --hash=sha256:f612e0a14b3d145d90eb6ead990064e22f6f27281d847237560b4e10bf2251f3
     # via -r requirements.in
 s3transfer==0.6.0 \
     --hash=sha256:06176b74f3a15f61f1b4f25a1fc29a4429040b7647133a463da8fa5bd28d5ecd \
@@ -846,17 +842,12 @@ statsd==4.0.1 \
 tomli==1.2.3 \
     --hash=sha256:05b6166bff487dc068d322585c7ea4ef78deed501cc124060e0f238e89a9231f \
     --hash=sha256:e3069e4be3ead9668e21cb9b074cd948f7b3113fd9c8bba083f48247aab8b11c
-    # via
-    #   black
-    #   build
-    #   pep517
-    #   pytest
+    # via pep517
 typing-extensions==4.3.0 \
     --hash=sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02 \
     --hash=sha256:e6d2677a32f47fc7eb2795db1dd15c1f34eff616bcaf2cfb5e997f854fa1c4a6
     # via
     #   -r requirements.in
-    #   black
     #   dj-database-url
 urllib3==1.26.13 \
     --hash=sha256:47cc05d99aaa09c9e72ed5809b60e7ba354e64b59c9c173ac3018642d8bb41fc \
@@ -888,7 +879,6 @@ zipp==3.11.0 \
     # via
     #   -r requirements.in
     #   importlib-metadata
-    #   importlib-resources
 
 # WARNING: The following packages were not pinned, but pip requires them to be
 # pinned when the requirements file includes hashes. Consider using the --allow-unsafe flag.
