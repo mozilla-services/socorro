@@ -155,6 +155,7 @@ mozilla::PodZero
 mozilla::PrioritizedEventQueue<T>::GetEvent
 mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
+mozilla::SegmentedVector<T>::SegmentImpl<T>::
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::TaskQueue::
 mozilla::ThreadEventQueue
@@ -162,6 +163,8 @@ mozilla::ThreadSafeAutoRefCnt
 mozilla::UniquePtr
 mozilla::widget::WlCrashHandler
 mozilla::wr::RenderThread::AddRef
+nsCOMPtr<T>::~nsCOMPtr
+nsCOMPtr_base::~nsCOMPtr_base
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 ns.*Hashtable
