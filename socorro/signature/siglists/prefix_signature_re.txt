@@ -106,6 +106,7 @@ mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
 mozilla::net::ShutdownEvent::PostAndWait
+mozilla::SegmentedVector
 mozilla::TimeStamp::Now
 mozilla::TimeStamp::operator
 mozilla::TimeStampValue::operator-
