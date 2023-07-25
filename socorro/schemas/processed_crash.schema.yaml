@@ -202,6 +202,73 @@ definitions:
               type: ["object"]
               permissions: ["public"]
             permissions: ["public"]
+          possible_bit_flips:
+            description: >
+              A list of addresses that could have been the actual address the
+              program wanted to access, but which were changed by a bit-flip.
+            type: ["array", "null"]
+            items:
+              properties:
+                address:
+                  description: >
+                    Address of the bit flip as a hex string.
+                  type: ["string", "null"]
+                  permissions: ["public"]
+                confidence:
+                  description: >
+                    The calculated confidence value in the bit-flip-corrected
+                    address.
+                  type: number
+                  permissions: ["public"]
+                details:
+                  description: >
+                    Flags related to the calculation of confidence in a
+                    bit-flip.
+                  properties:
+                    was_non_canonical:
+                      description: >
+                        Whether the original address was non-canonical.
+                      type: boolean
+                      permissions: ["public"]
+                    is_null:
+                      description: >
+                        Whether the bit-flipped address is null.
+                      type: boolean
+                      permissions: ["public"]
+                    was_low:
+                      description: |
+                        Whether the original address was fairly low.
+
+                        This is only set if `is_null` is true, and may indicate
+                        that a bit flip didn't occur (low values could be the
+                        result of many things).
+                      type: boolean
+                      permissions: ["public"]
+                    posion_registers:
+                      description: >
+                        Whether any poison register values were found.
+                      type: boolean
+                      permissions: ["public"]
+                    nearby_registers:
+                      description: >
+                        How many registers containing values near the
+                        bit-flip-corrected address. This is only set for
+                        corrected addresses which are sufficiently high to
+                        avoid false positives with (likely) low values.
+                      type: integer
+                      permissions: ["public"]
+                  type: object
+                  permissions: ["public"]
+                source_register:
+                  description: >
+                    The source register from which the address was retrieved,
+                    or `null` if there was no source register (e.g. the address
+                    was the crashing address).
+                  type: ["string", "null"]
+                  permissions: ["public"]
+              type: object
+              permissions: ["public"]
+            permissions: ["public"]
           type:
             description: Platform-specific error type that caused the crash.
             type: ["string", "null"]
