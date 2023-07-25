@@ -1778,6 +1778,9 @@ FIELDS = {
             "type": "multi_field",
         },
     },
+    "possible_bit_flips_max_confidence": integer_field(
+        name="possible_bit_flips_max_confidence",
+    ),
     "process_type": {
         "data_validation_type": "str",
         "form_field_choices": [
