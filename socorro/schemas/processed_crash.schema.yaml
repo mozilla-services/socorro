@@ -2828,6 +2828,14 @@ properties:
       into that process.
     type: string
     permissions: ["public"]
+  possible_bit_flips_max_confidence:
+    description: >
+      Possible bit flip confidence values are calculated by the stackwalker
+      when processing the minidump. Max confidence value is the maximum
+      confidence value of possible bit flips multiplied by 100 and rounded down
+      to the nearest whole number. This is an integer between 0 and 100.
+    type: integer
+    permissions: ["public"]
   process_type:
     description: >
       Type of the process that crashed. This will be `parent` if the crash

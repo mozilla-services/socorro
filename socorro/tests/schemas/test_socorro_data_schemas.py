@@ -529,6 +529,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "plugin_filename",
     "plugin_name",
     "plugin_version",
+    "possible_bit_flips_max_confidence",
     "process_type",
     "processor_history.[]",
     "processor_notes",
