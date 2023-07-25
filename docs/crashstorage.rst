@@ -175,7 +175,8 @@ Here is an explanation of each properties of a field:
     Specifies how values are validated when passed to filters of this field
     in Super Search.
 
-    Possible values: ``str``, ``enum``, ``bool``, ``int``, ``datetime``,
+    Possible values: ``str``, ``enum``, ``bool``, ``int``, ``float``,
+    ``datetime``,
 
 **permissions_needed**
     Permissions needed for a user to access this field.

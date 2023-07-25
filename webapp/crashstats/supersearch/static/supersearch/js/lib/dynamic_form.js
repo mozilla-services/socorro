@@ -38,7 +38,8 @@
 
   var OPERATORS_BOOLEAN = OPERATORS_BOOL.concat(OPERATORS_EXISTENCE);
   var OPERATORS_ENUM = OPERATORS_BASE.concat(OPERATORS_EXISTENCE);
-  var OPERATORS_NUMBER = OPERATORS_BASE.concat(OPERATORS_RANGE).concat(OPERATORS_EXISTENCE);
+  var OPERATORS_INTEGER = OPERATORS_BASE.concat(OPERATORS_RANGE).concat(OPERATORS_EXISTENCE);
+  var OPERATORS_FLOAT = OPERATORS_BASE.concat(OPERATORS_RANGE).concat(OPERATORS_EXISTENCE);
   var OPERATORS_DATE = OPERATORS_RANGE.concat(OPERATORS_EXISTENCE);
   var OPERATORS_STRING = OPERATORS_BASE.concat(OPERATORS_REGEX).concat(OPERATORS_EXISTENCE);
 
@@ -129,8 +130,10 @@
     function getOperatorsForField(field) {
       var options = OPERATORS_BASE;
 
-      if (field.valueType === 'number') {
-        options = OPERATORS_NUMBER;
+      if (field.valueType === 'integer') {
+        options = OPERATORS_INTEGER;
+      } else if (field.valueType === 'float') {
+        options = OPERATORS_FLOAT;
       } else if (field.valueType === 'date') {
         options = OPERATORS_DATE;
       } else if (field.valueType === 'bool') {

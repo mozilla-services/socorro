@@ -121,7 +121,7 @@ class SuperSearch(ESSocorroMiddleware):
         return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
     def _get_extended_params(self):
-        # Add histogram fields for all 'date' or 'number' fields.
+        # Add histogram fields for all 'date','integer', or 'float' fields.
         extended_fields = []
         for field in self.all_fields.values():
             if not field["is_exposed"] or field["permissions_needed"]:
@@ -129,12 +129,18 @@ class SuperSearch(ESSocorroMiddleware):
 
             extended_fields.append(("_aggs.%s" % field["name"], list))
 
-            if field["query_type"] in ("date", "number"):
+            interval_types = {
+                "date": str,
+                "integer": int,
+                "float": float,
+            }
+
+            if field["query_type"] in interval_types:
                 extended_fields.append(("_histogram.%s" % field["name"], list))
 
-                # Intervals can be strings for dates (like "day" or "1.5h")
-                # and can only be integers for numbers.
-                interval_type = {"date": str, "number": int}.get(field["query_type"])
+                # Intervals can be strings for dates (like "day" or "1.5h"), but
+                # integers and floats are integers and floats.
+                interval_type = interval_types[field["query_type"]]
 
                 extended_fields.append(
                     ("_histogram_interval.%s" % field["name"], interval_type)

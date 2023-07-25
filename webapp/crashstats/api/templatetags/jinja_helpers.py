@@ -18,6 +18,8 @@ def describe_friendly_type(type_):
         return "String"
     if type_ is int:
         return "Integer"
+    if type_ is float:
+        return "Float"
     if type_ is list:
         return "List of strings"
     if type_ is datetime.date:

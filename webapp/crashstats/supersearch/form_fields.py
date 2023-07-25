@@ -170,7 +170,7 @@ class MultiplePrefixedValueField(PrefixedField):
                     )
 
 
-class NumberField(MultiplePrefixedValueField, forms.IntegerField):
+class IntegerField(MultiplePrefixedValueField, forms.IntegerField):
     existence_strings = ["__null__", "!__null__"]
 
     def to_python(self, value):
@@ -184,6 +184,22 @@ class NumberField(MultiplePrefixedValueField, forms.IntegerField):
             return
 
         return forms.IntegerField.validate(self, value)
+
+
+class FloatField(MultiplePrefixedValueField, forms.FloatField):
+    existence_strings = ["__null__", "!__null__"]
+
+    def to_python(self, value):
+        if value in self.existence_strings:
+            return value
+
+        return super().to_python(value)
+
+    def validate(self, value):
+        if value in self.existence_strings:
+            return
+
+        return forms.FloatField.validate(self, value)
 
 
 class IsoDateTimeField(forms.DateTimeField):

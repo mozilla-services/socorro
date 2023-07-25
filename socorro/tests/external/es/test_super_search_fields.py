@@ -165,6 +165,7 @@ def test_validate_super_search_fields(name, properties):
         "datetime",
         "enum",
         "int",
+        "float",
         "str",
     )
 
@@ -174,7 +175,8 @@ def test_validate_super_search_fields(name, properties):
         "date",
         "enum",
         "flag",
-        "number",
+        "integer",
+        "float",
         "string",
     )
 

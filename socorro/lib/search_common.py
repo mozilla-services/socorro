@@ -43,6 +43,7 @@ OPERATORS_NUMBER = [">=", "<=", "<", ">"]
 OPERATORS_MAP = {
     "str": OPERATORS_STRING + OPERATORS_EXISTENCE + OPERATORS_BASE,
     "int": OPERATORS_NUMBER + OPERATORS_EXISTENCE + OPERATORS_BASE,
+    "float": OPERATORS_NUMBER + OPERATORS_EXISTENCE + OPERATORS_BASE,
     "date": OPERATORS_NUMBER + OPERATORS_EXISTENCE,
     "datetime": OPERATORS_NUMBER + OPERATORS_EXISTENCE,
     "bool": OPERATORS_BOOL + OPERATORS_EXISTENCE,
@@ -60,7 +61,7 @@ MAXIMUM_DATE_RANGE = 365
 
 
 # Query types of field that we can build histograms on.
-HISTOGRAM_QUERY_TYPES = ("date", "number")
+HISTOGRAM_QUERY_TYPES = ("date", "integer", "float")
 
 
 @dataclass
@@ -118,15 +119,30 @@ class SearchBase:
                 all_meta_filters.append(SearchFilter("_histogram.%s" % field["name"]))
 
                 # Add an interval field.
-                default_interval = 1
                 if field["query_type"] == "date":
-                    default_interval = "day"
-                all_meta_filters.append(
-                    SearchFilter(
-                        "_histogram_interval.%s" % field["name"],
-                        default=default_interval,
+                    all_meta_filters.append(
+                        SearchFilter(
+                            "_histogram_interval.%s" % field["name"],
+                            data_type="enum",
+                            default="day",
+                        )
                     )
-                )
+                elif field["query_type"] == "integer":
+                    all_meta_filters.append(
+                        SearchFilter(
+                            "_histogram_interval.%s" % field["name"],
+                            data_type="integer",
+                            default=1,
+                        )
+                    )
+                elif field["query_type"] == "float":
+                    all_meta_filters.append(
+                        SearchFilter(
+                            "_histogram_interval.%s" % field["name"],
+                            data_type="float",
+                            default=1.0,
+                        )
+                    )
 
         # Add meta parameters.
         self.filters.extend(all_meta_filters)
@@ -345,6 +361,8 @@ def convert_to_type(value, data_type):
         value = str(value)
     elif data_type == "int" and not isinstance(value, int):
         value = int(value)
+    elif data_type == "float" and not isinstance(value, float):
+        value = float(value)
     elif data_type == "bool" and not isinstance(value, bool):
         value = str(value).lower() in ("true", "t", "1", "y", "yes")
     elif data_type == "datetime" and not isinstance(value, datetime.datetime):
