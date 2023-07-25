@@ -165,6 +165,7 @@ mozilla::wr::RenderThread::AddRef
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 ns.*Hashtable
+nsTArrayElementTraits
 nsThread::GetEvent
 nsThread::ProcessNextEvent
 NS_ProcessNextEvent
