@@ -15,6 +15,7 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
+    PossibleBitFlipsRule,
     TruncateStacksRule,
 )
 
@@ -351,6 +352,88 @@ class TestCrashingThreadInfoRule:
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash == expected
+
+
+class TestPossibleBitFlipsRule:
+    def test_no_data(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_null(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {"json_dump": {"crash_info": {"possible_bit_flips": None}}}
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_empty_array(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {"json_dump": {"crash_info": {"possible_bit_flips": []}}}
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_max(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {
+                    "possible_bit_flips": [
+                        {
+                            "address": "0x00007ffdaf60bf90",
+                            "confidence": 0.625,
+                            "details": {
+                                "is_null": False,
+                                "nearby_registers": 1,
+                                "poison_registers": False,
+                                "was_low": False,
+                                "was_non_canonical": False,
+                            },
+                            "source_register": None,
+                        },
+                        {
+                            "address": "0x00007ffdaf60ef90",
+                            "confidence": 0.25,
+                            "details": {
+                                "is_null": False,
+                                "nearby_registers": 0,
+                                "poison_registers": False,
+                                "was_low": False,
+                                "was_non_canonical": False,
+                            },
+                            "source_register": None,
+                        },
+                    ]
+                }
+            }
+        }
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        # NOTE(willkg): max is int(0.625 * 100)
+        assert processed_crash["possible_bit_flips_max_confidence"] == 62
 
 
 class TestTruncateStacksRule:

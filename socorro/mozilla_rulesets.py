@@ -8,6 +8,7 @@ from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
+    PossibleBitFlipsRule,
     TruncateStacksRule,
 )
 from socorro.processor.rules.general import (
@@ -79,6 +80,7 @@ DEFAULT_RULESET = [
     ModuleURLRewriteRule(),
     CrashingThreadInfoRule(),
     TruncateStacksRule(),
+    PossibleBitFlipsRule(),
     MajorVersionRule(),
     PluginRule(),
     AccessibilityRule(),

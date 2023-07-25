@@ -94,6 +94,36 @@ class MinidumpSha256HashRule(Rule):
         )
 
 
+class PossibleBitFlipsRule(Rule):
+    """Compute possible_bit_flips_max_confidence value
+
+    Fills in:
+
+    * possible_bit_flips_max_confidence (int): maximum confidence value of possible bit
+      flips; range 0 to 100
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        bit_flips = glom.glom(
+            processed_crash, "json_dump.crash_info.possible_bit_flips", default=None
+        )
+        if bit_flips is None:
+            return
+
+        confidences = [item.get("confidence", 0.0) for item in bit_flips]
+
+        if not confidences:
+            return
+
+        # NOTE(willkg): The confidence value ranges from 0.0 to 1.0, but that doesn't
+        # work with Elasticsearch histogram intervals which round to whole numbers. So
+        # we make this 0 to 100.
+        processed_crash["possible_bit_flips_max_confidence"] = int(
+            max(confidences) * 100
+        )
+
+
 class TruncateStacksRule(Rule):
     """Truncate stacks that are too large
 
