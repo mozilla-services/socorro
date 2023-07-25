@@ -22,7 +22,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "str",
         "query_type": "string",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -31,7 +30,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "enum",
         "query_type": "enum",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -40,7 +38,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "str",
         "query_type": "string",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -49,7 +46,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "datetime",
         "query_type": "date",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -58,7 +54,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "int",
         "query_type": "number",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -67,7 +62,22 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "str",
         "query_type": "string",
         "namespace": "processed_crash",
-        "permissions_needed": [],
+        "is_exposed": True,
+        "is_returned": True,
+    },
+    "uptime": {
+        "name": "uptime",
+        "data_validation_type": "int",
+        "query_type": "integer",
+        "namespace": "processed_crash",
+        "is_exposed": True,
+        "is_returned": True,
+    },
+    "uptime_ts": {
+        "name": "uptime_ts",
+        "data_validation_type": "float",
+        "query_type": "float",
+        "namespace": "processed_crash",
         "is_exposed": True,
         "is_returned": True,
     },
@@ -76,7 +86,6 @@ SUPERSEARCH_FIELDS_MOCKED_RESULTS = {
         "data_validation_type": "str",
         "query_type": "string",
         "namespace": "processed_crash",
-        "permissions_needed": [],
         "is_exposed": True,
         "is_returned": True,
     },
@@ -125,6 +134,11 @@ class TestSearchBase:
         assert params["build_id"][0].value == 20000101000000
         assert params["build_id"][1].operator == "<"
         assert params["build_id"][1].value == 20150101000000
+
+        args = {"uptime_ts": [">1690300278.0"]}
+        params = search.get_parameters(**args)
+        assert params["uptime_ts"][0].operator == ">"
+        assert params["uptime_ts"][0].value == 1690300278.0
 
     def test_get_parameters_with_not(self):
         search = SearchBaseWithFields()
@@ -238,6 +252,33 @@ class TestSearchBase:
             elif param.operator == "":
                 assert param.value == ["1.9b2"]
 
+    def test_histograms(self):
+        search = SearchBaseWithFields()
+
+        args = {
+            "_histogram.uptime": "product",
+            "_histogram_interval.uptime": 84600,
+            "_histogram.uptime_ts": "product",
+            "_histogram_interval.uptime_ts": 84600.0,
+        }
+        params = search.get_parameters(**args)
+
+        param = params["_histogram.uptime"][0]
+        assert param.name == "_histogram.uptime"
+        assert param.value == ["product"]
+        interval_param = params["_histogram_interval.uptime"][0]
+        assert interval_param.name == "_histogram_interval.uptime"
+        assert interval_param.value == [84600]
+        assert interval_param.data_type == "integer"
+
+        param = params["_histogram.uptime_ts"][0]
+        assert param.name == "_histogram.uptime_ts"
+        assert param.value == ["product"]
+        interval_param = params["_histogram_interval.uptime_ts"][0]
+        assert interval_param.name == "_histogram_interval.uptime_ts"
+        assert interval_param.value == [84600.0]
+        assert interval_param.data_type == "float"
+
 
 class TestSearchCommon:
     """Test functions of the search_common module."""
@@ -250,10 +291,14 @@ class TestSearchCommon:
         # Test integer
         res = convert_to_type(12, "int")
         assert res == 12
-
-        # Test integer
         res = convert_to_type("12", "int")
         assert res == 12
+
+        # Test float
+        res = convert_to_type(6.0, "float")
+        assert res == 6.0
+        res = convert_to_type("6.0", "float")
+        assert res == 6.0
 
         # Test string
         res = convert_to_type(datetime.datetime(2012, 1, 1), "str")
@@ -262,12 +307,8 @@ class TestSearchCommon:
         # Test boolean
         res = convert_to_type(1, "bool")
         assert res is True
-
-        # Test boolean
         res = convert_to_type("T", "bool")
         assert res is True
-
-        # Test boolean
         res = convert_to_type(14, "bool")
         assert res is False
 

@@ -83,6 +83,7 @@ TYPE_MAP = {
     # NOTE: Not used in any API models
     datetime.datetime: forms.DateTimeField,
     int: forms.IntegerField,
+    float: forms.FloatField,
 }
 
 

@@ -12,8 +12,10 @@ from crashstats.supersearch import form_fields
 TYPE_TO_FIELD_MAPPING = {
     "enum": form_fields.MultipleValueField,
     "string": form_fields.StringField,
-    "number": form_fields.NumberField,
+    "integer": form_fields.IntegerField,
+    "float": form_fields.FloatField,
     "bool": form_fields.BooleanField,
+    "flag": form_fields.StringField,
     "date": form_fields.DateTimeField,
 }
 

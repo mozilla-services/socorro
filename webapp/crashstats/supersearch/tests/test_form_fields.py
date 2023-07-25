@@ -12,42 +12,42 @@ from django.forms import ValidationError
 from crashstats.supersearch import form_fields
 
 
-class TestNumberField:
+class TestIntegerField:
     def test_gt(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean([">13"])
         assert cleaned_value == [13]
         assert field.prefixed_value == [">13"]
 
     def test_duplicate(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean(["<10", "<10"])
         assert cleaned_value == [10, 10]
         assert field.prefixed_value == ["<10", "<10"]
 
     def test_not(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean(["!13"])
         assert cleaned_value == [13]
         assert field.prefixed_value == ["!13"]
 
     def test_null(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean(["__null__"])
         assert cleaned_value == ["__null__"]
 
     def test_not_null(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean(["!__null__"])
         assert cleaned_value == ["!__null__"]
 
     def test_not_null_and_filter(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
         cleaned_value = field.clean([">10", "!__null__"])
         assert cleaned_value == [10, "!__null__"]
 
     def test_invalid_combinations(self):
-        field = form_fields.NumberField()
+        field = form_fields.IntegerField()
 
         # Test non-overlapping ranges
         with pytest.raises(ValidationError, match="Operator combination failed"):
@@ -65,6 +65,61 @@ class TestNumberField:
         # Test doesn't exist with a filter--this is invalid
         with pytest.raises(ValidationError, match="Can't combine __null__"):
             field.clean(["__null__", ">10"])
+
+
+class TestFloatField:
+    def test_gt(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean([">13.0"])
+        assert cleaned_value == [13.0]
+        assert field.prefixed_value == [">13.0"]
+
+    def test_duplicate(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean(["<10.1", "<10.1"])
+        assert cleaned_value == [10.1, 10.1]
+        assert field.prefixed_value == ["<10.1", "<10.1"]
+
+    def test_not(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean(["!13.2"])
+        assert cleaned_value == [13.2]
+        assert field.prefixed_value == ["!13.2"]
+
+    def test_null(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean(["__null__"])
+        assert cleaned_value == ["__null__"]
+
+    def test_not_null(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean(["!__null__"])
+        assert cleaned_value == ["!__null__"]
+
+    def test_not_null_and_filter(self):
+        field = form_fields.FloatField()
+        cleaned_value = field.clean([">10.55", "!__null__"])
+        assert cleaned_value == [10.55, "!__null__"]
+
+    def test_invalid_combinations(self):
+        field = form_fields.FloatField()
+
+        # Test non-overlapping ranges
+        with pytest.raises(ValidationError, match="Operator combination failed"):
+            field.clean([">10.5", "<10.5"])
+        with pytest.raises(ValidationError, match="Operator combination failed"):
+            field.clean(["<10.4", ">10.4"])
+        with pytest.raises(ValidationError, match="Operator combination failed"):
+            field.clean(["<10.3", ">=10.3"])
+        with pytest.raises(ValidationError, match="Operator combination failed"):
+            field.clean(["<=10.2", ">10.2"])
+
+        # Test doesn't exist with a filter--this is invalid
+        with pytest.raises(ValidationError, match="Can't combine __null__"):
+            field.clean([">10.4", "__null__"])
+        # Test doesn't exist with a filter--this is invalid
+        with pytest.raises(ValidationError, match="Can't combine __null__"):
+            field.clean(["__null__", ">10.4"])
 
 
 class TestDateTimeField:

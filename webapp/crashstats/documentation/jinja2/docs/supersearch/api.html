@@ -227,7 +227,8 @@
         </header>
 
         <p class="description">
-          Run aggregations by range (instead of by terms) for date and number fields.
+          Run aggregations by range (instead of by terms) for date, integer,
+          and float fields.
         </p>
 
         <p class="description">
@@ -250,7 +251,7 @@
           <h2 id="param-_histogram_interval.*">_histogram_interval.*</h2>
           <p>
             <span class="type">string</span>
-            <span class="default"><code>'1d'</code> for date fields, <code>1</code> for number fields</span>
+            <span class="default"><code>'1d'</code> for date fields, <code>1</code> for integer and float fields</span>
           </p>
         </header>
 
@@ -260,9 +261,10 @@
         </p>
 
         <p class="description">
-          For number fields, the value has to be an integer. For dates and
-          datetimes, it has to be a string composed of an integer followed by a
-          unit. To see the list of all accepted units, please see the <a
+          For integer and float fields, the value has to be an integer or
+          float. For dates and datetimes, it has to be a string composed of an
+          integer followed by a unit. To see the list of all accepted units,
+          please see the <a
           href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units">Elasticsearch
           documentation</a>.
         </p>
