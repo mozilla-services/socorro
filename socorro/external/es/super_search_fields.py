@@ -362,7 +362,7 @@ def integer_field(
     name,
     namespace="processed_crash",
     in_database_name="",
-    number_type="integer",
+    storage_mapping_type="integer",
 ):
     """Generates a whole number field.
 
@@ -370,15 +370,16 @@ def integer_field(
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
-    :param number_type: "short", "integer", "long"
+    :param storage_mapping_type: the storage mapping type to use for Elasticsearch;
+        "short", "integer", "long"
 
     :returns: super search field specification as a dict
 
     """
     in_database_name = in_database_name or name
 
-    if number_type not in ["short", "integer", "long"]:
-        raise ValueError(f"number_type {number_type} is not valid")
+    if storage_mapping_type not in ["short", "integer", "long"]:
+        raise ValueError(f"storage_mapping_type {storage_mapping_type} is not valid")
 
     return {
         "name": name,
@@ -390,7 +391,7 @@ def integer_field(
         "is_exposed": True,
         "is_returned": True,
         "query_type": "integer",
-        "storage_mapping": {"type": number_type},
+        "storage_mapping": {"type": storage_mapping_type},
     }
 
 
