@@ -359,7 +359,7 @@ def supersearch_api(request, default_context=None):
     )
 
     date_number_fields = [
-        x for x in all_fields if x["query_type"] in ("number", "date")
+        x for x in all_fields if x["query_type"] in ("integer", "float", "date")
     ]
 
     context["all_fields"] = all_fields
