@@ -322,6 +322,16 @@
                     </td>
                   </tr>
                 {% endif %}
+
+                {% if report.possible_bit_flips_max_confidence %}
+                  <tr title="{{ fields_desc['processed_crash.possible_bit_flips_max_confidence'] }}">
+                    <th scope="row">Possible bit flips max confidence</th>
+                    <td>
+                      <pre>{{ report.possible_bit_flips_max_confidence }}%</pre>
+                    </td>
+                  </tr>
+                {% endif %}
+
                 <tr title="{{ fields_desc['processed_crash.process_type'] }}">
                   <th scope="row">Process Type</th>
                   <td>
