@@ -30,8 +30,6 @@ BROKEN_EVENT = {
             "version": ANY,
         },
         "trace": {
-            "description": "sentry_sdk.integrations.django._got_request_exception",
-            "op": "event.django",
             "parent_span_id": ANY,
             "span_id": ANY,
             "trace_id": ANY,

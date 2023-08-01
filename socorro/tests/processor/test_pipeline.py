@@ -30,7 +30,12 @@ RULE_ERROR_EVENT = {
             "build": ANY,
             "name": "CPython",
             "version": ANY,
-        }
+        },
+        "trace": {
+            "parent_span_id": None,
+            "span_id": ANY,
+            "trace_id": ANY,
+        },
     },
     "environment": "production",
     "event_id": ANY,
