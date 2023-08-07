@@ -2760,9 +2760,12 @@ properties:
     permissions: ["public"]
     source_annotation: OOMAllocationSize
   os_name:
-    description: >
-      The basic name of the operating system. Use `platform_pretty_version` for
-      a more precise operating system name including the version.
+    description: |
+      The basic name of the operating system. This comes from `system_info.os`
+      from the stackwalker output of the minidump.
+
+      Use `os_pretty_version` for a more precise operating system name
+      including the version.
     examples:
       - "Windows NT"
       - "Mac OS X"
@@ -2770,12 +2773,23 @@ properties:
     type: string
     permissions: ["public"]
   os_pretty_version:
-    description: >
+    description: |
       A better platform name including version for Windows and Mac OS X.
+
+      For Windows, this is done as a lookup in a table mapping Windows version
+      to a friendly name. e.g. `3.5` maps to `Windows NT`
+
+      For macOS, this is a concatenation of `os_name` and `os_version`.
+
+      For Linux, this is derived from `lsb_release.description` in the
+      stackwalker output from the minidump and degrades to the `os_name` if
+      that information isn't available.
     type: string
     permissions: ["public"]
   os_version:
-    description: Version of the operating system.
+    description: >
+      Version of the operating system. This comes from `system_info.os_ver`
+      from the stackwalker output of the minidump.
     type: string
     permissions: ["public"]
   phc_alloc_stack:
