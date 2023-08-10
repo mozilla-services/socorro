@@ -156,6 +156,7 @@ mozilla::PrioritizedEventQueue<T>::GetEvent
 mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
 mozilla::SegmentedVector<T>::SegmentImpl<T>::
+mozilla::Span<T>
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::TaskQueue::
 mozilla::ThreadEventQueue
