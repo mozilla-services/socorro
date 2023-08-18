@@ -956,7 +956,7 @@
               <p>
                 <b>Create a bug:</b>
                 {% for text, template in product_details.bug_links %}
-                  <a href="{{ generate_create_bug_url(request, template, raw, report, parsed_dump, crashing_thread) }}" target="_blank">{{ text }}</a>
+                  <a href="{{ generate_create_bug_url(crash_report_url, template, report) }}" target="_blank">{{ text }}</a>
                   {% if not loop.last %}|{% endif %}
                 {% endfor %}
               </p>
