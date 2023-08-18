@@ -103,6 +103,8 @@ def report_index(request, crash_id, default_context=None):
     context = default_context or {}
     context["crash_id"] = crash_id
 
+    context["crash_report_url"] = request.build_absolute_uri()
+
     raw_api = models.RawCrash()
     raw_api.api_user = request.user
     try:
