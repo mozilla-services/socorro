@@ -30,7 +30,7 @@ RUN cd /webapp-frontend-deps/ && npm install
 
 COPY --chown=app:app requirements.txt /app/
 RUN pip install -U 'pip==22.3.1' && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED=1 \
