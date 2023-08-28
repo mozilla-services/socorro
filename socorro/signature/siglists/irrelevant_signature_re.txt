@@ -222,6 +222,7 @@ std::_Tree
 std::alloc::rust_oom
 std::all_of
 std::collections
+<std::collections::hash::map::HashMap<K, V, S> as core::ops::index::Index<&Q>>::index
 std::io::stdio::_eprint
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
