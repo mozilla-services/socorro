@@ -16,7 +16,12 @@ import queue
 import threading
 import time
 
-from socorro.lib.task_manager import default_task_func, default_iterator, TaskManager
+from socorro.lib.task_manager import (
+    default_heartbeat,
+    default_iterator,
+    default_task_func,
+    TaskManager,
+)
 
 
 STOP_TOKEN = (None, None)
@@ -32,6 +37,7 @@ class ThreadedTaskManager(TaskManager):
         number_of_threads=4,
         maximum_queue_size=8,
         job_source_iterator=default_iterator,
+        heartbeat_func=default_heartbeat,
         task_func=default_task_func,
     ):
         """
@@ -46,6 +52,7 @@ class ThreadedTaskManager(TaskManager):
             instantiated with a config object can be iterated. The iterator must
             yield a tuple consisting of a function's tuple of args and, optionally,
             a mapping of kwargs. Ex:  (('a', 17), {'x': 23})
+        :arg heartbeat_func: a function to run every second
         :arg task_func: a function that will accept the args and kwargs yielded
             by the job_source_iterator
         """
@@ -62,6 +69,7 @@ class ThreadedTaskManager(TaskManager):
             idle_delay=idle_delay,
             quit_on_empty_queue=quit_on_empty_queue,
             job_source_iterator=job_source_iterator,
+            heartbeat_func=heartbeat_func,
             task_func=task_func,
         )
         self.thread_list = []  # the thread object storage
@@ -99,6 +107,7 @@ class ThreadedTaskManager(TaskManager):
 
         self.logger.debug("waiting to join queueing_thread")
         while True:
+            self.heartbeat_func()
             try:
                 self.queueing_thread.join(1.0)
                 if not self.queueing_thread.is_alive():
