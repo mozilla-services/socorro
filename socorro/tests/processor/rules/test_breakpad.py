@@ -12,6 +12,7 @@ import pytest
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
 from socorro.processor.pipeline import Status
 from socorro.processor.rules.breakpad import (
+    execute_process,
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
@@ -166,6 +167,20 @@ canonical_stackwalker_output = {
     # ...
 }
 canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
+
+
+def test_execute_process():
+    ret = execute_process("echo foo")
+    assert ret["stdout"] == b"foo\n"
+    assert ret["stderr"] == b""
+    assert ret["returncode"] == 0
+
+
+def test_execute_process_timeout():
+    ret = execute_process("sleep 10", timeout=1)
+    assert ret["stdout"] == b""
+    assert ret["stderr"] == b""
+    assert ret["returncode"] == -9
 
 
 class TestCrashingThreadInfoRule:

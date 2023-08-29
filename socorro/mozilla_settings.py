@@ -286,8 +286,7 @@ STACKWALKER = {
         doc="Aboslute path to the stackwalker binary.",
     ),
     "command_line": (
-        "timeout --signal KILL {kill_timeout} "
-        + "{command_path} "
+        "{command_path} "
         + "--evil-json={raw_crash_path} "
         + "--symbols-cache={symbol_cache_path} "
         + "--symbols-tmp={symbol_tmp_path} "

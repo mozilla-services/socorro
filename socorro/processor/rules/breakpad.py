@@ -200,23 +200,37 @@ class TruncateStacksRule(Rule):
                     self.truncate_stacks(value["json_dump"], f"{key}.json_dump", status)
 
 
-def execute_process(command_line):
+def execute_process(command_line, timeout=120):
     """Executes process and returns completed process data.
 
     :param command_line: the complete command line to run
+    :param timeout: the timeout in seconds for the command to complete before it's
+        killed; defaults to 120 seconds
 
-    :returns: dict with stdout, stderr, and returncode keys
+    :returns: dict with stdout (bytes), stderr (bytes), and returncode (signed smallint)
+        keys
 
     """
     # Tokenize the command line into args
     args = shlex.split(command_line, comments=False, posix=True)
-    completed = subprocess.run(args, capture_output=True)
-    ret = {
-        # NOTE(willkg) stdout and stderr here are bytes
-        "stdout": completed.stdout,
-        "stderr": completed.stderr,
-        "returncode": completed.returncode,
-    }
+    try:
+        completed = subprocess.run(args, timeout=timeout, capture_output=True)
+        ret = {
+            # NOTE(willkg) stdout and stderr here are bytes
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+            "returncode": completed.returncode,
+        }
+
+    except subprocess.TimeoutExpired as timeout_exc:
+        ret = {
+            # NOTE(willkg) stdout and stderr here are bytes
+            "stdout": timeout_exc.stdout or b"",
+            "stderr": timeout_exc.stderr or b"",
+            # NOTE(willkg): if the timeout expired, then the child process was killed
+            # and the returncode should be -9
+            "returncode": -9,
+        }
     return ret
 
 
@@ -256,7 +270,6 @@ class MinidumpStackwalkRule(Rule):
         # NOTE(willkg): this is the location it gets put in the Docker image
         command_path="/stackwalk-rust/minidump-stackwalk",
         command_line=(
-            "timeout --signal KILL {kill_timeout} "
             "{command_path} "
             "--evil-json={raw_crash_path} "
             "--symbols-cache={symbol_cache_path} "
@@ -304,7 +317,7 @@ class MinidumpStackwalkRule(Rule):
 
     def get_version(self):
         command_line = f"{self.command_path} --version"
-        ret = execute_process(command_line)
+        ret = execute_process(command_line, timeout=self.kill_timeout)
         if ret["returncode"] != 0:
             raise CommandError(
                 "MinidumpStackwalkRule: unknown error when getting version: "
@@ -347,7 +360,6 @@ class MinidumpStackwalkRule(Rule):
 
         params = {
             # These come from config
-            "kill_timeout": self.kill_timeout,
             "command_path": self.command_path,
             "symbol_cache_path": self.symbol_cache_path,
             "symbol_tmp_path": self.symbol_tmp_path,
@@ -359,7 +371,7 @@ class MinidumpStackwalkRule(Rule):
         return self.command_line.format(**params)
 
     def run_stackwalker(self, crash_id, command_path, command_line, status):
-        ret = execute_process(command_line)
+        ret = execute_process(command_line, timeout=self.kill_timeout)
         returncode = ret["returncode"]
         stdout = ret["stdout"]
         stderr = ret["stderr"]
