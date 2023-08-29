@@ -7,6 +7,9 @@ import os
 import time
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def default_task_func(a_param):
     """Default task function.
 
@@ -14,6 +17,16 @@ def default_task_func(a_param):
     to demonstrate the api and not really for any other purpose.
 
     """
+
+
+def default_heartbeat():
+    """Runs once a second from the main thread.
+
+    Note: If this raises an exception, it could kill the process or put it in a
+    weird state.
+
+    """
+    LOGGER.info("THUMP")
 
 
 def default_iterator():
@@ -61,6 +74,7 @@ class TaskManager:
         idle_delay=7,
         quit_on_empty_queue=False,
         job_source_iterator=default_iterator,
+        heartbeat_func=default_heartbeat,
         task_func=default_task_func,
     ):
         """
@@ -72,12 +86,14 @@ class TaskManager:
             instantiated with a config object can be iterated. The iterator must
             yield a tuple consisting of a function's tuple of args and, optionally,
             a mapping of kwargs. Ex:  (('a', 17), {'x': 23})
+        :arg heartbeat_func: a function to run every second
         :arg task_func: a function that will accept the args and kwargs yielded
             by the job_source_iterator
         """
         self.idle_delay = idle_delay
         self.quit_on_empty_queue = quit_on_empty_queue
         self.job_source_iterator = job_source_iterator
+        self.heartbeat_func = heartbeat_func
         self.task_func = task_func
 
         self._pid = os.getpid()
@@ -128,10 +144,14 @@ class TaskManager:
 
     def blocking_start(self):
         """This function starts the task manager running to do tasks."""
+        next_heartbeat = time.time() + 1
         self.logger.debug("threadless start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
+                if time.time() > next_heartbeat:
+                    self.heartbeat_func()
+                    next_heartbeat = time.time() + 1
                 self.logger.debug("received %r", job_params)
                 if job_params is None:
                     if self.quit_on_empty_queue:
