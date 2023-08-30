@@ -80,6 +80,8 @@ def convert_to_crash_data(processed_crash):
         "threads": glom(processed_crash, "json_dump.threads", default=None),
         # text or None
         "os": glom(processed_crash, "json_dump.system_info.os", default=None),
+        # text or None
+        "hang": glom(processed_crash, "hang", default=None),
         # int or None
         "oom_allocation_size": int_or_none(
             glom(processed_crash, "oom_allocation_size", default=None)
