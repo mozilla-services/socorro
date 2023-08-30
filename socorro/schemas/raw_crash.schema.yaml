@@ -513,6 +513,16 @@ properties:
     type: string
     permissions: ["public"]
 
+  Hang:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1716946#c25
+    description: >
+      Set if the crash was the result of a hang, with a value which describes
+      the type of hang. The value is one of `ui` for user interface hangs or
+      `shutdown` for shutdown hangs.
+    type: string
+    permissions: ["public"]
+
   HasDeviceTouchScreen:
     data_reviews:
       - unknown
