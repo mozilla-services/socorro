@@ -20,11 +20,11 @@ To run::
 """
 
 from collections import OrderedDict
-import datetime
 import logging
 import os
 import pathlib
 import sys
+import time
 import traceback
 
 from boltons.dictutils import OneToOne
@@ -74,6 +74,36 @@ def handle_exception(exctype, value, tb):
 
 
 sys.excepthook = handle_exception
+
+
+def get_index(sorted_list, percent):
+    """Given a sorted list, return the percentth item.
+
+    :args sorted_list: sorted list of things
+    :args percent: the percentth item (low) to retrieve in the sorted list
+
+    :returns: the percentth item or None if the list is empty
+
+    Examples:
+
+    >>> get_index([], 50)
+    None
+    >>> get_index([1, 2, 3], 50)
+    2
+    >>> get_index([1, 2, 3, 4], 50)
+    2
+
+    """
+    if not sorted_list:
+        return None
+
+    if not 0 <= percent <= 100:
+        raise ValueError("percent must be between 0 and 100")
+
+    index = int(len(sorted_list) * percent / 100)
+    if index > 0 and index % 2 == 0:
+        index -= 1
+    return sorted_list[index]
 
 
 class DiskCacheManager:
@@ -266,7 +296,7 @@ class DiskCacheManager:
         self.running = True
         processed_events = False
         num_unhandled_errors = 0
-        last_usage_update = datetime.datetime.now()
+        next_heartbeat = time.time() + 1
         try:
             while self.running:
                 try:
@@ -449,13 +479,23 @@ class DiskCacheManager:
                         len(self.lru),
                         f"{self.total_size:,d}",
                     )
-                    # Emit a usage metric, but debounce it so it only gets emitted at
-                    # most once per second
-                    now = datetime.datetime.now()
-                    if now > (last_usage_update + datetime.timedelta(seconds=1)):
-                        METRICS.gauge("usage", value=self.total_size)
-                        last_usage_update = now
                     processed_events = False
+
+                # Emit usage metric, but debounce it so it only gets emitted at most
+                # once per second
+                now = time.time()
+                if now > next_heartbeat:
+                    if is_verbose:
+                        METRICS.gauge("usage", value=self.total_size)
+
+                    sorted_sizes = list(sorted(self.lru.values()))
+                    if sorted_sizes:
+                        METRICS.gauge("file_sizes.median", get_index(sorted_sizes, 50))
+                        METRICS.gauge(
+                            "file_sizes.ninety_five", get_index(sorted_sizes, 95)
+                        )
+
+                    next_heartbeat = now + 1
 
                 yield
 
