@@ -1192,6 +1192,7 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
+    "hang": keyword_field(name="hang"),
     "has_device_touch_screen": {
         "data_validation_type": "bool",
         "form_field_choices": [],

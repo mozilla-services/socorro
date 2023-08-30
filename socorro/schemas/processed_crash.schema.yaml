@@ -2510,6 +2510,14 @@ properties:
     type: boolean
     permissions: ["public"]
     source_annotation: GraphicsStartupTest
+  hang:
+    description: >
+      Set if the crash was the result of a hang, with a value which describes
+      the type of hang. The value is one of `ui` for user interface hangs or
+      `shutdown` for shutdown hangs.
+    type: string
+    permissions: ["public"]
+    source_annotation: Hang
   has_device_touch_screen:
     description:
       Set to 1 if the device had a touch-screen, this only applies to Firefox
