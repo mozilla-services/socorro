@@ -13,8 +13,32 @@ from socorro import settings
 from socorro.processor.cache_manager import (
     count_sentry_scrub_error,
     DiskCacheManager,
+    get_index,
     LastUpdatedOrderedDict,
 )
+
+
+@pytest.mark.parametrize(
+    "sorted_list, percent, expected",
+    [
+        (None, 50, None),
+        ([], 50, None),
+        ([1], 50, 1),
+        ([1, 2, 3], 50, 2),
+        ([1, 2, 3, 4], 50, 2),
+        ([1, 2, 3, 4], 95, 4),
+    ],
+)
+def test_get_index(sorted_list, percent, expected):
+    assert get_index(sorted_list, percent) == expected
+
+
+def test_get_index_bad_percent():
+    with pytest.raises(ValueError):
+        get_index([1, 2, 3], -1)
+
+    with pytest.raises(ValueError):
+        get_index([1, 2, 3], 101)
 
 
 class TestLastUpdatedOrderedDict:
