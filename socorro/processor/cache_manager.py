@@ -42,6 +42,7 @@ LOGGER = logging.getLogger(__name__)
 REPOROOT_DIR = str(pathlib.Path(__file__).parent.parent.parent)
 MAX_ERRORS = 10
 METRICS = markus.get_metrics("processor.cache_manager")
+HEARTBEAT_INTERVAL = 60
 
 
 def count_sentry_scrub_error(msg):
@@ -296,7 +297,7 @@ class DiskCacheManager:
         self.running = True
         processed_events = False
         num_unhandled_errors = 0
-        next_heartbeat = time.time() + 1
+        next_heartbeat = time.time() + HEARTBEAT_INTERVAL
         try:
             while self.running:
                 try:
@@ -482,7 +483,7 @@ class DiskCacheManager:
                     processed_events = False
 
                 # Emit usage metric, but debounce it so it only gets emitted at most
-                # once per second
+                # once per HEARTBEAT_INTERVAL
                 now = time.time()
                 if now > next_heartbeat:
                     if is_verbose:
@@ -490,7 +491,7 @@ class DiskCacheManager:
 
                     if self.lru:
                         sorted_sizes = list(sorted(self.lru.values()))
-                        avg = sum(sorted_sizes) / len(sorted_sizes)
+                        avg = int(sum(sorted_sizes) / len(sorted_sizes))
                         # Some metrics about file sizes
                         METRICS.gauge("file_sizes.avg", avg)
                         METRICS.gauge("file_sizes.median", get_index(sorted_sizes, 50))
@@ -504,7 +505,7 @@ class DiskCacheManager:
                         gt_500 = len([fs for fs in sorted_sizes if fs > 500_000_000])
                         METRICS.gauge("files.gt_500", gt_500)
 
-                    next_heartbeat = now + 1
+                    next_heartbeat = now + HEARTBEAT_INTERVAL
 
                 yield
 
