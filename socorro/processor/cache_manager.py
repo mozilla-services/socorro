@@ -488,12 +488,20 @@ class DiskCacheManager:
                     if is_verbose:
                         METRICS.gauge("usage", value=self.total_size)
 
-                    sorted_sizes = list(sorted(self.lru.values()))
-                    if sorted_sizes:
+                    if self.lru:
+                        sorted_sizes = list(sorted(self.lru.values()))
+                        avg = sum(sorted_sizes) / len(sorted_sizes)
+                        # Some metrics about file sizes
+                        METRICS.gauge("file_sizes.avg", avg)
                         METRICS.gauge("file_sizes.median", get_index(sorted_sizes, 50))
                         METRICS.gauge(
                             "file_sizes.ninety_five", get_index(sorted_sizes, 95)
                         )
+
+                        # Some metrics about what's in the cache
+                        METRICS.gauge("files.count", len(sorted_sizes))
+                        gt_500 = len([fs for fs in sorted_sizes if fs > 500_000_000])
+                        METRICS.gauge("files.gt_500", gt_500)
 
                     next_heartbeat = now + 1
 
