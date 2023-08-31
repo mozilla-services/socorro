@@ -9,6 +9,8 @@ import time
 
 LOGGER = logging.getLogger(__name__)
 
+HEARTBEAT_INTERVAL = 60
+
 
 def default_task_func(a_param):
     """Default task function.
@@ -144,14 +146,14 @@ class TaskManager:
 
     def blocking_start(self):
         """This function starts the task manager running to do tasks."""
-        next_heartbeat = time.time() + 1
+        next_heartbeat = time.time() + HEARTBEAT_INTERVAL
         self.logger.debug("threadless start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
                 if time.time() > next_heartbeat:
                     self.heartbeat_func()
-                    next_heartbeat = time.time() + 1
+                    next_heartbeat = time.time() + HEARTBEAT_INTERVAL
                 self.logger.debug("received %r", job_params)
                 if job_params is None:
                     if self.quit_on_empty_queue:

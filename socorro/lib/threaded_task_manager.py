@@ -26,6 +26,8 @@ from socorro.lib.task_manager import (
 
 STOP_TOKEN = (None, None)
 
+HEARTBEAT_INTERVAL = 60
+
 
 class ThreadedTaskManager(TaskManager):
     """Threaded task manager."""
@@ -105,9 +107,12 @@ class ThreadedTaskManager(TaskManager):
         if self.queueing_thread is None:
             return
 
+        next_heartbeat = time.time() + HEARTBEAT_INTERVAL
         self.logger.debug("waiting to join queueing_thread")
         while True:
-            self.heartbeat_func()
+            if time.time() > next_heartbeat:
+                self.heartbeat_func()
+                next_heartbeat = time.time() + HEARTBEAT_INTERVAL
             try:
                 self.queueing_thread.join(1.0)
                 if not self.queueing_thread.is_alive():
