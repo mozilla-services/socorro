@@ -497,6 +497,7 @@ class DiskCacheManager:
                         METRICS.gauge(
                             "file_sizes.ninety_five", get_index(sorted_sizes, 95)
                         )
+                        METRICS.gauge("file_sizes.max", sorted_sizes[-1])
 
                         # Some metrics about what's in the cache
                         METRICS.gauge("files.count", len(sorted_sizes))
