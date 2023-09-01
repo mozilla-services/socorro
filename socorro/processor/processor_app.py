@@ -299,7 +299,8 @@ class ProcessorApp:
                 # "zombie" and "orphaned" as process statuses or seeing lots of
                 # processes as a type will be really fishy and suggestive that evil is a
                 # foot.
-                cmdline = proc.cmdline()
+                cmdline = proc.cmdline() or ["unknown"]
+
                 if cmdline[0] in ["/bin/sh", "/bin/bash"]:
                     proc_type = "shell"
                 elif cmdline[0] in ["python", "/usr/local/bin/python"]:
