@@ -719,6 +719,154 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
         assert notes == []
 
 
+class TestJavaExceptionSignatureTool:
+    @pytest.mark.parametrize(
+        "value",
+        [
+            None,
+            "abcde",
+            [],
+            {},
+        ],
+    )
+    def test_bad_data(self, value):
+        tool = rules.JavaExceptionSignatureTool()
+        signature, notes, debug_notes = tool.generate(value)
+        assert signature == "EMPTY: Java exception not in expected format"
+        assert notes == ["JavaExceptionSignatureTool: value not in expected format"]
+
+    @pytest.mark.parametrize(
+        "frame, expected",
+        [
+            ({}, "unknown"),
+            # Everything that can be used
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons(AddonManager.kt)",
+            ),
+            # Variations on the module
+            (
+                {
+                    "module": "",
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": None,
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            (
+                {
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            # Variations on function
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": None,
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            # Variations on filename
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": "",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": None,
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+        ],
+    )
+    def test_normalize_frame(self, frame, expected):
+        tool = rules.JavaExceptionSignatureTool()
+        assert tool.normalize_frame(frame) == expected
+
+    @pytest.mark.parametrize(
+        "stacktrace, expected",
+        [
+            (
+                {
+                    "stacktrace": {
+                        "frames": [
+                            {
+                                "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                                "function": "getFenixAddons",
+                                "filename": "AddonManager.kt",
+                            },
+                        ],
+                        "type": "IOException",
+                        "module": "java.io",
+                    },
+                },
+                (
+                    "java.io.IOException: at "
+                    + "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons(AddonManager.kt)"
+                ),
+            ),
+            (
+                {
+                    "stacktrace": {
+                        "frames": [],
+                        "type": "RemoteException",
+                        "module": "android.os",
+                    },
+                },
+                "android.os.RemoteException",
+            ),
+        ],
+    )
+    def test_generate(self, stacktrace, expected):
+        java_exception = {"exception": {"values": [stacktrace]}}
+        tool = rules.JavaExceptionSignatureTool()
+        signature, notes, debug_notes = tool.generate(java_exception)
+        assert signature == expected
+
+
 #  rules testing section
 
 FRAMES_FROM_JSON_DUMP = {
