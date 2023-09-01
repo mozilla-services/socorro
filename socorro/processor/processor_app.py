@@ -293,27 +293,37 @@ class ProcessorApp:
             processes_by_status = {}
             open_files = 0
             for proc in psutil.process_iter(["cmdline", "status", "open_files"]):
-                # NOTE(willkg): This is all intertwined with exactly how we run the
-                # processor in a Docker container. If we ever make changes to that, this
-                # will change, too. However, even if we never update this, seeing
-                # "zombie" and "orphaned" as process statuses or seeing lots of
-                # processes as a type will be really fishy and suggestive that evil is a
-                # foot.
-                cmdline = proc.cmdline() or ["unknown"]
+                try:
+                    # NOTE(willkg): This is all intertwined with exactly how we run the
+                    # processor in a Docker container. If we ever make changes to that, this
+                    # will change, too. However, even if we never update this, seeing
+                    # "zombie" and "orphaned" as process statuses or seeing lots of
+                    # processes as a type will be really fishy and suggestive that evil is a
+                    # foot.
+                    cmdline = proc.cmdline() or ["unknown"]
 
-                if cmdline[0] in ["/bin/sh", "/bin/bash"]:
-                    proc_type = "shell"
-                elif cmdline[0] in ["python", "/usr/local/bin/python"]:
-                    proc_type = "python"
-                elif "stackwalk" in cmdline[0]:
-                    proc_type = "stackwalker"
-                else:
-                    proc_type = "other"
+                    if cmdline[0] in ["/bin/sh", "/bin/bash"]:
+                        proc_type = "shell"
+                    elif cmdline[0] in ["python", "/usr/local/bin/python"]:
+                        proc_type = "python"
+                    elif "stackwalk" in cmdline[0]:
+                        proc_type = "stackwalker"
+                    else:
+                        proc_type = "other"
+
+                    open_files_count = len(proc.open_files())
+                    proc_status = proc.status()
+
+                except psutil.AccessDenied:
+                    proc_type = "unknown"
+                    proc_status = "unknown"
+                    open_files_count = 0
+
                 processes_by_type[proc_type] = processes_by_type.get(proc_type, 0) + 1
-
-                status = proc.status()
-                processes_by_status[status] = processes_by_status.get(status, 0) + 1
-                open_files += len(proc.open_files())
+                processes_by_status[proc_status] = (
+                    processes_by_status.get(proc_status, 0) + 1
+                )
+                open_files += open_files_count
 
             METRICS.gauge("open_files", open_files)
             for proc_type, val in processes_by_type.items():
