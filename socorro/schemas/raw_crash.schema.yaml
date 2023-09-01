@@ -609,13 +609,14 @@ properties:
 
   JavaException:
     data_reviews:
-      - unknown
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1671654#c1
     description: |
       JSON structured Java stack trace, only present on Firefox for Android if
       we encounter an uncaught Java exception.
 
       Parts of the JSON structure can contain sensitive data.
     bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1671654
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1675560
     type: string
     permissions: ["protected"]
