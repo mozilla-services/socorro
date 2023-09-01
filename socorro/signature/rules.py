@@ -415,7 +415,7 @@ class CSignatureTool:
 
 
 class JavaSignatureTool:
-    """This is the signature generation class for Java signatures."""
+    """Signature generation class for signatures based on JavaStackTrace."""
 
     # The max length of a java exception description--if it's longer than this,
     # drop it
@@ -492,6 +492,67 @@ class JavaSignatureTool:
             notes.append(
                 "JavaSignatureTool: dropped Java exception description due to length"
             )
+
+        return signature, notes, debug_notes
+
+
+class JavaExceptionSignatureTool:
+    """Signature generation class for signatures based on JavaException."""
+
+    def normalize_frame(self, frame):
+        frame_module = frame.get("module", "")
+        frame_function = frame.get("function", "")
+        if frame_module and frame_function:
+            frame_signature = ".".join([frame_module, frame_function])
+        elif frame_module:
+            frame_signature = frame_module
+        elif frame_function:
+            frame_signature = frame_function
+        else:
+            frame_signature = ""
+
+        frame_filename = frame.get("filename", "")
+
+        if frame_signature and frame_filename:
+            return f"{frame_signature}({frame_filename})"
+        elif frame_signature:
+            return frame_signature
+        return "unknown"
+
+    def generate(self, source):
+        if not isinstance(source, dict):
+            return (
+                "EMPTY: Java exception not in expected format",
+                ["JavaExceptionSignatureTool: value not in expected format"],
+                [],
+            )
+
+        # This looks at the first frame (the one that raised the exception) of the first
+        # exception value (the exception that started a series of cascading exceptions).
+        stacktrace = glom(source, "exception.values.0.stacktrace", default=None)
+        if not stacktrace:
+            return (
+                "EMPTY: Java exception not in expected format",
+                ["JavaExceptionSignatureTool: value not in expected format"],
+                [],
+            )
+
+        notes = []
+        debug_notes = []
+
+        exc_module = stacktrace.get("module", "")
+        exc_type = stacktrace.get("type", "Unknown")
+        if exc_module and exc_type:
+            exc_class = f"{exc_module}.{exc_type}"
+        else:
+            exc_class = exc_type
+
+        frames = stacktrace.get("frames", [])
+        normalized_frames = [self.normalize_frame(frame) for frame in frames]
+        if frames:
+            signature = f"{exc_class}: at {normalized_frames[0]}"
+        else:
+            signature = f"{exc_class}"
 
         return signature, notes, debug_notes
 
@@ -583,6 +644,7 @@ class SignatureGenerationRule(Rule):
     def __init__(self, signature_list_dir=None):
         super().__init__()
         self.java_signature_tool = JavaSignatureTool()
+        self.java_exception_signature_tool = JavaExceptionSignatureTool()
         self.c_signature_tool = CSignatureTool(datadir=signature_list_dir)
 
     def action(self, crash_data, result):
@@ -591,6 +653,22 @@ class SignatureGenerationRule(Rule):
             result.debug(self.name, "using JavaSignatureTool")
             signature, notes, debug_notes = self.java_signature_tool.generate(
                 crash_data["java_stack_trace"], delimiter=": "
+            )
+            for note in notes:
+                result.info(self.name, note)
+            for note in debug_notes:
+                result.debug(self.name, note)
+            result.set_signature(self.name, signature)
+            return True
+
+        # If there's a java_exception, use that to generate the signature
+        #
+        # NOTE(willkg): At some point, we want to rewrite signature generation for Java
+        # crashes and we'll want to make this take precedence over java_stack_trace.
+        if crash_data.get("java_exception"):
+            result.debug(self.name, "using JavaExceptionSignatureTool")
+            signature, notes, debug_notes = self.java_exception_signature_tool.generate(
+                crash_data["java_exception"]
             )
             for note in notes:
                 result.info(self.name, note)

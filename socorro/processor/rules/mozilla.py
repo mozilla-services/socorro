@@ -391,12 +391,10 @@ class DatesAndTimesRule(Rule):
 
 
 class JavaProcessRule(Rule):
-    """Move Java-crash-related bits over."""
+    """Process JavaStackTrace."""
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return bool(raw_crash.get("JavaStackTrace", None)) or bool(
-            raw_crash.get("JavaException", None)
-        )
+        return bool(raw_crash.get("JavaStackTrace", None))
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         if "JavaStackTrace" in raw_crash:
