@@ -547,9 +547,9 @@ class JavaExceptionSignatureTool:
         else:
             exc_class = exc_type
 
-        frames = stacktrace.get("frames", [])
-        normalized_frames = [self.normalize_frame(frame) for frame in frames]
+        frames = stacktrace.get("frames") or []
         if frames:
+            normalized_frames = [self.normalize_frame(frame) for frame in frames]
             signature = f"{exc_class}: at {normalized_frames[0]}"
         else:
             signature = f"{exc_class}"
