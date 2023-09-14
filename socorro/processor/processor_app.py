@@ -314,7 +314,9 @@ class ProcessorApp:
                     open_files_count = len(proc.open_files())
                     proc_status = proc.status()
 
-                except psutil.AccessDenied:
+                except psutil.Error:
+                    # For any psutil error, we want to track that we saw a process, but
+                    # the details don't matter
                     proc_type = "unknown"
                     proc_status = "unknown"
                     open_files_count = 0
