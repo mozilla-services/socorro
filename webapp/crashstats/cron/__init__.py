@@ -16,6 +16,12 @@ JOBS = [
         "frequency": "1d",
     },
     {
+        # Clear Django sessions every week
+        "cmd": "clearsessions",
+        "frequency": "7d",
+        "time": "05:00",
+    },
+    {
         # Audit hackers group every week
         "cmd": "auditgroups",
         "frequency": "7d",
