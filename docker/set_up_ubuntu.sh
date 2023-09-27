@@ -18,7 +18,6 @@ PACKAGES_TO_INSTALL=(
 
     # For building Python libraries
     build-essential
-    python-dev
     libpq-dev
     libxml2-dev libxslt1-dev
     libsasl2-dev
