@@ -878,9 +878,14 @@ non-standard port when run with docker compose. You can connect to it with the
 client of your choice using the following connection settings:
 
 * Username: ``postgres``
-* Password: ``aPassword``
+* Password: ``postgres``
 * Port: ``8574``
+* Database: ``socorro``
 
 For example::
 
-    PGPASSWORD=aPassword psql -h localhost -p 8574 -U postgres --no-password breakpad
+    PGPASSWORD=postgres psql -h localhost -p 8574 -U postgres --no-password socorro
+
+You can also connect with ``make``::
+
+    make psql

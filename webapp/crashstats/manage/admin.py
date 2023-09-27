@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -40,6 +41,17 @@ def site_status(request):
 
     context["version_info"] = version_info
 
+    # Get settings
+    context["site_settings"] = []
+    keys = (
+        "LOCAL_DEV_ENV",
+        "DEBUG",
+        "TOOL_ENV",
+    )
+    for key in keys:
+        value = getattr(settings, key)
+        context["site_settings"].append({"key": key, "value": str(value)})
+
     # Get Django migration data
     try:
         with connection.cursor() as cursor:
@@ -52,6 +64,36 @@ def site_status(request):
         django_db_error = "error: %s" % exc
     context["django_db_data"] = django_db_data
     context["django_db_error"] = django_db_error
+
+    # Get some table counts
+    tables = [
+        "auth_user",
+        "django_session",
+        "tokens_token",
+        "cron_job",
+        "cron_log",
+        "crashstats_bugassociation",
+        "crashstats_graphicsdevice",
+        "crashstats_missingprocessedcrash",
+        "crashstats_platform",
+        "crashstats_productversion",
+        "crashstats_signature",
+    ]
+    context["table_counts"] = []
+    for table_name in tables:
+        start_time = time.time()
+        with connection.cursor() as cursor:
+            cursor.execute("select count(*) from %s" % table_name)
+            row = cursor.fetchone()
+            (value,) = row
+        timing = time.time() - start_time
+        context["table_counts"].append(
+            {
+                "key": table_name,
+                "value": f"{value:,}",
+                "timing": f"{timing:,.2f}",
+            }
+        )
 
     context["title"] = "Site status"
 
