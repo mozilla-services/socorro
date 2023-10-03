@@ -26,3 +26,14 @@ bugzilla_product = "Socorro"
 bugzilla_component = "Infra"
 main_branch = "main"
 tag_name_template = "%Y.%m.%d"
+
+
+[tool.service-status]
+main_branch = "main"
+hosts = [
+    "stage=https://crash-reports.allizom.org",
+    "stage=https://crash-stats.allizom.org",
+    "prod=https://crashstats-submitter-version-prod.s3-us-west-2.amazonaws.com",
+    "prod=https://crash-reports.mozilla.com",
+    "prod=https://crash-stats.mozilla.org"
+]
