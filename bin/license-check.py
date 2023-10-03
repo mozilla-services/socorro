@@ -4,15 +4,28 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# Usage: python bin/license_check.py
+"""
+This script checks files for license headers.
 
-# This checks files for a license header.
+This requires Python 3 to run.
+
+See https://github.com/willkg/socorro-release/#readme for details.
+
+repo: https://github.com/willkg/socorro-release/
+sha: 036f7078ba7991200f7f4fc85742a6ed3dc97b6f
+
+"""
 
 import argparse
 import pathlib
 import subprocess
 import sys
 
+
+DESCRIPTION = (
+    "Checks files in specified directory for license headers. "
+    + "If you don't specify a target, it'll check all files in \"git ls-files\"."
+)
 
 # From https://www.mozilla.org/en-US/MPL/2.0/
 MPLV2 = [
@@ -64,9 +77,8 @@ def has_license_header(path: pathlib.Path):
                 line = line.strip(indicator)
             line = line.strip()
 
-            # If we hit a blank line, start over
+            # Skip blank lines
             if not line:
-                header = []
                 continue
 
             header.append(line)
@@ -80,15 +92,11 @@ def has_license_header(path: pathlib.Path):
 
 
 def main(args):
-    parser = argparse.ArgumentParser(
-        description=(
-            "Checks files in specified directory for license headers. "
-            "If you don't specify a target, it'll check all files in \"git ls-files\"."
-        )
-    )
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument(
         "-l", "--file-only", action="store_true", help="print files only"
     )
+    parser.add_argument("--verbose", action="store_true", help="verbose output")
     parser.add_argument("target", help="file or directory tree to check", nargs="?")
 
     parsed = parser.parse_args(args)
@@ -116,6 +124,8 @@ def main(args):
 
     # Iterate through all the files in this target directory
     for path in targets:
+        if parsed.verbose:
+            print(f"Checking {path}")
         if is_code_file(path) and not has_license_header(path):
             missing_headers += 1
             if parsed.file_only:
