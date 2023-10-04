@@ -1,14 +1,25 @@
+---
 version: 2
 updates:
-  - package-ecosystem: pip
-    directory: /
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: monthly
+      interval: "monthly"
     reviewers:
-      - willkg
-  - package-ecosystem: docker
-    directory: /docker
+      - "willkg"
+
+  - package-ecosystem: "docker"
+    directory: "/docker"
     schedule:
-      interval: monthly
+      interval: "monthly"
     reviewers:
-      - willkg
+      - "willkg"
+
+  # Set update schedule for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    reviewers:
+      - "willkg"
+    rebase-strategy: "disabled"
