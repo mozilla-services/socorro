@@ -19,7 +19,11 @@ from pathlib import Path
 
 import sphinx_rtd_theme
 
+
 BASEDIR = Path(__file__).parent.parent
+
+# Insert repo base dir which will pick up Socorro things
+sys.path.insert(0, str(BASEDIR))
 
 # Insert this directory to pick up extensions
 sys.path.insert(0, str(Path(__file__).parent))
