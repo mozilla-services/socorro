@@ -14,10 +14,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
 import sys
 from pathlib import Path
 
 import sphinx_rtd_theme
+
+
+# Set TOOL_ENV to true to pick up fake settings so configuration doesn't fail.
+os.environ["TOOL_ENV"] = "true"
 
 
 BASEDIR = Path(__file__).parent.parent
