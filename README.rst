@@ -1,6 +1,6 @@
-=========================================
-Socorro: Mozilla crash ingestion pipeline
-=========================================
+======
+README
+======
 
 Socorro is a Mozilla-centric crash ingestion pipeline and analysis tools for
 crash reports using the `Breakpad libraries

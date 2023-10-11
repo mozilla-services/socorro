@@ -1,26 +1,29 @@
-.. include:: ../README.rst
+=========================================
+Socorro: Mozilla crash ingestion pipeline
+=========================================
 
 .. toctree::
-   :caption: For Socorro/Crash Stats Users
+   :caption: Socorro / Crash Stats users
    :includehidden:
    :maxdepth: 1
 
+   project_readme
    overview
    whatsnew
    signaturegeneration
    reprocessing
    products
+   annotations
    telemetry_socorro_crash
    correlations
-   annotations
-
+   glossary
 
 Crash Stats site documentation covering API docs, getting access to memory dumps,
 and Super Search is located at `<https://crash-stats.mozilla.org/documentation/>`_.
 
 
 .. toctree::
-   :caption: For Socorro Developers and Ops
+   :caption: Socorro Developers and SRE
    :includehidden:
    :maxdepth: 1
 
@@ -38,9 +41,16 @@ and Super Search is located at `<https://crash-stats.mozilla.org/documentation/>
 
 
 .. toctree::
-   :caption: Specifications and Resources
+   :caption: Specifications and resources
    :includehidden:
    :maxdepth: 1
 
    spec_crashreport
    schemas
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`search`
