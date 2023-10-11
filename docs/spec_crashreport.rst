@@ -47,7 +47,7 @@ submission URL.
 Request headers
 ---------------
 
-The HTTP POST request must include the following headers:
+The HTTP POST request *must* include the following headers:
 
 ``Content-Type``
 
@@ -59,6 +59,18 @@ The HTTP POST request must include the following headers:
 
    The content length of the crash report must be set. The value is the length
    of the body.
+
+The HTTP POST request *can* include the following headers:
+
+``User-Agent`` (optional)
+
+   A user agent string which includes the product name, version, and "crash
+   reporter".
+
+   .. Note::
+
+      Including a user agent makes it easier for us to help you debug crash
+      reporter issues.
 
 ``Content-Encoding`` (optional)
 
@@ -73,17 +85,19 @@ The HTTP POST request must include the following headers:
 Request body
 ------------
 
-The crash report is in the HTTP POST body and consists of crash annotations and
-dumps.
+The HTTP POST payload contains the crash report which is comprised of crash
+annotations and minidumps.
 
-If the ``Content-Encoding`` header is set to ``gzip``, the body must be
-gzipped.
+.. Note::
+
+   If the ``Content-Encoding`` header is set to ``gzip``, the body must be
+   gzipped.
 
 
 Crash annotations
 ~~~~~~~~~~~~~~~~~
 
-The body consists of a series of multipart fields. Each field is either an
+The body consists of a sequence of multipart fields. Each field is either an
 annotation or a binary like a minidump.
 
 .. seealso::
@@ -91,13 +105,19 @@ annotation or a binary like a minidump.
    RFC for multipart/form-data and multipart/mixed:
       https://tools.ietf.org/html/rfc7578
 
-There are two ways to provide crash annotations:
+Crash annotations can be provided in one of two ways:
 
-1. annotations as key/value pairs, OR
+1. annotations as individual key/value pairs, OR
 2. annotations as a single JSON-encoded value
 
-You can provide crash annotations as EITHER key/value pairs, OR a JSON-encoded
-value for all annotations--you can't do both.
+.. Note::
+
+   You can provide crash annotations as EITHER key/value pairs, OR a
+   JSON-encoded value for all annotations.
+
+   If your crash report includes both, it will be rejected with HTTP 400 and::
+
+       Discarded=malformed_has_json_and_kv
 
 
 Annotations as key/value pairs in form-data
@@ -153,8 +173,8 @@ Example::
    in December 2019 and is in Firefox 73.
 
 
-Dumps and other binary data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Minidumps and other binary data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. The ``Content-Disposition`` must be ``form-data``.
 
@@ -317,7 +337,6 @@ HTTP 413
 
     The crash reporter client shouldn't try to send this crash report again.
 
-
 HTTP 500
     This is an internal server error.
 
@@ -431,7 +450,7 @@ to us.
 
 The crash report request body is too large. If you aren't compressing it with
 gzip, try that. If you are, then reach out to us but you're probably going to
-need to remove something.
+need to remove something from the crash report to reduce the size.
 
 **I'm getting back a rejection**
 
@@ -480,4 +499,5 @@ Ask yourself these questions and see if they help you at all:
 2. If you successfully submit a crash report, search for the crash id on Crash
    Stats. Are there processor notes indicating problems?
 
-If nothing here helps please reach out to us on Matrix.
+If nothing here helps please reach out to us in the `#crashreporting matrix
+channel <https://chat.mozilla.org/#/room/#crashreporting:mozilla.org>`_.
