@@ -25,6 +25,9 @@ Glossary
    crash annotation
        A crash annotation is a key/value pair with some bit of information.
 
+       Crash annotations are one of two kinds of data in a Breakpad-style crash
+       report the other being :term:`minidumps <minidump>`.
+
        In a crash report, all values are strings, but they can be decoded as a
        variety of data types like strings, integers, floats, and JSON-encoded
        structures.
@@ -50,32 +53,9 @@ Glossary
            MozCrashReason=Shutdown hanging at step AppShutdownConfirmed. Something is blocking th
            e main-thread.
 
-       Example (wrapped)::
-
-           ModuleSignatureInfo={"ESET, spol. s r.o.":["eplgFirefox.dll"],"Microsoft Corporation":
-           ["VCRUNTIME140_1.dll","msvcp140.dll","VCRUNTIME140.dll"],"Microsoft Windows":["winrnr.
-           dll","pnrpnsp.dll","Windows.Globalization.dll","NapiNSP.dll","DWrite.dll","ondemandcon
-           nroutehelper.dll","twinapi.dll","wininet.dll","webauthn.dll","wscapi.dll","winmm.dll",
-           "FWPUCLNT.DLL","dbgcore.dll","urlmon.dll","srvcli.dll","rasadhlp.dll","winhttp.dll","i
-           ertutil.dll","Windows.UI.Immersive.dll","ktmw32.dll","dhcpcsvc.dll","dhcpcsvc6.DLL","n
-           pmproxy.dll","winnsi.dll","BCP47mrm.dll","TextInputFramework.dll","InputHost.dll","Win
-           dowManagementAPI.dll","Windows.UI.dll","Bcp47Langs.dll","version.dll","wshbth.dll","ms
-           cms.dll","dcomp.dll","wsock32.dll","netprofm.dll","nlaapi.dll","twinapi.appcore.dll","
-           WinTypes.dll","CoreMessaging.dll","CoreUIComponents.dll","ColorAdapterClient.dll","pro
-           psys.dll","uxtheme.dll","dwmapi.dll","windows.storage.dll","gpapi.dll","dxgi.dll","dbg
-           help.dll","wtsapi32.dll","kernel.appcore.dll","rsaenh.dll","ntmarta.dll","winsta.dll",
-           "IPHLPAPI.DLL","dnsapi.dll","netutils.dll","mswsock.dll","cryptsp.dll","cryptbase.dll"
-           ,"wldp.dll","ntasn1.dll","ncrypt.dll","msasn1.dll","devobj.dll","sspicli.dll","userenv
-           .dll","profapi.dll","cfgmgr32.dll","bcryptPrimitives.dll","crypt32.dll","msvcp_win.dll
-           ","KERNELBASE.dll","win32u.dll","gdi32full.dll","bcrypt.dll","wintrust.dll","ucrtbase.
-           dll","imm32.dll","sechost.dll","oleaut32.dll","msctf.dll","ole32.dll","advapi32.dll","
-           ws2_32.dll","clbcatq.dll","kernel32.dll","shlwapi.dll","nsi.dll","setupapi.dll","psapi
-           .dll","combase.dll","msvcrt.dll","user32.dll","shell32.dll","SHCore.dll","gdi32.dll","
-           rpcrt4.dll","ntdll.dll"],"Mozilla Corporation":["firefox.exe","xul.dll","nss3.dll","fr
-           eebl3.dll","osclientcerts.dll","nssckbi.dll","mozglue.dll","softokn3.dll","lgpllibs.dl
-           l"]}
-
        .. seealso::
+
+          :ref:`annotations-chapter`
 
           `CrashAnnotations.yaml <https://searchfox.org/mozilla-central/source/toolkit/crashreporter/CrashAnnotations.yaml>`__
               Available crash annotations.
@@ -138,6 +118,22 @@ Glossary
        and :term:`minidumps <minidump>`. It is the data packet that is sent by
        the :term:`crash reporter`, accepted by the collector, and processed by the
        processor.
+
+       Socorro doesn't accept all incoming crash reports. The collector has a
+       throttler which rejects some crash reports.
+
+       Crash reports get rejected for a variety of reasons:
+
+       1. **The crash report is malformed in some fundamental way.**
+
+       2. **The crash report is from a cohort we get many crash reports from and
+          we don't need them all.** For example, we only accept 10% of Firefox
+          desktop, release channel, Windows crash reports.
+
+       3. **The crash report contains something we cannot accept.** There have
+          been bugs in the crash reporter in the past where it sent crash
+          reports the user did not consent to. We reject crash reports that
+          have the markers of these bugs.
 
        .. seealso::
 
@@ -209,6 +205,12 @@ Glossary
 
           `Minidump Files (Microsoft) <https://learn.microsoft.com/en-us/windows/win32/debug/minidump-files>`__
               Documentation on minidump file format.
+
+          `Breakpad: minidump file format <https://chromium.googlesource.com/breakpad/breakpad/+/HEAD/docs/getting_started_with_breakpad.md#the-minidump-file-format>`__
+              Breakpad documentation on minidump file format.
+
+          `Breakpad: processing minidumps <https://chromium.googlesource.com/breakpad/breakpad/+/HEAD/docs/processor_design.md#dump-files>`__
+              Breakpad documentation on processing minidumps.
 
           `rust-minidump <https://github.com/rust-minidump/rust-minidump>`__
               Type definitions, parsing, and analysis for the minidump file format.
@@ -287,6 +289,23 @@ Glossary
               to relevant bugs. This information can be seen in the `Crash
               Reporting Data Dictionary
               <https://crash-stats.mozilla.org/documentation/datadictionary/>`__.
+
+
+   reprocess
+       Socorro can reprocess crash reports. Reprocessing involves starting with
+       the original crash data and running it through the processing pipeline
+       again.
+
+       Sometimes we reprocess crash reports after we've made changes to
+       signature generation so that the crash reports pick up new crash
+       signatures.
+
+       Sometimes we reprocess crash reports after we've uploaded missing
+       symbols files so minidump processing has symbols files to work with.
+       This results in improved symbolicated stacks and new crash signatures.
+
+       Sometimes we reprocess crash reports that were affected by a bug we've
+       just fixed in the processor.
 
 
    stackwalker
