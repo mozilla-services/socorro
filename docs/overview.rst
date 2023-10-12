@@ -21,16 +21,17 @@ Arrow direction represents connections to access services.
 Important services in the diagram:
 
 * **Collector:** Collects incoming :term:`crash reports <crash report>` via
-  HTTP POST. It generates a :term:`crash id` for the :term:`crash report`. It
+  HTTP POST. It throttles crash reports--some get accepted and some get
+  rejected. It generates a :term:`crash id` for the :term:`crash report`. It
   parses the HTTP POST payload into a raw crash with
   :term:`crash annotations <crash annotation>` and :term:`minidump` files. It
   saves this crash data to AWS S3 and publishes :term:`crash ids <crash id>` to
   AWS SQS for processing.
 
-* **Processor:** Processes :term:`crash reports <crash report>`, extracts data
-  from :term:`minidumps <minidump>`, generates :term:`crash signatures <crash
-  signature>`, performs other analysis, and saves everything as a
-  :term:`processed crash`.
+* **Processor:** Processes :term:`crash reports <crash report>`, normalizes and
+  validates data, extracts data from :term:`minidumps <minidump>`, generates
+  :term:`crash signatures <crash signature>`, performs other analysis, and
+  saves everything as a :term:`processed crash` to AWS S3 and Elasticsearch.
 
 * **Webapp (aka Crash Stats):** Web user interface for looking at, searching,
   and analyzing :term:`processed crash` data.
@@ -117,11 +118,10 @@ The collector saves the crash report data to AWS S3 as a :term:`raw crash` and
 
 .. code-block:: text
 
-   v2/
+   v1/
      raw_crash/
        20160513/
          00007bd0-2d1c-4865-af09-80bc02160513      crash annotations and collection metadata
-   v1/
      dump_names/
        00007bd0-2d1c-4865-af09-80bc02160513        list of minidumps for this crash
      dump/
