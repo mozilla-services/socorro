@@ -271,14 +271,16 @@ class MinidumpStackwalkRule(Rule):
         command_path="/stackwalk-rust/minidump-stackwalk",
         command_line=(
             "{command_path} "
-            "--evil-json={raw_crash_path} "
-            "--symbols-cache={symbol_cache_path} "
-            "--symbols-tmp={symbol_tmp_path} "
-            "--no-color "
-            "{symbols_urls} "
-            "--json "
-            "--verbose=error "
-            "{dump_file_path}"
+            + "--evil-json={raw_crash_path} "
+            + "--symbols-cache={symbol_cache_path} "
+            + "--symbols-tmp={symbol_tmp_path} "
+            + "--no-color "
+            + "--output-file={output_path} "
+            + "--log-file={log_path} "
+            + "{symbols_urls} "
+            + "--json "
+            + "--verbose=error "
+            + "{dump_file_path}"
         ),
         kill_timeout=600,
         symbol_tmp_path="/tmp/symbols-tmp",
@@ -341,11 +343,13 @@ class MinidumpStackwalkRule(Rule):
         os.makedirs(self.symbol_tmp_path, exist_ok=True)
         os.makedirs(self.symbol_cache_path, exist_ok=True)
 
-    def expand_commandline(self, dump_file_path, raw_crash_path):
+    def expand_commandline(self, dump_file_path, raw_crash_path, output_path, log_path):
         """Expands the command line parameters and returns the final command line
 
         :param dump_file_path: the absolute path to the dump file to parse
         :param raw_crash_path: the absolute path to the crash annotations file
+        :param output_path: the absolute path to where the output will go
+        :param log_path: the absolute path to where logging output will go
 
         :returns: command line as a string
 
@@ -367,43 +371,54 @@ class MinidumpStackwalkRule(Rule):
             # These are calculated
             "dump_file_path": dump_file_path,
             "raw_crash_path": raw_crash_path,
+            "output_path": output_path,
+            "log_path": log_path,
         }
         return self.command_line.format(**params)
 
-    def run_stackwalker(self, crash_id, command_path, command_line, status):
+    def run_stackwalker(
+        self, crash_id, command_path, command_line, output_path, log_path, status
+    ):
         ret = execute_process(command_line, timeout=self.kill_timeout)
         returncode = ret["returncode"]
-        stdout = ret["stdout"]
-        stderr = ret["stderr"]
+
+        # Grab any log data
+        if os.path.exists(log_path):
+            with open(log_path, "r") as fp:
+                log_data = fp.read()
+        else:
+            log_data = ""
 
         # Decode stderr and truncate to 10 lines
-        stderr = stderr.decode("utf-8") if stderr else ""
-        if stderr.count("\n") > 10:
-            stderr = "\n".join(["..."] + stderr.splitlines()[-10:])
+        if log_data.count("\n") > 10:
+            log_data = "\n".join(["..."] + log_data.splitlines()[-10:])
+
         output = {}
-
         if returncode == 0:
-            try:
-                output = json.loads(ret["stdout"])
+            if os.path.exists(output_path):
+                with open(output_path, "r") as fp:
+                    output_raw = fp.read()
 
-            except Exception as exc:
-                msg = f"{command_path}: non-json output: {exc}"
-                self.logger.debug(
-                    "MinidumpStackwalkRule: %s: non-json output: %s",
-                    command_path,
-                    stdout[:1000],
-                )
-                self.logger.error(msg)
-                status.add_note(msg)
+                try:
+                    output = json.loads(output_raw)
+                except Exception as exc:
+                    msg = f"{command_path}: non-json output: {exc}"
+                    self.logger.debug(
+                        "MinidumpStackwalkRule: %s: non-json output: %s",
+                        command_path,
+                        output_raw[:1000],
+                    )
+                    self.logger.error(msg)
+                    status.add_note(msg)
 
-            if output and not isinstance(output, Mapping):
-                msg = (
-                    "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
-                    + f"output: {str(output)[:200]}"
-                )
-                status.add_note(msg)
-                self.logger.warning("%s (%s)", msg, crash_id)
-                output = {}
+                if output and not isinstance(output, Mapping):
+                    msg = (
+                        "MinidumpStackwalkRule: minidump-stackwalk produced unexpected "
+                        + f"output: {str(output)[:200]}"
+                    )
+                    status.add_note(msg)
+                    self.logger.warning("%s (%s)", msg, crash_id)
+                    output = {}
 
         status_line = output.get("status", "unknown error")
         stackwalker_data = {
@@ -412,8 +427,8 @@ class MinidumpStackwalkRule(Rule):
             "mdsw_status_string": status_line,
             "success": status_line == "OK",
             "stackwalk_version": self.stackwalk_version,
-            # Note: this may contain proected data
-            "mdsw_stderr": stderr,
+            # NOTE(willkg): this may contain proected data
+            "mdsw_stderr": log_data,
         }
 
         # subprocess.Popen with shell=False returns negative exit codes where the number
@@ -479,15 +494,21 @@ class MinidumpStackwalkRule(Rule):
                 )
 
             else:
+                log_path = os.path.join(tmpdir, f"{crash_id}.{dump_name}.log")
+                output_path = os.path.join(tmpdir, f"{crash_id}.{dump_name}.json")
                 command_line = self.expand_commandline(
                     dump_file_path=dump_file_path,
                     raw_crash_path=raw_crash_path,
+                    output_path=output_path,
+                    log_path=log_path,
                 )
 
                 stackwalker_data = self.run_stackwalker(
                     crash_id=crash_id,
                     command_path=self.command_path,
                     command_line=command_line,
+                    output_path=output_path,
+                    log_path=log_path,
                     status=status,
                 )
 

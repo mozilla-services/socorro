@@ -823,6 +823,13 @@ class TestMinidumpStackwalkRule:
                     stderr=b"",
                 )
 
+                # We mocked the subprocess, so we have to generate the output files we're
+                # expecting.
+                output_path = tmp_path / f"{example_uuid}.{rule.dump_field}.json"
+                output_path.write_text(MINIMAL_STACKWALKER_OUTPUT_STR)
+                log_path = tmp_path / f"{example_uuid}.{rule.dump_field}.log"
+                log_path.write_text("")
+
                 rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
             expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
@@ -899,6 +906,13 @@ class TestMinidumpStackwalkRule:
             mock_subprocess.run.return_value = ProcessCompletedMock(
                 returncode=-1, stdout=b"{ff", stderr=b"boo hiss"
             )
+
+            # We mocked the subprocess, so we have to generate the output files we're
+            # expecting.
+            output_path = tmp_path / f"{example_uuid}.{rule.dump_field}.json"
+            output_path.write_text("{ff")
+            log_path = tmp_path / f"{example_uuid}.{rule.dump_field}.log"
+            log_path.write_text("boo hiss")
 
             rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 

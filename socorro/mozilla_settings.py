@@ -291,6 +291,8 @@ STACKWALKER = {
         + "--symbols-cache={symbol_cache_path} "
         + "--symbols-tmp={symbol_tmp_path} "
         + "--no-color "
+        + "--output-file={output_path} "
+        + "--log-file={log_path} "
         + "{symbols_urls} "
         + "--json "
         + "--verbose=error "
