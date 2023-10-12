@@ -15,6 +15,7 @@ set -euo pipefail
 
 DATADIR=./crashdata_mdsw_tmp
 STACKWALKER="/stackwalk-rust/minidump-stackwalk"
+SYMBOLSCACHE="/tmp/symbols"
 
 # This will pull symbols from the symbols server
 SYMBOLS="--symbols-url=https://symbols.mozilla.org"
@@ -35,25 +36,29 @@ if [[ $# -eq 0 ]]; then
 fi
 
 mkdir "${DATADIR}" || true
+mkdir -p "${SYMBOLSCACHE}/cache" || true
+mkdir -p "${SYMBOLSCACHE}/tmp" || true
 
 for CRASHID in "$@"
 do
     # Pull down the data for the crash if we don't have it, yet
     if [ ! -f "${DATADIR}/v1/dump/$CRASHID" ]; then
         echo "Fetching crash data..."
-        ./socorro-cmd fetch_crash_data "${DATADIR}" $CRASHID
+        ./socorro-cmd fetch_crash_data "${DATADIR}" "${CRASHID}"
     fi
 
     # Find the raw crash file
-    RAWCRASHFILE=$(find ${DATADIR}/v1/raw_crash/ -name $CRASHID -type f)
+    RAWCRASHFILE=$(find ${DATADIR}/v1/raw_crash/ -name "${CRASHID}" -type f)
 
     "${STACKWALKER}" \
-        --evil-json=$RAWCRASHFILE \
+        --evil-json="${RAWCRASHFILE}" \
         --symbols-cache=/tmp/symbols/cache \
         --symbols-tmp=/tmp/symbols/tmp \
         --no-color \
         ${SYMBOLS} \
+        --output-file="${CRASHID}.dump.json" \
+        --log-file="${CRASHID}.dump.log" \
         --json \
-        --verbose=error \
-        ${DATADIR}/v1/dump/$CRASHID
+        --verbose=debug \
+        "${DATADIR}/v1/dump/${CRASHID}"
 done
