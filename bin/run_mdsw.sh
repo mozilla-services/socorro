@@ -18,7 +18,7 @@ STACKWALKER="/stackwalk-rust/minidump-stackwalk"
 SYMBOLSCACHE="/tmp/symbols"
 
 # This will pull symbols from the symbols server
-SYMBOLS="--symbols-url=https://symbols.mozilla.org"
+SYMBOLS="--symbols-url=https://symbols.mozilla.org/try"
 # SYMBOLS="--symbols-url=https://symbols.stage.mozaws.net"
 
 # This will pull symbols from disk
@@ -52,8 +52,8 @@ do
 
     "${STACKWALKER}" \
         --evil-json="${RAWCRASHFILE}" \
-        --symbols-cache=/tmp/symbols/cache \
-        --symbols-tmp=/tmp/symbols/tmp \
+        --symbols-cache="${SYMBOLSCACHE}/cache" \
+        --symbols-tmp="${SYMBOLSCACHE}/tmp/symbols/tmp" \
         --no-color \
         ${SYMBOLS} \
         --output-file="${CRASHID}.dump.json" \
