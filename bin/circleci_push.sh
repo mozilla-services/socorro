@@ -11,7 +11,7 @@
 # Environment variables used:
 #
 # DOCKER_USER/DOCKER_PASS: dockerhub credentials
-# DOCKER_REPO: name of the repo on dockerhub to use
+# DOCKERHUB_REPO: name of the repo on dockerhub to use
 # CIRCLE_BRANCH/CIRCLE_TAG: CircleCI generated environment variables
 
 set -euo pipefail
@@ -40,25 +40,26 @@ if [[ $# -eq 0 ]]; then
 fi
 
 LOCAL_IMAGE="$1"
-DOCKER_USER="${DOCKER_USER:-}"
-DOCKER_PASS="${DOCKER_PASS:-}"
 
-if [ "${DOCKER_USER}" == "" ] || [ "${DOCKER_PASS}" == "" ]; then
+if [ -z "${DOCKER_USER:-}" ] || [ -z "${DOCKER_PASS:-}" ] || [ -z "${DOCKERHUB_REPO:-}"]; then
     echo "Skipping Login to Dockerhub, credentials not available."
     exit
 fi
 
-
 echo "${DOCKER_PASS}" | docker login -u="${DOCKER_USER}" --password-stdin
 
-if [ "${CIRCLE_BRANCH}" == "main" ]; then
+if [ "${CIRCLE_BRANCH:-}" == "main" ]; then
     # deploy main latest
-    docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:latest"
-    retry docker push "${DOCKERHUB_REPO}:latest"
-elif  [ ! -z "${CIRCLE_TAG}" ]; then
+    REMOTE_IMAGE="${DOCKERHUB_REPO}:latest"
+elif  [ -n "${CIRCLE_TAG:-}" ]; then
     # deploy a release tag
-    echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-    docker tag "${LOCAL_IMAGE}" "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-    docker images
-    retry docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+    REMOTE_IMAGE="${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+else
+    echo "Build neither for the main branch nor for a tag, skipping Docker upload."
+    exit
 fi
+
+echo "Pushing ${REMOTE_IMAGE}..."
+docker tag "${LOCAL_IMAGE}" "${REMOTE_IMAGE}"
+docker images
+retry docker push "${REMOTE_IMAGE}"
