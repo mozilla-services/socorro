@@ -6,6 +6,7 @@ build.py
 build
 .DS_Store
 .noseids
+.nvmrc
 *.mo
 .virtualenv
 /models-cache/
