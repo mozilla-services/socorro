@@ -125,6 +125,7 @@ mozilla::ipc::IProtocol::ChannelSend
 mozilla::ipc::IToplevelProtocol::ShmemCreated
 mozilla::layers::CompositorD3D11::Failed
 mozilla::SpinEventLoopUntil
+mozilla::Vector<T>
 mozilla::WrapNotNull<
 mozilla.*FatalError
 moz_xmalloc
