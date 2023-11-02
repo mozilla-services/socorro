@@ -29,7 +29,7 @@ COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
 COPY --chown=app:app requirements.txt /app/
-RUN pip install -U 'pip==22.3.1' && \
+RUN pip install -U 'pip==23.3.1' && \
     pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
 
