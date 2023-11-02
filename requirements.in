@@ -52,7 +52,7 @@ semver==3.0.1
 sentry-sdk==1.31.0
 statsd==4.0.1
 urlwait==1.0
-werkzeug==3.0.0
+werkzeug==3.0.1
 whitenoise==6.5.0
 
 # NOTE(willkg): awscli pins docutils to <0.17.0, so we can't update Sphinx
