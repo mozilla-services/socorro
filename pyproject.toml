@@ -28,6 +28,12 @@ main_branch = "main"
 tag_name_template = "%Y.%m.%d"
 
 
+[tool.paul-mclendahand]
+github_user = "mozilla-services"
+github_project = "socorro"
+main_branch = "main"
+
+
 [tool.service-status]
 main_branch = "main"
 hosts = [
