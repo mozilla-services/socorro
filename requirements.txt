@@ -291,9 +291,9 @@ django==3.2.23 \
     #   django-jinja
     #   djangorestframework
     #   mozilla-django-oidc
-django-cors-headers==3.14.0 \
-    --hash=sha256:5fbd58a6fb4119d975754b2bc090f35ec160a8373f276612c675b00e8a138739 \
-    --hash=sha256:684180013cc7277bdd8702b80a3c5a4b3fcae4abb2bf134dceb9f5dfe300228e
+django-cors-headers==4.3.0 \
+    --hash=sha256:25aabc94d4837678c1edf442c7f68a5f5fd151f6767b0e0b01c61a2179d02711 \
+    --hash=sha256:bd36c7aea0d070e462f3383f0dc9ef717e5fdc2b10a99c98c285f16da84ffba2
     # via -r requirements.in
 django-csp==3.7 \
     --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
