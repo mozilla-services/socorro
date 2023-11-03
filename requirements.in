@@ -6,7 +6,7 @@ boto3==1.28.77
 click==8.1.7
 contextlib2==21.6.0
 datadog==0.47.0
-django-cors-headers==3.14.0
+django-cors-headers==4.3.0
 django_csp==3.7
 django-jinja==2.11.0
 django-npm==1.0.0
