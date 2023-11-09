@@ -58,7 +58,7 @@
             </li>
           </ul>
         {% else %}
-          <a class="signup-link" href="{{ url("documentation:signup") }}">Sign up</a>
+          <a class="signup-link" href="{{ url("documentation:home") }}">Sign up</a>
           |
           <a class="login-link" href="{{ url('oidc_authentication_init') }}?{{ make_query_string(next=request.get_full_path()) }}">Log in</a>
         {% endif %}
@@ -124,7 +124,7 @@
       {% endblock %}
 
       <div class="nav-links">
-        <a href="{{ url('documentation:home') }}">Documentation</a>
+        <a href="{{ url('documentation:home') }}">Help</a>
         |
         <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro">File a bug</a>
         |

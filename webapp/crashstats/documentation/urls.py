@@ -23,7 +23,6 @@ urlpatterns = [
         name="supersearch_examples",
     ),
     path("supersearch/api/", views.supersearch_api, name="supersearch_api"),
-    path("signup/", views.signup, name="signup"),
     path(
         "protected_data_access/",
         views.protected_data_access,
