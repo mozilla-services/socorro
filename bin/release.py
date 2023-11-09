@@ -18,7 +18,7 @@ requires the tomli library.
 See https://github.com/willkg/socorro-release/#readme for details.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 036f7078ba7991200f7f4fc85742a6ed3dc97b6f
+sha: 617689e3e94b556265fbf6bddc10d63e44a08689
 
 """
 
@@ -97,6 +97,7 @@ def get_config():
             if config_data:
                 for key, default_val in my_config.items():
                     my_config[key] = config_data.get(key, default_val)
+                return my_config
 
     if os.path.exists("setup.cfg"):
         config = configparser.ConfigParser()
