@@ -54,6 +54,6 @@ logconfig_dict = {
 
 if LOCAL_DEV_ENV:
     # In a local development environment, we want to use console logger.
-    for logger, logger_config in logconfig_dict["loggers"].items():
+    for _, logger_config in logconfig_dict["loggers"].items():
         logger_config["handlers"] = ["console"]
     logconfig_dict["root"]["handlers"] = ["console"]

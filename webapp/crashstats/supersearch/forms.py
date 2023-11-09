@@ -12,7 +12,8 @@ from crashstats.supersearch import form_fields
 TYPE_TO_FIELD_MAPPING = {
     "enum": form_fields.MultipleValueField,
     "string": form_fields.StringField,
-    "number": form_fields.IntegerField,
+    "integer": form_fields.IntegerField,
+    "float": form_fields.FloatField,
     "bool": form_fields.BooleanField,
     "flag": form_fields.StringField,
     "date": form_fields.DateTimeField,
@@ -115,5 +116,5 @@ class QueryForm(forms.Form):
     def clean_query(self):
         try:
             return json.loads(self.cleaned_data["query"])
-        except ValueError as x:
-            raise forms.ValidationError(x)
+        except ValueError as exc:
+            raise forms.ValidationError(exc) from exc

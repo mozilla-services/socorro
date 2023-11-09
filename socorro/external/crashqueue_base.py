@@ -6,17 +6,9 @@
 crash ids from queues for processing.
 """
 
-from configman import Namespace, RequiredConfig
 
-
-class CrashQueueBase(RequiredConfig):
+class CrashQueueBase:
     """Base class for crash queue classes."""
-
-    required_config = Namespace()
-
-    def __init__(self, config, namespace=""):
-        self.config = config
-        self.namespace = namespace
 
     def close(self):
         pass
@@ -29,7 +21,7 @@ class CrashQueueBase(RequiredConfig):
         ``finished_func`` when it's done processing the crash.
 
         """
-        pass
+        raise NotImplementedError("__iter__ not implemented")
 
     def new_crashes(self):
         return self.__iter__()
@@ -39,4 +31,4 @@ class CrashQueueBase(RequiredConfig):
 
     def publish(self, queue, crash_ids):
         """Publish crash ids to specified queue."""
-        assert queue in ["standard", "priority", "reprocessing"]
+        raise NotImplementedError("publish not implemented")

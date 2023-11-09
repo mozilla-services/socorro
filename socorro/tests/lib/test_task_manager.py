@@ -4,49 +4,36 @@
 
 from unittest import mock
 
-from configman.dotdict import DotDict
-
-from socorro.lib.task_manager import TaskManager, default_task_func
+from socorro.lib.task_manager import TaskManager
 
 
 class TestTaskManager:
-    def test_constuctor1(self):
-        config = DotDict()
-        config.quit_on_empty_queue = False
-
-        tm = TaskManager(config)
-        assert tm.config == config
-        assert tm.task_func == default_task_func
-        assert tm.quit is False
-
     def test_get_iterator(self):
-        config = DotDict()
-        config.quit_on_empty_queue = False
+        # job_source_iterator as an iterable
+        tm = TaskManager(job_source_iterator=range(3))
+        assert list(tm._get_iterator()) == [0, 1, 2]
 
-        tm = TaskManager(config, job_source_iterator=range(1))
-        assert list(tm._get_iterator()) == [0]
-
-        def an_iter(self):
-            yield from range(5)
-
-        tm = TaskManager(config, job_source_iterator=an_iter)
-        assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
+        tm = TaskManager(job_source_iterator=[1, 2, 3])
+        assert list(tm._get_iterator()) == [1, 2, 3]
 
         class X:
-            def __init__(self, config):
-                self.config = config
+            def __init__(self):
+                self.items = [1, 2, 3, 4, 5]
 
             def __iter__(self):
-                yield from self.config
+                yield from self.items
 
-        tm = TaskManager(config, job_source_iterator=X(config))
-        assert list(tm._get_iterator()) == list(config.keys())
+        tm = TaskManager(job_source_iterator=X())
+        assert list(tm._get_iterator()) == [1, 2, 3, 4, 5]
+
+        # job_source_iterator as a callable
+        def an_iter():
+            yield from range(5)
+
+        tm = TaskManager(job_source_iterator=an_iter)
+        assert list(tm._get_iterator()) == [0, 1, 2, 3, 4]
 
     def test_blocking_start(self):
-        config = DotDict()
-        config.idle_delay = 1
-        config.quit_on_empty_queue = False
-
         class MyTaskManager(TaskManager):
             def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
                 try:
@@ -56,25 +43,15 @@ class TestTaskManager:
                 except AttributeError:
                     self.count = 0
 
-        tm = MyTaskManager(config, task_func=mock.Mock())
+        tm = MyTaskManager(idle_delay=1, task_func=mock.Mock())
 
-        waiting_func = mock.Mock()
-
-        tm.blocking_start(waiting_func=waiting_func)
+        tm.blocking_start()
 
         assert tm.task_func.call_count == 10
-        assert waiting_func.call_count == 0
 
     def test_blocking_start_with_quit_on_empty(self):
-        config = DotDict()
-        config.idle_delay = 1
-        config.quit_on_empty_queue = True
+        tm = TaskManager(idle_delay=1, quit_on_empty_queue=True, task_func=mock.Mock())
 
-        tm = TaskManager(config, task_func=mock.Mock())
-
-        waiting_func = mock.Mock()
-
-        tm.blocking_start(waiting_func=waiting_func)
+        tm.blocking_start()
 
         assert tm.task_func.call_count == 10
-        assert waiting_func.call_count == 0

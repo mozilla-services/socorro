@@ -9,7 +9,6 @@ import time
 
 import boto3
 from botocore.client import ClientError
-from configman import Namespace, RequiredConfig
 
 from socorro.lib.util import retry
 
@@ -41,7 +40,7 @@ class KeyNotFound(Exception):
     pass
 
 
-class S3Connection(RequiredConfig):
+class S3Connection:
     """Connection object for S3.
 
     **Credentials and permissions**
@@ -52,7 +51,6 @@ class S3Connection(RequiredConfig):
     2. use one of the other methods described in the boto3 docs
        http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials
 
-
     The AWS credentials that Socorro is configured with must have the following
     Amazon S3 permissions:
 
@@ -60,55 +58,38 @@ class S3Connection(RequiredConfig):
     * ``s3:PutObject``: Socorro saves crash data in the bucket.
     * ``s3:GetObject``: Socorro retrieves crash data from buckets.
 
-
     **Retrying loads and saves**
 
     When loading and saving crashes, this connection will retry several times.
 
     """
 
-    required_config = Namespace()
-    required_config.add_option(
-        "access_key",
-        doc="access key",
-        default=None,
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "secret_access_key",
-        doc="secret access key",
-        default=None,
-        secret=True,
-        reference_value_from="secrets.boto",
-    )
-    required_config.add_option(
-        "bucket_name",
-        doc="The name of the bucket.",
-        default="crashstats",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "region",
-        doc="Name of the S3 region (e.g. us-west-2)",
-        default="us-west-2",
-        reference_value_from="resource.boto",
-    )
-    required_config.add_option(
-        "s3_endpoint_url",
-        doc=(
-            "endpoint url to connect to; None if you are connecting to AWS. For "
-            "example, ``http://localhost:4572/``."
-        ),
-        default="",
-        reference_value_from="resource.boto",
-    )
-
+    # Attach to class so it's easier to access without imports
     KeyNotFound = KeyNotFound
 
-    def __init__(self, config):
-        self.config = config
-        self.bucket = self.config.bucket_name
-        self.client = self.build_client()
+    def __init__(
+        self,
+        region=None,
+        access_key=None,
+        secret_access_key=None,
+        endpoint_url=None,
+        **kwargs,
+    ):
+        """
+        :arg region: AWS region to use (e.g. us-west-2)
+        :arg access_key: AWS access key
+        :arg secret_access_key: AWS secret access key
+        :arg endpoint_url: the endpoint url to use when in a local development
+            environment
+        """
+
+        self.region = region
+        self.client = self.build_client(
+            region=region,
+            access_key=access_key,
+            secret_access_key=secret_access_key,
+            endpoint_url=endpoint_url,
+        )
 
     @retry(
         retryable_exceptions=[
@@ -124,24 +105,39 @@ class S3Connection(RequiredConfig):
         sleep_function=time.sleep,
         module_logger=logger,
     )
-    def build_client(self):
-        """Returns a Boto3 S3 Client."""
+    def build_client(
+        cls,
+        region,
+        access_key=None,
+        secret_access_key=None,
+        endpoint_url=None,
+        **kwargs,
+    ):
+        """Returns a Boto3 S3 Client.
+
+        :arg region: the S3 region to use
+        :arg access_key: the S3 access_key to use
+        :arg secret_access_key: the S3 secret_access_key to use
+        :arg endpoint_url: the endpoint url to use when in a local development
+            environment
+
+        """
         # Either they provided ACCESS_KEY and SECRET_ACCESS_KEY in which case
         # we use those, or they didn't in which case boto3 pulls credentials
         # from one of a myriad of other places.
         # http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials
         session_kwargs = {}
-        if self.config.access_key and self.config.secret_access_key:
-            session_kwargs["aws_access_key_id"] = self.config.access_key
-            session_kwargs["aws_secret_access_key"] = self.config.secret_access_key
+        if access_key and secret_access_key:
+            session_kwargs["aws_access_key_id"] = access_key
+            session_kwargs["aws_secret_access_key"] = secret_access_key
         session = boto3.session.Session(**session_kwargs)
 
         kwargs = {
             "service_name": "s3",
-            "region_name": self.config.region,
+            "region_name": region,
         }
-        if self.config.s3_endpoint_url:
-            kwargs["endpoint_url"] = self.config.s3_endpoint_url
+        if endpoint_url:
+            kwargs["endpoint_url"] = endpoint_url
 
         return session.client(**kwargs)
 
@@ -154,15 +150,15 @@ class S3Connection(RequiredConfig):
         wait_time_generator=wait_times_access,
         module_logger=logger,
     )
-    def save_file(self, path, data):
+    def save_file(self, bucket, path, data):
         """Save a single file to S3.
 
         This will retry a handful of times in short succession so as to deal
         with some amount of fishiness. After that, the caller should retry
         saving after a longer period of time.
 
+        :arg str bucket: the bucket to save to
         :arg str path: the path to save to
-
         :arg bytes data: the data to save
 
         :raises botocore.exceptions.ClientError: connection issues, permissions
@@ -172,9 +168,7 @@ class S3Connection(RequiredConfig):
         if not isinstance(data, bytes):
             raise TypeError("data argument must be bytes")
 
-        self.client.upload_fileobj(
-            Fileobj=io.BytesIO(data), Bucket=self.bucket, Key=path
-        )
+        self.client.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket, Key=path)
 
     @retry(
         retryable_exceptions=[
@@ -185,14 +179,15 @@ class S3Connection(RequiredConfig):
         wait_time_generator=wait_times_access,
         module_logger=logger,
     )
-    def load_file(self, path):
+    def load_file(self, bucket, path):
         """Load a file from S3.
 
-        This will retry a handful of times in short succession so as to deal
-        with some amount of fishiness. After that, the caller should retry
-        saving after a longer period of time.
+        This will retry a handful of times in short succession so as to deal with some
+        amount of fishiness. After that, the caller should retry saving after a longer
+        period of time.
 
-        :arg str path: the path to save to
+        :arg str bucket: the bucket to load from
+        :arg str path: the path to load from
 
         :returns: bytes
 
@@ -202,10 +197,48 @@ class S3Connection(RequiredConfig):
 
         """
         try:
-            resp = self.client.get_object(Bucket=self.config.bucket_name, Key=path)
+            resp = self.client.get_object(Bucket=bucket, Key=path)
             return resp["Body"].read()
-        except self.client.exceptions.NoSuchKey:
+        except self.client.exceptions.NoSuchKey as exc:
             raise KeyNotFound(
-                "%s (bucket=%r key=%r) not found, no value returned"
-                % (id, self.config.bucket_name, path)
-            )
+                f"(bucket={bucket!r} key={path}) not found, no value returned"
+            ) from exc
+
+    def list_objects_paginator(self, bucket, prefix):
+        """Returns S3 client paginator of objects with key prefix in bucket
+
+        :arg bucket: the name of the bucket
+        :arg prefix: the key prefix
+
+        :returns: S3 paginator
+
+        """
+        paginator = self.client.get_paginator("list_objects_v2")
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+        return page_iterator
+
+    def head_object(self, bucket, key):
+        """HEAD action on an object in a S3 bucket
+
+        :arg bucket: the name of the bucket
+        :arg key: the key for the object to HEAD
+
+        :returns: S3 HEAD response
+
+        :raises KeyNotFound: if the object doesn't exist
+        :raises botocore.exceptions.ClientError: connection issues, permissions
+            issues, bucket is missing, etc.
+
+        """
+        try:
+            return self.client.head_object(Bucket=bucket, Key=key)
+        except self.client.exceptions.NoSuchKey as exc:
+            raise KeyNotFound(
+                f"(bucket={bucket!r} key={key}) not found, no value returned"
+            ) from exc
+        except self.client.exceptions.ClientError as exc:
+            if "404" in str(exc):
+                raise KeyNotFound(
+                    f"(bucket={bucket!r} key={key}) not found, no value returned"
+                ) from exc
+            raise

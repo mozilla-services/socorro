@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,24 +13,16 @@ import datetime
 import json
 
 import click
-from configman import ConfigurationManager
-from configman.environment import environment
 from elasticsearch_dsl import Search
 from elasticsearch.client import IndicesClient
 
+from socorro import settings
 from socorro.external.es.base import generate_list_of_indexes
-from socorro.external.es.connection_context import ConnectionContext
+from socorro.libclass import build_instance_from_settings
 
 
-def get_conn():
-    # Create a configuration manager that will only check the environment for
-    # configuration and not command line parameters
-
-    cm = ConfigurationManager(
-        ConnectionContext.get_required_config(), values_source_list=[environment]
-    )
-    config = cm.get_config()
-    return ConnectionContext(config)
+def get_crashstorage():
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
 
 
 @click.group()
@@ -53,10 +47,10 @@ def es_group():
 @click.pass_context
 def cmd_create(ctx, weeks_future, weeks_past):
     """Create recent indices."""
-    conn = get_conn()
+    crashstorage = get_crashstorage()
 
     # Create recent indices
-    index_name_template = conn.get_index_template()
+    index_name_template = crashstorage.get_index_template()
 
     # Figure out dates
     today = datetime.date.today()
@@ -66,7 +60,7 @@ def cmd_create(ctx, weeks_future, weeks_past):
     # Create indiices
     index_names = generate_list_of_indexes(from_date, to_date, index_name_template)
     for index_name in index_names:
-        was_created = conn.create_index(index_name)
+        was_created = crashstorage.create_index(index_name)
         if was_created:
             click.echo("Index %s was created." % index_name)
         else:
@@ -77,8 +71,8 @@ def cmd_create(ctx, weeks_future, weeks_past):
 @click.pass_context
 def cmd_list(ctx):
     """List indices."""
-    conn = get_conn()
-    indices = conn.get_indices()
+    crashstorage = get_crashstorage()
+    indices = crashstorage.get_indices()
     if indices:
         click.echo("Indices:")
         for index in indices:
@@ -92,12 +86,12 @@ def cmd_list(ctx):
 @click.pass_context
 def cmd_list_crashids(ctx, index):
     """List crashids for index."""
-    es_conn = get_conn()
-    with es_conn() as conn:
+    crashstorage = get_crashstorage()
+    with crashstorage.client() as conn:
         search = Search(
             using=conn,
             index=index,
-            doc_type=es_conn.get_doctype(),
+            doc_type=crashstorage.get_doctype(),
         )
         search = search.fields("processed_crash.uuid")
         results = search.execute()
@@ -110,13 +104,13 @@ def cmd_list_crashids(ctx, index):
 @click.argument("index", nargs=1)
 @click.pass_context
 def cmd_print_mapping(ctx, index):
-    context = get_conn()
-    doctype = context.get_doctype()
-    conn = context.connection()
-    indices_client = IndicesClient(conn)
-    resp = indices_client.get_mapping(index=index)
-    mapping = resp[index]["mappings"][doctype]["properties"]
-    click.echo(json.dumps(mapping, indent=2, sort_keys=True))
+    crashstorage = get_crashstorage()
+    doctype = crashstorage.get_doctype()
+    with crashstorage.client() as conn:
+        indices_client = IndicesClient(conn)
+        resp = indices_client.get_mapping(index=index)
+        mapping = resp[index]["mappings"][doctype]["properties"]
+        click.echo(json.dumps(mapping, indent=2, sort_keys=True))
 
 
 @es_group.command("print_document")
@@ -124,17 +118,17 @@ def cmd_print_mapping(ctx, index):
 @click.argument("crashid", nargs=1)
 @click.pass_context
 def cmd_print_document(ctx, index, crashid):
-    context = get_conn()
-    conn = context.connection()
-    search = Search(
-        using=conn,
-        index=index,
-        doc_type=context.get_doctype(),
-    )
-    search = search.query("match", crash_id=crashid)
-    results = search.execute()
-    for item in results:
-        click.echo(json.dumps(item.to_dict(), indent=2, sort_keys=True))
+    crashstorage = get_crashstorage()
+    with crashstorage.client() as conn:
+        search = Search(
+            using=conn,
+            index=index,
+            doc_type=crashstorage.get_doctype(),
+        )
+        search = search.query("match", crash_id=crashid)
+        results = search.execute()
+        for item in results:
+            click.echo(json.dumps(item.to_dict(), indent=2, sort_keys=True))
 
 
 @es_group.command("delete")
@@ -142,19 +136,24 @@ def cmd_print_document(ctx, index, crashid):
 @click.pass_context
 def cmd_delete(ctx, index):
     """Delete indices."""
-    conn = get_conn()
+    crashstorage = get_crashstorage()
     if index:
         indices_to_delete = [index]
     else:
-        indices_to_delete = conn.get_indices()
+        indices_to_delete = crashstorage.get_indices()
 
     if not indices_to_delete:
         click.echo("No indices to delete.")
         return
 
     for index_name in indices_to_delete:
-        conn.delete_index(index_name)
+        crashstorage.delete_index(index_name)
         click.echo("Deleted index: %s" % index_name)
+
+
+def main(argv=None):
+    argv = argv or []
+    es_group(argv)
 
 
 if __name__ == "__main__":

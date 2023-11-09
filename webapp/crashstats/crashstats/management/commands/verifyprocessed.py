@@ -21,39 +21,30 @@ from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
-from crashstats.crashstats.configman_utils import get_s3_context
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.supersearch.models import SuperSearchUnredacted
+from socorro import settings as socorro_settings
 from socorro.lib.libooid import date_from_ooid
+from socorro.libclass import build_instance_from_settings
 
 
-RAW_CRASH_ENTROPY_PREFIX_TEMPLATE = "v2/raw_crash/%s/%s/"
 RAW_CRASH_PREFIX_TEMPLATE = "v1/raw_crash/%s/%s"
 PROCESSED_CRASH_TEMPLATE = "v1/processed_crash/%s"
 
 # Number of seconds until we decide a worker has stalled
 WORKER_TIMEOUT = 15 * 60
 
-# Number of entropy items to pass to a check_crashids subprocess
+# Number of prefix variations to pass to a check_crashids subprocess
 CHUNK_SIZE = 4
 
 
 metrics = markus.get_metrics("cron.verifyprocessed")
 
 
-def is_in_s3(s3_client, bucket, crash_id):
+def is_in_s3(s3_crash_dest, crash_id):
     """Is the processed crash in S3."""
-    try:
-        key = PROCESSED_CRASH_TEMPLATE % crash_id
-        s3_client.head_object(Bucket=bucket, Key=key)
-    except s3_client.exceptions.ClientError as exc:
-        # If we got back a 404: Not Found, then the processed crash isn't
-        # there. If we got something else back, re-raise it.
-        if exc.response["Error"]["Code"] == "404":
-            return False
-        else:
-            raise
-    return True
+    key = PROCESSED_CRASH_TEMPLATE % crash_id
+    return s3_crash_dest.exists_object(key)
 
 
 def check_elasticsearch(supersearch, crash_ids):
@@ -83,60 +74,10 @@ def check_elasticsearch(supersearch, crash_ids):
     return set(crash_ids) - set(crash_ids_in_es)
 
 
-def check_crashids_for_entropy_date(entropy_chunk, date):
-    """Checks crash ids for a given entropy and date.
-
-    NOTE(willkg): the entropy part is being phased out, so this checks the entropy/date
-    possible key (deprecated) and then checks the date directory directly.
-
-    We can remove this a week after Antenna switches to the no-entropy keys. Maybe
-    October 2022.
-
-    """
-    s3_context = get_s3_context()
-    bucket = s3_context.config.bucket_name
-    s3_client = s3_context.client
-
-    supersearch = SuperSearchUnredacted()
-
-    missing = []
-
-    # Grab all the crash ids at the given entropy/date directory
-    #
-    # NOTE(willkg): this path is deprecated and will get removed; apirl 2023
-    for entropy in entropy_chunk:
-        raw_crash_key_prefix = RAW_CRASH_ENTROPY_PREFIX_TEMPLATE % (entropy, date)
-
-        paginator = s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
-
-        for page in page_iterator:
-            # NOTE(willkg): Keys look like /v2/raw_crash/ENTRPOY/DATE/CRASHID
-            crash_ids = [
-                item["Key"].split("/")[-1] for item in page.get("Contents", [])
-            ]
-
-            if not crash_ids:
-                continue
-
-            # Check S3 first
-            for crash_id in crash_ids:
-                if not is_in_s3(s3_client, bucket, crash_id):
-                    missing.append(crash_id)
-
-            # Check Elasticsearch in batches
-            for crash_ids_batch in chunked(crash_ids, 100):
-                missing_in_es = check_elasticsearch(supersearch, crash_ids_batch)
-                missing.extend(missing_in_es)
-
-    return list(set(missing))
-
-
 def check_crashids_for_date(firstchars_chunk, date):
     """Check crash ids for a given firstchars and date"""
-    s3_context = get_s3_context()
-    bucket = s3_context.config.bucket_name
-    s3_client = s3_context.client
+    s3_crash_source = build_instance_from_settings(socorro_settings.CRASH_SOURCE)
+    s3_crash_dest = build_instance_from_settings(socorro_settings.S3_STORAGE)
 
     supersearch = SuperSearchUnredacted()
 
@@ -146,8 +87,10 @@ def check_crashids_for_date(firstchars_chunk, date):
         # Grab all the crash ids at the given date directory
         raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (date, firstchars)
 
-        paginator = s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=raw_crash_key_prefix)
+        page_iterator = s3_crash_source.connection.list_objects_paginator(
+            bucket=s3_crash_source.bucket,
+            prefix=raw_crash_key_prefix,
+        )
 
         for page in page_iterator:
             # NOTE(willkg): Keys here look like /v2/raw_crash/ENTROPY/DATE/CRASHID or
@@ -161,7 +104,7 @@ def check_crashids_for_date(firstchars_chunk, date):
 
             # Check S3 first
             for crash_id in crash_ids:
-                if not is_in_s3(s3_client, bucket, crash_id):
+                if not is_in_s3(s3_crash_dest, crash_id):
                     missing.append(crash_id)
 
             # Check Elasticsearch in batches
@@ -189,7 +132,7 @@ class Command(BaseCommand):
         )
 
     def get_threechars(self):
-        """Generate all entropy combinations."""
+        """Generate all combinations of 3 hex digits."""
         chars = "0123456789abcdef"
         for x in chars:
             for y in chars:
@@ -197,32 +140,18 @@ class Command(BaseCommand):
                     yield x + y + z
 
     def find_missing(self, num_workers, date):
-        check_crashids_for_entropy = partial(check_crashids_for_entropy_date, date=date)
         check_crashids = partial(check_crashids_for_date, date=date)
 
         missing = []
-        entropy_chunked = chunked(self.get_threechars(), CHUNK_SIZE)
         firstchars_chunked = chunked(self.get_threechars(), CHUNK_SIZE)
 
         if num_workers == 1:
-            # NOTE(willkg): entropy bit is deprecated. we can remove in October 2022
-            # maybe.
-            for result in map(check_crashids_for_entropy, entropy_chunked):
-                missing.extend(result)
-
             for result in map(check_crashids, firstchars_chunked):
                 missing.extend(result)
         else:
             with concurrent.futures.ProcessPoolExecutor(
                 max_workers=num_workers
             ) as executor:
-                # NOTE(willkg): entropy bit is deprecated. we can remove in October 2022
-                # maybe.
-                for result in executor.map(
-                    check_crashids_for_entropy, entropy_chunked, timeout=WORKER_TIMEOUT
-                ):
-                    missing.extend(result)
-
                 for result in executor.map(
                     check_crashids, firstchars_chunked, timeout=WORKER_TIMEOUT
                 ):
@@ -235,7 +164,7 @@ class Command(BaseCommand):
         metrics.gauge("missing_processed", len(missing))
         if missing:
             for crash_id in missing:
-                self.stdout.write("Missing: %s" % crash_id)
+                self.stdout.write(f"Missing: {crash_id}")
 
                 try:
                     MissingProcessedCrash.objects.create(
@@ -248,7 +177,7 @@ class Command(BaseCommand):
                     else:
                         raise
         else:
-            self.stdout.write("All crashes for %s were processed." % date)
+            self.stdout.write(f"All crashes for {date} were processed.")
 
     def handle(self, **options):
         check_date_arg = options.get("run_time")
@@ -257,7 +186,7 @@ class Command(BaseCommand):
             if not check_date:
                 check_date = parse_date(check_date_arg)
             if not check_date:
-                raise CommandError("Unrecognized run_time format: %s" % check_date_arg)
+                raise CommandError(f"Unrecognized run_time format: {check_date_arg}")
         else:
             check_date = timezone.now()
 
@@ -266,7 +195,7 @@ class Command(BaseCommand):
 
         check_date_formatted = check_date.strftime("%Y%m%d")
         self.stdout.write(
-            "Checking for missing processed crashes for: %s" % check_date_formatted
+            f"Checking for missing processed crashes for: {check_date_formatted}"
         )
 
         # Find new missing crashes.

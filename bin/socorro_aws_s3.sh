@@ -28,17 +28,6 @@
 
 set -euo pipefail
 
-# First convert configman environment vars which have bad identifiers to ones
-# that don't
-function getenv {
-    python -c "import os; print(os.environ['$1'])"
-}
-
-AWS_ENDPOINT_URL="$(getenv 'resource.boto.s3_endpoint_url')"
-AWS_ACCESS_KEY_ID="$(getenv 'resource.boto.access_key')"
-AWS_SECRET_ACCESS_KEY="$(getenv 'secrets.boto.secret_access_key')"
-AWS_BUCKET="$(getenv 'resource.boto.bucket_name')"
-
 # Create required configuration files for aws
 if [[ ! -d /tmp/.aws ]]
 then
@@ -54,11 +43,11 @@ if [[ ! -f /tmp/.aws/credentials ]]
 then
     cat > /tmp/.aws/credentials <<EOF
 [default]
-aws_access_key_id = ${AWS_ACCESS_KEY_ID}
-aws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}
+aws_access_key_id = ${CRASHSTORAGE_S3_ACCESS_KEY}
+aws_secret_access_key = ${CRASHSTORAGE_S3_SECRET_ACCESS_KEY}
 EOF
 fi
 
-AWSOPTIONS="--endpoint-url=${AWS_ENDPOINT_URL}"
+AWSOPTIONS="--endpoint-url=${LOCAL_DEV_AWS_ENDPOINT_URL}"
 
 HOME=/tmp aws ${AWSOPTIONS} s3 $@

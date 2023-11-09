@@ -3,18 +3,32 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-"""The processor app converts raw crashes into processed crashes."""
+"""The processor app converts raw crashes into processed crashes.
+
+It uses a fetch/transform/save model.
+
+1. fetch: a queue class determines which crash report to process next and
+   crash storage fetches the data from a crash storage source
+2. transform: a pipeline class runs the crash report through a set of
+   processing rules which results in a processed crash
+3. save: crash storage saves the data to crash storage destinations
+
+"""
 
 from contextlib import suppress
+from functools import partial
+import logging
 import os
+from pathlib import Path
+import signal
 import sys
+import tempfile
 import time
 
-from configman import Namespace
-from configman.converters import class_converter
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
+import psutil
 import sentry_sdk
 from sentry_sdk.integrations.atexit import AtexitIntegration
 from sentry_sdk.integrations.boto3 import Boto3Integration
@@ -24,64 +38,13 @@ from sentry_sdk.integrations.modules import ModulesIntegration
 from sentry_sdk.integrations.stdlib import StdlibIntegration
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
-from socorro.app.fetch_transform_save_app import FetchTransformSaveApp
-from socorro.external.crashstorage_base import CrashIDNotFound, PolyStorageError
+from socorro import settings
+from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.libclass import build_instance, build_instance_from_settings
 from socorro.lib.libdatetime import isoformat_to_time
-from socorro.lib.libdockerflow import get_release_name
-
-
-CONFIG_DEFAULTS = {
-    "always_ignore_mismatches": True,
-    "queue": {"crashqueue_class": "socorro.external.sqs.crashqueue.SQSCrashQueue"},
-    "source": {
-        "benchmark_tag": "BotoS3CrashStorage",
-        "crashstorage_class": "socorro.external.crashstorage_base.BenchmarkingCrashStorage",
-        "wrapped_crashstore": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
-    },
-    "destination": {
-        "crashstorage_class": "socorro.external.crashstorage_base.PolyCrashStorage",
-        # Each key in this list corresponds to a key in this dict containing
-        # a crash storage config.
-        "storage_namespaces": ",".join(["s3", "elasticsearch", "statsd", "telemetry"]),
-        "s3": {
-            "active_list": "save_processed_crash",
-            "benchmark_tag": "BotoS3CrashStorage",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.s3",
-            "wrapped_object_class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
-        },
-        "elasticsearch": {
-            "active_list": "save_processed_crash",
-            "benchmark_tag": "ElasticsearchCrashStorage",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.es",
-            "wrapped_object_class": "socorro.external.es.crashstorage.ESCrashStorage",
-        },
-        "statsd": {
-            "active_list": "save_processed_crash",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsCounter",
-            "metrics_prefix": "processor",
-        },
-        "telemetry": {
-            "active_list": "save_processed_crash",
-            "bucket_name": "org-mozilla-telemetry-crashes",
-            "crashstorage_class": "socorro.external.crashstorage_base.MetricsBenchmarkingWrapper",
-            "metrics_prefix": "processor.telemetry",
-            "wrapped_object_class": (
-                "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage"
-            ),
-        },
-    },
-    "companion_process": {
-        "companion_class": "socorro.processor.symbol_cache_manager.SymbolLRUCacheManager",
-        "symbol_cache_size": "40G",
-        "verbosity": 0,
-    },
-    "producer_consumer": {"maximum_queue_size": 8, "number_of_threads": 4},
-    "resource": {
-        "boto": {"prefix": "", "boto_metrics_prefix": "processor.s3"},
-    },
-}
+from socorro.lib.libdockerflow import get_release_name, get_version_info
+from socorro.lib.liblogging import set_up_logging
+from socorro.lib.task_manager import respond_to_SIGTERM
 
 
 METRICS = markus.get_metrics("processor")
@@ -91,48 +54,35 @@ def count_sentry_scrub_error(msg):
     METRICS.incr("sentry_scrub_error", 1)
 
 
-class ProcessorApp(FetchTransformSaveApp):
-    """Configman app that transforms raw crashes into processed crashes."""
+class ProcessorApp:
+    """App that transforms raw crashes into processed crashes."""
 
-    app_name = "processor"
-    app_version = "3.0"
-    app_description = __doc__
-    config_defaults = CONFIG_DEFAULTS
+    def __init__(self):
+        self.basedir = Path(__file__).resolve().parent.parent.parent
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
-    required_config = Namespace()
+    def log_config(self):
+        version_info = get_version_info(self.basedir)
+        data = ", ".join(
+            [f"{key!r}: {val!r}" for key, val in sorted(version_info.items())]
+        )
+        data = data or "no version data"
+        self.logger.info("version.json: %s", data)
+        settings.log_settings(logger=self.logger)
 
-    # The processor is the pipeline that transforms raw crashes into
-    # processed crashes.
-    required_config.namespace("processor")
-    required_config.processor.add_option(
-        "processor_class",
-        doc="the class that transforms raw crashes into processed crashes",
-        default="socorro.processor.processor_pipeline.ProcessorPipeline",
-        from_string_converter=class_converter,
-    )
+    def _set_up_sentry(self):
+        if not settings.SENTRY_DSN:
+            return
 
-    # The companion_process runs alongside the processor and cleans up
-    # the symbol lru cache.
-    required_config.namespace("companion_process")
-    required_config.companion_process.add_option(
-        "companion_class",
-        doc="a classname that runs a process in parallel with the processor",
-        default="",
-        # default='socorro.processor.symbol_cache_manager.SymbolLRUCacheManager',
-        from_string_converter=class_converter,
-    )
-
-    @classmethod
-    def configure_sentry(cls, basedir, host_id, sentry_dsn):
-        release = get_release_name(basedir)
+        release = get_release_name(self.basedir)
         scrubber = Scrubber(
             rules=SCRUB_RULES_DEFAULT,
             error_handler=count_sentry_scrub_error,
         )
         set_up_sentry(
-            sentry_dsn=sentry_dsn,
+            sentry_dsn=settings.SENTRY_DSN,
             release=release,
-            host_id=host_id,
+            host_id=settings.HOST_ID,
             # Disable frame-local variables
             with_locals=False,
             # Disable request data from being added to Sentry events
@@ -155,7 +105,12 @@ class ProcessorApp(FetchTransformSaveApp):
     def _basic_iterator(self):
         """Yields an infinite list of processing tasks."""
         try:
-            yield from super()._basic_iterator()
+            for x in self.queue.new_crashes():
+                if x is None or isinstance(x, tuple):
+                    yield x
+                else:
+                    yield ((x,), {})
+            yield None
         except Exception as exc:
             # NOTE(willkg): Queue code should not be throwing unhandled exceptions. If
             # it does, we should send it to sentry, log it, and then re-raise it so the
@@ -164,128 +119,277 @@ class ProcessorApp(FetchTransformSaveApp):
             self.logger.exception("error in crash id iterator")
             raise
 
-    def _transform(self, task):
-        """Runs a transform on a task.
+    def source_iterator(self):
+        """Iterate infinitely yielding tasks."""
+        while True:
+            yield from self._basic_iterator()
 
-        The ``task`` passed in is in the form of CRASHID or CRASHID:RULESET.
-        In the case of the former, it uses the default pipeline.
+    def transform(self, task, finished_func=(lambda: None)):
+        try:
+            if ":" in task:
+                crash_id, ruleset_name = task.split(":", 1)
+            else:
+                crash_id, ruleset_name = task, "default"
 
-        """
+            # Set up metrics and sentry scopes
+            with METRICS.timer("process_crash", tags=[f"ruleset:{ruleset_name}"]):
+                with sentry_sdk.push_scope() as scope:
+                    scope.set_extra("crash_id", crash_id)
+                    scope.set_extra("ruleset", ruleset_name)
 
-        if ":" in task:
-            crash_id, ruleset_name = task.split(":", 1)
-        else:
-            crash_id, ruleset_name = task, "default"
+                    # Create temporary directory context
+                    with tempfile.TemporaryDirectory(dir=self.temporary_path) as tmpdir:
+                        # Process the crash report
+                        self.process_crash(
+                            crash_id=crash_id,
+                            ruleset_name=ruleset_name,
+                            tmpdir=tmpdir,
+                        )
 
-        with METRICS.timer("process_crash", tags=[f"ruleset:{ruleset_name}"]):
-            self.process_crash(crash_id, ruleset_name)
+        finally:
+            # no matter what causes this method to end, we need to make sure
+            # that the finished_func gets called. If the new crash source is
+            # Pub/Sub, this is what removes the job from the queue.
+            try:
+                finished_func()
+            except Exception:
+                # when run in a thread, a failure here is not a problem, but if
+                # we're running all in the same thread, a failure here could
+                # derail the the whole processor. Best just log the problem
+                # so that we can continue.
+                self.logger.exception("Error calling finishing_func() on %s", task)
 
-    def process_crash(self, crash_id, ruleset_name):
+    def process_crash(self, crash_id, ruleset_name, tmpdir):
         """Processed crash data using a specified ruleset into a processed crash.
 
-        The ``crash_id`` is a key to fetch the raw crash data from the ``source``, the
-        ``processor_class`` processes the crash and the processed crash is saved to the
-        ``destination``.
+        :arg crash_id: unique identifier for the crash report used to fetch the data and
+            save the processed data
+        :arg ruleset_name: the name of the ruleset to process the crash report with
+        :arg tmpdir: the temporary directory to use as a workspace
 
         """
-        with sentry_sdk.push_scope() as scope:
-            scope.set_extra("crash_id", crash_id)
-            scope.set_extra("ruleset", ruleset_name)
+        self.logger.info("starting %s with %s", crash_id, ruleset_name)
 
-            # Fetch the raw crash data
+        self.logger.debug("fetching data %s", crash_id)
+        # Fetch crash annotations and dumps
+        try:
+            raw_crash = self.source.get_raw_crash(crash_id)
+            dumps = self.source.get_dumps_as_files(crash_id, tmpdir)
+        except CrashIDNotFound:
+            # If the crash isn't found, we just reject it--no need to capture
+            # errors here
+            self.pipeline.reject_raw_crash(
+                crash_id, "crash cannot be found in raw crash storage"
+            )
+            return
+        except Exception as exc:
+            sentry_sdk.capture_exception(exc)
+            self.logger.exception("error: crash id %s: %r", crash_id, exc)
+            self.pipeline.reject_raw_crash(crash_id, f"error in loading: {exc}")
+            return
+
+        # Fetch processed crash data--there won't be any if this crash hasn't
+        # been processed, yet
+        try:
+            processed_crash = self.source.get_processed_crash(crash_id)
+            new_crash = False
+        except CrashIDNotFound:
+            new_crash = True
+            processed_crash = {}
+
+        # Process the crash to generate a processed crash
+        self.logger.debug("processing %s", crash_id)
+        processed_crash = self.pipeline.process_crash(
+            ruleset_name=ruleset_name,
+            raw_crash=raw_crash,
+            dumps=dumps,
+            processed_crash=processed_crash,
+            tmpdir=tmpdir,
+        )
+
+        # Save data to crash storage destinations
+        self.logger.debug("saving %s", crash_id)
+        for dest in self.destinations:
             try:
-                raw_crash = self.source.get_raw_crash(crash_id)
-                dumps = self.source.get_dumps_as_files(crash_id)
-            except CrashIDNotFound:
-                # If the crash isn't found, we just reject it--no need to capture
-                # errors here
-                self.processor.reject_raw_crash(
-                    crash_id, "crash cannot be found in raw crash storage"
+                with METRICS.timer(
+                    f"{dest.crash_destination_name}.save_processed_crash"
+                ):
+                    dest.save_processed_crash(raw_crash, processed_crash)
+            except Exception as storage_error:
+                self.logger.error(
+                    "error: crash id %s: %r (%s)",
+                    crash_id,
+                    storage_error,
+                    dest.crash_destination_name,
                 )
-                return
-            except Exception as exc:
-                sentry_sdk.capture_exception(exc)
-                self.logger.exception("error: crash id %s: %r", crash_id, exc)
-                self.processor.reject_raw_crash(crash_id, f"error in loading: {exc}")
-                return
-
-            # Fetch processed crash data--there won't be any if this crash hasn't
-            # been processed, yet
-            try:
-                processed_crash = self.source.get_processed(crash_id)
-                new_crash = False
-            except CrashIDNotFound:
-                new_crash = True
-                processed_crash = {}
-
-            # Process the crash and remove any temporary artifacts from disk
-            try:
-                # Process the crash to generate a processed crash
-                processed_crash = self.processor.process_crash(
-                    ruleset_name, raw_crash, dumps, processed_crash
-                )
-
-                self.destination.save_processed_crash(raw_crash, processed_crash)
-                self.logger.info("saved - %s", crash_id)
-            except PolyStorageError as poly_storage_error:
-                # Capture and log the exceptions raised by storage backends
-                for storage_error in poly_storage_error:
-                    sentry_sdk.capture_exception(storage_error)
-                    self.logger.error("error: crash id %s: %r", crash_id, storage_error)
-                self.logger.warning("error in processing or saving crash %s", crash_id)
-
                 # Re-raise the original exception with the correct traceback
                 raise
 
-            finally:
-                # Clean up any dump files saved to the file system
-                for a_dump_pathname in dumps.values():
-                    if "TEMPORARY" in a_dump_pathname:
-                        try:
-                            os.unlink(a_dump_pathname)
-                        except OSError as x:
-                            self.logger.info("deletion of dump failed: %s", x)
+        METRICS.incr("save_processed_crash")
 
-            if ruleset_name == "default" and new_crash:
-                # Capture the total time for ingestion covering when the crash report was
-                # collected (submitted_timestamp) to the end of processing (now). We only
-                # want to do this for crash reports being processed for the first time.
-                collected = raw_crash.get("submitted_timestamp", None)
-                if collected:
-                    delta = time.time() - isoformat_to_time(collected)
-                    delta = delta * 1000
-                    METRICS.timing("ingestion_timing", value=delta)
+        self.logger.info("saved %s", crash_id)
 
-    def _setup_source_and_destination(self):
+        if ruleset_name == "default" and new_crash:
+            # Capture the total time for ingestion covering when the crash report
+            # was collected (submitted_timestamp) to the end of processing (now). We
+            # only want to do this for crash reports being processed for the first
+            # time.
+            collected = raw_crash.get("submitted_timestamp", None)
+            if collected:
+                delta = time.time() - isoformat_to_time(collected)
+                delta = delta * 1000
+                METRICS.timing("ingestion_timing", value=delta)
+
+        self.logger.info("completed %s", crash_id)
+
+    def _set_up_source_and_destination(self):
         """Instantiate classes necessary for processing."""
-        super()._setup_source_and_destination()
-        if self.config.companion_process.companion_class:
-            self.companion_process = self.config.companion_process.companion_class(
-                self.config.companion_process
-            )
-        else:
-            self.companion_process = None
+        self.queue = build_instance_from_settings(settings.QUEUE)
+        self.source = build_instance_from_settings(settings.CRASH_SOURCE)
+        destinations = []
+        for key in settings.CRASH_DESTINATIONS_ORDER:
+            dest_obj = build_instance_from_settings(settings.CRASH_DESTINATIONS[key])
+            dest_obj.crash_destination_name = key
+            destinations.append(dest_obj)
+        self.destinations = destinations
 
-        # This function will be called by the MainThread periodically
-        # while the threaded_task_manager processes crashes.
-        self.waiting_func = None
+        self.pipeline = build_instance_from_settings(settings.PROCESSOR["pipeline"])
 
-        self.processor = self.config.processor.processor_class(
-            config=self.config.processor, host_id=self.app_instance_name
+        self.temporary_path = settings.PROCESSOR["temporary_path"]
+        os.makedirs(self.temporary_path, exist_ok=True)
+
+    def _set_up_task_manager(self):
+        """Create and set up task manager."""
+        self.logger.info("installing signal handers")
+        # Set up the signal handler for dealing with SIGTERM. The target should be this
+        # app instance so the signal handler can reach in and set the quit flag to be
+        # True. See the 'respond_to_SIGTERM' method for the more information
+        respond_to_SIGTERM_with_logging = partial(respond_to_SIGTERM, target=self)
+        signal.signal(signal.SIGTERM, respond_to_SIGTERM_with_logging)
+
+        # Create task manager
+        manager_class = settings.PROCESSOR["task_manager"]["class"]
+        manager_settings = settings.PROCESSOR["task_manager"]["options"]
+        manager_settings.update(
+            {
+                "job_source_iterator": self.source_iterator,
+                "heartbeat_func": self.heartbeat,
+                "task_func": self.transform,
+            }
         )
+        self.task_manager = build_instance(
+            class_path=manager_class, kwargs=manager_settings
+        )
+
+    def heartbeat(self):
+        """Runs once a second from the main thread.
+
+        Note: If this raises an exception, it could kill the process or put it in a
+        weird state.
+
+        """
+        try:
+            processes_by_type = {}
+            processes_by_status = {}
+            open_files = 0
+            for proc in psutil.process_iter(["cmdline", "status", "open_files"]):
+                try:
+                    # NOTE(willkg): This is all intertwined with exactly how we run the
+                    # processor in a Docker container. If we ever make changes to that, this
+                    # will change, too. However, even if we never update this, seeing
+                    # "zombie" and "orphaned" as process statuses or seeing lots of
+                    # processes as a type will be really fishy and suggestive that evil is a
+                    # foot.
+                    cmdline = proc.cmdline() or ["unknown"]
+
+                    if cmdline[0] in ["/bin/sh", "/bin/bash"]:
+                        proc_type = "shell"
+                    elif cmdline[0] in ["python", "/usr/local/bin/python"]:
+                        proc_type = "python"
+                    elif "stackwalk" in cmdline[0]:
+                        proc_type = "stackwalker"
+                    else:
+                        proc_type = "other"
+
+                    open_files_count = len(proc.open_files())
+                    proc_status = proc.status()
+
+                except psutil.Error:
+                    # For any psutil error, we want to track that we saw a process, but
+                    # the details don't matter
+                    proc_type = "unknown"
+                    proc_status = "unknown"
+                    open_files_count = 0
+
+                processes_by_type[proc_type] = processes_by_type.get(proc_type, 0) + 1
+                processes_by_status[proc_status] = (
+                    processes_by_status.get(proc_status, 0) + 1
+                )
+                open_files += open_files_count
+
+            METRICS.gauge("open_files", open_files)
+            for proc_type, val in processes_by_type.items():
+                METRICS.gauge("processes_by_type", val, tags=[f"proctype:{proc_type}"])
+            for status, val in processes_by_status.items():
+                METRICS.gauge("processes_by_status", val, tags=[f"procstatus:{status}"])
+
+        except Exception as exc:
+            sentry_sdk.capture_exception(exc)
 
     def close(self):
         """Clean up the processor on shutdown."""
-        super().close()
-        # There is either no companion or it doesn't have a close method we can skip on
         with suppress(AttributeError):
-            self.companion_process.close()
+            self.queue.close()
 
-        # The processor implementation does not have a close method we can blithely skip
-        # on
         with suppress(AttributeError):
-            self.processor.close()
+            self.source.close()
+
+        with suppress(AttributeError):
+            self.destination.close()
+
+        with suppress(AttributeError):
+            self.pipeline.close()
+
+    def main(self, *args):
+        """Main routine
+
+        Sets up the signal handlers, the source and destination crashstorage systems at
+        the theaded task manager. That starts a flock of threads that are ready to
+        shepherd tasks from the source to the destination.
+
+        """
+        # Set everything up
+        set_up_logging(
+            local_dev_env=settings.LOCAL_DEV_ENV,
+            logging_level=settings.LOGGING_LEVEL,
+            host_id=settings.HOST_ID,
+        )
+        self.log_config()
+
+        markus.configure(backends=settings.MARKUS_BACKENDS)
+        self._set_up_sentry()
+
+        self._set_up_task_manager()
+        self._set_up_source_and_destination()
+
+        # Run
+        self.task_manager.blocking_start()
+
+        # End processing and quit
+        self.close()
+        self.logger.info("done.")
+        return 0
+
+
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    # NOTE(willkg): we need to do this so that the processor app logger isn't `__main__`
+    # which causes problems when logging
+    from socorro.processor import processor_app
+
+    sys.exit(processor_app.ProcessorApp().main(args))
 
 
 if __name__ == "__main__":
-    sys.exit(ProcessorApp.run())
+    main()

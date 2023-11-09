@@ -5,11 +5,12 @@
 from dataclasses import dataclass
 import datetime
 
-from configman import class_converter, Namespace, RequiredConfig
 import elasticsearch
 from elasticsearch_dsl import Search
 
+from socorro import settings as socorro_settings
 from socorro.external.es.super_search_fields import FIELDS
+from socorro.libclass import build_instance_from_settings
 
 
 # Map of processed crash schema permissions to webapp permissions
@@ -37,7 +38,7 @@ def convert_permissions(fields):
         ]
         return [perm for perm in new_permissions if perm]
 
-    for key, val in fields.items():
+    for val in fields.values():
         val["permissions_needed"] = _convert(val["permissions_needed"])
 
     return fields
@@ -53,25 +54,16 @@ class IndexDataItem:
     count: int
 
 
-class SuperSearchStatusModel(RequiredConfig):
+class SuperSearchStatusModel:
     """Model that returns list of indices and latest mapping."""
 
     filters = []
 
-    required_config = Namespace()
-    required_config.add_option(
-        "elasticsearch_class",
-        doc="a class that implements the ES connection object",
-        default="socorro.external.es.connection_context.ConnectionContext",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config):
-        self.config = config
-        self.context = self.config.elasticsearch_class(self.config)
+    def __init__(self):
+        self.es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
 
     def get_connection(self):
-        with self.context() as conn:
+        with self.es_crash_dest.client() as conn:
             return conn
 
     def get(self):
@@ -85,11 +77,11 @@ class SuperSearchStatusModel(RequiredConfig):
         """
         conn = self.get_connection()
         index_client = elasticsearch.client.IndicesClient(conn)
-        indices = sorted(self.context.get_indices())
+        indices = sorted(self.es_crash_dest.get_indices())
         latest_index = indices[-1]
 
-        doctype = self.context.get_doctype()
-        index_template = self.context.get_index_template()
+        doctype = self.es_crash_dest.get_doctype()
+        index_template = self.es_crash_dest.get_index_template()
         if index_template.endswith("%Y%W"):
             # Doing strptime on a template that has %W but doesn't have a day-of-week,
             # will ignore the %W part; so we anchor it with 1 (Monday)

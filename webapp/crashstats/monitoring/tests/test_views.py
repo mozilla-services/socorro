@@ -13,10 +13,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
-from crashstats.monitoring.views import HeartbeatException
+from crashstats.monitoring.views import HeartbeatException, IntentionalException
 from crashstats.supersearch.models import SuperSearch
 
 
@@ -97,7 +97,7 @@ class TestDockerflowHeartbeatViews:
 
         def mocked_supersearch_get(*args, **kwargs):
             searches.append(kwargs)
-            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["product"] == libproduct.get_default_product().name
             assert kwargs["_results_number"] == 1
             assert kwargs["_columns"] == ["uuid"]
             return {
@@ -125,7 +125,7 @@ class TestDockerflowHeartbeatViews:
 
         def mocked_supersearch_get(*args, **kwargs):
             searches.append(kwargs)
-            assert kwargs["product"] == productlib.get_default_product().name
+            assert kwargs["product"] == libproduct.get_default_product().name
             assert kwargs["_results_number"] == 1
             assert kwargs["_columns"] == ["uuid"]
             return {
@@ -141,26 +141,26 @@ class TestDockerflowHeartbeatViews:
 
 
 class TestDockerflowVersionView:
-    def test_version_no_file(self, client, settings, tmpdir):
+    def test_version_no_file(self, client, settings, tmp_path):
         """Test with no version.json file"""
-        # The tmpdir definitely doesn't have a version.json in it, so we use
+        # The tmp_path definitely doesn't have a version.json in it, so we use
         # that
-        settings.SOCORRO_ROOT = str(tmpdir)
+        settings.SOCORRO_ROOT = str(tmp_path)
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json; charset=UTF-8"
         assert smart_str(resp.content) == "{}"
 
-    def test_version_with_file(self, client, settings, tmpdir):
+    def test_version_with_file(self, client, settings, tmp_path):
         """Test with a version.json file"""
-        settings.SOCORRO_ROOT = str(tmpdir)
+        settings.SOCORRO_ROOT = str(tmp_path)
 
         text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
 
-        # Create the version.json file in the tmpdir
-        version_json = tmpdir / "version.json"
-        version_json.write(text)
+        # Create the version.json file in the tmp_path
+        version_json = tmp_path / "version.json"
+        version_json.write_text(text)
 
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
@@ -170,5 +170,5 @@ class TestDockerflowVersionView:
 
 class TestBroken:
     def test_broken(self, client):
-        with pytest.raises(Exception):
+        with pytest.raises(IntentionalException):
             client.get(reverse("monitoring:broken"))

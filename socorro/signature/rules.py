@@ -145,8 +145,9 @@ class CSignatureTool:
 
     def normalize_cpp_function(self, function, line):
         """Normalizes a single cpp frame with a function"""
-        # Drop member function cv/ref qualifiers like const, const&, &, and &&
-        for ref in ("const", "const&", "&&", "&"):
+        # Drop member function cv/ref qualifiers like const, const&, const &,
+        # &, and &&
+        for ref in ("const", "const&", "const &", "&&", "&"):
             if function.endswith(ref):
                 function = function[: -len(ref)].strip()
 
@@ -414,7 +415,7 @@ class CSignatureTool:
 
 
 class JavaSignatureTool:
-    """This is the signature generation class for Java signatures."""
+    """Signature generation class for signatures based on JavaStackTrace."""
 
     # The max length of a java exception description--if it's longer than this,
     # drop it
@@ -491,6 +492,67 @@ class JavaSignatureTool:
             notes.append(
                 "JavaSignatureTool: dropped Java exception description due to length"
             )
+
+        return signature, notes, debug_notes
+
+
+class JavaExceptionSignatureTool:
+    """Signature generation class for signatures based on JavaException."""
+
+    def normalize_frame(self, frame):
+        frame_module = frame.get("module", "")
+        frame_function = frame.get("function", "")
+        if frame_module and frame_function:
+            frame_signature = ".".join([frame_module, frame_function])
+        elif frame_module:
+            frame_signature = frame_module
+        elif frame_function:
+            frame_signature = frame_function
+        else:
+            frame_signature = ""
+
+        frame_filename = frame.get("filename", "")
+
+        if frame_signature and frame_filename:
+            return f"{frame_signature}({frame_filename})"
+        elif frame_signature:
+            return frame_signature
+        return "unknown"
+
+    def generate(self, source):
+        if not isinstance(source, dict):
+            return (
+                "EMPTY: Java exception not in expected format",
+                ["JavaExceptionSignatureTool: value not in expected format"],
+                [],
+            )
+
+        # This looks at the first frame (the one that raised the exception) of the first
+        # exception value (the exception that started a series of cascading exceptions).
+        stacktrace = glom(source, "exception.values.0.stacktrace", default=None)
+        if not stacktrace:
+            return (
+                "EMPTY: Java exception not in expected format",
+                ["JavaExceptionSignatureTool: value not in expected format"],
+                [],
+            )
+
+        notes = []
+        debug_notes = []
+
+        exc_module = stacktrace.get("module", "")
+        exc_type = stacktrace.get("type", "Unknown")
+        if exc_module and exc_type:
+            exc_class = f"{exc_module}.{exc_type}"
+        else:
+            exc_class = exc_type
+
+        frames = stacktrace.get("frames") or []
+        if frames:
+            normalized_frames = [self.normalize_frame(frame) for frame in frames]
+            signature = f"{exc_class}: at {normalized_frames[0]}"
+        else:
+            signature = f"{exc_class}"
 
         return signature, notes, debug_notes
 
@@ -582,6 +644,7 @@ class SignatureGenerationRule(Rule):
     def __init__(self, signature_list_dir=None):
         super().__init__()
         self.java_signature_tool = JavaSignatureTool()
+        self.java_exception_signature_tool = JavaExceptionSignatureTool()
         self.c_signature_tool = CSignatureTool(datadir=signature_list_dir)
 
     def action(self, crash_data, result):
@@ -590,6 +653,22 @@ class SignatureGenerationRule(Rule):
             result.debug(self.name, "using JavaSignatureTool")
             signature, notes, debug_notes = self.java_signature_tool.generate(
                 crash_data["java_stack_trace"], delimiter=": "
+            )
+            for note in notes:
+                result.info(self.name, note)
+            for note in debug_notes:
+                result.debug(self.name, note)
+            result.set_signature(self.name, signature)
+            return True
+
+        # If there's a java_exception, use that to generate the signature
+        #
+        # NOTE(willkg): At some point, we want to rewrite signature generation for Java
+        # crashes and we'll want to make this take precedence over java_stack_trace.
+        if crash_data.get("java_exception"):
+            result.debug(self.name, "using JavaExceptionSignatureTool")
+            signature, notes, debug_notes = self.java_exception_signature_tool.generate(
+                crash_data["java_exception"]
             )
             for note in notes:
                 result.info(self.name, note)
@@ -641,7 +720,7 @@ class SignatureGenerationRule(Rule):
 class StackOverflowSignature(Rule):
     """Prepends ``stackoverflow``
 
-    See bug #1796389.
+    See `bug #1796389 <https://bugzilla.mozilla.org/show_bug.cgi?id=1796389>`__.
 
     """
 
@@ -667,7 +746,7 @@ class StackOverflowSignature(Rule):
 class OOMSignature(Rule):
     """Prepends ``OOM | <size>`` to signatures for OOM crashes.
 
-    See bug #1007530.
+    See `bug #1007530 <https://bugzilla.mozilla.org/show_bug.cgi?id=1007530>`__.
 
     """
 
@@ -748,7 +827,7 @@ class OOMSignature(Rule):
 class BadHardware(Rule):
     """Prepends ``bad hardware`` to signatures that are from bad hardware.
 
-    See bug #1733904.
+    See `bug #1733904 <https://bugzilla.mozilla.org/show_bug.cgi?id=1733904>`__.
 
     """
 
@@ -776,7 +855,7 @@ class BadHardware(Rule):
 class AbortSignature(Rule):
     """Prepends abort message to signature.
 
-    See bug #803779.
+    See `bug #803779 <https://bugzilla.mozilla.org/show_bug.cgi?id=803779>`__.
 
     """
 
@@ -857,7 +936,7 @@ class SigFixWhitespace(Rule):
 
 
 class SigTruncate(Rule):
-    """Truncates signatures down to SIGNATURE_MAX_LENGTH characters."""
+    """Truncates signatures down to ``SIGNATURE_MAX_LENGTH`` characters."""
 
     def predicate(self, crash_data, result):
         return len(result.signature) > SIGNATURE_MAX_LENGTH
@@ -887,7 +966,7 @@ class StackwalkerErrorSignatureRule(Rule):
 
 
 class SignatureRunWatchDog(Rule):
-    """Prepends "shutdownhang" to signature for shutdown hang crashes."""
+    """Prepends ``shutdownhang`` to signature for shutdown hang crashes."""
 
     def __init__(self):
         super().__init__()
@@ -909,9 +988,10 @@ class SignatureRunWatchDog(Rule):
 
 
 class SignatureShutdownTimeout(Rule):
-    """Replaces signature with async_shutdown_timeout message.
+    """Replaces signature with ``async_shutdown_timeout`` message.
 
-    This supports AsyncShutdownTimeout annotation values with the following structure::
+    This supports ``AsyncShutdownTimeout`` annotation values with the following
+    structure::
 
         {
             "phase": <str>,
@@ -943,7 +1023,7 @@ class SignatureShutdownTimeout(Rule):
                 # be a string that looks like a "name" or a dict with a "name" in it.
                 #
                 # This handles both variations.
-                c["name"] if isinstance(c, dict) else c
+                str(c["name"] if isinstance(c, dict) else c)
                 for c in shutdown_data.get("conditions") or []
             ]
             if conditions:
@@ -968,7 +1048,7 @@ class SignatureShutdownTimeout(Rule):
 class SignatureIPCChannelError(Rule):
     """Stomps on signature with shutdownkill signature
 
-    Either "IPCError-browser | ShutDownKill" or "IPCError-content | ShutDownKill".
+    Either ``IPCError-browser | ShutDownKill`` or ``IPCError-content | ShutDownKill``.
 
     """
 
@@ -988,7 +1068,7 @@ class SignatureIPCChannelError(Rule):
 
 
 class SignatureIPCMessageName(Rule):
-    """Appends ipc_message_name to signature."""
+    """Appends ``ipc_message_name`` value to signature."""
 
     def predicate(self, crash_data, result):
         return bool(crash_data.get("ipc_message_name"))
@@ -1004,7 +1084,7 @@ class SignatureIPCMessageName(Rule):
 
 
 class SignatureParentIDNotEqualsChildID(Rule):
-    """Stomp on the signature if moz_crash_reason is ``parentBuildID != childBuildID``.
+    """Stomp on the signature if ``moz_crash_reason`` is ``parentBuildID != childBuildID``.
 
     In the case where the assertion fails, then the parent buildid and the child buildid are
     different. This causes a lot of strangeness particularly in symbolification, so the signatures
@@ -1025,4 +1105,21 @@ class SignatureParentIDNotEqualsChildID(Rule):
 
         # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature
         result.set_signature(self.name, "parentBuildID != childBuildID")
+        return True
+
+
+class HungProcess(Rule):
+    """Prepends ``hang: <hang_type>`` to the signature of hangs.
+
+    See bug `#1826703 <https://bugzilla.mozilla.org/show_bug.cgi?id=1826703>`__.
+
+    """
+
+    def predicate(self, crash_data, result):
+        hang_type = crash_data.get("hang", None)
+        return hang_type is not None
+
+    def action(self, crash_data, result):
+        hang_type = crash_data.get("hang")
+        result.set_signature(self.name, f"hang: {hang_type} | {result.signature}")
         return True

@@ -35,13 +35,11 @@ import logging
 import os
 
 import click
-from configman import ConfigurationManager
-from configman.environment import environment
 from elasticsearch_dsl import Search
 
-from socorro.external.boto.connection_context import S3Connection
+from socorro import settings
 from socorro.external.boto.crashstorage import build_keys
-from socorro.external.es.connection_context import ConnectionContext
+from socorro.libclass import build_instance_from_settings
 
 
 logging.basicConfig()
@@ -59,19 +57,19 @@ def crashid_generator(fn):
             yield line
 
 
-def get_s3_context():
+def get_s3_crashstorage():
     """Return an S3ConnectionContext."""
-    cm = ConfigurationManager(
-        S3Connection.get_required_config(), values_source_list=[environment]
-    )
-    config = cm.get_config()
-    return S3Connection(config)
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["s3"])
 
 
 def s3_delete_object(client, bucket, key):
     """Deletes a specific object from S3.
 
     Requires s3:DeleteObject.
+
+    :arg client: the s3 client
+    :arg bucket: the bucket name
+    :arg key: the key of the object to delete
 
     :return: True if the delete was fine or already not there; False if there was an
         error
@@ -82,7 +80,7 @@ def s3_delete_object(client, bucket, key):
         click.echo(f"s3: deleted {key!r}")
         return True
     except Exception:
-        logger.exception(f"ERROR: s3: when deleting {key!r}")
+        logger.exception("ERROR: s3: when deleting %r", key)
         return False
 
 
@@ -90,6 +88,10 @@ def s3_fetch_object(client, bucket, key):
     """Fetch an object from S3 with appropriate handling for issues.
 
     Requires s3:GetObject.
+
+    :arg client: the s3 client
+    :arg bucket: the bucket name
+    :arg key: the key of the object to delete
 
     :returns: Body or None
 
@@ -100,14 +102,14 @@ def s3_fetch_object(client, bucket, key):
     except client.exceptions.NoSuchKey:
         click.echo(f"s3: not found: {key!r}")
     except Exception:
-        logger.exception(f"ERROR: s3: when fetching {key!r}")
+        logger.exception("ERROR: s3: when fetching %r", key)
 
 
 def s3_delete(crashid):
     """Delete crash report data from S3."""
-    s3_context = get_s3_context()
-    bucket = s3_context.config.bucket_name
-    s3_client = s3_context.client
+    s3_crashstorage = get_s3_crashstorage()
+    bucket = s3_crashstorage.bucket
+    s3_client = s3_crashstorage.connection.client
 
     keys = build_keys("raw_crash", crashid)
     for key in keys:
@@ -132,6 +134,7 @@ def s3_delete(crashid):
     if dump_names:
         # For each dump, delete it if it exists
         dump_errors = 0
+
         for dump_name in dump_names:
             # Handle dump_name -> key goofiness
             if dump_name in (None, "", "upload_file_minidump"):
@@ -160,24 +163,20 @@ def s3_delete(crashid):
             s3_delete_object(s3_client, bucket, key)
 
 
-def get_es_conn():
+def get_es_crashstorage():
     """Return an Elasticsearch ConnectionContext."""
-    cm = ConfigurationManager(
-        ConnectionContext.get_required_config(), values_source_list=[environment]
-    )
-    config = cm.get_config()
-    return ConnectionContext(config)
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
 
 
-def es_fetch_document(es_conn, crashid):
+def es_fetch_document(es_crashstorage, crashid):
     """Fetch a crash report document from Elasticsearch.
 
     :returns: Elasticsearch document as a dict or None
 
     """
-    doc_type = es_conn.get_doctype()
+    doc_type = es_crashstorage.get_doctype()
 
-    with es_conn() as conn:
+    with es_crashstorage.client() as conn:
         try:
             search = Search(using=conn, doc_type=doc_type)
             search = search.filter("term", **{"processed_crash.uuid": crashid})
@@ -191,9 +190,9 @@ def es_fetch_document(es_conn, crashid):
     click.echo(f"es: not found: {doc_type} {crashid}")
 
 
-def es_delete_document(es_conn, index, doc_type, doc_id):
+def es_delete_document(es_crashstorage, index, doc_type, doc_id):
     """Delete document in Elasticsearch."""
-    with es_conn() as conn:
+    with es_crashstorage.client() as conn:
         try:
             conn.delete(index=index, doc_type=doc_type, id=doc_id)
             click.echo(f"es: deleted {index} {doc_type} {doc_id}")
@@ -205,11 +204,11 @@ def es_delete_document(es_conn, index, doc_type, doc_id):
 
 def es_delete(crashid):
     """Delete crash report data from Elasticsearch."""
-    es_conn = get_es_conn()
+    es_crashstorage = get_es_crashstorage()
 
-    resp = es_fetch_document(es_conn, crashid)
+    resp = es_fetch_document(es_crashstorage, crashid)
     if resp:
-        es_delete_document(es_conn, resp["_index"], resp["_type"], resp["_id"])
+        es_delete_document(es_crashstorage, resp["_index"], resp["_type"], resp["_id"])
 
 
 @click.command()

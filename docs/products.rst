@@ -12,6 +12,7 @@ Socorro supports specific products. If the product isn't supported, then the
 Socorro collector will reject those crash reports.
 
 .. contents::
+   :local:
 
 
 How to add crash reporting to your product

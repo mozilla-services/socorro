@@ -13,7 +13,7 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 from django.utils.safestring import SafeText
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats.templatetags.jinja_helpers import (
     generate_create_bug_url,
     change_query_string,
@@ -654,16 +654,16 @@ class Test_generate_create_bug_url:
         assert quote_plus("No crashing thread identified; using thread 0.") in url
         assert quote_plus("0  test_module  foo::bar") in url
 
-    @pytest.mark.parametrize("fn", productlib.get_product_files())
+    @pytest.mark.parametrize("fn", libproduct.get_product_files())
     def test_product_bug_links(self, fn):
         """Verify bug links templates are well-formed."""
-        product = productlib.load_product_from_file(fn)
+        product = libproduct.load_product_from_file(fn)
 
         req = RequestFactory().get("/report/index")
         raw_crash = {"DOMFissionEnabled": "1"}
         report = self._create_report()
 
-        for text, template in product.bug_links:
+        for _, template in product.bug_links:
             # If there's an error in the template, it'll raise an exception here
             generate_create_bug_url(req, template, raw_crash, report, {}, 0)
 

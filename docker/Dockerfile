@@ -3,7 +3,7 @@
 # =========================================================================
 
 # https://hub.docker.com/_/python
-FROM python:3.9.16-slim@sha256:e23b65d2ed7cbb4f9975bcc46421470ca670e8e47744fe4b03eb94d39311ad24
+FROM python:3.9.18-slim-bullseye@sha256:d09e0452f6fe44e662af689b379991cb3b21af72476a4e8b5fe54e07b6af4535
 
 # Set up user and group
 ARG groupid=10001
@@ -29,8 +29,8 @@ COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
 COPY --chown=app:app requirements.txt /app/
-RUN pip install -U 'pip==22.3.1' && \
-    pip install --no-cache-dir -r requirements.txt && \
+RUN pip install -U 'pip==23.3.1' && \
+    pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED=1 \
@@ -50,8 +50,8 @@ COPY --chown=app:app . /app/
 
 # Run collectstatic in container which puts files in the default place for
 # static files
-RUN cd /app/webapp/ && SECRET_KEY=fakekey python manage.py collectstatic --noinput
+RUN cd /app/webapp/ && TOOL_ENV=True python manage.py collectstatic --noinput
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.
-ENTRYPOINT ["/app/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/app/bin/entrypoint.sh"]

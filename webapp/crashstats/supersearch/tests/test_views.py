@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
 import re
 from unittest import mock
@@ -15,48 +16,32 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats.models import BugAssociation
-from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.models import Query, SuperSearchUnredacted
-from socorro.lib import BadArgumentError
+
+from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
-class TestViews(BaseTestViews):
-    def setUp(self):
-        super().setUp()
-        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
-        # supersearch mocking
-        self.mock_gvfp = mock.patch(
-            "crashstats.crashstats.utils.get_versions_for_product"
-        )
-        self.mock_gvfp.return_value = ["20.0", "19.1", "19.0", "18.0"]
-        self.mock_gvfp.start()
-
-    def tearDown(self):
-        self.mock_gvfp.stop()
-        super().tearDown()
-
-    def test_search_metrics(self):
+class TestViews:
+    def test_search_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search")
 
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
+            response = client.get(url)
+            assert response.status_code == 200
+            metrics_mock.assert_timing(
+                "webapp.view.pageview",
+                tags=[
+                    "ajax:false",
+                    "api:false",
+                    "path:/search/",
+                    "status:200",
+                ],
+            )
 
-        assert response.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/search/",
-                "status:200",
-            ],
-        )
-
-    def test_search(self):
-        self._login()
+    def test_search(self, client, db, es_helper):
         url = reverse("supersearch:search")
 
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
 
@@ -64,172 +49,98 @@ class TestViews(BaseTestViews):
         for field in settings.SIMPLE_SEARCH_FIELDS:
             assert field.capitalize().replace("_", " ") in smart_str(response.content)
 
-    def test_search_fields(self):
-        user = self._login()
+    def test_search_fields(self, client, db, es_helper, user_helper):
         url = reverse("supersearch:search_fields")
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
-        assert "WaterWolf" in smart_str(response.content)
-        assert "SeaMonkey" in smart_str(response.content)
-        assert "NightTrain" in smart_str(response.content)
+        data = json.loads(response.content)
+        # Assert product names in response; these come from libproduct
+        assert "Firefox" in data["product"]["values"]
+        assert "Focus" in data["product"]["values"]
+        assert "Fenix" in data["product"]["values"]
 
-        content = json.loads(response.content)
-        assert "signature" in content  # It contains at least one known field.
+        # Assert fields that are protected aren't in the data
+        assert "user_comments" not in data
 
-        # Verify non-exposed fields are not listed.
-        assert "a_test_field" not in content
-
-        # Verify fields with permissions are listed.
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
-
-        response = self.client.get(url)
+        # Log in with user with protected data permissions and verify protected fields
+        # are listed
+        user = user_helper.create_protected_user()
+        client.force_login(user)
+        response = client.get(url)
         assert response.status_code == 200
-        content = json.loads(response.content)
+        data = json.loads(response.content)
+        assert "user_comments" in data
 
-        assert "gmp_library_path" in content
-
-    def test_search_fields_metrics(self):
-        self._login()
+    def test_search_fields_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search_fields")
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
-        assert response.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/search/fields/",
-                "status:200",
-            ],
-        )
+            response = client.get(url)
+            assert response.status_code == 200
+            metrics_mock.assert_timing(
+                "webapp.view.pageview",
+                tags=[
+                    "ajax:false",
+                    "api:false",
+                    "path:/search/fields/",
+                    "status:200",
+                ],
+            )
 
-    def test_search_results(self):
+    def test_search_results(self, client, db, es_helper):
         BugAssociation.objects.create(
             bug_id=123456, signature="nsASDOMWindowEnumerator::GetNext()"
         )
 
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
+        def build_crash_data(**params):
+            crash_id = create_new_ooid()
+            data = {
+                "date_processed": utc_now(),
+                "uuid": crash_id,
+                "version": "1.0",
+                "os_name": "Linux",
+            }
+            data.update(params)
+            return data
 
-            if "WaterWolf" in params.get("product", []):
-                results = {
-                    "hits": [
-                        {
-                            "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "f74a5763-3270-4151-9c49-853710220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "<Linux>",
-                            "build_id": 888981,
-                        },
-                        {
-                            "signature": "mySignatureIsCool",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 888981,
-                        },
-                        {
-                            "signature": "mineIsCoolerThanYours",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": None,
-                        },
-                        {
-                            "signature": "EMPTY",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "2e982308-dc57-41a1-b997-b56f40220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": None,
-                        },
-                    ],
-                    "facets": {
-                        "signature": [
-                            {"term": "nsASDOMWindowEnumerator::GetNext()", "count": 1},
-                            {"term": "mySignatureIsCool", "count": 1},
-                            {"term": "mineIsCoolerThanYours", "count": 1},
-                            {"term": "EMPTY", "count": 1},
-                        ]
-                    },
-                    "total": 4,
-                }
-                results["hits"] = self.only_certain_columns(
-                    results["hits"], params["_columns"]
-                )
-                return results
-
-            elif "SeaMonkey" in params.get("product", []):
-                results = {
-                    "hits": [
-                        {
-                            "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "663c9970-3f35-4b15-beaf-756d60220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 888981,
-                        },
-                        {
-                            "signature": "mySignatureIsCool",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "1c6f67c8-a6ff-45ab-b5c5-4d2c20220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 888981,
-                        },
-                    ],
-                    "facets": {"build_id": [{"term": "888981", "count": 2}]},
-                    "total": 2,
-                }
-                results["hits"] = self.only_certain_columns(
-                    results["hits"], params["_columns"]
-                )
-                return results
-
-            elif "~nsASDOMWindowEnumerator" in params.get("signature", []):
-                results = {
-                    "hits": [
-                        {
-                            "signature": "nsASDOMWindowEnumerator::GetNext()",
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "ddb79c06-0d2f-4a7a-b2fc-d32a00220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 12345678,
-                        }
-                    ],
-                    "facets": {
-                        "signature": [
-                            {"term": "nsASDOMWindowEnumerator::GetNext()", "count": 1}
-                        ]
-                    },
-                    "total": 1,
-                }
-                results["hits"] = self.only_certain_columns(
-                    results["hits"], params["_columns"]
-                )
-                return results
-
-            else:
-                return {"hits": [], "facets": [], "total": 0}
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        crash_data = [
+            build_crash_data(
+                signature="nsASDOMWindowEnumerator::GetNext()",
+                product="Firefox",
+                build=20220705093820,
+            ),
+            build_crash_data(
+                signature="mySignatureIsCool",
+                product="Firefox",
+                os_name="<Windows>",
+                build=20220608170832,
+            ),
+            build_crash_data(
+                signature="mineIsCoolerThanYours",
+                product="Firefox",
+                build=None,
+            ),
+            build_crash_data(
+                signature="EMPTY",
+                product="Firefox",
+                build=None,
+            ),
+            build_crash_data(
+                signature="nsASDOMWindowEnumerator::GetNext()",
+                product="Thunderbird",
+                build=20220330194208,
+            ),
+            build_crash_data(
+                signature="mySignatureIsCool",
+                product="Thunderbird",
+                build=20220330194208,
+            ),
+        ]
+        for item in crash_data:
+            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+        es_helper.refresh()
 
         url = reverse("supersearch:search_results")
-        response = self.client.get(url, {"product": "WaterWolf"})
+        response = client.get(url, {"product": "Firefox"})
         assert response.status_code == 200
         # Test results are existing
         assert 'table id="reports-list"' in smart_str(response.content)
@@ -237,184 +148,132 @@ class TestViews(BaseTestViews):
         assert "mySignatureIsCool" in smart_str(response.content)
         assert "mineIsCoolerThanYours" in smart_str(response.content)
         assert "EMPTY" in smart_str(response.content)
-        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
-        assert "888981" in smart_str(response.content)
-        assert "Linux" in smart_str(response.content)
-        assert "2017-01-31 23:12:57" in smart_str(response.content)
+        # Make sure first crash report shows up in results
+        assert crash_data[0]["uuid"] in smart_str(response.content)
+        assert str(crash_data[0]["build"]) in smart_str(response.content)
+        assert crash_data[0]["os_name"] in smart_str(response.content)
         # Test facets are existing
         assert 'table id="facets-list-' in smart_str(response.content)
         # Test bugs are existing
         assert '<th scope="col">Bugs</th>' in smart_str(response.content)
         assert "123456" in smart_str(response.content)
         # Test links on terms are existing
-        assert "build_id=%3D888981" in smart_str(response.content)
+        assert "build_id=%3D" + str(crash_data[0]["build"]) in smart_str(
+            response.content
+        )
         # Refine links to the product should not be "is" queries
-        assert "product=WaterWolf" in smart_str(response.content)
+        assert "product=Firefox" in smart_str(response.content)
         # Refine links have values that are urlencoded (this is also a field that should
         # not be an "is" query)
-        assert "platform=%3CLinux%3E" in smart_str(response.content)
+        assert "platform=%3CWindows%3E" in smart_str(response.content)
 
-        # Test with empty results
-        response = self.client.get(url, {"product": "NightTrain", "date": "2012-01-01"})
+        # Test with empty results--we didn't index any crash reports for this product
+        response = client.get(url, {"product": "Fenix"})
         assert response.status_code == 200
         assert 'table id="reports-list"' not in smart_str(response.content)
         assert "No results were found" in smart_str(response.content)
 
-        # Test with a signature param
-        response = self.client.get(url, {"signature": "~nsASDOMWindowEnumerator"})
+        # Test with a signature param--make sure first crash report shows up
+        response = client.get(url, {"signature": "~nsASDOMWindowEnumerator"})
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
-        assert "nsASDOMWindowEnumerator::GetNext()" in smart_str(response.content)
+        assert crash_data[0]["signature"] in smart_str(response.content)
+        assert str(crash_data[0]["build"]) in smart_str(response.content)
+        # Make sure bugs show up because this has the signature facet by default
+        assert ">Bugs</th>" in smart_str(response.content)
         assert "123456" in smart_str(response.content)
 
-        # Test with a different facet
-        response = self.client.get(url, {"_facets": "build_id", "product": "SeaMonkey"})
+        # Test with a different facet--fourth crash report shows up
+        response = client.get(url, {"_facets": "build_id", "product": "Thunderbird"})
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
         assert 'table id="facets-list-' in smart_str(response.content)
-        assert "888981" in smart_str(response.content)
-        # Bugs should not be there, they appear only in the signature facet
+        assert str(crash_data[4]["build"]) in smart_str(response.content)
+        # Make sure bug does not show up
         assert "<th>Bugs</th>" not in smart_str(response.content)
         assert "123456" not in smart_str(response.content)
 
         # Test with a different columns list
-        response = self.client.get(
-            url, {"_columns": ["build_id", "platform"], "product": "WaterWolf"}
+        response = client.get(
+            url, {"_columns": ["build_id", "platform"], "product": "Thunderbird"}
         )
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
         assert 'table id="facets-list-' in smart_str(response.content)
         # The build and platform appear
-        assert "888981" in smart_str(response.content)
-        assert "Linux" in smart_str(response.content)
+        assert str(crash_data[4]["build"]) in smart_str(response.content)
+        assert crash_data[4]["os_name"] in smart_str(response.content)
         # The crash id is always shown
-        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
+        assert crash_data[4]["uuid"] in smart_str(response.content)
         # The version and date do not appear
-        assert "1.0" not in smart_str(response.content)
-        assert "2017" not in smart_str(response.content)
+        assert crash_data[4]["version"] not in smart_str(response.content)
+        # FIXME(willkg): date is hard to test because it changes forms when indexing
 
+    def test_search_results_missing_parameter_values(self, client, db, es_helper):
+        url = reverse("supersearch:search_results")
         # Test missing parameters don't raise an exception.
-        response = self.client.get(
-            url, {"product": "WaterWolf", "date": "", "build_id": ""}
+        response = client.get(
+            url, {"product": "Thunderbird", "date": "", "build_id": ""}
         )
         assert response.status_code == 200
 
-    def test_search_results_metrics(self):
-        def mocked_supersearch_get(**params):
-            return {"hits": [], "facets": [], "total": 0}
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
+    def test_search_results_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url, {"product": "WaterWolf"})
-        assert response.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/search/results/",
-                "status:200",
-            ],
-        )
+            response = client.get(url, {"product": "Firefox"})
+            assert response.status_code == 200
+            metrics_mock.assert_timing(
+                "webapp.view.pageview",
+                tags=[
+                    "ajax:false",
+                    "api:false",
+                    "path:/search/results/",
+                    "status:200",
+                ],
+            )
 
-    def test_search_results_ratelimited(self):
-        def mocked_supersearch_get(**params):
-            return {"hits": [], "facets": [], "total": 0}
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
+    def test_search_results_ratelimited(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         limit = int(re.findall(r"(\d+)", settings.RATELIMIT_SUPERSEARCH)[0])
-        params = {"product": "WaterWolf"}
-        # double to avoid https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-        for i in range(limit * 2):
-            self.client.get(url, params)
+        params = {"product": "Firefox"}
+        # Double to avoid rate limiting window issues. bug 1148470
+        for _ in range(limit * 2):
+            client.get(url, params)
         # NOTE(willkg): this way of denoting AJAX requests may not work with all
         # JS frameworks
-        response = self.client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        response = client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         assert response.status_code == 429
         assert smart_str(response.content) == "Too Many Requests"
         assert response["content-type"] == "text/plain"
 
-    def test_search_results_badargumenterror(self):
-        def mocked_supersearch_get(**params):
-            raise BadArgumentError("<script>xss")
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
+    def test_search_results_badargumenterror(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
-        params = {"product": "WaterWolf"}
-        response = self.client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        params = {"product": "<script>"}
+        response = client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
         assert response.status_code == 400
         assert response["content-type"] == "text/html; charset=utf-8"
         assert "<script>" not in smart_str(response.content)
         assert "&lt;script&gt;" in smart_str(response.content)
 
-    def test_search_results_admin_mode(self):
-        """Test that an admin can see more fields, and that a non-admin cannot."""
-
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
-
-            facets = {}
-            if "url" in params.get("_facets", []):
-                facets["url"] = [{"term": "http://example.org", "count": 3}]
-
-            if "platform" in params.get("_facets", []):
-                facets["platform"] = [{"term": "Linux", "count": 3}]
-
-            results = {
-                "hits": [
-                    {
-                        "signature": "nsASDOMWindowEnumerator::GetNext()",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": "f74a5763-3270-4151-9c49-853710220208",
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": 888981,
-                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.2449.0 ",
-                        "url": "http://example.org",
-                    },
-                    {
-                        "signature": "mySignatureIsCool",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": 888981,
-                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.2449.0 ",
-                        "url": "http://example.org",
-                    },
-                    {
-                        "signature": "mineIsCoolerThanYours",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": None,
-                        "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.5000.0 ",
-                        "url": "http://example.org",
-                    },
-                ],
-                "facets": facets,
-                "total": 3,
-            }
-            results["hits"] = self.only_certain_columns(
-                results["hits"], params["_columns"]
-            )
-            return results
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+    def test_search_results_permissions(self, client, db, es_helper, user_helper):
+        """Test that users with protected data access can see all fields."""
+        crash_id = create_new_ooid()
+        es_helper.index_crash(
+            raw_crash={},
+            processed_crash={
+                "uuid": crash_id,
+                "date_processed": utc_now(),
+                "version": "1.0",
+                "os_name": "Linux",
+                "gmp_library_path": "/home/me/gmp-widevinecdm/4.10.2449.0 ",
+                "url": "http://example.org",
+            },
+        )
 
         url = reverse("supersearch:search_results")
 
-        # When not logged in, user can only see public fields
-        response = self.client.get(
+        # Anonymous users can only see public fields
+        response = client.get(
             url,
             {
                 "_columns": ["version", "url", "gmp_library_path"],
@@ -432,12 +291,11 @@ class TestViews(BaseTestViews):
         assert "Gmp library path" not in smart_str(response.content)
         assert "widevinecdm" not in smart_str(response.content)
 
-        # Logged in user, can see public and protected data fields
-        user = self._login()
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
+        # Protected data access uers can see all fields
+        user = user_helper.create_protected_user()
+        client.force_login(user)
 
-        response = self.client.get(
+        response = client.get(
             url,
             {
                 "_columns": ["version", "url", "gmp_library_path"],
@@ -456,8 +314,8 @@ class TestViews(BaseTestViews):
         assert "widevinecdm" in smart_str(response.content)
 
         # Logged out user, can only see public fields
-        self._logout()
-        response = self.client.get(
+        client.logout()
+        response = client.get(
             url,
             {
                 "_columns": ["version", "url"],
@@ -475,86 +333,91 @@ class TestViews(BaseTestViews):
         assert "Gmp library path" not in smart_str(response.content)
         assert "widevinecdm" not in smart_str(response.content)
 
-    def test_search_results_parameters(self):
+    def test_search_results_parameters(self, client, db, es_helper):
+        """Verify all expected parameters are in the url."""
+        calls = []
+
         def mocked_supersearch_get(**params):
-            # Verify that all expected parameters are in the URL.
-            assert "product" in params
-            assert "WaterWolf" in params["product"]
-            assert "NightTrain" in params["product"]
-
-            assert "address" in params
-            assert "0x00000000" in params["address"]
-            assert "0xa0000000" in params["address"]
-
-            assert "reason" in params
-            assert "^hello" in params["reason"]
-            assert "$thanks" in params["reason"]
-
-            assert "java_stack_trace" in params
-            assert "Exception" in params["java_stack_trace"]
-
+            calls.append(params)
             return {"hits": [], "facets": "", "total": 0}
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        with mock.patch(
+            "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
+        ) as mocked_get_implementation:
+            mocked_get_implementation.return_value.get.side_effect = (
+                mocked_supersearch_get
+            )
 
-        url = reverse("supersearch:search_results")
+            url = reverse("supersearch:search_results")
 
-        response = self.client.get(
-            url,
-            {
-                "product": ["WaterWolf", "NightTrain"],
-                "address": ["0x00000000", "0xa0000000"],
-                "reason": ["^hello", "$thanks"],
-                "java_stack_trace": "Exception",
-            },
-        )
-        assert response.status_code == 200
+            response = client.get(
+                url,
+                {
+                    "product": ["Firefox", "Thunderbird"],
+                    "address": ["0x00000000", "0xa0000000"],
+                    "reason": ["^hello", "$thanks"],
+                    "java_stack_trace": "Exception",
+                },
+            )
+            assert response.status_code == 200
+            # First call is the call to get_versions_for_product(), so we ignore
+            # that
+            assert len(calls) == 2
+            params = calls[1]
 
-    def test_search_results_pagination(self):
+            # Verify that all expected parameters are there
+            assert "Firefox" in params["product"]
+            assert "Thunderbird" in params["product"]
+            assert "0x00000000" in params["address"]
+            assert "0xa0000000" in params["address"]
+            assert "^hello" in params["reason"]
+            assert "$thanks" in params["reason"]
+            assert "Exception" in params["java_stack_trace"]
+
+    def test_search_results_pagination(self, client, db, es_helper):
         """Test that the pagination of results works as expected."""
 
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
+        def build_crash_data(i):
+            # Make crash ids unique with the first 6 characters being i
+            crash_id = create_new_ooid()
+            crash_id = f"{i:06d}{crash_id[6:]}"
 
-            # Make sure a negative page does not lead to negative offset value.
-            # But instead it is considered as the page 1 and thus is not added.
-            assert params.get("_results_offset") == 0
+            # Make the date_processed unique and sortable by subtracting i * 5 minutes
+            date = date_from_ooid(crash_id) - datetime.timedelta(minutes=i * 5)
 
-            hits = []
-            for i in range(140):
-                crashid = f"{i:04d}5763-3270-4151-9c49-853710220208"
-                hits.append(
-                    {
-                        "signature": "hang | nsASDOMWindowEnumerator::GetNext()",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": crashid,
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": 888981,
-                    }
-                )
             return {
-                "hits": self.only_certain_columns(hits, params["_columns"]),
-                "facets": "",
-                "total": len(hits),
+                "date_processed": date_to_string(date),
+                "uuid": crash_id,
+                "signature": "hang | nsASDOMWindowEnumerator::GetNext()",
+                "product": "Firefox",
+                "version": "1.0",
+                "os_name": "Linux",
+                "build": 888981,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        crash_ids = []
+        for i in range(140):
+            data = build_crash_data(i)
+            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            crash_ids.append(data["uuid"])
+
+        es_helper.refresh()
 
         url = reverse("supersearch:search_results")
 
-        response = self.client.get(
+        response = client.get(
             url,
             {
                 "signature": "hang | nsASDOMWindowEnumerator::GetNext()",
                 "_columns": ["version"],
                 "_facets": ["platform"],
+                "_sort": "-date",
             },
         )
 
         assert response.status_code == 200
-        assert "140" in smart_str(response.content)
+        # The first crash is newest, so it shows up on first page
+        assert crash_ids[0] in smart_str(response.content)
 
         # Check that the pagination URL contains all three expected parameters.
         doc = pyquery.PyQuery(response.content)
@@ -564,114 +427,84 @@ class TestViews(BaseTestViews):
         assert "page=2" in next_page_url
         assert "#crash-reports" in next_page_url
 
-        # Verify white spaces are correctly encoded.
-        # Note we use `quote` and not `quote_plus`, so white spaces are
-        # turned into '%20' instead of '+'.
+        # Verify white spaces are correctly encoded. Note we use `quote` and not
+        # `quote_plus`, so white spaces are turned into '%20' instead of '+'.
         assert quote("hang | nsASDOMWindowEnumerator::GetNext()") in next_page_url
 
         # Test that a negative page value does not break it.
-        response = self.client.get(url, {"page": "-1"})
+        response = client.get(url, {"page": "-1"})
         assert response.status_code == 200
 
-    def create_custom_query_perm(self):
-        user = self._login()
-        group = self._create_group_with_permission("run_custom_queries")
-        user.groups.add(group)
 
-    def test_search_custom_permission(self):
-        def mocked_supersearch_get(**params):
-            return None
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
+class TestCustomQuery:
+    def test_search_custom_permission(self, client, db, es_helper, user_helper):
         url = reverse("supersearch:search_custom")
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 302
 
-        self.create_custom_query_perm()
+        user = user_helper.create_protected_plus_user()
+        client.force_login(user)
 
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
 
-    def test_search_custom(self):
-        def mocked_supersearch_get(**params):
-            return None
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
-        self.create_custom_query_perm()
-
-        url = reverse("supersearch:search_custom")
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert "Run a search to get some results" in smart_str(response.content)
-
-    def test_search_custom_metrics(self):
-        def mocked_supersearch_get(**params):
-            return None
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
-        self.create_custom_query_perm()
+    def test_search_custom_metrics(self, client, db, es_helper, user_helper):
+        user = user_helper.create_protected_plus_user()
+        client.force_login(user)
 
         url = reverse("supersearch:search_custom")
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
-        assert response.status_code == 200
+            response = client.get(url)
+            assert response.status_code == 200
+            metrics_mock.assert_timing(
+                "webapp.view.pageview",
+                tags=[
+                    "ajax:false",
+                    "api:false",
+                    "path:/search/custom/",
+                    "status:200",
+                ],
+            )
 
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/search/custom/",
-                "status:200",
-            ],
-        )
-
-    def test_search_custom_parameters(self):
-        self.create_custom_query_perm()
-
-        def mocked_supersearch_get(**params):
-            assert "_return_query" in params
-            assert "signature" in params
-            assert params["signature"] == ["nsA"]
-
-            return {
-                "query": {"query": None},
-                "indices": ["socorro200000", "socorro200001"],
-            }
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+    def test_search_custom_parameters(self, client, db, es_helper, user_helper):
+        es_helper.health_check()
+        user = user_helper.create_protected_plus_user()
+        client.force_login(user)
 
         url = reverse("supersearch:search_custom")
-        response = self.client.get(url, {"signature": "nsA"})
+        response = client.get(url, {"signature": "nsA"})
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
-        assert "{&#34;query&#34;: null}" in smart_str(response.content)
-        assert "socorro200000" in smart_str(response.content)
-        assert "socorro200001" in smart_str(response.content)
+        # Assert the query is in the editor
+        assert "{&#34;query&#34;:" in smart_str(response.content)
+        # Assert the available indices are there
+        template = es_helper.get_index_template()
+        now = utc_now()
+        indices = [
+            (now - datetime.timedelta(days=7)).strftime(template),
+            now.strftime(template),
+        ]
+        assert ",".join(indices) in smart_str(response.content)
 
-    def test_search_query(self):
-        self.create_custom_query_perm()
-
-        def mocked_query_get(**params):
-            assert "query" in params
-
-            return {"hits": []}
-
-        Query.implementation().get.side_effect = mocked_query_get
+    def test_search_query(self, client, db, es_helper, user_helper):
+        user = user_helper.create_protected_plus_user()
+        client.force_login(user)
 
         url = reverse("supersearch:search_query")
-        response = self.client.post(url, {"query": '{"query": {}}'})
+        query = json.dumps({"query": {"filtered": {"query": {"match_all": {}}}}})
+        response = client.post(url, {"query": query})
         assert response.status_code == 200
 
         content = json.loads(response.content)
-        assert "hits" in content
-        assert content["hits"] == []
+        # There's nothing indexed, so no results
+        assert content["hits"] == {"hits": [], "max_score": None, "total": 0}
 
-        # Test a failure.
-        response = self.client.post(url)
+    def test_search_query_failure(self, client, db, es_helper, user_helper):
+        user = user_helper.create_protected_plus_user()
+        client.force_login(user)
+
+        url = reverse("supersearch:search_query")
+        response = client.post(url)
         assert response.status_code == 400
         assert "query" in smart_str(response.content)

@@ -12,22 +12,12 @@
 
 set -euo pipefail
 
-# First convert configman environment vars which have bad identifiers to ones
-# that don't
-function getenv {
-    python -c "import os; print(os.environ['$1'])"
-}
-
-BUCKET="$(getenv 'resource.boto.bucket_name')"
-TELEMETRY_BUCKET="$(getenv 'destination.telemetry.bucket_name')"
-
-
 cd /app
 
 echo "Dropping and recreating S3 crash bucket..."
-(./bin/socorro_aws_s3.sh rb "s3://${BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
-./bin/socorro_aws_s3.sh mb "s3://${BUCKET}/"
+(./bin/socorro_aws_s3.sh rb "s3://${CRASHSTORAGE_S3_BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
+./bin/socorro_aws_s3.sh mb "s3://${CRASHSTORAGE_S3_BUCKET}/"
 
 echo "Dropping and recreating S3 telemetry bucket..."
-(./bin/socorro_aws_s3.sh rb "s3://${TELEMETRY_BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
-./bin/socorro_aws_s3.sh mb "s3://${TELEMETRY_BUCKET}/"
+(./bin/socorro_aws_s3.sh rb "s3://${TELEMETRY_S3_BUCKET}/" --force || true) 2> /dev/null # Ignore if it doesn't exist
+./bin/socorro_aws_s3.sh mb "s3://${TELEMETRY_S3_BUCKET}/"

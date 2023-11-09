@@ -6,12 +6,12 @@ from copy import deepcopy
 from datetime import timedelta
 from unittest import mock
 
-import elasticsearch
+import glom
 from markus.testing import MetricsMock
 import pytest
 
+from socorro import settings
 from socorro.external.es.crashstorage import (
-    ESCrashStorage,
     fix_boolean,
     fix_integer,
     fix_keyword,
@@ -19,16 +19,11 @@ from socorro.external.es.crashstorage import (
     fix_string,
     is_valid_key,
 )
-from socorro.lib.libdatetime import date_to_string, utc_now, string_to_datetime
-from socorro.lib.libooid import create_new_ooid
+
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.tests.external.es.base import ElasticsearchTestCase
-
-
-# Uncomment these lines to decrease verbosity of the elasticsearch library
-# while running unit tests.
-# import logging
-# logging.getLogger('elasticsearch').setLevel(logging.ERROR)
+from socorro.libclass import build_instance
+from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 # A sample crash report that is used for testing.
@@ -80,6 +75,12 @@ SAMPLE_PROCESSED_CRASH = {
 
 SAMPLE_RAW_CRASH = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
 
+REMOVED_VALUE = object()
+
+
+class FakeException(Exception):
+    pass
+
 
 class TestIsValidKey:
     @pytest.mark.parametrize(
@@ -93,57 +94,54 @@ class TestIsValidKey:
         assert is_valid_key(key) is False
 
 
-class TestIntegrationESCrashStorage(ElasticsearchTestCase):
-    """These tests interact with Elasticsearch (or some other external resource)."""
+class TestESCrashStorage:
+    def build_crashstorage(self):
+        return build_instance(
+            class_path="socorro.external.es.crashstorage.ESCrashStorage",
+            kwargs=settings.ES_STORAGE["options"],
+        )
 
-    def setup_method(self):
-        super().setup_method()
-        self.config = self.get_tuned_config(ESCrashStorage)
-
-    def test_index_crash(self):
+    def test_index_crash(self, es_helper):
         """Test indexing a crash document."""
-        es_storage = ESCrashStorage(config=self.config)
-
         raw_crash = deepcopy(SAMPLE_RAW_CRASH)
         processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
         processed_crash["date_processed"] = date_to_string(utc_now())
 
-        es_storage.save_processed_crash(
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
             raw_crash=raw_crash,
             processed_crash=processed_crash,
         )
 
-        # Ensure that the document was indexed by attempting to retreive it.
-        assert self.conn.get(
-            index=self.es_context.get_index_for_date(utc_now()),
-            id=SAMPLE_PROCESSED_CRASH["uuid"],
-        )
-        es_storage.close()
+        with es_helper.conn() as conn:
+            assert conn.get(
+                index=crashstorage.get_index_for_date(utc_now()),
+                id=SAMPLE_PROCESSED_CRASH["uuid"],
+            )
 
-    def test_index_crash_indexable_keys(self):
-        # Check super_search_fields.py for valid keys to update this
+    def test_index_crash_indexable_keys(self, es_helper):
+        """Test indexing ONLY indexes valid, known keys."""
         raw_crash = {
             "InvalidKey": "alpha",
         }
         processed_crash = {
-            "AnotherInvalidKey": "alpha",
+            "another_invalid_key": "alpha",
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
             "dom_fission_enabled": "1",
         }
 
-        es_storage = ESCrashStorage(config=self.config)
-
-        es_storage.save_processed_crash(
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
             raw_crash=raw_crash,
             processed_crash=processed_crash,
         )
 
-        # Ensure that the document was indexed by attempting to retreive it.
-        doc = self.conn.get(
-            index=self.es_context.get_index_for_date(utc_now()),
-            id=processed_crash["uuid"],
-        )
+        with es_helper.conn() as conn:
+            doc = conn.get(
+                index=crashstorage.get_index_for_date(utc_now()),
+                id=processed_crash["uuid"],
+            )
 
         # Verify keys that aren't in super_search_fields aren't in the raw or processed
         # crash parts
@@ -157,13 +155,16 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
             "uuid",
         ]
 
-    def test_index_crash_mapping_keys(self):
+    def test_index_crash_mapping_keys(self, es_helper):
         """Test indexing a crash that has keys not in the mapping
 
         Indexing a crash that has keys that aren't in the mapping for the index
         should cause those keys to be removed from the crash.
 
         """
+        # Delete all the indices so we have a fresh start
+        es_helper.delete_indices()
+
         # The test harness creates an index for this week and last week. So let's create
         # one for 4 weeks ago.
         now = utc_now()
@@ -171,22 +172,22 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
 
         field = "user_comments"
 
+        crashstorage = self.build_crashstorage()
+
         # We're going to use a mapping from super search fields, bug remove the
         # user_comments field.
-        mappings = build_mapping(self.es_context.get_doctype())
-        doctype = self.es_context.get_doctype()
+        mappings = build_mapping(crashstorage.get_doctype())
+        doctype = crashstorage.get_doctype()
         del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
 
         # Create the index for 4 weeks ago
-        self.es_context.create_index(
-            index_name=self.es_context.get_index_for_date(four_weeks_ago),
+        crashstorage.create_index(
+            index_name=crashstorage.get_index_for_date(four_weeks_ago),
             mappings=mappings,
         )
 
-        es_storage = ESCrashStorage(config=self.config)
-
         # Create a crash for this week and save it
-        now_uuid = "00000000-0000-0000-0000-000000120408"
+        now_uuid = create_new_ooid(timestamp=now)
         raw_crash = {
             "BuildID": "20200506000000",
         }
@@ -196,13 +197,13 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
             "uuid": now_uuid,
         }
 
-        es_storage.save_processed_crash(
+        crashstorage.save_processed_crash(
             raw_crash=raw_crash,
             processed_crash=processed_crash,
         )
 
         # Create a crash for four weeks ago with the bum mapping and save it
-        old_uuid = "11111111-1111-1111-1111-111111120408"
+        old_uuid = create_new_ooid(timestamp=four_weeks_ago)
         raw_crash = {
             "BuildID": "20200506000000",
         }
@@ -212,383 +213,43 @@ class TestIntegrationESCrashStorage(ElasticsearchTestCase):
             "uuid": old_uuid,
         }
 
-        es_storage.save_processed_crash(
+        crashstorage.save_processed_crash(
             raw_crash=raw_crash,
             processed_crash=processed_crash,
         )
 
-        self.es_context.refresh()
+        es_helper.refresh()
 
         # Retrieve the document from this week and verify it has the user_comments
         # field
-        doc = self.conn.get(
-            index=self.es_context.get_index_for_date(now),
-            id=now_uuid,
-        )
-        assert field in doc["_source"]["processed_crash"]
+        with es_helper.conn() as conn:
+            doc = conn.get(
+                index=crashstorage.get_index_for_date(now),
+                id=now_uuid,
+            )
+            assert field in doc["_source"]["processed_crash"]
 
         # Retrieve the document from four weeks ago and verify it doesn't have the
         # user_comments field
-        doc = self.conn.get(
-            index=self.es_context.get_index_for_date(four_weeks_ago),
-            id=old_uuid,
-        )
-        assert field not in doc["_source"]["processed_crash"]
-
-
-class TestESCrashStorage(ElasticsearchTestCase):
-    """These tests are self-contained and use Mock where necessary"""
-
-    def setup_method(self):
-        super().setup_method()
-        self.config = self.get_tuned_config(ESCrashStorage)
-
-    def test_index_crash(self):
-        """Mock test the entire crash submission mechanism"""
-        es_storage = ESCrashStorage(config=self.config)
-
-        # This is the function that would actually connect to ES; by mocking
-        # it entirely we are ensuring that ES doesn't actually get touched.
-        es_storage._submit_crash_to_elasticsearch = mock.Mock()
-
-        es_storage.save_processed_crash(
-            raw_crash=deepcopy(SAMPLE_RAW_CRASH),
-            processed_crash=deepcopy(SAMPLE_PROCESSED_CRASH),
-        )
-
-        # Ensure that the indexing function is only called once.
-        assert es_storage._submit_crash_to_elasticsearch.call_count == 1
-
-    @mock.patch("socorro.external.es.connection_context.elasticsearch")
-    def test_success(self, espy_mock):
-        """Test a successful index of a crash report"""
-        raw_crash = {
-            "BuildID": "20200605000",
-            "ProductName": "Firefox",
-            "ReleaseChannel": "nightly",
-        }
-        processed_crash = {
-            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "json_dump": {},
-            "date_processed": date_to_string(utc_now()),
-            "dom_fission_enabled": "1",
-        }
-
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        crash_id = processed_crash["uuid"]
-
-        # Submit a crash like normal, except that the back-end ES object is
-        # mocked (see the decorator above).
-        es_storage = ESCrashStorage(config=self.config)
-        es_storage.save_processed_crash(
-            raw_crash=raw_crash,
-            processed_crash=processed_crash,
-        )
-
-        # Ensure that the ES objects were instantiated by ConnectionContext.
-        assert espy_mock.Elasticsearch.called
-
-        # Ensure that the IndicesClient was also instantiated (this happens in
-        # IndexCreator but is part of the crashstorage workflow).
-        assert espy_mock.client.IndicesClient.called
-
-        # The actual call to index the document (crash).
-        document = {
-            "crash_id": crash_id,
-            "raw_crash": {},
-            "processed_crash": {
-                "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "dom_fission_enabled": "1",
-            },
-        }
-
-        additional = {
-            "doc_type": "crash_reports",
-            "id": crash_id,
-            "index": self.es_context.get_index_for_date(utc_now()),
-        }
-
-        sub_mock.index.assert_called_with(body=document, **additional)
-
-    @mock.patch("socorro.external.es.connection_context.elasticsearch")
-    def test_fatal_failure(self, espy_mock):
-        """Test an index attempt that fails catastrophically"""
-        sub_mock = mock.MagicMock()
-        espy_mock.Elasticsearch.return_value = sub_mock
-
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
-
-        # Oh the humanity!
-        failure_exception = Exception("horrors")
-        sub_mock.index.side_effect = failure_exception
-
-        # Submit a crash and ensure that it failed.
-        with pytest.raises(Exception):
-            es_storage.save_processed_crash(
-                raw_crash=deepcopy(SAMPLE_RAW_CRASH),
-                dumps=None,
-                processed_crsah=deepcopy(SAMPLE_PROCESSED_CRASH),
-                crash_id=crash_id,
+        with es_helper.conn() as conn:
+            doc = conn.get(
+                index=crashstorage.get_index_for_date(four_weeks_ago),
+                id=old_uuid,
             )
-
-    @mock.patch("elasticsearch.client")
-    @mock.patch("elasticsearch.Elasticsearch")
-    def test_indexing_bogus_string_field(self, es_class_mock, es_client_mock):
-        """Test an index attempt that fails because of a bogus string field.
-
-        Expected behavior is to remove that field and retry indexing.
-
-        """
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
-        raw_crash = {}
-        processed_crash = {
-            "date_processed": date_to_string(utc_now()),
-            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
-            # rejected by our mock_index call--this is wildly contrived.
-            "version": "some bogus value",
-            "uuid": crash_id,
-        }
-
-        def mock_index(*args, **kwargs):
-            if "version" in kwargs["body"]["processed_crash"]:
-                raise elasticsearch.exceptions.TransportError(
-                    400,
-                    "RemoteTransportException[[i-5exxx97][inet[/172.3.9.12:"
-                    "9300]][indices:data/write/index]]; nested: "
-                    "IllegalArgumentException[Document contains at least one "
-                    'immense term in field="processed_crash.version.full" '
-                    "(whose UTF8 encoding is longer than the max length 32766)"
-                    ", all of which were skipped.  Please correct the analyzer"
-                    " to not produce such terms.  The prefix of the first "
-                    "immense term is: '[124, 91, 48, 93, 91, 71, 70, 88, 49, "
-                    "45, 93, 58, 32, 65, 116, 116, 101, 109, 112, 116, 32, "
-                    "116, 111, 32, 99, 114, 101, 97, 116, 101]...', original "
-                    "message: bytes can be at most 32766 in length; got 98489]"
-                    "; nested: MaxBytesLengthExceededException"
-                    "[bytes can be at most 32766 in length; got 98489]; ",
-                )
-
-            return True
-
-        es_class_mock().index.side_effect = mock_index
-
-        # Submit a crash and ensure that it succeeds.
-        es_storage.save_processed_crash(
-            raw_crash=deepcopy(raw_crash),
-            processed_crash=deepcopy(processed_crash),
-        )
-
-        expected_doc = {
-            "crash_id": crash_id,
-            "removed_fields": "processed_crash.version",
-            "processed_crash": {
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "uuid": crash_id,
-            },
-            "raw_crash": {},
-        }
-        es_class_mock().index.assert_called_with(
-            index=self.es_context.get_index_for_date(utc_now()),
-            doc_type=self.config.elasticsearch.elasticsearch_doctype,
-            body=expected_doc,
-            id=crash_id,
-        )
-
-    @mock.patch("elasticsearch.client")
-    @mock.patch("elasticsearch.Elasticsearch")
-    def test_indexing_bogus_number_field(self, es_class_mock, es_client_mock):
-        """Test an index attempt that fails because of a bogus number field.
-
-        Expected behavior is to remove that field and retry indexing.
-
-        """
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = SAMPLE_PROCESSED_CRASH["uuid"]
-        raw_crash = {}
-        processed_crash = {
-            "date_processed": date_to_string(utc_now()),
-            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
-            # rejected by our mock_index call--this is wildly contrived.
-            "version": 1234567890,
-            "uuid": crash_id,
-        }
-
-        def mock_index(*args, **kwargs):
-            if "version" in kwargs["body"]["processed_crash"]:
-                raise elasticsearch.exceptions.TransportError(
-                    400,
-                    (
-                        "RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:"
-                        "9300]][indices:data/write/index]]; nested: "
-                        "MapperParsingException[failed to parse "
-                        "[processed_crash.version]]; nested: "
-                        "NumberFormatException[For input string: "
-                        '"18446744073709480735"]; '
-                    ),
-                )
-
-            return True
-
-        es_class_mock().index.side_effect = mock_index
-
-        # Submit a crash and ensure that it succeeds.
-        es_storage.save_processed_crash(
-            raw_crash=deepcopy(raw_crash),
-            processed_crash=deepcopy(processed_crash),
-        )
-
-        expected_doc = {
-            "crash_id": crash_id,
-            "removed_fields": "processed_crash.version",
-            "processed_crash": {
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "uuid": crash_id,
-            },
-            "raw_crash": {},
-        }
-        es_class_mock().index.assert_called_with(
-            index=self.es_context.get_index_for_date(utc_now()),
-            doc_type=self.config.elasticsearch.elasticsearch_doctype,
-            body=expected_doc,
-            id=crash_id,
-        )
-
-    @mock.patch("elasticsearch.client")
-    @mock.patch("elasticsearch.Elasticsearch")
-    def test_indexing_unknown_property_field(self, es_class_mock, es_client_mock):
-        """Test an index attempt that fails because of an unknown property.
-
-        Expected behavior is to remove that field and retry indexing.
-
-        """
-        es_storage = ESCrashStorage(config=self.config)
-
-        crash_id = create_new_ooid()
-        raw_crash = {
-            "ProductName": "Firefox",
-            "DOMFissionEnabled": "1",
-        }
-        processed_crash = {
-            "date_processed": date_to_string(utc_now()),
-            "dom_fission_enabled": "1",
-            # NOTE(willkg): This needs to be a key that's in super_search_fields, but is
-            # rejected by our mock_index call--this is wildly contrived.
-            "version": {"key": {"nested_key": "val"}},
-            "uuid": crash_id,
-        }
-
-        def mock_index(*args, **kwargs):
-            if "version" in kwargs["body"]["processed_crash"]:
-                raise elasticsearch.exceptions.TransportError(
-                    400,
-                    (
-                        "RemoteTransportException[[Madam Slay]"
-                        "[inet[/172.31.22.181:9300]][indices:data/write/index]]; "
-                        "nested: MapperParsingException"
-                        "[failed to parse [processed_crash.version]]; "
-                        "nested: "
-                        "ElasticsearchIllegalArgumentException[unknown property [key]]"
-                    ),
-                )
-
-            return True
-
-        es_class_mock().index.side_effect = mock_index
-
-        # Submit crash and verify.
-        es_storage.save_processed_crash(
-            raw_crash=raw_crash,
-            processed_crash=processed_crash,
-        )
-
-        expected_doc = {
-            "crash_id": crash_id,
-            "removed_fields": "processed_crash.version",
-            "processed_crash": {
-                "date_processed": string_to_datetime(processed_crash["date_processed"]),
-                "uuid": crash_id,
-                "dom_fission_enabled": "1",
-            },
-            "raw_crash": {},
-        }
-        es_class_mock().index.assert_called_with(
-            index=self.es_context.get_index_for_date(utc_now()),
-            doc_type=self.config.elasticsearch.elasticsearch_doctype,
-            body=expected_doc,
-            id=crash_id,
-        )
-
-    @mock.patch("elasticsearch.client")
-    @mock.patch("elasticsearch.Elasticsearch")
-    def test_indexing_unhandled_errors(self, es_class_mock, es_client_mock):
-        """Test an index attempt that fails because of unhandled errors.
-
-        Expected behavior is to fail indexing and raise the error.
-
-        """
-        es_storage = ESCrashStorage(config=self.config)
-
-        raw_crash = {}
-        processed_crash = {
-            "uuid": "9d8e7127-9d98-4d92-8ab1-065982200317",
-            "date_processed": date_to_string(utc_now()),
-        }
-
-        # Test with an error from which a field name cannot be extracted.
-        def mock_index_unparsable_error(*args, **kwargs):
-            raise elasticsearch.exceptions.TransportError(
-                400,
-                "RemoteTransportException[[i-f94dae31][inet[/172.31.1.54:"
-                "9300]][indices:data/write/index]]; nested: "
-                "MapperParsingException[BROKEN PART]; NumberFormatException",
-            )
-
-            return True
-
-        es_class_mock().index.side_effect = mock_index_unparsable_error
-
-        with pytest.raises(elasticsearch.exceptions.TransportError):
-            es_storage.save_processed_crash(
-                raw_crash=deepcopy(raw_crash),
-                processed_crash=deepcopy(processed_crash),
-            )
-
-        # Test with an error that we do not handle.
-        def mock_index_unhandled_error(*args, **kwargs):
-            raise elasticsearch.exceptions.TransportError(400, "Something went wrong")
-
-            return True
-
-        es_class_mock().index.side_effect = mock_index_unhandled_error
-
-        with pytest.raises(elasticsearch.exceptions.TransportError):
-            es_storage.save_processed_crash(
-                raw_crash=deepcopy(raw_crash),
-                processed_crash=deepcopy(processed_crash),
-            )
+            assert field not in doc["_source"]["processed_crash"]
 
     def test_crash_size_capture(self):
         """Verify we capture raw/processed crash sizes in ES crashstorage"""
+        crash_id = create_new_ooid()
         raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
         processed_crash = {
             "date_processed": "2012-04-08 10:56:41.558922",
-            "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
+            "uuid": crash_id,
         }
 
+        crashstorage = self.build_crashstorage()
         with MetricsMock() as mm:
-            es_storage = ESCrashStorage(config=self.config, namespace="processor.es")
-
-            es_storage._submit_crash_to_elasticsearch = mock.Mock()
-
-            es_storage.save_processed_crash(
+            crashstorage.save_processed_crash(
                 raw_crash=raw_crash,
                 processed_crash=processed_crash,
             )
@@ -597,24 +258,23 @@ class TestESCrashStorage(ElasticsearchTestCase):
             mm.assert_histogram("processor.es.processed_crash_size", value=96)
             mm.assert_histogram("processor.es.crash_document_size", value=186)
 
-    def test_index_data_capture(self):
+    def test_index_data_capture(self, es_helper):
         """Verify we capture index data in ES crashstorage"""
+        crashstorage = self.build_crashstorage()
+        mock_connection = mock.Mock()
         with MetricsMock() as mm:
-            es_storage = ESCrashStorage(config=self.config, namespace="processor.es")
-
-            mock_connection = mock.Mock()
-            # Do a successful indexing
-            es_storage._index_crash(
+            # Successful indexing
+            crashstorage._index_crash(
                 connection=mock_connection,
                 es_index=None,
                 es_doctype=None,
                 crash_document=None,
                 crash_id=None,
             )
-            # Do a failed indexing
-            mock_connection.index.side_effect = Exception
-            with pytest.raises(Exception):
-                es_storage._index_crash(
+            # Failed indexing
+            mock_connection.index.side_effect = FakeException
+            with pytest.raises(FakeException):
+                crashstorage._index_crash(
                     connection=mock_connection,
                     es_index=None,
                     es_doctype=None,
@@ -625,16 +285,111 @@ class TestESCrashStorage(ElasticsearchTestCase):
             mm.assert_histogram_once("processor.es.index", tags=["outcome:successful"])
             mm.assert_histogram_once("processor.es.index", tags=["outcome:failed"])
 
+    def test_delete_expired_indices(self, es_helper):
+        # Delete any existing indices first
+        es_helper.delete_indices()
+        es_helper.refresh()
+        es_helper.health_check()
+
+        # Create an index > retention_policy
+        crashstorage = self.build_crashstorage()
+        template = crashstorage.get_index_template()
+        now = utc_now()
+        current_index_name = now.strftime(template)
+        before_retention_policy = now - timedelta(weeks=crashstorage.retention_policy)
+        old_index_name = before_retention_policy.strftime(template)
+
+        crashstorage.create_index(current_index_name)
+        crashstorage.create_index(old_index_name)
+        es_helper.health_check()
+        assert list(es_helper.get_indices()) == [old_index_name, current_index_name]
+
+        # Delete all expired indices and verify old one is gone and new one is still
+        # there
+        crashstorage.delete_expired_indices()
+        es_helper.health_check()
+        assert list(es_helper.get_indices()) == [current_index_name]
+
+    # NOTE(willkg): This is dependent on supersearch fields. As we adjust
+    # supersearch fields, we may need to update this test.
+    @pytest.mark.parametrize(
+        "key, value, expected_value",
+        [
+            # Non-string keyword converted to "BAD DATA"
+            ("processed_crash.background_task_name", 44, "BAD DATA"),
+            # Long keywords are truncated
+            pytest.param(
+                "processed_crash.background_task_name",
+                "a" * 10_001,
+                "a" * 10_000,
+                id="long_keywords_truncated",
+            ),
+            # Non-string string converted to "BAD DATA"
+            ("processed_crash.user_comments", 44, "BAD DATA"),
+            # Long strings are truncated
+            pytest.param(
+                "processed_crash.user_comments",
+                "a" * 32_767,
+                "a" * 32_766,
+                id="long_strings_truncated",
+            ),
+            # Out-of-bounds integers are removed
+            (
+                "processed_crash.mac_available_memory_sysctl",
+                2_147_483_999,
+                REMOVED_VALUE,
+            ),
+            # Out-of-bounds longs are removed
+            (
+                "processed_crash.memory_explicit",
+                9_223_372_036_854_775_999,
+                REMOVED_VALUE,
+            ),
+            # Booleans are converted
+            # FIXME(willkg): fix_boolean is never called--that's wrong
+            # ("processed_crash.accessibility", "true", True),
+        ],
+    )
+    def test_indexing_bad_data(self, key, value, expected_value, es_helper):
+        crash_id = create_new_ooid()
+        raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
+        processed_crash = {
+            "date_processed": date_from_ooid(crash_id),
+            "uuid": crash_id,
+        }
+
+        # Put the processed_crash in a doc like we index so the keys match the shape of
+        # the structure, then set the value, then extract the processed crash structure
+        # so we can save it
+        doc = {"processed_crash": processed_crash}
+        glom.assign(doc, key, value, missing=dict)
+        processed_crash = doc["processed_crash"]
+
+        # Save the crash data and then fetch it and verify the value is as expected
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
+        )
+        es_helper.refresh()
+
+        doc = es_helper.get_crash_data(crash_id)
+        assert glom.glom(doc, key, default=REMOVED_VALUE) == expected_value
+
+    # FIXME(willkg): write tests for index error handling; this is tricky because
+    # when we have index error handling, we write code to fix the error, so it's
+    # hard to test the error situation
+
 
 @pytest.mark.parametrize(
     "value, expected",
     [
         # Non-string values are converted to "BAD DATA"
         (1, "BAD DATA"),
-        # String values are truncated if > 10,000 characters
-        ("a" * 9_999, "a" * 9_999),
-        ("a" * 10_000, "a" * 10_000),
-        ("a" * 10_001, "a" * 10_000),
+        # Keyword string values are truncated if > 10,000 characters
+        pytest.param("a" * 9_999, "a" * 9_999, id="keyword_9_999"),
+        pytest.param("a" * 10_000, "a" * 10_000, id="keyword_10_000"),
+        pytest.param("a" * 10_001, "a" * 10_000, id="keyword_10_001_truncated"),
     ],
 )
 def test_fix_keyword(value, expected):
@@ -648,9 +403,9 @@ def test_fix_keyword(value, expected):
         # Non string values are converted to "BAD DATA"
         (1, "BAD DATA"),
         # String values are truncated if > 32,766 characters
-        ("a" * 32_765, "a" * 32_765),
-        ("a" * 32_766, "a" * 32_766),
-        ("a" * 32_767, "a" * 32_766),
+        pytest.param("a" * 32_765, "a" * 32_765, id="string_32_765"),
+        pytest.param("a" * 32_766, "a" * 32_766, id="string_32_766"),
+        pytest.param("a" * 32_767, "a" * 32_766, id="string_32_767_truncated"),
         # Bad Unicode values shouldn't throw an exception
         (
             b"hi \xc3there".decode("utf-8", "surrogateescape"),

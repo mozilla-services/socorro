@@ -3,117 +3,117 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
-import shutil
-from unittest import mock
 
-from configman import ConfigurationManager
 import pytest
 
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
 from socorro.external.fs.crashstorage import FSPermanentStorage
 
 
-FS_ROOT = os.environ["resource.fs.fs_root"]
-
-
 class TestFSPermanentStorage:
-    CRASH_ID_1 = "0bba929f-8721-460c-dead-a43c20071025"
-    CRASH_ID_2 = "0bba929f-8721-460c-dead-a43c20071026"
-    CRASH_ID_3 = "0bba929f-8721-460c-dead-a43c20071027"
+    def test_save_raw_crash(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
 
-    def setup_method(self, method):
-        with self._common_config_setup().context() as config:
-            self.fsrts = FSPermanentStorage(config)
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        fs.save_raw_crash(raw_crash=raw_crash, dumps={}, crash_id=crash_id)
 
-    def teardown_method(self, method):
-        shutil.rmtree(self.fsrts.config.fs_root)
+        assert os.path.exists(fs._get_radixed_parent_directory(crash_id))
 
-    def _common_config_setup(self):
-        mock_logging = mock.Mock()
-        required_config = FSPermanentStorage.get_required_config()
-        required_config.add_option("logger", default=mock_logging)
-        config_manager = ConfigurationManager(
-            [required_config],
-            app_name="testapp",
-            app_version="1.0",
-            app_description="app description",
-            values_source_list=[{"logger": mock_logging, "fs_root": FS_ROOT}],
-            argv_source=[],
-        )
-        return config_manager
+    def test_save_processed_crash(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
 
-    def _make_test_crash(self, crash_id=CRASH_ID_1):
-        self.fsrts.save_raw_crash(
-            raw_crash={"test": "TEST"},
-            dumps=MemoryDumpsMapping(
-                {"foo": b"bar", self.fsrts.config.dump_field: b"baz"}
-            ),
-            crash_id=crash_id,
-        )
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        processed_crash = {"uuid": crash_id, "product_name": "Firefox"}
+        fs.save_processed_crash(raw_crash=raw_crash, processed_crash=processed_crash)
 
-    def _make_processed_test_crash(self):
-        self.fsrts.save_processed_crash(
-            {}, {"uuid": self.CRASH_ID_2, "test": "TEST", "url": "https://example.com/"}
-        )
-
-    def test_save_raw_crash(self):
-        self._make_test_crash()
-        assert os.path.exists(self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1))
-
-    def test_save_processed_crash(self):
-        self._make_processed_test_crash()
         assert os.path.exists(
             os.path.join(
-                self.fsrts._get_radixed_parent_directory(self.CRASH_ID_2),
-                self.CRASH_ID_2 + self.fsrts.config.jsonz_file_suffix,
+                fs._get_radixed_parent_directory(crash_id),
+                crash_id + fs.jsonz_file_suffix,
             )
         )
 
-    def test_get_raw_crash(self):
-        self._make_test_crash()
-        assert self.fsrts.get_raw_crash(self.CRASH_ID_1)["test"] == "TEST"
-        with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_raw_crash(self.CRASH_ID_2)
+    def test_get_raw_crash(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
 
-    def test_get_processed_crash(self):
-        self._make_processed_test_crash()
-        assert self.fsrts.get_processed(self.CRASH_ID_2)["test"] == "TEST"
-        with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_processed(self.CRASH_ID_1)
-
-    def test_get_raw_dump(self):
-        self._make_test_crash()
-        contents = self.fsrts.get_raw_dump(self.CRASH_ID_1, "foo")
-        assert contents == b"bar"
-
-        contents = self.fsrts.get_raw_dump(
-            self.CRASH_ID_1, self.fsrts.config.dump_field
-        )
-        assert contents == b"baz"
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
 
         with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_raw_dump(self.CRASH_ID_2, "foo")
+            fs.get_raw_crash(crash_id)
 
-        with pytest.raises(IOError):
-            self.fsrts.get_raw_dump(self.CRASH_ID_1, "foor")
+        fs.save_raw_crash(raw_crash=raw_crash, dumps={}, crash_id=crash_id)
+        ret = fs.get_raw_crash(crash_id)
+        assert ret["ProductName"] == "Firefox"
 
-    def test_get_dumps(self):
-        self._make_test_crash()
-        expected = MemoryDumpsMapping(
-            {"foo": b"bar", self.fsrts.config.dump_field: b"baz"}
-        )
-        assert self.fsrts.get_dumps(self.CRASH_ID_1) == expected
+    def test_get_processed_crash(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
+
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        processed_crash = {"uuid": crash_id, "product_name": "Firefox"}
 
         with pytest.raises(CrashIDNotFound):
-            self.fsrts.get_dumps(self.CRASH_ID_2)
+            fs.get_processed_crash(crash_id)
 
-    def test_remove(self):
-        self._make_test_crash()
-        self._make_test_crash(self.CRASH_ID_3)
-        self.fsrts.remove(self.CRASH_ID_1)
-        self.fsrts.remove(self.CRASH_ID_3)
-        assert not os.path.exists(
-            self.fsrts._get_radixed_parent_directory(self.CRASH_ID_1)
-        )
+        fs.save_processed_crash(raw_crash=raw_crash, processed_crash=processed_crash)
+        ret = fs.get_processed_crash(crash_id)
+        assert ret["product_name"] == "Firefox"
+
+    def test_get_raw_dump(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
+
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+
         with pytest.raises(CrashIDNotFound):
-            self.fsrts.remove(self.CRASH_ID_2)
+            fs.get_raw_dump(crash_id, name="memory_report")
+        with pytest.raises(CrashIDNotFound):
+            fs.get_raw_dump(crash_id, name=fs.dump_field)
+
+        dumps = {"memory_report": b"12345", fs.dump_field: b"abcde"}
+        fs.save_raw_crash(raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
+
+        ret = fs.get_raw_dump(crash_id, name="memory_report")
+        assert ret == b"12345"
+
+        ret = fs.get_raw_dump(crash_id, name=fs.dump_field)
+        assert ret == b"abcde"
+
+    def test_get_dumps(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
+
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        dumps = {"memory_report": b"12345", fs.dump_field: b"abcde"}
+
+        with pytest.raises(CrashIDNotFound):
+            fs.get_dumps(crash_id)
+
+        fs.save_raw_crash(raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
+        expected = MemoryDumpsMapping(dumps)
+        assert fs.get_dumps(crash_id) == expected
+
+    def test_remove(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
+
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        processed_crash = {"uuid": crash_id, "product_name": "Firefox"}
+        dumps = {"memory_report": b"12345", fs.dump_field: b"abcde"}
+
+        fs.save_raw_crash(raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
+        fs.save_processed_crash(raw_crash=raw_crash, processed_crash=processed_crash)
+
+        # Make sure they're all gettable
+        fs.get_raw_crash(crash_id)
+        fs.get_processed_crash(crash_id)
+        fs.get_dumps(crash_id)
+
+        # Remove the data
+        fs.remove(crash_id)
+        assert not os.path.exists(fs._get_radixed_parent_directory(crash_id))
+        with pytest.raises(CrashIDNotFound):
+            fs.get_raw_crash(crash_id)

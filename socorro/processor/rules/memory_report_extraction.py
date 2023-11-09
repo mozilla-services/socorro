@@ -20,7 +20,7 @@ class MemoryReportExtraction(Rule):
 
     """
 
-    def predicate(self, raw_crash, dumps, processed_crash, status):
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         try:
             # Verify that...
             return (
@@ -36,19 +36,24 @@ class MemoryReportExtraction(Rule):
         except KeyError:
             return False
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         pid = processed_crash["json_dump"]["pid"]
         memory_report = processed_crash["memory_report"]
 
         try:
             measures = self._get_memory_measures(memory_report, pid)
-        except ValueError as e:
-            self.logger.info(f"Unable to extract measurements from memory report: {e}")
-            return
-        except KeyError as e:
+        except ValueError as exc:
             self.logger.info(
-                "Unable to extract measurements from memory report: "
-                "key {} is missing from a report".format(e)
+                "Unable to extract measurements from memory report: %s", exc
+            )
+            return
+        except KeyError as exc:
+            self.logger.info(
+                (
+                    "Unable to extract measurements from memory report: "
+                    + "key %s is missing from a report"
+                ),
+                exc,
             )
             return
 

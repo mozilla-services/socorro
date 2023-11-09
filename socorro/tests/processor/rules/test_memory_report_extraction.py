@@ -5,6 +5,7 @@
 import os
 import json
 
+from socorro.processor.pipeline import Status
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 
 
@@ -18,7 +19,7 @@ def get_example_file_data(filename):
 
 
 class TestMemoryReportExtraction:
-    def test_predicate_success(self):
+    def test_predicate_success(self, tmp_path):
         rule = MemoryReportExtraction()
 
         processed_crash = {
@@ -30,26 +31,34 @@ class TestMemoryReportExtraction:
             "json_dump": {"pid": 42},
         }
 
-        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        predicate_result = rule.predicate(
+            {}, {}, processed_crash, str(tmp_path), Status()
+        )
         assert predicate_result
 
-    def test_predicate_no_match(self):
+    def test_predicate_no_match(self, tmp_path):
         rule = MemoryReportExtraction()
 
         processed_crash = {}
 
-        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        predicate_result = rule.predicate(
+            {}, {}, processed_crash, str(tmp_path), Status()
+        )
         assert not predicate_result
 
         processed_crash["memory_report"] = {}
-        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        predicate_result = rule.predicate(
+            {}, {}, processed_crash, str(tmp_path), Status()
+        )
         assert not predicate_result
 
         processed_crash["json_dump"] = {"pid": None}
-        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        predicate_result = rule.predicate(
+            {}, {}, processed_crash, str(tmp_path), Status()
+        )
         assert not predicate_result
 
-    def test_predicate_failure_bad_unrecognizable(self):
+    def test_predicate_failure_bad_unrecognizable(self, tmp_path):
         rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data("bad_unrecognizable.json")
@@ -59,10 +68,12 @@ class TestMemoryReportExtraction:
             "json_dump": {"pid": 11620},
         }
 
-        predicate_result = rule.predicate({}, {}, processed_crash, {})
+        predicate_result = rule.predicate(
+            {}, {}, processed_crash, str(tmp_path), Status()
+        )
         assert not predicate_result
 
-    def test_action_success(self):
+    def test_action_success(self, tmp_path):
         rule = MemoryReportExtraction()
 
         memory_report = get_example_file_data("good.json")
@@ -71,7 +82,7 @@ class TestMemoryReportExtraction:
             "memory_report": memory_report,
             "json_dump": {"pid": 11620},
         }
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" in processed_crash
 
@@ -97,7 +108,7 @@ class TestMemoryReportExtraction:
 
         # Test with a different pid
         processed_crash["json_dump"]["pid"] = 11717
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" in processed_crash
 
@@ -121,7 +132,7 @@ class TestMemoryReportExtraction:
         }
         assert processed_crash["memory_measures"] == expected_res
 
-    def test_action_failure_bad_kind(self, caplogpp):
+    def test_action_failure_bad_kind(self, tmp_path, caplogpp):
         caplogpp.set_level("DEBUG")
 
         rule = MemoryReportExtraction()
@@ -132,17 +143,17 @@ class TestMemoryReportExtraction:
             "memory_report": memory_report,
             "json_dump": {"pid": 11620},
         }
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" not in processed_crash
 
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "bad kind for an explicit/ report: explicit/foo, 2"
+            + "bad kind for an explicit/ report: explicit/foo, 2"
         )
 
-    def test_action_failure_bad_units(self, caplogpp):
+    def test_action_failure_bad_units(self, tmp_path, caplogpp):
         caplogpp.set_level("DEBUG")
 
         rule = MemoryReportExtraction()
@@ -153,17 +164,17 @@ class TestMemoryReportExtraction:
             "memory_report": memory_report,
             "json_dump": {"pid": 11620},
         }
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" not in processed_crash
 
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "bad units for an explicit/ report: explicit/foo, 1"
+            + "bad units for an explicit/ report: explicit/foo, 1"
         )
 
-    def test_action_failure_bad_pid(self, caplogpp):
+    def test_action_failure_bad_pid(self, tmp_path, caplogpp):
         caplogpp.set_level("DEBUG")
 
         rule = MemoryReportExtraction()
@@ -174,17 +185,17 @@ class TestMemoryReportExtraction:
             "memory_report": memory_report,
             "json_dump": {"pid": 12345},
         }
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" not in processed_crash
 
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "no measurements found for pid 12345"
+            + "no measurements found for pid 12345"
         )
 
-    def test_action_failure_key_error(self, caplogpp):
+    def test_action_failure_key_error(self, tmp_path, caplogpp):
         caplogpp.set_level("DEBUG")
 
         rule = MemoryReportExtraction()
@@ -195,12 +206,12 @@ class TestMemoryReportExtraction:
             "memory_report": memory_report,
             "json_dump": {"pid": 11620},
         }
-        rule.action({}, {}, processed_crash, {})
+        rule.action({}, {}, processed_crash, str(tmp_path), Status())
 
         assert "memory_measures" not in processed_crash
 
         msgs = [rec.message for rec in caplogpp.records]
         assert msgs[0] == (
             "Unable to extract measurements from memory report: "
-            "key 'process' is missing from a report"
+            + "key 'process' is missing from a report"
         )

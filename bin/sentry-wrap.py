@@ -69,7 +69,7 @@ def wrap_process(ctx, timeout, cmd):
 
     cmd = " ".join(cmd)
     cmd_args = shlex.split(cmd)
-    click.echo(f"Running: {cmd_args}")
+    click.echo(f"sentry-wrap: running: {cmd_args}")
 
     try:
         ret = subprocess.run(cmd_args, capture_output=True, timeout=timeout)
@@ -83,25 +83,25 @@ def wrap_process(ctx, timeout, cmd):
                 },
             )
             capture_message(f"Command {cmd!r} failed.")
-            click.echo(ret.stdout.decode("utf-8"))
-            click.echo(ret.stderr.decode("utf-8"))
+            click.echo(ret.stdout.decode("utf-8"), err=True)
+            click.echo(ret.stderr.decode("utf-8"), err=True)
             time_delta = (time.time() - start_time) / 1000
-            click.echo(f"Fail. {time_delta:.2f}s")
+            click.echo(f"sentry-wrap: fail. {time_delta:.2f}s", err=True)
             ctx.exit(1)
 
         else:
             click.echo(ret.stdout.decode("utf-8"))
             time_delta = (time.time() - start_time) / 1000
-            click.echo(f"Success! {time_delta:.2f}s")
+            click.echo(f"sentry-wrap: success! {time_delta:.2f}s")
 
     except click.exceptions.Exit:
         raise
 
     except Exception as exc:
         capture_exception(exc)
-        click.echo(traceback.format_exc())
+        click.echo(traceback.format_exc(), err=True)
         time_delta = (time.time() - start_time) / 1000
-        click.echo(f"Fail. {time_delta:.2f}s")
+        click.echo(f"sentry-wrap: fail. {time_delta:.2f}s", err=True)
         ctx.exit(1)
 
 

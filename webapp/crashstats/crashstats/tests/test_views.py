@@ -7,6 +7,7 @@ import json
 import re
 from unittest import mock
 
+import requests_mock
 import pyquery
 from markus.testing import MetricsMock
 
@@ -20,10 +21,13 @@ from django.test.utils import override_settings
 
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import BaseTestViews, Response
-from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.external.boto.crashstorage import build_keys, dict_to_str
+from socorro.lib.libdatetime import date_to_string
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
 
 
+RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
@@ -34,6 +38,7 @@ _SAMPLE_META = {
     "Vendor": "Mozilla",
     "URL": "someaddress.com",
     "Comments": "this is a comment",
+    "version": 2,
 }
 
 
@@ -70,6 +75,36 @@ _SAMPLE_PROCESSED = {
     # protected data
     "user_comments": "this is a comment",
 }
+
+
+def build_crash_data():
+    crash_id = create_new_ooid()
+
+    raw_crash = copy.deepcopy(_SAMPLE_META)
+    processed_crash = copy.deepcopy(_SAMPLE_PROCESSED)
+    processed_crash["uuid"] = crash_id
+    processed_crash["date_processed"] = date_to_string(date_from_ooid(crash_id))
+    return crash_id, raw_crash, processed_crash
+
+
+def upload_crash_data(s3_helper, raw_crash, processed_crash):
+    """Validate crash data and upload it to crash bucket"""
+    crash_id = processed_crash["uuid"]
+    bucket = s3_helper.get_crashstorage_bucket()
+
+    validate_instance(raw_crash, RAW_CRASH_SCHEMA)
+    raw_key = build_keys("raw_crash", crash_id)[0]
+    s3_helper.upload_fileobj(
+        bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
+    )
+
+    validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+    processed_key = build_keys("processed_crash", crash_id)[0]
+    s3_helper.upload_fileobj(
+        bucket_name=bucket,
+        key=processed_key,
+        data=dict_to_str(processed_crash).encode("utf-8"),
+    )
 
 
 SAMPLE_SIGNATURE_SUMMARY = {
@@ -237,51 +272,49 @@ class TestFaviconIco:
         assert response["Content-Type"] == "image/vnd.microsoft.icon"
 
 
-class TestViews(BaseTestViews):
-    @mock.patch("requests.Session")
-    def test_buginfo(self, rsession):
-        url = reverse("crashstats:buginfo")
-
-        def mocked_get(url, **options):
-            if "bug?id=123,456" in url:
-                return Response(
+class Test_buginfo:
+    def test_buginfo(self, client):
+        with requests_mock.Mocker(real_http=False) as mock_requests:
+            bugzilla_results = {
+                "bugs": [
                     {
-                        "bugs": [
-                            {
-                                "id": 123,
-                                "status": "NEW",
-                                "resolution": "",
-                                "summary": "Some Summary",
-                            },
-                            {
-                                "id": 456,
-                                "status": "NEW",
-                                "resolution": "",
-                                "summary": "Other Summary",
-                            },
-                        ]
-                    }
-                )
+                        "id": 907277,
+                        "status": "NEW",
+                        "resolution": "",
+                        "summary": "Some Summary",
+                    },
+                    {
+                        "id": 1529342,
+                        "status": "NEW",
+                        "resolution": "",
+                        "summary": "Other Summary",
+                    },
+                ]
+            }
+            mock_requests.get(
+                (
+                    "http://bugzilla.example.com/rest/bug?"
+                    + "id=907277,1529342&include_fields=summary,status,id,resolution"
+                ),
+                text=json.dumps(bugzilla_results),
+            )
 
-            raise NotImplementedError(url)
+            url = reverse("crashstats:buginfo")
+            response = client.get(url)
+            assert response.status_code == 400
 
-        rsession().get.side_effect = mocked_get
+            response = client.get(url, {"bug_ids": ""})
+            assert response.status_code == 400
 
-        response = self.client.get(url)
-        assert response.status_code == 400
+            response = client.get(url, {"bug_ids": " 907277, 1529342 "})
+            assert response.status_code == 200
 
-        response = self.client.get(url, {"bug_ids": ""})
-        assert response.status_code == 400
-
-        response = self.client.get(url, {"bug_ids": " 123, 456 "})
-        assert response.status_code == 200
-
-        struct = json.loads(response.content)
-        assert struct["bugs"]
-        assert struct["bugs"][0]["summary"] == "Some Summary"
+            struct = json.loads(response.content)
+            assert struct["bugs"]
+            assert struct["bugs"][0]["summary"] == "Some Summary"
 
     @mock.patch("requests.Session")
-    def test_buginfo_with_caching(self, rsession):
+    def test_buginfo_with_caching(self, rsession, client):
         url = reverse("crashstats:buginfo")
 
         def mocked_get(url, **options):
@@ -307,7 +340,7 @@ class TestViews(BaseTestViews):
 
         rsession().get.side_effect = mocked_get
 
-        response = self.client.get(
+        response = client.get(
             url, {"bug_ids": "987,654", "include_fields": "product,summary"}
         )
         assert response.status_code == 200
@@ -324,38 +357,40 @@ class TestViews(BaseTestViews):
         cache_key = "buginfo:987"
         assert cache.get(cache_key) == struct["bugs"][0]
 
-    def test_quick_search(self):
+
+class Test_quick_search:
+    def test_quick_search(self, client):
         url = reverse("crashstats:quick_search")
 
         # Test with no parameter.
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 302
         target = reverse("supersearch:search")
         assert response["location"].endswith(target)
 
         # Test with a signature.
-        response = self.client.get(url, {"query": "moz"})
+        response = client.get(url, {"query": "moz"})
         assert response.status_code == 302
         target = reverse("supersearch:search") + "?signature=~moz"
         assert response["location"].endswith(target)
 
         # Test with a crash_id.
         crash_id = "1234abcd-ef56-7890-ab12-abcdef130802"
-        response = self.client.get(url, {"query": crash_id})
+        response = client.get(url, {"query": crash_id})
         assert response.status_code == 302
         target = reverse("crashstats:report_index", kwargs=dict(crash_id=crash_id))
         assert response["location"].endswith(target)
 
         # Test a simple search containing a crash id and spaces
         crash_id = "   1234abcd-ef56-7890-ab12-abcdef130802 "
-        response = self.client.get(url, {"query": crash_id})
+        response = client.get(url, {"query": crash_id})
         assert response.status_code == 302
         assert response["location"].endswith(target)
 
-    def test_quick_search_metrics(self):
+    def test_quick_search_metrics(self, client):
         url = reverse("crashstats:quick_search")
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
+            response = client.get(url)
         assert response.status_code == 302
         metrics_mock.assert_timing(
             "webapp.view.pageview",
@@ -367,7 +402,9 @@ class TestViews(BaseTestViews):
             ],
         )
 
-    def test_report_index(self):
+
+class Test_report_index:
+    def test_report_index(self, client, db, s3_helper, user_helper):
         json_dump = {
             "system_info": {
                 "os": "Mac OS X",
@@ -378,38 +415,21 @@ class TestViews(BaseTestViews):
             },
         }
 
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+        )
+
         models.BugAssociation.objects.create(bug_id=222222, signature="FakeSignature1")
         models.BugAssociation.objects.create(bug_id=333333, signature="FakeSignature1")
         models.BugAssociation.objects.create(
             bug_id=444444, signature="Other FakeSignature"
         )
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
+        url = reverse("crashstats:report_index", args=(crash_id,))
         with MetricsMock() as metrics_mock:
-            response = self.client.get(url)
+            response = client.get(url)
 
         assert response.status_code == 200
         # which bug IDs appear is important and the order matters too
@@ -422,13 +442,13 @@ class TestViews(BaseTestViews):
         )
 
         assert "FakeSignature1" in content
-        assert "11cb72f5-eb28-41e1-a8e4-849982120611" in content
+        assert crash_id in content
 
         # Verify the "AMD CPU bug" marker is there.
         assert "Possible AMD CPU bug related crash report" in content
 
-        assert _SAMPLE_PROCESSED["user_comments"] not in content
-        assert _SAMPLE_META["URL"] not in content
+        assert processed_crash["user_comments"] not in content
+        assert raw_crash["URL"] not in content
         assert (
             "You need to be logged in and have access to protected data to see "
             "links to crash report data."
@@ -438,15 +458,13 @@ class TestViews(BaseTestViews):
         assert "OS X 10.11" in content
 
         # the protected data will appear if we log in
-        user = self._login()
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
-        assert user.has_perm("crashstats.view_pii")
+        user = user_helper.create_protected_user()
+        client.force_login(user)
 
-        response = self.client.get(url)
+        response = client.get(url)
         content = smart_str(response.content)
-        assert _SAMPLE_PROCESSED["user_comments"] in content
-        assert _SAMPLE_META["URL"] in content
+        assert processed_crash["user_comments"] in content
+        assert raw_crash["URL"] in content
         assert response.status_code == 200
 
         # Ensure fields have their description in title.
@@ -469,96 +487,31 @@ class TestViews(BaseTestViews):
         # If the user ceases to be active, these PII fields should disappear
         user.is_active = False
         user.save()
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
         content = smart_str(response.content)
-        assert _SAMPLE_PROCESSED["user_comments"] not in content
-        assert _SAMPLE_META["URL"] not in content
+        assert processed_crash["user_comments"] not in content
+        assert raw_crash["URL"] not in content
 
-    def test_report_index_with_raw_crash_unicode_key(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                raw = copy.deepcopy(_SAMPLE_META)
-                raw["Prénom"] = "Peter"
-                return raw
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return copy.deepcopy(_SAMPLE_PROCESSED)
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+    def test_raw_crash_unicode_key(self, client, db, s3_helper, user_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        # NOTE(willkg): The collector doesn't remove non-ascii keys currently. At some
+        # point, it probably should.
+        raw_crash["Pr\u00e9nom"] = "Peter"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        # Be logged in with view_pii to avoid allowlisting
-        user = self._login()
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
-        assert user.has_perm("crashstats.view_pii")
+        # Log in with protected data access to view all data
+        user = user_helper.create_protected_user()
+        client.force_login(user)
 
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = client.get(url)
         assert response.status_code == 200
-        # The response is a byte string so look for 'Pr\xc3\xa9nom' in the
-        # the client output.
-        # NOTE(willkg): the right side should be binary format
-        assert "Prénom".encode() in response.content
+        assert "Pr\u00e9nom" in smart_str(response.content)
 
-    def test_report_index_with_remote_type_raw_crash(self):
-        # If a processed crash has a 'process_type' value *and* if the raw
-        # crash has as 'RemoteType' then both of these values should be
-        # displayed in the HTML.
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                raw = copy.deepcopy(_SAMPLE_META)
-                raw["ProcessType"] = "content"
-                raw["RemoteType"] = "java-applet"
-                return raw
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                processed = copy.deepcopy(_SAMPLE_PROCESSED)
-                processed["process_type"] = "content"
-                return processed
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        # Log in because RemoteType is PII
-        user = self._login()
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
-        assert user.has_perm("crashstats.view_pii")
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        # Assert that it displays '{process_type}\s+({raw_crash.RemoteType})'
-        assert re.findall(
-            r"content[\s\n]+\(java-applet\)", smart_str(response.content), re.MULTILINE
-        )
-
-    def test_report_index_with_additional_raw_dump_links(self):
+    def test_additional_raw_dump_links(self, client, db, s3_helper, user_helper):
         json_dump = {
             "system_info": {
                 "os": "Mac OS X",
@@ -569,49 +522,20 @@ class TestViews(BaseTestViews):
             }
         }
 
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["metadata"] = {
+            "dump_checksums": {
+                "upload_file_minidump": "xxx",
+                "upload_file_minidump_foo": "xxx",
+                "upload_file_minidump_bar": "xxx",
+            },
+        }
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-
-            if params["datatype"] == "meta":
-                return {
-                    "InstallTime": "1339289895",
-                    "Theme": "classic/1.0",
-                    "Version": "5.0a1",
-                    "Vendor": "Mozilla",
-                    "URL": "farmville.com",
-                    "metadata": {
-                        "dump_checksums": {
-                            "upload_file_minidump": "xxx",
-                            "upload_file_minidump_foo": "xxx",
-                            "upload_file_minidump_bar": "xxx",
-                        },
-                    },
-                }
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
-        url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-        # first of all, expect these basic URLs
+        # Expect these urls
         raw_crash_url = "%s?crash_id=%s" % (
             reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
             crash_id,
@@ -620,26 +544,32 @@ class TestViews(BaseTestViews):
             reverse("api:model_wrapper", kwargs={"model_name": "RawCrash"}),
             crash_id,
         )
-        # not quite yet
+
+        # Request url as anonymous user--urls should not appear
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = client.get(url)
+        assert response.status_code == 200
         assert raw_crash_url not in smart_str(response.content)
         assert dump_url not in smart_str(response.content)
 
-        user = self._login()
-        response = self.client.get(url)
+        # Log in as a user without protected data access--urls should not appear
+        user = user_helper.create_user(username="user1")
+        client.force_login(user)
+        response = client.get(url)
         assert response.status_code == 200
-        # still they don't appear
         assert raw_crash_url not in smart_str(response.content)
         assert dump_url not in smart_str(response.content)
+        client.logout()
 
-        group = self._create_group_with_permission(["view_pii", "view_rawdump"])
-        user.groups.add(group)
-        response = self.client.get(url)
+        # Log in as a user with protected data access--urls should appear
+        user = user_helper.create_protected_user(username="user2")
+        client.force_login(user)
+        response = client.get(url)
         assert response.status_code == 200
-        # finally they appear
         assert raw_crash_url in smart_str(response.content)
         assert dump_url in smart_str(response.content)
 
-        # also, check that the other links are there
+        # Check that the other links are there
         foo_dump_url = (
             "%s?crash_id=%s&amp;format=raw&amp;name=upload_file_minidump_foo"
             % (
@@ -657,7 +587,7 @@ class TestViews(BaseTestViews):
         )
         assert bar_dump_url in smart_str(response.content)
 
-    def test_report_index_with_symbol_url_in_modules(self):
+    def test_symbol_url_in_modules(self, client, db, s3_helper, user_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -686,32 +616,15 @@ class TestViews(BaseTestViews):
             ],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash["additional_minidumps"] = "foo, bar,"
-                return crash
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["additional_minidumps"] = "foo, bar,"
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert 'id="modules-list"' in smart_str(response.content)
@@ -719,7 +632,7 @@ class TestViews(BaseTestViews):
             response.content
         )
 
-    def test_report_index_with_cert_subject_in_modules(self):
+    def test_cert_subject_in_modules(self, client, db, s3_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -750,32 +663,14 @@ class TestViews(BaseTestViews):
             "modules_contains_cert_info": True,
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash["additional_minidumps"] = "foo, bar,"
-                return crash
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert 'id="modules-list"' in smart_str(response.content)
@@ -787,7 +682,7 @@ class TestViews(BaseTestViews):
             smart_str(response.content),
         )
 
-    def test_report_index_with_unloaded_modules(self):
+    def test_unloaded_modules(self, client, db, s3_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -809,32 +704,14 @@ class TestViews(BaseTestViews):
             ],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash["additional_minidumps"] = "foo, bar,"
-                return crash
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert 'id="unloaded-modules-list"' in smart_str(response.content)
@@ -843,7 +720,7 @@ class TestViews(BaseTestViews):
         # Assert that the second unloaded module cert subject shows up
         assert "<td>Microsoft Windows</td>" in smart_str(response.content)
 
-    def test_report_index_with_shutdownhang_signature(self):
+    def test_shutdownhang_signature(self, client, db, s3_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 2},
             "status": "OK",
@@ -855,38 +732,23 @@ class TestViews(BaseTestViews):
             "modules": [],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-                crash["json_dump"] = json_dump
-                crash["signature"] = "shutdownhang | foo::bar()"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        processed_crash["json_dump"] = json_dump
+        processed_crash["signature"] = "shutdownhang | foo::bar()"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert "Crashing Thread (2)" not in smart_str(response.content)
         assert "Crashing Thread (0)" in smart_str(response.content)
 
-    def test_report_index_with_no_crashing_thread(self):
+    def test_no_crashing_thread(self, client, db, s3_helper):
         # If the json_dump has no crashing thread available, do not display a
         # specific crashing thread, but instead display all threads.
         json_dump = {
@@ -900,31 +762,15 @@ class TestViews(BaseTestViews):
             "modules": [],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                crash["signature"] = "foo::bar()"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["signature"] = "foo::bar()"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert "Crashing Thread" not in smart_str(response.content)
@@ -932,7 +778,7 @@ class TestViews(BaseTestViews):
         assert "Thread 1" in smart_str(response.content)
         assert "Thread 2" in smart_str(response.content)
 
-    def test_report_index_crashing_thread_table(self):
+    def test_crashing_thread_table(self, client, db, s3_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 0},
             "status": "OK",
@@ -991,39 +837,23 @@ class TestViews(BaseTestViews):
             "modules": [],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-                crash["json_dump"] = json_dump
-                crash["signature"] = "shutdownhang | foo::bar()"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        processed_crash["signature"] = "shutdownhang | foo::bar()"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # Make sure the "trust" parts show up in the page
         assert "context" in smart_str(response.content)
         assert "frame_pointer" in smart_str(response.content)
 
-    def test_inlines(self):
+    def test_inlines(self, client, db, s3_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 0},
             "status": "OK",
@@ -1071,34 +901,18 @@ class TestViews(BaseTestViews):
             "modules": [],
         }
 
-        processed_crash = copy.deepcopy(_SAMPLE_PROCESSED)
+        crash_id, raw_crash, processed_crash = build_crash_data()
+
         processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
         processed_crash["json_dump"] = json_dump
         processed_crash["signature"] = "shutdownhang | foo::bar()"
-        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return processed_crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # Make sure inline function show up
@@ -1107,7 +921,7 @@ class TestViews(BaseTestViews):
         assert "InlineFunction2" in smart_str(response.content)
         assert "inlinefile2.cpp:374" in smart_str(response.content)
 
-    def test_java_exception_table_not_logged_in(self):
+    def test_java_exception_table_not_logged_in(self, client, db, s3_helper):
         java_exception = {
             "exception": {
                 "values": [
@@ -1131,26 +945,14 @@ class TestViews(BaseTestViews):
             }
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            crash = copy.deepcopy(_SAMPLE_PROCESSED)
-            crash["java_exception"] = java_exception
-            return crash
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["java_exception"] = java_exception
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # Make sure it printed some java_exception data
@@ -1159,7 +961,7 @@ class TestViews(BaseTestViews):
         # Make sure "PII" is not in the crash report
         assert "[PII]" not in smart_str(response.content)
 
-    def test_java_exception_table_logged_in(self):
+    def test_java_exception_table_logged_in(self, client, db, s3_helper, user_helper):
         java_exception = {
             "exception": {
                 "values": [
@@ -1183,30 +985,17 @@ class TestViews(BaseTestViews):
             }
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            crash = copy.deepcopy(_SAMPLE_PROCESSED)
-            crash["java_exception"] = java_exception
-            return crash
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["java_exception"] = java_exception
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        user = self._login()
-        group = self._create_group_with_permission("view_pii")
-        user.groups.add(group)
+        user = user_helper.create_protected_user()
+        client.force_login(user)
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # Make sure it printed some java_exception data
@@ -1215,15 +1004,7 @@ class TestViews(BaseTestViews):
         # Make sure "PII" is in the crash report
         assert "[PII]" in smart_str(response.content)
 
-    def test_last_error_value(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
+    def test_last_error_value(self, client, db, s3_helper):
         json_dump = {
             "crash_info": {
                 "crashing_thread": 0,
@@ -1236,27 +1017,21 @@ class TestViews(BaseTestViews):
             ],
         }
 
-        def mocked_processed_crash_get(**params):
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                # Create a minimal json_dump with the last_error_value
-                crash["json_dump"] = json_dump
-                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-                return crash
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # Assert it's not in the content
         assert "Last Error Value" in smart_str(response.content)
 
-    def test_report_index_unpaired_surrogate(self):
+    def test_unpaired_surrogate(self, client, db, s3_helper):
         """An unpaired surrogate like \udf03 can't be encoded in UTF-8, so it is escaped."""
         json_dump = {
             "crash_info": {"crashing_thread": 0},
@@ -1275,108 +1050,66 @@ class TestViews(BaseTestViews):
             "threads": [{"frames": []}],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-                crash["signature"] = "shutdownhang | foo::bar()"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        processed_crash["signature"] = "shutdownhang | foo::bar()"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         # The escaped surrogate appears in the page
         assert "surrogate@example.com.xpi\\udf03" in smart_str(response.content)
 
-    def test_report_index_with_telemetry_environment(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash["TelemetryEnvironment"] = json.dumps(
-                    {
-                        "key": ["values"],
-                        "plainstring": "I am a string",
-                        "plainint": 12345,
-                        "empty": [],
-                        "foo": {"keyA": "AAA", "keyB": "BBB"},
-                    }
-                )
-                return crash
-            raise NotImplementedError
+    def test_telemetry_environment(self, client, db, s3_helper):
+        telemetry_environment = {
+            "build": {
+                "applicationId": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+                "applicationName": "Firefox",
+                "displayVersion": "109.0.1",
+                "platformVersion": "109.0.1",
+                "updaterAvailable": True,
+                "vendor": "Mozilla",
+                "version": "109.0.1",
+            },
+        }
 
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return copy.deepcopy(_SAMPLE_PROCESSED)
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["TelemetryEnvironment"] = json.dumps(telemetry_environment)
+        processed_crash["telemetry_environment"] = telemetry_environment
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
         url = reverse("crashstats:report_index", args=(crash_id,))
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 200
 
         assert "Telemetry Environment" in smart_str(response.content)
-        # it's non-trivial to check that the dict above is serialized exactly like jinja
+        # It's non-trivial to check that the dict above is serialized exactly like jinja
         # does it so let's just check the data attribute is there.
         assert 'id="telemetryenvironment-json"' in smart_str(response.content)
 
-    def test_report_index_odd_product_and_version(self):
-        # If the processed JSON references an unfamiliar product and version it
-        # should not use that to make links in the nav to reports for that
-        # unfamiliar product and version.
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
+    def test_odd_product_and_version(self, client, db, s3_helper):
+        # If the processed JSON references an unfamiliar product and version it should
+        # not use that to make links in the nav to reports for that unfamiliar product
+        # and version.
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["ProductName"] = "WaterWolf"
+        raw_crash["Version"] = "99.9"
+        processed_crash["product"] = "WaterWolf"
+        processed_crash["version"] = "99.9"
 
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["product"] = "WaterWolf"
-                crash["version"] = "99.9"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
         assert response.status_code == 200
         # the title should have the "SummerWolf 99.9" in it
         doc = pyquery.PyQuery(response.content)
@@ -1389,102 +1122,53 @@ class TestViews(BaseTestViews):
         bad_url = reverse("crashstats:product_home", args=("WaterWolf",))
         assert bad_url not in smart_str(response.content)
 
-    def test_report_index_no_dump(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                del crash["json_dump"]
-                return crash
-
-            raise NotImplementedError(url)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+    def test_no_dump(self, client, db, s3_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        del processed_crash["json_dump"]
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
         assert response.status_code == 200
         assert "No dump available" in smart_str(response.content)
 
-    def test_report_index_invalid_crash_id(self):
-        # last 6 digits indicate 30th Feb 2012 which doesn't exist
+    def test_invalid_crash_id(self, client, db, s3_helper):
+        # Last 6 digits indicate 30th Feb 2012 which doesn't exist so this is an invalid
+        # crash_id
         url = reverse(
             "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120230"]
         )
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 400
         assert "Invalid crash ID" in smart_str(response.content)
         assert response["Content-Type"] == "text/html; charset=utf-8"
 
-    def test_report_index_with_valid_install_time(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return {"InstallTime": "1461170304", "Version": "5.0a1"}
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return copy.deepcopy(_SAMPLE_PROCESSED)
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+    def test_valid_install_time(self, client, db, s3_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["InstallTime"] = "1461170304"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
         assert "Install Time</th>" in smart_str(response.content)
         # This is what 1461170304 is in human friendly format.
         assert "2016-04-20 16:38:24" in smart_str(response.content)
 
-    def test_report_index_with_invalid_install_time(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                crash = copy.deepcopy(_SAMPLE_META)
-                crash["InstallTime"] = "Not a number"
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return copy.deepcopy(_SAMPLE_PROCESSED)
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+    def test_invalid_install_time(self, client, db, s3_helper):
+        # NOTE(willkg): this is no longer an issue when we switch the template to
+        # render the install time from the processed crash
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        raw_crash["InstallTime"] = "bad number"
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
         # The heading is there but there should not be a value for it
         doc = pyquery.PyQuery(response.content)
         # Look for a <tr> whose <th> is 'Install Time', then
@@ -1493,182 +1177,71 @@ class TestViews(BaseTestViews):
             if pyquery.PyQuery(row).find("th").text() == "Install Time":
                 assert pyquery.PyQuery(row).find("td").text() == ""
 
-    def test_report_index_with_invalid_parsed_dump(self):
-        json_dump = {
-            "crash_info": {
-                "address": "0x88",
-                "type": "EXCEPTION_ACCESS_VIOLATION_READ",
-            },
-            "main_module": 0,
-            "modules": [
-                {
-                    "base_addr": "0x980000",
-                    "debug_file": "foo.pdb",
-                    "debug_id": "5F3C0D3034CA49FE9B94FC97EBF590A81",
-                    "end_addr": "0xb4d000",
-                    "filename": "foo.exe",
-                    "version": "13.0.0.214",
-                }
-            ],
-            "status": "OK",
-            "system_info": {
-                "cpu_arch": "x86",
-                "cpu_count": 8,
-                "cpu_info": "GenuineIntel family 6 model 26 stepping 4",
-                "os": "Windows NT",
-                "os_ver": "6.0.6002 Service Pack 2",
-            },
-            "thread_count": 1,
-            "threads": [{"frame_count": 0, "frames": []}],
-        }
-
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
-        )
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
-        assert "<th>Install Time</th>" not in smart_str(response.content)
-
-    def test_report_index_with_sparse_json_dump(self):
+    def test_empty_json_dump(self, client, db, s3_helper):
         json_dump = {"stackwalker_version": "minidump_stackwalk 0.10.3 ..."}
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
-
-        url = reverse(
-            "crashstats:report_index", args=["11cb72f5-eb28-41e1-a8e4-849982120611"]
-        )
-        response = self.client.get(url)
-        assert response.status_code == 200
-
-    def test_report_index_raw_crash_not_found(self):
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
-
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                raise CrashIDNotFound(params["uuid"])
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
 
         url = reverse("crashstats:report_index", args=[crash_id])
-        response = self.client.get(url)
+        response = client.get(url)
+        assert response.status_code == 200
+
+    def test_raw_crash_not_found(self, client, db, s3_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+
+        bucket = s3_helper.get_crashstorage_bucket()
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+        processed_key = build_keys("processed_crash", crash_id)[0]
+        s3_helper.upload_fileobj(
+            bucket_name=bucket,
+            key=processed_key,
+            data=dict_to_str(processed_crash).encode("utf-8"),
+        )
+
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
 
         assert response.status_code == 404
         assert "Crash Report Not Found" in smart_str(response.content)
 
-    def test_report_index_processed_crash_not_found(self):
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+    def test_processed_crash_not_found(self, client, db, s3_helper, sqs_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
 
-        def mocked_raw_crash_get(**params):
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            if params["datatype"] == "processed":
-                raise CrashIDNotFound(params["uuid"])
-
-            raise NotImplementedError
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        bucket = s3_helper.get_crashstorage_bucket()
+        validate_instance(raw_crash, RAW_CRASH_SCHEMA)
+        raw_key = build_keys("raw_crash", crash_id)[0]
+        s3_helper.upload_fileobj(
+            bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
         )
 
-        def mocked_publish(**params):
-            assert params["crash_ids"] == [crash_id]
-            return True
-
-        models.PriorityJob.implementation().publish.side_effect = mocked_publish
-
         url = reverse("crashstats:report_index", args=[crash_id])
-        response = self.client.get(url)
+        response = client.get(url)
 
         assert response.status_code == 200
         content = smart_str(response.content)
         assert "Please wait..." in content
         assert "Processing this crash report only takes a few seconds" in content
 
-    def test_report_index_redirect_by_prefix(self):
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError(params)
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                return copy.deepcopy(_SAMPLE_PROCESSED)
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+    def test_redirect_by_prefix(self, client, db, s3_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
-        base_crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
-        crash_id = settings.CRASH_ID_PREFIX + base_crash_id
-        assert len(crash_id) > 36
-        url = reverse("crashstats:report_index", kwargs={"crash_id": crash_id})
-        response = self.client.get(url, follow=False)
-        expected = reverse(
-            "crashstats:report_index", kwargs={"crash_id": base_crash_id}
+        url = reverse(
+            "crashstats:report_index", args=(f"{settings.CRASH_ID_PREFIX}{crash_id}",)
         )
+        response = client.get(url, follow=False)
+        expected = reverse("crashstats:report_index", kwargs={"crash_id": crash_id})
         assert response.url == expected
 
-    def test_report_index_with_thread_name(self):
-        # Some threads now have a name. If there is one, verify that name is
-        # displayed next to that thread's number.
-        crash_id = "11cb72f5-eb28-41e1-a8e4-849982120611"
+    def test_thread_name(self, client, db, s3_helper):
+        # Some threads now have a name. If there is one, verify that name is displayed
+        # next to that thread's number.
         json_dump = {
             "crash_info": {"crashing_thread": 1},
             "thread_count": 2,
@@ -1686,32 +1259,15 @@ class TestViews(BaseTestViews):
             ],
         }
 
-        def mocked_raw_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "meta":
-                return copy.deepcopy(_SAMPLE_META)
-
-            raise NotImplementedError
-
-        models.RawCrash.implementation().get.side_effect = mocked_raw_crash_get
-
-        def mocked_processed_crash_get(**params):
-            assert "datatype" in params
-            if params["datatype"] == "processed":
-                crash = copy.deepcopy(_SAMPLE_PROCESSED)
-                crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-                crash["json_dump"] = json_dump
-                return crash
-
-            raise NotImplementedError(params)
-
-        models.ProcessedCrash.implementation().get.side_effect = (
-            mocked_processed_crash_get
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["json_dump"] = json_dump
+        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
+        upload_crash_data(
+            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
-
-        response = self.client.get(url)
+        response = client.get(url)
         assert "Crashing Thread (1), Name: I am a Crashing Thread" in smart_str(
             response.content
         )

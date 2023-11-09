@@ -29,15 +29,13 @@ import os
 
 from botocore.client import ClientError
 import click
-from configman import ConfigurationManager
-from configman.environment import environment
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch_dsl import Search
 from more_itertools import chunked
 
-from socorro.external.boto.connection_context import S3Connection
+from socorro import settings
 from socorro.external.boto.crashstorage import build_keys, dict_to_str
-from socorro.external.es.connection_context import ConnectionContext
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.util import retry
 
 
@@ -51,22 +49,14 @@ CHUNK_SIZE = 1000
 logger = logging.getLogger(__name__)
 
 
-def get_s3_context():
-    """Return an S3ConnectionContext."""
-    cm = ConfigurationManager(
-        S3Connection.get_required_config(), values_source_list=[environment]
-    )
-    config = cm.get_config()
-    return S3Connection(config)
+def get_s3_crashstorage():
+    """Return an S3 crash storage instance."""
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["s3"])
 
 
-def get_es_conn():
-    """Return an Elasticsearch ConnectionContext."""
-    cm = ConfigurationManager(
-        ConnectionContext.get_required_config(), values_source_list=[environment]
-    )
-    config = cm.get_config()
-    return ConnectionContext(config)
+def get_es_crashstorage():
+    """Return an Elasticsearch crash storage instance."""
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
 
 
 def crashid_generator(fn):
@@ -89,8 +79,11 @@ def wait_times_access():
     wait_time_generator=wait_times_access,
     module_logger=logger,
 )
-def fix_data_in_s3(fields, bucket, s3_client, crash_data):
+def fix_data_in_s3(fields, s3_crashstorage, crash_data):
     """Fix data in raw_crash file in S3."""
+    bucket = s3_crashstorage.bucket
+    s3_client = s3_crashstorage.connection
+
     crashid = crash_data["crashid"]
 
     # Iterate through the available keys until we find one we like.
@@ -98,10 +91,10 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
     path = None
     for possible_path in paths:
         try:
-            resp = s3_client.get_object(Bucket=bucket, Key=possible_path)
+            resp = s3_client.load_file(bucket=bucket, path=possible_path)
             path = possible_path
             break
-        except s3_client.exceptions.NoSuchKey:
+        except s3_client.KeyNotFound:
             continue
 
     if not path:
@@ -118,10 +111,10 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
             should_save = True
 
     if should_save:
-        s3_client.upload_fileobj(
-            Fileobj=io.BytesIO(dict_to_str(data).encode("utf-8")),
-            Bucket=bucket,
-            Key=path,
+        s3_client.save_file(
+            bucket=bucket,
+            path=path,
+            data=io.BytesIO(dict_to_str(data).encode("utf-8")),
         )
         click.echo("# s3: fixed raw crash")
     else:
@@ -133,13 +126,13 @@ def fix_data_in_s3(fields, bucket, s3_client, crash_data):
     wait_time_generator=wait_times_access,
     module_logger=logger,
 )
-def fix_data_in_es(fields, es_conn, crash_data):
+def fix_data_in_es(fields, es_crashstorage, crash_data):
     """Fix document in Elasticsearch."""
     crashid = crash_data["crashid"]
     index = crash_data["index"]
+    doc_type = es_crashstorage.get_doctype()
 
-    doc_type = es_conn.get_doctype()
-    with es_conn() as conn:
+    with es_crashstorage.client() as conn:
         search = Search(using=conn, index=index, doc_type=doc_type)
         search = search.filter("term", **{"processed_crash.uuid": crashid})
         results = search.execute().to_dict()
@@ -162,19 +155,16 @@ def fix_data_in_es(fields, es_conn, crash_data):
 
 
 def fix_data(crashids, fields):
-    s3_context = get_s3_context()
-    bucket = s3_context.config.bucket_name
-    s3_client = s3_context.client
-
-    es_conn = get_es_conn()
+    s3_crashstorage = get_s3_crashstorage()
+    es_crashstorage = get_es_crashstorage()
 
     for crashid in crashids:
         click.echo("# working on %s" % crashid)
 
         # Fix the data in S3 and then Elasticsearch
         try:
-            fix_data_in_s3(fields, bucket, s3_client, crashid)
-            fix_data_in_es(fields, es_conn, crashid)
+            fix_data_in_s3(fields, s3_crashstorage, crashid)
+            fix_data_in_es(fields, es_crashstorage, crashid)
         except Exception:
             # If this throws an exception, print it out and move on. Then we'll finish
             # all the fixing for the first pass and can address the problematic crash

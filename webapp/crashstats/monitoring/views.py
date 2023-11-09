@@ -5,8 +5,6 @@
 import datetime
 import uuid
 
-import elasticsearch
-
 from django.conf import settings
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Permission
@@ -14,11 +12,13 @@ from django.core.cache import cache
 from django.shortcuts import render
 from django.utils import timezone
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import utils
 from crashstats.cron import MAX_ONGOING
 from crashstats.cron.models import Job as CronJob
 from crashstats.supersearch.models import SuperSearch
+from socorro import settings as socorro_settings
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdockerflow import get_version_info
 
 
@@ -80,20 +80,20 @@ def dockerflow_heartbeat(request):
     Returns HTTP 200 if everything is ok or HTTP 500 on error.
 
     """
-    # Perform a basic DB query
+    # Test database
     Permission.objects.all().count()
 
-    # We should also be able to set and get a cache value
+    # Test caching
     cache_key = "__healthcheck__" + str(uuid.uuid4())
     try:
         cache.set(cache_key, 1, 10)
     except Exception as exc:
-        raise HeartbeatException(f"cache.set failed: {exc}")
+        raise HeartbeatException(f"cache.set failed: {exc}") from exc
 
     try:
         val = cache.get(cache_key)
     except Exception as exc:
-        raise HeartbeatException(f"cache.get failed: {exc}")
+        raise HeartbeatException(f"cache.get failed: {exc}") from exc
 
     if not val:
         raise HeartbeatException(f"cache.get failed: {cache_key} not available")
@@ -101,33 +101,28 @@ def dockerflow_heartbeat(request):
     try:
         cache.delete(cache_key)
     except Exception as exc:
-        raise HeartbeatException(f"cache.delete failed: {exc}")
+        raise HeartbeatException(f"cache.delete failed: {exc}") from exc
 
-    # Perform a basic Elasticsearch query
-    es = elasticsearch.Elasticsearch(
-        hosts=settings.ELASTICSEARCH_URLS,
-        timeout=30,
-        connection_class=elasticsearch.connection.RequestsHttpConnection,
-        verify_certs=True,
-    )
-    # This will raise an error if there's a problem with the cluster
+    es = build_instance_from_settings(socorro_settings.ES_STORAGE)
+
+    # Test Elasticsearch
     try:
-        es.info()
+        with es.client() as conn:
+            conn.info()
     except Exception as exc:
-        raise HeartbeatException(f"es.info failed: {exc}")
+        raise HeartbeatException(f"es.info failed: {exc}") from exc
 
-    # Check SuperSearch paginated results
     supersearch = SuperSearch()
     supersearch.cache_seconds = 0
     try:
         results = supersearch.get(
-            product=productlib.get_default_product().name,
+            product=libproduct.get_default_product().name,
             _results_number=1,
             _columns=["uuid"],
             _facets_size=1,
         )
     except Exception as exc:
-        raise HeartbeatException(f"supersearch failed: {exc}")
+        raise HeartbeatException(f"supersearch failed: {exc}") from exc
 
     if results.get("errors"):
         raise HeartbeatException(f"supersearch failed: {results['errors']}")
@@ -141,9 +136,13 @@ def dockerflow_lbheartbeat(request):
     return {"ok": True}
 
 
+class IntentionalException(Exception):
+    pass
+
+
 def broken(request):
     """Throws an error to test Sentry connetivity."""
-    raise Exception("intentional exception")
+    raise IntentionalException()
 
 
 @permission_required("crashstats.view_pii")

@@ -83,6 +83,7 @@ clean:  ## | Remove all build, test, coverage, and Python artifacts.
 
 .PHONY: docs
 docs: my.env .docker-build  ## | Generate Sphinx HTML documetation.
+	${DC} run --rm --user ${SOCORRO_UID} app shell make -C docs/ clean
 	${DC} run --rm --user ${SOCORRO_UID} app shell make -C docs/ html
 
 .PHONY: lint
@@ -92,6 +93,11 @@ lint: my.env  ## | Lint code.
 .PHONY: lintfix
 lintfix: my.env  ## | Reformat code.
 	${DC} run --rm --no-deps app shell ./bin/lint.sh --fix
+
+.PHONY: psql
+psql: my.env .docker-build  ## | Open psql cli.
+	@echo "NOTE: Password is 'postgres'."
+	${DC} run --rm postgresql psql -h postgresql -U postgres -d socorro
 
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.

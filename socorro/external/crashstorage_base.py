@@ -4,16 +4,9 @@
 
 """Base classes for crashstorage system."""
 
-import datetime
-from collections.abc import MutableSequence, Sequence
+from contextlib import suppress
 import logging
 import os
-import sys
-
-from configman import Namespace, RequiredConfig
-from configman.converters import class_converter, str_to_list
-from configman.dotdict import DotDict
-import markus
 
 
 class MemoryDumpsMapping(dict):
@@ -101,64 +94,10 @@ class CrashIDNotFound(Exception):
     pass
 
 
-def migrate_raw_crash(data):
-    """Migrates the raw crash structure to the current structure
-
-    Currently, the version is 2.
-
-    :arg data: the raw crash structure as saved
-
-    :returns: the migrated raw crash structure
-
-    """
-    if "version" not in data:
-        # If it has no version, then it's version 1
-        data["version"] = 1
-
-    if data["version"] == 1:
-        # Convert to version 2 by moving some keys to a new metadata section, deleting
-        # the old location, and updating to version 2
-        old_keys = [
-            "collector_notes",
-            "dump_checksums",
-            "payload",
-            "payload_compressed",
-        ]
-        metadata = data.get("metadata", {})
-        metadata.update(
-            {
-                "collector_notes": data.get("collector_notes", []),
-                "dump_checksums": data.get("dump_checksums", {}),
-                "payload_compressed": data.get("payload_compressed", "0"),
-                "payload": data.get("payload", "unknown"),
-                "migrated_from_version_1": True,
-            }
-        )
-        data["metadata"] = metadata
-        for key in old_keys:
-            if key in data:
-                del data[key]
-        data["version"] = 2
-
-    return data
-
-
-class CrashStorageBase(RequiredConfig):
+class CrashStorageBase:
     """Base class for all crash storage classes."""
 
-    required_config = Namespace()
-
-    def __init__(self, config, namespace=""):
-        """Initializer
-
-        :param config: configman DotDict holding configuration information
-        :param namespace: namespace for this crashstorage instance; used
-            for metrics prefixes and logging
-
-        """
-        self.config = config
-        self.namespace = namespace
-
+    def __init__(self):
         # Collection of non-fatal exceptions that can be raised by a given storage
         # implementation. This may be fetched by a client of the crashstorge so that it
         # can determine if it can try a failed storage operation again.
@@ -167,7 +106,6 @@ class CrashStorageBase(RequiredConfig):
 
     def close(self):
         """Close resources used by this crashstorage."""
-        pass
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """Save raw crash data.
@@ -178,7 +116,6 @@ class CrashStorageBase(RequiredConfig):
         :param crash_id: the crash report id
 
         """
-        pass
 
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash to crash storage
@@ -199,16 +136,20 @@ class CrashStorageBase(RequiredConfig):
 
         :returns: dict of raw crash data
 
+        :raises CrashIdNotFound:
+
         """
         raise NotImplementedError("get_raw_crash is not implemented")
 
-    def get_raw_dump(self, crash_id, name=None):
+    def get_raw_dump(self, crash_id, name):
         """Fetch dump for a raw crash
 
         :param crash_id: crash report id
         :param name: name of dump to fetch
 
         :returns: dump as bytes
+
+        :raises CrashIdNotFound:
 
         """
         raise NotImplementedError("get_raw_dump is not implemented")
@@ -220,28 +161,35 @@ class CrashStorageBase(RequiredConfig):
 
         :returns: MemoryDumpsMapping of dumps
 
+        :raises CrashIdNotFound:
+
         """
         raise NotImplementedError("get_dumps is not implemented")
 
-    def get_dumps_as_files(self, crash_id):
+    def get_dumps_as_files(self, crash_id, tmpdir):
         """Fetch all dumps for a crash report and save as files.
 
         :param crash_id: crash report id
+        :param tmpdir: the path to store the dump files in
 
         :returns: dict of dumpname -> file path
 
-        """
-        raise NotImplementedError("get_dumps is not implemented")
+        :raises CrashIdNotFound:
 
-    def get_processed(self, crash_id):
+        """
+        raise NotImplementedError("get_dumps_as_files is not implemented")
+
+    def get_processed_crash(self, crash_id):
         """Fetch processed crash.
 
         :arg crash_id: crash report id
 
         :returns: dict of processed crash data
 
+        :raises CrashIdNotFound:
+
         """
-        raise NotImplementedError("get_processed is not implemented")
+        raise NotImplementedError("get_processed_crash is not implemented")
 
     def remove(self, crash_id):
         """Delete crash report data from storage
@@ -252,368 +200,65 @@ class CrashStorageBase(RequiredConfig):
         raise NotImplementedError("remove is not implemented")
 
 
-class PolyStorageError(Exception, MutableSequence):
-    """Exception container holding a sequence of exceptions with tracebacks
+class InMemoryCrashStorage(CrashStorageBase):
+    """In-memory crash storage for testing."""
 
-    :arg message: an optional over all error message
-
-    """
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.exceptions = []  # the collection
-
-    def gather_current_exception(self):
-        """Append the currently active exception to the collection"""
-        self.exceptions.append(sys.exc_info())
-
-    def has_exceptions(self):
-        """Boolean opposite of is_empty"""
-        return bool(self.exceptions)
-
-    def __len__(self):
-        """Length of exception collection"""
-        return len(self.exceptions)
-
-    def __iter__(self):
-        """Start an iterator over the sequence"""
-        return iter(self.exceptions)
-
-    def __contains__(self, value):
-        """Search the sequence for a value and return true if it is present"""
-        return self.exceptions.__contains__(value)
-
-    def __getitem__(self, index):
-        """Get a specific exception by index"""
-        return self.exceptions.__getitem__(index)
-
-    def __setitem__(self, index, value):
-        """Set the value for an index in the sequence"""
-        self.exceptions.__setitem__(index, value)
-
-    def __str__(self):
-        output = []
-        if self.args:
-            output.append(self.args[0])
-        for e in self.exceptions:
-            output.append(repr(e[1]))
-        return ",".join(output)
-
-
-class StorageNamespaceList(Sequence):
-    """A sequence of configuration namespaces for crash stores.
-
-    Functionally, this is a list of strings that correspond to a configuration
-    namespace under the key ``destination.{namespace}``. Each entry creates a
-    new crashstorage instance that crashes are saved to.
-
-    We use a custom subclass so that we can add ``self.required_config``, which
-    contains options for each crashstorage class. Doing this lets configman find
-    and include any config options that those classes define via their own
-    ``required_config`` attributes.
-    """
-
-    def __init__(self, storage_namespaces):
-        self.storage_namespaces = storage_namespaces
-        self.required_config = Namespace()
-
-        for storage_name in storage_namespaces:
-            self.required_config[storage_name] = Namespace()
-            self.required_config[storage_name].add_option(
-                "crashstorage_class", from_string_converter=class_converter
-            )
-
-    def __len__(self):
-        return len(self.storage_namespaces)
-
-    def __getitem__(self, key):
-        return self.storage_namespaces[key]
-
-    def __repr__(self):
-        return "StorageNamespaceList(%s)" % repr(self.storage_namespaces)
-
-    @classmethod
-    def converter(cls, storage_namespace_list_str):
-        """from_string_converter-compatible factory method.
-
-        parameters:
-            storage_namespace_list_str - comma-separated list of config
-                namespaces containing info about crash storages.
-        """
-        namespaces = [name.strip() for name in storage_namespace_list_str.split(",")]
-        return cls(namespaces)
-
-
-class PolyCrashStorage(CrashStorageBase):
-    """Crashstorage pipeline for multiple crashstorage destinations
-
-    This class is useful for "save" operations only--it does not implement the "get"
-    operations.
-
-    The contained crashstorage instances are specified in the configuration.  Each key
-    in the ``storage_namespaces`` config option will be used to create a crashstorage
-    instance that this saves to. The keys are namespaces in the config, and any options
-    defined under those namespaces will be isolated within the config passed to the
-    crashstorage instance. For example:
-
-    .. code-block:: ini
-        destination.crashstorage_namespaces=postgres,s3
-
-        destination.postgres.crashstorage_class=module.path.PostgresStorage
-        destination.postgres.my.config=Postgres
-
-        destination.s3.crashstorage_class=module.path.S3Storage
-        destination.s3.my.config=S3
-
-    With this config, there are two crashstorage instances this class will create: one
-    for Postgres, and one for S3. The PostgresStorage instance will see the
-    ``my.config`` option as being set to "Postgres", while the S3Storage instance will
-    see ``my.config`` set to "S3".
-
-    """
-
-    required_config = Namespace()
-    required_config.add_option(
-        "storage_namespaces",
-        doc="a comma delimited list of storage namespaces",
-        default="",
-        from_string_converter=StorageNamespaceList.converter,
-        likely_to_be_changed=True,
-    )
-
-    def __init__(self, config, namespace=""):
-        """Instantiate all the subordinate crashstorage instances
-
-        :param config: configman DotDict holding configuration information
-        :param namespace: namespace for this crashstorage instance; used
-            for metrics prefixes and logging
-
-        """
-        super().__init__(config, namespace)
-        # The list of the namespaces in which the subordinate instances are stored.
-        self.storage_namespaces = config.storage_namespaces
-        # Instances of the subordinate crash stores.
-        self.stores = DotDict()
-        for storage_namespace in self.storage_namespaces:
-            absolute_namespace = ".".join(
-                x for x in [namespace, storage_namespace] if x
-            )
-            self.stores[storage_namespace] = config[
-                storage_namespace
-            ].crashstorage_class(
-                config[storage_namespace],
-                namespace=absolute_namespace,
-            )
-
-    def close(self):
-        """Close resources used by crashstorage instances.
-
-        :raises PolyStorageError: An exception container holding a list of the
-            exceptions raised by the subordinate storage
-            systems.
-
-        """
-        storage_exception = PolyStorageError()
-        for a_store in self.stores.values():
-            try:
-                a_store.close()
-            except Exception as x:
-                self.logger.error("%s failure: %s", a_store.__class__, str(x))
-                storage_exception.gather_current_exception()
-        if storage_exception.has_exceptions():
-            raise storage_exception
+    def __init__(self):
+        # crash id -> data
+        self._raw_crash_data = {}
+        # crash id -> (dump name -> data)
+        self._dumps = {}
+        # crash id -> data
+        self._processed_crash_data = {}
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """Save raw crash to all crashstorage destinations.
-
-        :param raw_crash: the raw crash data
-        :param dumps: mapping of dump name keys -> dump binary
-        :param crash_id: the crash report id
-
-        """
-        storage_exception = PolyStorageError()
-        for a_store in self.stores.values():
-            try:
-                a_store.save_raw_crash(raw_crash, dumps, crash_id)
-            except Exception as x:
-                self.logger.error("%s failure: %s", a_store.__class__, str(x))
-                storage_exception.gather_current_exception()
-        if storage_exception.has_exceptions():
-            raise storage_exception
+        self._raw_crash_data[crash_id] = raw_crash
+        self._dumps[crash_id] = MemoryDumpsMapping(dumps)
 
     def save_processed_crash(self, raw_crash, processed_crash):
-        """Save processed crash to all crashstorage destinations
-
-        :param raw_crash: the raw crash data
-        :param processed_crash: the processed crash data
-
-        NOTE(willkg): Crash storage systems that implement this should
-        not mutate the raw and processed crash structures!
-
-        """
-        storage_exception = PolyStorageError()
-        for a_store in self.stores.values():
-            try:
-                a_store.save_processed_crash(raw_crash, processed_crash)
-            except Exception:
-                store_class = getattr(a_store, "wrapped_object", a_store.__class__)
-                crash_id = processed_crash.get("uuid", "NONE")
-                self.logger.error(
-                    "%r failed (crash id: %s)", store_class, crash_id, exc_info=True
-                )
-                storage_exception.gather_current_exception()
-        if storage_exception.has_exceptions():
-            raise storage_exception
-
-
-class BenchmarkingCrashStorage(CrashStorageBase):
-    """Wrapper around crash stores that will benchmark the calls in the logs"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        name="benchmark_tag",
-        doc="a tag to put on logged benchmarking lines",
-        default="Benchmark",
-    )
-    required_config.add_option(
-        name="wrapped_crashstore",
-        doc="another crash store to be benchmarked",
-        default="",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config, namespace=""):
-        super().__init__(config, namespace=namespace)
-        self.wrapped_crashstore = config.wrapped_crashstore(config, namespace=namespace)
-        self.tag = config.benchmark_tag
-        self.start_timer = datetime.datetime.now
-        self.end_timer = datetime.datetime.now
-        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-
-    def close(self):
-        """some implementations may need explicit closing."""
-        self.wrapped_crashstore.close()
-
-    def save_raw_crash(self, raw_crash, dumps, crash_id):
-        start_time = self.start_timer()
-        self.wrapped_crashstore.save_raw_crash(raw_crash, dumps, crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s save_raw_crash %s", self.tag, end_time - start_time)
-
-    def save_processed_crash(self, raw_crash, processed_crash):
-        start_time = self.start_timer()
-        self.wrapped_crashstore.save_processed_crash(raw_crash, processed_crash)
-        end_time = self.end_timer()
-        self.logger.debug("%s save_processed_crash %s", self.tag, end_time - start_time)
+        crash_id = processed_crash["uuid"]
+        self._processed_crash_data[crash_id] = processed_crash
 
     def get_raw_crash(self, crash_id):
-        start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_raw_crash(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s get_raw_crash %s", self.tag, end_time - start_time)
-        return result
+        try:
+            return self._raw_crash_data[crash_id]
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
-    def get_raw_dump(self, crash_id, name=None):
-        start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_raw_dump(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s get_raw_dump %s", self.tag, end_time - start_time)
-        return result
+    def get_raw_dump(self, crash_id, name):
+        try:
+            return self._dumps[crash_id][name]
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def get_dumps(self, crash_id):
-        start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_dumps(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s get_dumps %s", self.tag, end_time - start_time)
-        return result
+        try:
+            return self._dumps[crash_id]
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
-    def get_dumps_as_files(self, crash_id):
-        start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_dumps_as_files(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s get_dumps_as_files %s", self.tag, end_time - start_time)
-        return result
+    def get_dumps_as_files(self, crash_id, tmpdir):
+        try:
+            return self._dumps[crash_id].as_file_dumps_mapping(
+                crash_id=crash_id,
+                temp_path=str(tmpdir),
+                dump_file_suffix=".dump",
+            )
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
-    def get_processed(self, crash_id):
-        start_time = self.start_timer()
-        result = self.wrapped_crashstore.get_processed(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s get_processed %s", self.tag, end_time - start_time)
-        return result
+    def get_processed_crash(self, crash_id):
+        try:
+            return self._processed_crash_data[crash_id]
+        except KeyError as exc:
+            raise CrashIDNotFound(f"{crash_id} not found") from exc
 
     def remove(self, crash_id):
-        start_time = self.start_timer()
-        self.wrapped_crashstore.remove(crash_id)
-        end_time = self.end_timer()
-        self.logger.debug("%s remove %s", self.tag, end_time - start_time)
+        with suppress(KeyError):
+            del self._raw_crash_data[crash_id]
 
+        with suppress(KeyError):
+            del self._dumps[crash_id]
 
-class MetricsEnabledBase(RequiredConfig):
-    """Base class for capturing metrics for crashstorage classes"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        "metrics_prefix",
-        doc="a string to be used as the prefix for metrics keys",
-        default="",
-    )
-    required_config.add_option(
-        "active_list",
-        default="save_processed_crash,act",
-        doc="a comma delimeted list of counters that are enabled",
-        from_string_converter=str_to_list,
-    )
-
-    def __init__(self, config, namespace=""):
-        self.config = config
-        self.metrics = markus.get_metrics(self.config.metrics_prefix)
-
-    def _make_key(self, *args):
-        return ".".join(x for x in args if x)
-
-
-class MetricsCounter(MetricsEnabledBase):
-    """Counts the number of times it's called"""
-
-    required_config = Namespace()
-
-    def __getattr__(self, attr):
-        if attr in self.config.active_list:
-            self.metrics.incr(attr)
-        return self._noop
-
-    def _noop(self, *args, **kwargs):
-        pass
-
-
-class MetricsBenchmarkingWrapper(MetricsEnabledBase):
-    """Sends timings for specified method calls in wrapped crash store"""
-
-    required_config = Namespace()
-    required_config.add_option(
-        name="wrapped_object_class",
-        doc="fully qualified Python class path for an object to an be benchmarked",
-        default="",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config, namespace=""):
-        super().__init__(config, namespace=namespace)
-        self.wrapped_object = config.wrapped_object_class(config, namespace=namespace)
-
-    def close(self):
-        self.wrapped_object.close()
-
-    def __getattr__(self, attr):
-        wrapped_attr = getattr(self.wrapped_object, attr)
-        if attr in self.config.active_list:
-
-            def benchmarker(*args, **kwargs):
-                metrics_key = self._make_key(
-                    self.config.wrapped_object_class.__name__, attr
-                )
-                with self.metrics.timer(metrics_key):
-                    return wrapped_attr(*args, **kwargs)
-
-            return benchmarker
-        return wrapped_attr
+        with suppress(KeyError):
+            del self._processed_crash_data[crash_id]

@@ -8,41 +8,41 @@ from pathlib import Path
 from socorro.lib.libdockerflow import get_version_info
 
 
-def test_get_version_info(tmpdir):
+def test_get_version_info(tmp_path):
     version_info = {"commit": "abcde"}
-    version_json = tmpdir / "version.json"
-    version_json.write(json.dumps(version_info))
+    version_json = tmp_path / "version.json"
+    version_json.write_text(json.dumps(version_info))
 
     # Test with str path
-    tmpdir = str(tmpdir)
-    assert get_version_info(tmpdir) == version_info
+    tmp_path = str(tmp_path)
+    assert get_version_info(tmp_path) == version_info
 
     # Test with Path path
-    tmpdir = Path(tmpdir)
-    assert get_version_info(tmpdir) == version_info
+    tmp_path = Path(tmp_path)
+    assert get_version_info(tmp_path) == version_info
 
 
-def test_version_info_malformed(tmpdir):
+def test_version_info_malformed(tmp_path):
     """Return {} if version.json is malformed"""
     version_info = "{abc"
-    version_json = tmpdir / "version.json"
-    version_json.write(version_info)
+    version_json = tmp_path / "version.json"
+    version_json.write_text(version_info)
 
     # Test with str path
-    tmpdir = str(tmpdir)
-    assert get_version_info(tmpdir) == {}
+    tmp_path = str(tmp_path)
+    assert get_version_info(tmp_path) == {}
 
     # Test with Path path
-    tmpdir = Path(tmpdir)
-    assert get_version_info(tmpdir) == {}
+    tmp_path = Path(tmp_path)
+    assert get_version_info(tmp_path) == {}
 
 
-def test_get_version_info_no_file(tmpdir):
+def test_get_version_info_no_file(tmp_path):
     """Return {} if there is no version.json"""
     # Test with str path
-    tmpdir = str(tmpdir)
-    assert get_version_info(tmpdir) == {}
+    tmp_path = str(tmp_path)
+    assert get_version_info(tmp_path) == {}
 
     # Test with Path path
-    tmpdir = Path(tmpdir)
-    assert get_version_info(tmpdir) == {}
+    tmp_path = Path(tmp_path)
+    assert get_version_info(tmp_path) == {}

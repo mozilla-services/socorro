@@ -11,26 +11,32 @@ import io
 import logging
 import os
 import pathlib
+import sys
 
 import boto3
 from botocore.client import ClientError, Config
-from configman import ConfigurationManager
-from configman.environment import environment
+from elasticsearch_dsl import Search
 from markus.testing import MetricsMock
 import pytest
 import requests_mock
 
-from socorro.external.es.connection_context import (
-    ConnectionContext as ESConnectionContext,
-)
+from socorro import settings
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import utc_now
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
+
+
+REPOROOT = pathlib.Path(__file__).parent.parent.parent
+
+
+# Add bin directory to Python path
+sys.path.insert(0, str(REPOROOT / "bin"))
 
 
 @pytest.fixture
 def reporoot():
     """Returns path to repository root directory"""
-    path = pathlib.Path(__file__).parent.parent.parent
-    return path
+    return REPOROOT
 
 
 @pytest.fixture
@@ -73,11 +79,8 @@ def caplogpp(caplog):
         logger.propagate = False
 
 
-class BotoHelper:
-    """Helper class inspired by Boto's S3 API.
-
-    The goal here is to automate repetitive things in a convenient way, but
-    be inspired by the existing Boto S3 API.
+class S3Helper:
+    """S3 helper class.
 
     When used in a context, this will clean up any buckets created.
 
@@ -89,13 +92,15 @@ class BotoHelper:
 
     def get_client(self):
         session = boto3.session.Session(
-            aws_access_key_id=os.environ.get("resource.boto.access_key"),
-            aws_secret_access_key=os.environ.get("secrets.boto.secret_access_key"),
+            # NOTE(willkg): these use environment variables set in
+            # docker/config/test.env
+            aws_access_key_id=os.environ["CRASHSTORAGE_S3_ACCESS_KEY"],
+            aws_secret_access_key=os.environ["CRASHSTORAGE_S3_SECRET_ACCESS_KEY"],
         )
         client = session.client(
             service_name="s3",
             config=Config(s3={"addressing_style": "path"}),
-            endpoint_url=os.environ.get("resource.boto.s3_endpoint_url"),
+            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
         )
         return client
 
@@ -114,6 +119,12 @@ class BotoHelper:
             # Then delete the bucket
             self.conn.delete_bucket(Bucket=bucket)
         self._buckets_seen = None
+
+    def get_crashstorage_bucket(self):
+        return os.environ["CRASHSTORAGE_S3_BUCKET"]
+
+    def get_telemetry_bucket(self):
+        return os.environ["TELEMETRY_S3_BUCKET"]
 
     def create_bucket(self, bucket_name):
         """Create specified bucket if it doesn't exist."""
@@ -143,50 +154,229 @@ class BotoHelper:
 
 
 @pytest.fixture
-def boto_helper():
-    """Returns a BotoHelper for automating repetitive tasks in S3 setup.
+def s3_helper():
+    """Returns an S3Helper for automating repetitive tasks in S3 setup.
 
     Provides:
 
     * ``get_client()``
+    * ``get_crashstorage_bucket()``
     * ``create_bucket(bucket_name)``
     * ``upload_fileobj(bucket_name, key, value)``
     * ``download_fileobj(bucket_name, key)``
     * ``list(bucket_name)``
 
     """
-    with BotoHelper() as boto_helper:
-        yield boto_helper
+    with S3Helper() as s3_helper:
+        yield s3_helper
+
+
+class ElasticsearchHelper:
+    """Elasticsearch helper class.
+
+    When used in a context, this will clean up any indexes created.
+
+    """
+
+    def __init__(self):
+        self._crashstorage = build_instance_from_settings(settings.ES_STORAGE)
+        self.conn = self._crashstorage.client
+
+    def get_index_template(self):
+        return self._crashstorage.get_index_template()
+
+    def get_doctype(self):
+        return self._crashstorage.get_doctype()
+
+    def create_index(self, index_name):
+        print(f"ElasticsearchHelper: creating index: {index_name}")
+        self._crashstorage.create_index(index_name)
+
+    def create_indices(self):
+        # Create all the indexes for the last couple of weeks; we have to do it this way
+        # to handle split indexes over the new year
+        template = self._crashstorage.index
+        to_create = set()
+
+        for i in range(14):
+            index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
+            to_create.add(index_name)
+
+        for index_name in to_create:
+            print(f"ElasticsearchHelper: creating index: {index_name}")
+            self._crashstorage.create_index(index_name)
+
+        self.health_check()
+
+    def delete_indices(self):
+        for index in self._crashstorage.get_indices():
+            self._crashstorage.delete_index(index)
+
+    def get_indices(self):
+        return self._crashstorage.get_indices()
+
+    def health_check(self):
+        with self.conn() as conn:
+            conn.cluster.health(wait_for_status="yellow", request_timeout=5)
+
+    def get_url(self):
+        """Returns the Elasticsearch url."""
+        return settings.ES_STORAGE["options"]["url"]
+
+    def refresh(self):
+        self.conn.refresh()
+
+    def index_crash(self, raw_crash, processed_crash, refresh=True):
+        """Index a single crash and refresh"""
+        self._crashstorage.save_processed_crash(raw_crash, processed_crash)
+
+        if refresh:
+            self.refresh()
+
+    def index_many_crashes(
+        self, number, raw_crash=None, processed_crash=None, loop_field=None
+    ):
+        """Index multiple crashes and refresh at the end"""
+        processed_crash = processed_crash or {}
+        raw_crash = raw_crash or {}
+
+        crash_ids = []
+        for i in range(number):
+            processed_copy = processed_crash.copy()
+            processed_copy["uuid"] = create_new_ooid()
+            processed_copy["date_processed"] = date_from_ooid(processed_copy["uuid"])
+            if loop_field is not None:
+                processed_copy[loop_field] = processed_crash[loop_field] % i
+
+            self.index_crash(
+                raw_crash=raw_crash, processed_crash=processed_copy, refresh=False
+            )
+
+        self.refresh()
+        return crash_ids
+
+    def get_crash_data(self, crash_id):
+        """Get source in index for given crash_id
+
+        :arg crash_id: the crash id to fetch the source for
+
+        :returns: source as a Python dict
+
+        """
+        index = self._crashstorage.get_index_for_date(date_from_ooid(crash_id))
+        doc_type = self._crashstorage.get_doctype()
+
+        with self.conn() as conn:
+            search = Search(using=conn, index=index, doc_type=doc_type)
+            search = search.filter("term", **{"processed_crash.uuid": crash_id})
+            results = search.execute().to_dict()
+
+            return results["hits"]["hits"][0]["_source"]
 
 
 @pytest.fixture
-def es_conn():
-    """Create an Elasticsearch ConnectionContext and clean up indices afterwards.
+def es_helper():
+    """Returns an ElasticsearchHelper for helping tests.
 
-    This uses defaults and configuration from the environment.
+    Provides:
+
+    * ``get_doctype()``
+    * ``get_url()``
+    * ``create_indices()``
+    * ``delete_indices()``
+    * ``get_indices()``
+    * ``index_crash()``
+    * ``index_many_crashes()``
+    * ``refresh()``
+    * ``get_crash_data()``
 
     """
-    manager = ConfigurationManager(
-        ESConnectionContext.get_required_config(), values_source_list=[environment]
-    )
-    conn = ESConnectionContext(manager.get_config())
+    es_helper = ElasticsearchHelper()
+    es_helper.create_indices()
+    yield es_helper
+    es_helper.delete_indices()
 
-    # Create all the indexes for the last couple of weeks; we have to do it this way to
-    # handle split indexes over the new year
-    template = conn.config.elasticsearch_index
-    to_create = set()
 
-    for i in range(14):
-        index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
-        to_create.add(index_name)
+class SQSHelper:
+    """Helper class for setting up, tearing down, and publishing to SQS."""
 
-    for index_name in to_create:
-        print(f"es_conn: creating index: {index_name}")
-        conn.create_index(index_name)
+    def __init__(self):
+        self.conn = self.get_client()
 
-    conn.health_check()
+        self.queue_to_queue_name = {
+            "standard": os.environ["SQS_STANDARD_QUEUE"],
+            "priority": os.environ["SQS_PRIORITY_QUEUE"],
+            "reprocessing": os.environ["SQS_REPROCESSING_QUEUE"],
+        }
 
-    yield conn
+        self.conn = self.get_client()
 
-    for index in conn.get_indices():
-        conn.delete_index(index)
+        # Visibility timeout for the AWS SQS queue in seconds
+        self.visibility_timeout = 1
+
+    def get_client(self):
+        session = boto3.session.Session(
+            # NOTE(willkg): these use environment variables set in
+            # docker/config/test.env
+            aws_access_key_id=os.environ["SQS_ACCESS_KEY"],
+            aws_secret_access_key=os.environ["SQS_SECRET_ACCESS_KEY"],
+        )
+        client = session.client(
+            service_name="sqs",
+            region_name=os.environ["SQS_REGION"],
+            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
+        )
+        return client
+
+    def setup_queues(self):
+        for queue_name in self.queue_to_queue_name.values():
+            self.create_queue(queue_name)
+
+    def teardown_queues(self):
+        for queue_name in self.queue_to_queue_name.values():
+            try:
+                queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+                self.conn.delete_queue(QueueUrl=queue_url)
+            except self.conn.exceptions.QueueDoesNotExist:
+                print(f"skipping teardown {queue_name!r}: does not exist")
+
+    def __enter__(self):
+        self.setup_queues()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.teardown_queues()
+
+    def create_queue(self, queue_name):
+        self.conn.create_queue(
+            QueueName=queue_name,
+            Attributes={"VisibilityTimeout": str(self.visibility_timeout)},
+        )
+
+    def get_published_crashids(self, queue):
+        queue_name = self.queue_to_queue_name[queue]
+        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+        all_crashids = []
+        while True:
+            resp = self.conn.receive_message(
+                QueueUrl=queue_url,
+                WaitTimeSeconds=0,
+                VisibilityTimeout=1,
+            )
+            msgs = resp.get("Messages", [])
+            if not msgs:
+                break
+            all_crashids.extend([msg["Body"] for msg in msgs])
+
+        return all_crashids
+
+    def publish(self, queue, crash_id):
+        queue_name = self.queue_to_queue_name[queue]
+        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
+        self.conn.send_message(QueueUrl=queue_url, MessageBody=crash_id)
+
+
+@pytest.fixture
+def sqs_helper():
+    with SQSHelper() as sqs:
+        yield sqs

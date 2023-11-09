@@ -34,6 +34,48 @@
     </div>
 
     <div>
+      <h2>Settings</h2>
+      <table>
+        <thead>
+          <tr>
+            <td>key</td>
+            <td>value</td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in site_settings %}
+            <tr>
+              <td>{{ item.key }}</td>
+              <td>{{ item.value }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <h2>Table Counts</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>table</th>
+            <th>number of rows</th>
+            <th>time to count rows (s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in table_counts %}
+            <tr>
+              <td>{{ item.key }}</td>
+              <td>{{ item.value }}</td>
+              <td>{{ item.timing }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
       <h2>Django db status</h2>
       {% if django_error %}
         <p>{{ django_error }}</p>

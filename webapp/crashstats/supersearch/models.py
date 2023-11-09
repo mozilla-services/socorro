@@ -4,16 +4,18 @@
 
 import copy
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
     SUPERSEARCH_FIELDS,
     SuperSearchStatusModel,
 )
+from socorro import settings as socorro_settings
 from socorro.external.es import query
 from socorro.external.es import supersearch
 from socorro.external.es.super_search_fields import get_source_key
 from socorro.lib import BadArgumentError
+from socorro.libclass import build_instance_from_settings
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -56,8 +58,6 @@ def get_api_allowlist(include_all_fields=False):
 
 
 class ESSocorroMiddleware(models.SocorroMiddleware):
-    implementation_config_namespace = "elasticsearch"
-
     post = None
     put = None
     delete = None
@@ -78,7 +78,7 @@ def validate_products(product_value):
         product_value = [product_value]
 
     # Do some data validation here before we go further to reduce efforts
-    valid_products = {product.name for product in productlib.get_products()}
+    valid_products = {product.name for product in libproduct.get_products()}
     invalid_products = set(product_value) - valid_products
     if invalid_products:
         invalid_products_str = ", ".join(invalid_products)
@@ -86,8 +86,6 @@ def validate_products(product_value):
 
 
 class SuperSearch(ESSocorroMiddleware):
-    implementation = supersearch.SuperSearch
-
     IS_PUBLIC = True
 
     HELP_TEXT = """
@@ -118,8 +116,12 @@ class SuperSearch(ESSocorroMiddleware):
             + tuple(self.extended_fields)
         )
 
+    def get_implementation(self):
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return supersearch.SuperSearch(crashstorage=s3_crash_dest)
+
     def _get_extended_params(self):
-        # Add histogram fields for all 'date' or 'number' fields.
+        # Add histogram fields for all 'date','integer', or 'float' fields.
         extended_fields = []
         for field in self.all_fields.values():
             if not field["is_exposed"] or field["permissions_needed"]:
@@ -127,12 +129,18 @@ class SuperSearch(ESSocorroMiddleware):
 
             extended_fields.append(("_aggs.%s" % field["name"], list))
 
-            if field["query_type"] in ("date", "number"):
+            interval_types = {
+                "date": str,
+                "integer": int,
+                "float": float,
+            }
+
+            if field["query_type"] in interval_types:
                 extended_fields.append(("_histogram.%s" % field["name"], list))
 
-                # Intervals can be strings for dates (like "day" or "1.5h")
-                # and can only be integers for numbers.
-                interval_type = {"date": str, "number": int}.get(field["query_type"])
+                # Intervals can be strings for dates (like "day" or "1.5h"), but
+                # integers and floats are integers and floats.
+                interval_type = interval_types[field["query_type"]]
 
                 extended_fields.append(
                     ("_histogram_interval.%s" % field["name"], interval_type)
@@ -197,8 +205,6 @@ class SuperSearchUnredacted(SuperSearch):
 
     API_ALLOWLIST = get_api_allowlist(include_all_fields=True)
 
-    implementation = supersearch.SuperSearch
-
     def __init__(self):
         self.all_fields = SUPERSEARCH_FIELDS
 
@@ -218,6 +224,10 @@ class SuperSearchUnredacted(SuperSearch):
                 permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
+
+    def get_implementation(self):
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return supersearch.SuperSearch(crashstorage=s3_crash_dest)
 
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
@@ -253,16 +263,19 @@ class SuperSearchFields(ESSocorroMiddleware):
 
 
 class SuperSearchStatus(ESSocorroMiddleware):
-    implementation = SuperSearchStatusModel
-
     cache_seconds = 0
+
+    def get_implementation(self):
+        return SuperSearchStatusModel()
 
 
 class Query(ESSocorroMiddleware):
     # No API_ALLOWLIST because this can't be accessed through the public API.
 
-    implementation = query.Query
-
     required_params = ("query",)
 
     possible_params = ("indices",)
+
+    def get_implementation(self):
+        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return query.Query(crashstorage=s3_crash_dest)

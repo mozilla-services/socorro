@@ -358,27 +358,28 @@ def keyword_field(
     }
 
 
-def number_field(
+def integer_field(
     name,
     namespace="processed_crash",
     in_database_name="",
-    number_type="integer",
+    storage_mapping_type="integer",
 ):
-    """Generates a numeric field.
+    """Generates a whole number field.
 
     :param name: the name used to query the field in super search
     :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
         to a model where we pull everything from the processed_crash, so prefer that
     :param in_database_name: the field in the processed crash to pull this data from
-    :param number_type: "short", "integer", "long", "double"
+    :param storage_mapping_type: the storage mapping type to use for Elasticsearch;
+        "short", "integer", "long"
 
     :returns: super search field specification as a dict
 
     """
     in_database_name = in_database_name or name
 
-    if number_type not in ["short", "integer", "long", "double"]:
-        raise ValueError(f"number_type {number_type} is not valid")
+    if storage_mapping_type not in ["short", "integer", "long"]:
+        raise ValueError(f"storage_mapping_type {storage_mapping_type} is not valid")
 
     return {
         "name": name,
@@ -389,8 +390,39 @@ def number_field(
         "in_database_name": in_database_name,
         "is_exposed": True,
         "is_returned": True,
-        "query_type": "number",
-        "storage_mapping": {"type": number_type},
+        "query_type": "integer",
+        "storage_mapping": {"type": storage_mapping_type},
+    }
+
+
+def float_field(
+    name,
+    namespace="processed_crash",
+    in_database_name="",
+):
+    """Generates a floating point field.
+
+    :param name: the name used to query the field in super search
+    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
+        to a model where we pull everything from the processed_crash, so prefer that
+    :param in_database_name: the field in the processed crash to pull this data from
+
+    :returns: super search field specification as a dict
+
+    """
+    in_database_name = in_database_name or name
+
+    return {
+        "name": name,
+        "data_validation_type": "float",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "namespace": namespace,
+        "in_database_name": in_database_name,
+        "is_exposed": True,
+        "is_returned": True,
+        "query_type": "float",
+        "storage_mapping": {"type": "double"},
     }
 
 
@@ -410,7 +442,7 @@ def apply_schema_properties(fields, schema):
     """
     default_permissions = schema["default_permissions"]
 
-    for key, val in fields.items():
+    for val in fields.values():
         source_key = get_source_key(val)
         if not source_key or not source_key.startswith("processed_crash."):
             continue
@@ -444,7 +476,7 @@ FIELDS = {
         "is_returned": True,
         "name": "application_build_id",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "crash_report_keys": keyword_field(name="crash_report_keys"),
@@ -481,7 +513,7 @@ FIELDS = {
         "is_returned": True,
         "name": "phc_usable_size",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "phc_alloc_stack": {
@@ -841,7 +873,7 @@ FIELDS = {
         "is_returned": True,
         "name": "available_page_file",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "available_physical_memory": {
@@ -853,7 +885,7 @@ FIELDS = {
         "is_returned": True,
         "name": "available_physical_memory",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "available_virtual_memory": {
@@ -865,7 +897,7 @@ FIELDS = {
         "is_returned": True,
         "name": "available_virtual_memory",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "background_task_name": keyword_field(name="background_task_name"),
@@ -878,7 +910,7 @@ FIELDS = {
         "is_returned": True,
         "name": "build_id",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "co_marshal_interface_failure": {
@@ -924,7 +956,7 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_capabilities",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "integer"},
     },
     "content_sandbox_capable": {
@@ -960,7 +992,7 @@ FIELDS = {
         "is_returned": True,
         "name": "content_sandbox_level",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "short"},
     },
     "cpu_arch": {
@@ -990,7 +1022,7 @@ FIELDS = {
             "processed_crash.json_dump.system_info.cpu_count",
             "processed_crash.cpu_count",
         ],
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "short"},
     },
     "cpu_info": {
@@ -1027,10 +1059,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "string"},
     },
-    "crashing_thread": number_field(
-        "crashing_thread",
-        in_database_name="crashing_thread",
-    ),
+    "crashing_thread": integer_field(name="crashing_thread"),
     "crashing_thread_name": keyword_field(
         "crashing_thread_name",
         in_database_name="crashing_thread_name",
@@ -1163,6 +1192,7 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
+    "hang": keyword_field(name="hang"),
     "has_device_touch_screen": {
         "data_validation_type": "bool",
         "form_field_choices": [],
@@ -1184,7 +1214,7 @@ FIELDS = {
         "is_returned": True,
         "name": "install_age",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "install_time": {
@@ -1196,7 +1226,7 @@ FIELDS = {
         "is_returned": True,
         "name": "install_time",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "ipc_channel_error": {
@@ -1264,7 +1294,7 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_message_size",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "ipc_shutdown_state": {
@@ -1288,7 +1318,7 @@ FIELDS = {
         "is_returned": True,
         "name": "ipc_system_error",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "integer"},
     },
     "is_garbage_collecting": {
@@ -1345,7 +1375,7 @@ FIELDS = {
         "is_returned": True,
         "name": "last_crash",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "mac_crash_info": {
@@ -1364,18 +1394,12 @@ FIELDS = {
             "type": "string",
         },
     },
-    "mac_available_memory_sysctl": number_field(
-        name="mac_available_memory_sysctl",
-        number_type="integer",
-    ),
+    "mac_available_memory_sysctl": integer_field(name="mac_available_memory_sysctl"),
     "mac_memory_pressure": keyword_field(
         name="mac_memory_pressure",
         choices=["Normal", "Unset", "Warning", "Critical", "Unexpected"],
     ),
-    "mac_memory_pressure_sysctl": number_field(
-        name="mac_memory_pressure_sysctl",
-        number_type="integer",
-    ),
+    "mac_memory_pressure_sysctl": integer_field(name="mac_memory_pressure_sysctl"),
     "major_version": {
         "data_validation_type": "int",
         "form_field_choices": [],
@@ -1385,7 +1409,7 @@ FIELDS = {
         "is_returned": True,
         "name": "major_version",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "integer"},
     },
     "memory_explicit": {
@@ -1397,7 +1421,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_explicit",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_gfx_textures": {
@@ -1409,7 +1433,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_gfx_textures",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_ghost_windows": {
@@ -1421,7 +1445,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_ghost_windows",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_heap_allocated": {
@@ -1433,7 +1457,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_allocated",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_heap_overhead": {
@@ -1445,7 +1469,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_overhead",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_heap_unclassified": {
@@ -1457,7 +1481,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_heap_unclassified",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_host_object_urls": {
@@ -1469,7 +1493,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_host_object_urls",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_images": {
@@ -1481,7 +1505,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_images",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_js_main_runtime": {
@@ -1493,7 +1517,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_js_main_runtime",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_private": {
@@ -1505,7 +1529,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_private",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_resident": {
@@ -1517,7 +1541,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_resident",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_resident_unique": {
@@ -1529,7 +1553,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_resident_unique",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_system_heap_allocated": {
@@ -1541,7 +1565,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_system_heap_allocated",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_top_none_detached": {
@@ -1553,7 +1577,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_top_none_detached",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_vsize": {
@@ -1565,7 +1589,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_vsize",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "memory_vsize_max_contiguous": {
@@ -1577,7 +1601,7 @@ FIELDS = {
         "is_returned": True,
         "name": "memory_vsize_max_contiguous",
         "namespace": "processed_crash.memory_measures",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "minidump_sha256_hash": {
@@ -1645,7 +1669,7 @@ FIELDS = {
         "is_returned": True,
         "name": "oom_allocation_size",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "platform": {
@@ -1755,6 +1779,9 @@ FIELDS = {
             "type": "multi_field",
         },
     },
+    "possible_bit_flips_max_confidence": integer_field(
+        name="possible_bit_flips_max_confidence",
+    ),
     "process_type": {
         "data_validation_type": "str",
         "form_field_choices": [
@@ -1836,6 +1863,22 @@ FIELDS = {
             "type": "string",
         },
     },
+    "quota_manager_shutdown_timeout": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": True,
+        "in_database_name": "quota_manager_shutdown_timeout",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "quota_manager_shutdown_timeout",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {
+            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
+            "index": "analyzed",
+            "type": "string",
+        },
+    },
     "reason": {
         "data_validation_type": "str",
         "form_field_choices": [],
@@ -1878,6 +1921,7 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"analyzer": "keyword", "type": "string"},
     },
+    "report_type": keyword_field(name="report_type"),
     "safe_mode": {
         "data_validation_type": "bool",
         "form_field_choices": [],
@@ -1902,6 +1946,7 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
+    "shutdown_reason": keyword_field(name="shutdown_reason"),
     "signature": {
         "data_validation_type": "str",
         "form_field_choices": [],
@@ -1947,12 +1992,10 @@ FIELDS = {
         "is_returned": True,
         "name": "startup_time",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
-    "submitted_from": keyword_field(
-        name="submitted_from",
-    ),
+    "submitted_from": keyword_field(name="submitted_from"),
     "system_memory_use_percentage": {
         "data_validation_type": "int",
         "form_field_choices": [],
@@ -1962,7 +2005,7 @@ FIELDS = {
         "is_returned": True,
         "name": "system_memory_use_percentage",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "throttleable": {
@@ -1998,7 +2041,7 @@ FIELDS = {
         "is_returned": True,
         "name": "total_page_file",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "total_physical_memory": {
@@ -2010,7 +2053,7 @@ FIELDS = {
         "is_returned": True,
         "name": "total_physical_memory",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "total_virtual_memory": {
@@ -2022,7 +2065,7 @@ FIELDS = {
         "is_returned": True,
         "name": "total_virtual_memory",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
     "uptime": {
@@ -2034,21 +2077,10 @@ FIELDS = {
         "is_returned": True,
         "name": "uptime",
         "namespace": "processed_crash",
-        "query_type": "number",
+        "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
-    "uptime_ts": {
-        "data_validation_type": "int",
-        "form_field_choices": [],
-        "has_full_version": False,
-        "in_database_name": "uptime_ts",
-        "is_exposed": True,
-        "is_returned": True,
-        "name": "uptime_ts",
-        "namespace": "processed_crash",
-        "query_type": "number",
-        "storage_mapping": {"type": "double"},
-    },
+    "uptime_ts": float_field(name="uptime_ts"),
     "url": {
         "data_validation_type": "str",
         "form_field_choices": [],
@@ -2092,9 +2124,8 @@ FIELDS = {
         "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
     "utility_actors_name": keyword_field(name="utility_actors_name"),
-    "utility_process_sandboxing_kind": number_field(
-        name="utility_process_sandboxing_kind",
-        number_type="integer",
+    "utility_process_sandboxing_kind": integer_field(
+        name="utility_process_sandboxing_kind"
     ),
     "uuid": {
         "data_validation_type": "enum",

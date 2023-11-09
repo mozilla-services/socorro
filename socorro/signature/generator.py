@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from .rules import (
     AbortSignature,
     BadHardware,
+    HungProcess,
     OOMSignature,
     SigFixWhitespace,
     SignatureGenerationRule,
@@ -36,6 +37,7 @@ DEFAULT_RULESET = [
     SignatureIPCMessageName,
     SignatureParentIDNotEqualsChildID,
     StackOverflowSignature,
+    HungProcess,
     # NOTE(willkg): These should always come last and in this order
     SigFixWhitespace,
     SigTruncate,

@@ -68,18 +68,8 @@ def convert_to_crash_data(processed_crash):
 
     """
     crash_data = {
-        # JavaStackTrace or None
-        "java_stack_trace": glom(processed_crash, "java_stack_trace", default=None),
-        # int or None
-        "crashing_thread": glom(
-            processed_crash, "json_dump.crash_info.crashing_thread", default=None
-        ),
-        # string or None
-        "reason": glom(processed_crash, "json_dump.crash_info.type", default=None),
-        # list of CStackTrace or None
-        "threads": glom(processed_crash, "json_dump.threads", default=None),
         # text or None
-        "os": glom(processed_crash, "json_dump.system_info.os", default=None),
+        "hang": glom(processed_crash, "hang", default=None),
         # int or None
         "oom_allocation_size": int_or_none(
             glom(processed_crash, "oom_allocation_size", default=None)
@@ -112,6 +102,33 @@ def convert_to_crash_data(processed_crash):
         # pull out the original signature if there was one
         "original_signature": glom(processed_crash, "signature", default=""),
     }
+
+    # Add platform-specific data for stacks
+
+    if "json_dump" in processed_crash:
+        # int or None
+        crash_data["crashing_thread"] = glom(
+            processed_crash, "json_dump.crash_info.crashing_thread", default=None
+        )
+        # string or None
+        crash_data["reason"] = glom(
+            processed_crash, "json_dump.crash_info.type", default=None
+        )
+        # list of CStackTrace or None
+        crash_data["threads"] = glom(processed_crash, "json_dump.threads", default=None)
+        # text or None
+        crash_data["os"] = glom(
+            processed_crash, "json_dump.system_info.os", default=None
+        )
+
+    if "java_exception" in processed_crash:
+        # java_exception structure or {}
+        crash_data["java_exception"] = glom(processed_crash, "java_exception")
+
+    if "java_stack_trace" in processed_crash:
+        # java_stack_trace string or None
+        crash_data["java_stack_trace"] = glom(processed_crash, "java_stack_trace")
+
     return crash_data
 
 
@@ -306,7 +323,7 @@ def drop_prefix_and_return_type(function):
     # The current token we're building
     current = []
 
-    for i, char in enumerate(function):
+    for _, char in enumerate(function):
         if char in OPEN:
             levels.append(char)
             current.append(char)

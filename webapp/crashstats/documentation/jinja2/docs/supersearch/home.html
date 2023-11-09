@@ -155,9 +155,14 @@
           <td>Advanced type for strings, gives a lot more options. </td>
         </tr>
         <tr>
-          <td>number</td>
-          <td><code></code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code></td>
-          <td>Type for all numbers, underlying data can be float, int, long&hellip; </td>
+          <td>integer</td>
+          <td><code></code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>__null__</code></td>
+          <td>Type for all whole numbers (short, long, integer).</td>
+        </tr>
+        <tr>
+          <td>float</td>
+          <td><code></code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>__null__</code></td>
+          <td>Type for all float numbers.</td>
         </tr>
         <tr>
           <td>date</td>
@@ -166,13 +171,8 @@
         </tr>
         <tr>
           <td>boolean</td>
-          <td><code>__true__</code></td>
+          <td><code>__true__</code>, <code>__null__</code></td>
           <td>Type for fields that can be true or false.</td>
-        </tr>
-        <tr>
-          <td>flag</td>
-          <td><code>__null__</code></td>
-          <td>Type for fields that either have a value (generally <code>1</code>) or are missing.</td>
         </tr>
       </tbody>
     </table>
@@ -206,7 +206,7 @@
     <p>
       Most operators are only usable with some data types. For example,
       comparison operators (like <code>&lt;</code> or <code>&gt;</code>) are not
-      usable with string data, but only with numbers and dates. Operators for
+      usable with string data, but only with integers, floats, and dates. Operators for
       each filter are listed on the
       <a href="{{ url("documentation:supersearch_api") }}">API Reference</a> page.
     </p>
@@ -233,11 +233,11 @@
         <tr>
           <td>has terms</td>
           <td><code></code></td>
-          <td>enum, keyword, number, string</td>
+          <td>enum, keyword, integer, float, string</td>
           <td>
             <p>Default operator.</p>
             <p>
-              For enum, keyword, and number, the field contains
+              For enum, keyword, integer, and float, the field contains
               at least one instance of the specified term.
             </p>
             <p>
@@ -279,39 +279,39 @@
         <tr>
           <td>does not exist</td>
           <td><code>__null__</code></td>
-          <td>string, flag</td>
+          <td>string, boolean, integer, float</td>
           <td>
             <p>
               The field is missing or has a null value.
             </p>
             <p>
-              Note: This doesn't work for empty string values.
+              Note: This will not match empty string values.
             </p>
           </td>
         </tr>
         <tr>
           <td>greater than</td>
           <td><code>&gt;</code></td>
-          <td>date, number</td>
-          <td>The field is greater than the given date or number.</td>
+          <td>date, integer, float</td>
+          <td>The field is greater than the given date, float, or integer value.</td>
         </tr>
         <tr>
           <td>greater than or equal</td>
           <td><code>&gt;=</code></td>
-          <td>date, number</td>
-          <td>The field is greater than or equal the given date or number.</td>
+          <td>date, integer, float</td>
+          <td>The field is greater than or equal the given date, float, or integer value.</td>
         </tr>
         <tr>
           <td>lower than</td>
           <td><code>&lt;</code></td>
-          <td>date, number</td>
-          <td>The field is lower than the given date or number.</td>
+          <td>date, integer, float</td>
+          <td>The field is lower than the given date, float, or integer value.</td>
         </tr>
         <tr>
           <td>lower than or equal</td>
           <td><code>&lt;=</code></td>
-          <td>date, number</td>
-          <td>The field is lower than or equal the given date or number.</td>
+          <td>date, integer, float</td>
+          <td>The field is lower than or equal the given date, float, or integer value.</td>
         </tr>
         <tr>
           <td>is true</td>
@@ -379,7 +379,7 @@
     </div>
 
     <p>
-      Aggregations are all about numbers. Or rather, they give you all the
+      Aggregations are all about numbers--or rather, they give you all the
       numbers about a dataset. There are several types of aggregations,
       depending of the type of data you're interested in, but they have in
       common that they are used for counting things. For example, you would use
@@ -468,7 +468,7 @@
       The previous aggregations work great for string fields, but what if you
       want to aggregate on a date for example? Or if you want to manipulate
       ranges of numbers? That is what histograms are made for. Histograms work
-      with dates and numbers, and allow you to treat that data as ranges instead
+      with dates, integers, and floats, and allow you to treat that data as ranges instead
       of "terms". For example, if you want to get a count of crashes per product
       per day, you would run a histogram on the <code>date</code> field, using
       an interval of <i>1d</i> (one day). Here's what it looks like:
@@ -494,7 +494,7 @@
     </p>
 
     <p>
-      For numbers, you do not need a unit, just a number. Let's take the
+      For integers and floats, you do not need a unit, just a number. Let's take the
       <code>uptime</code> field for example. If you want to count the number of
       crashes happening at startup (let's say startup is up to 60 seconds after
       launching the app), here is what you can do:

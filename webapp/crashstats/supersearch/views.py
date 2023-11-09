@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 
 from django_ratelimit.decorators import ratelimit
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models, utils
 from crashstats.crashstats.decorators import track_view
 from crashstats.crashstats.utils import render_exception, urlencode_obj
@@ -28,7 +28,9 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
 )
+from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
+from socorro.libclass import build_instance_from_settings
 
 
 DEFAULT_COLUMNS = ("date", "signature", "product", "version", "build_id", "platform")
@@ -58,7 +60,7 @@ def get_allowed_fields(user):
 
 def get_supersearch_form(request):
     platforms = list(models.Platform.objects.values_list("name", flat=True))
-    products = [product.name for product in productlib.get_products()]
+    products = [product.name for product in libproduct.get_products()]
 
     # FIXME(willkg): this hardcodes always getting Firefox versions which
     # seems unhelpful
@@ -284,12 +286,10 @@ def search_custom(request, default_context=None):
         except BadArgumentError as e:
             error = e
 
-    schema = settings.ELASTICSEARCH_INDEX_SCHEMA
-    now = timezone.now()
+    es_crashstorage = build_instance_from_settings(socorro_settings.ES_STORAGE)
 
     possible_indices = []
-    for i in range(26):
-        index = (now - datetime.timedelta(weeks=i)).strftime(schema)
+    for index in es_crashstorage.get_indices():
         possible_indices.append({"id": index, "text": index})
 
     context = default_context
@@ -297,7 +297,7 @@ def search_custom(request, default_context=None):
 
     if query:
         context["query"] = json.dumps(query["query"])
-        context["indices"] = ",".join(query["indices"])
+        context["indices"] = ",".join(sorted(query["indices"]))
 
     context["error"] = error
 

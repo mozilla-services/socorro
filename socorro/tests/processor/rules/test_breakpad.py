@@ -7,13 +7,16 @@ import json
 from unittest import mock
 
 from markus.testing import MetricsMock
+import pytest
 
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
-from socorro.processor.processor_pipeline import ProcessorPipeline, Status
+from socorro.processor.pipeline import Status
 from socorro.processor.rules.breakpad import (
+    execute_process,
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
+    PossibleBitFlipsRule,
     TruncateStacksRule,
 )
 
@@ -75,7 +78,7 @@ canonical_standard_raw_crash = {
 
 canonical_stackwalker_output = {
     "crash_info": {
-        "address": "0x0",
+        "address": "0x0000000000000000",
         "crashing_thread": 0,
         "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
     },
@@ -166,65 +169,290 @@ canonical_stackwalker_output = {
 canonical_stackwalker_output_str = json.dumps(canonical_stackwalker_output)
 
 
+def test_execute_process():
+    ret = execute_process("echo foo")
+    assert ret["stdout"] == b"foo\n"
+    assert ret["stderr"] == b""
+    assert ret["returncode"] == 0
+
+
+def test_execute_process_timeout():
+    ret = execute_process("sleep 10", timeout=1)
+    assert ret["stdout"] == b""
+    assert ret["stderr"] == b""
+    assert ret["returncode"] == -9
+
+
 class TestCrashingThreadInfoRule:
-    def test_valid_data(self):
+    @pytest.mark.parametrize(
+        "json_dump, expected",
+        [
+            # Test basic case
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # json_dump is missing
+            (
+                None,
+                {},
+            ),
+            # empty json_dump
+            (
+                {},
+                {
+                    "crashing_thread": None,
+                    "crashing_thread_name": None,
+                    "address": None,
+                    "reason": "",
+                },
+            ),
+        ],
+    )
+    def test_scenarios(self, tmp_path, json_dump, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
         dumps = {}
-        processed_crash = {
-            "json_dump": {
-                "crash_info": {
-                    "crashing_thread": 0,
-                    "address": "0x0",
-                    "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-                },
-                "crashing_thread": {
-                    "thread_name": "MainThread",
-                },
-            }
-        }
+        if json_dump is None:
+            processed_crash = {}
+        else:
+            processed_crash = {"json_dump": json_dump}
+            expected["json_dump"] = json_dump
         validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
         status = Status()
 
         rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert processed_crash["crashing_thread"] == 0
-        assert processed_crash["crashing_thread_name"] == "MainThread"
-        assert processed_crash["address"] == "0x0"
-        assert processed_crash["reason"] == "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS"
+        assert processed_crash == expected
 
-    def test_json_dump_missing(self):
-        """If there's no dump data, then this rule doesn't do anything"""
+    @pytest.mark.parametrize(
+        "json_dump, expected",
+        [
+            # use "address" value if "adjusted_address" doesn't exist
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # use "address" value if "adjusted_address" is null
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00007fff0b54a5d7",
+                        "adjusted_address": None,
+                        "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00007fff0b54a5d7",
+                    "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                },
+            ),
+            # use null (32-bit) if adjusted_address.kind is "null-pointer"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x00000048",
+                        "adjusted_address": {
+                            "kind": "null-pointer",
+                            "offset": "0x00000048",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x00000000",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+            # use null (64-bit) if adjusted_address.kind is "null-pointer"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0x0000000000000048",
+                        "adjusted_address": {
+                            "kind": "null-pointer",
+                            "offset": "0x0000000000000048",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0x0000000000000000",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+            # use adjusted_address.address if adjusted_address.kind is "non-canonical"
+            (
+                {
+                    "crash_info": {
+                        "crashing_thread": 0,
+                        "address": "0xffffffffffffffff",
+                        "adjusted_address": {
+                            "address": "0xe5e5e5e5e5e5e61d",
+                            "kind": "non-canonical",
+                        },
+                        "type": "EXCEPTION_ACCESS_VIOLATION_READ",
+                    },
+                    "crashing_thread": {
+                        "thread_name": "MainThread",
+                    },
+                },
+                {
+                    "crashing_thread": 0,
+                    "crashing_thread_name": "MainThread",
+                    "address": "0xe5e5e5e5e5e5e61d",
+                    "reason": "EXCEPTION_ACCESS_VIOLATION_READ",
+                },
+            ),
+        ],
+    )
+    def test_address_scenarios(self, tmp_path, json_dump, expected):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        dumps = {}
+        if json_dump is None:
+            processed_crash = {}
+        else:
+            processed_crash = {"json_dump": json_dump}
+            expected["json_dump"] = json_dump
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+        status = Status()
+
+        rule = CrashingThreadInfoRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash == expected
+
+
+class TestPossibleBitFlipsRule:
+    def test_no_data(self, tmp_path):
+        raw_crash = {}
         dumps = {}
         processed_crash = {}
-        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
         status = Status()
 
-        rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule = PossibleBitFlipsRule()
 
-        assert processed_crash == {}
-        assert status.notes == []
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-    def test_empty_json_dump(self):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_null(self, tmp_path):
+        raw_crash = {}
         dumps = {}
-        processed_crash = {"json_dump": {}}
-        validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
+        processed_crash = {"json_dump": {"crash_info": {"possible_bit_flips": None}}}
         status = Status()
 
-        rule = CrashingThreadInfoRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule = PossibleBitFlipsRule()
 
-        assert processed_crash["crashing_thread"] is None
-        assert processed_crash["crashing_thread_name"] is None
-        assert processed_crash["address"] is None
-        assert processed_crash["reason"] == ""
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_empty_array(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {"json_dump": {"crash_info": {"possible_bit_flips": []}}}
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "possible_bit_flips_max_confidence" not in processed_crash
+
+    def test_max(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {
+                    "possible_bit_flips": [
+                        {
+                            "address": "0x00007ffdaf60bf90",
+                            "confidence": 0.625,
+                            "details": {
+                                "is_null": False,
+                                "nearby_registers": 1,
+                                "poison_registers": False,
+                                "was_low": False,
+                                "was_non_canonical": False,
+                            },
+                            "source_register": None,
+                        },
+                        {
+                            "address": "0x00007ffdaf60ef90",
+                            "confidence": 0.25,
+                            "details": {
+                                "is_null": False,
+                                "nearby_registers": 0,
+                                "poison_registers": False,
+                                "was_low": False,
+                                "was_non_canonical": False,
+                            },
+                            "source_register": None,
+                        },
+                    ]
+                }
+            }
+        }
+        status = Status()
+
+        rule = PossibleBitFlipsRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        # NOTE(willkg): max is int(0.625 * 100)
+        assert processed_crash["possible_bit_flips_max_confidence"] == 62
 
 
 class TestTruncateStacksRule:
-    def test_truncate_json_dump(self):
+    def test_truncate_json_dump(self, tmp_path):
         frames = [
             {
                 "frame": 0,
@@ -296,7 +524,7 @@ class TestTruncateStacksRule:
         status = Status()
 
         rule = TruncateStacksRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         json_dump = processed_crash["json_dump"]
 
@@ -320,7 +548,7 @@ class TestTruncateStacksRule:
 
         validate_instance(instance=processed_crash, schema=PROCESSED_CRASH_SCHEMA)
 
-    def test_truncate_upload_file_minidump_browser(self):
+    def test_truncate_upload_file_minidump_browser(self, tmp_path):
         frames = [
             {
                 "frame": 0,
@@ -394,7 +622,7 @@ class TestTruncateStacksRule:
         status = Status()
 
         rule = TruncateStacksRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         json_dump = processed_crash["upload_file_minidump_browser"]["json_dump"]
 
@@ -420,24 +648,24 @@ class TestTruncateStacksRule:
 
 
 class TestMinidumpSha256HashRule:
-    def test_no_dump_checksum(self):
+    def test_no_dump_checksum(self, tmp_path):
         raw_crash = {}
         dumps = {}
         processed_crash = {}
         status = Status()
 
         rule = MinidumpSha256HashRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["minidump_sha256_hash"] == ""
 
-    def test_copy_over(self):
+    def test_copy_over(self, tmp_path):
         raw_crash = {"metadata": {"dump_checksums": {"upload_file_minidump": "hash"}}}
         dumps = {}
         processed_crash = {}
         status = Status()
 
         rule = MinidumpSha256HashRule()
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["minidump_sha256_hash"] == "hash"
 
 
@@ -453,7 +681,7 @@ class ProcessCompletedMock:
 MINIMAL_STACKWALKER_OUTPUT = {
     "status": "OK",
     "crash_info": {
-        "address": "0x0",
+        "address": "0x0000000000000000",
         "assertion": None,
         "crashing_thread": 0,
         "type": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
@@ -571,24 +799,11 @@ MINIMAL_STACKWALKER_OUTPUT_STR = json.dumps(MINIMAL_STACKWALKER_OUTPUT)
 
 
 class TestMinidumpStackwalkRule:
-    # NOTE(willkg): this tests the mechanics of the rule that runs minidump-stackwalk,
-    # but doesn't test minidump-stackwalk itself
-    def build_rule(self):
-        config = ProcessorPipeline.required_config.minidumpstackwalk
-
-        return MinidumpStackwalkRule(
-            dump_field="upload_file_minidump",
-            symbols_urls=config.symbols_urls.default,
-            command_path=config.command_path.default,
-            command_line=config.command_line.default,
-            kill_timeout=5,
-            symbol_tmp_path="/tmp/symbols/tmp",
-            symbol_cache_path="/tmp/symbols/cache",
-            tmp_path="/tmp",
-        )
-
     def test_everything_we_hoped_for(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -608,7 +823,14 @@ class TestMinidumpStackwalkRule:
                     stderr=b"",
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, status)
+                # We mocked the subprocess, so we have to generate the output files we're
+                # expecting.
+                output_path = tmp_path / f"{example_uuid}.{rule.dump_field}.json"
+                output_path.write_text(MINIMAL_STACKWALKER_OUTPUT_STR)
+                log_path = tmp_path / f"{example_uuid}.{rule.dump_field}.log"
+                log_path.write_text("")
+
+                rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
             expected_output = copy.deepcopy(MINIMAL_STACKWALKER_OUTPUT)
 
@@ -623,8 +845,15 @@ class TestMinidumpStackwalkRule:
                 tags=["outcome:success", "exitcode:0"],
             )
 
-    def test_stackwalker_hangs(self, tmp_path):
-        rule = self.build_rule()
+    def test_stackwalker_timeout(self, tmp_path):
+        # NOTE(willkg): we run the stackwalker with a "timeout --signal KILL ..." When
+        # stackwalker exceeds the amount of time alotted, timeout kills it with a
+        # SIGKILL (9) and subprocess denotes that using a negative exit code of -9.
+        # This tests that.
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -639,12 +868,12 @@ class TestMinidumpStackwalkRule:
                 "socorro.processor.rules.breakpad.subprocess"
             ) as mock_subprocess:
                 mock_subprocess.run.return_value = ProcessCompletedMock(
-                    returncode=124, stdout=b"{}\n", stderr=b""
+                    returncode=-9, stdout=b"{}\n", stderr=b""
                 )
 
-                rule.act(raw_crash, dumps, processed_crash, status)
+                rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-            assert processed_crash["mdsw_return_code"] == 124
+            assert processed_crash["mdsw_return_code"] == -9
             assert processed_crash["mdsw_status_string"] == "unknown error"
             assert processed_crash["stackwalk_version"] == rule.stackwalk_version
             assert processed_crash["success"] is False
@@ -654,11 +883,14 @@ class TestMinidumpStackwalkRule:
 
             mm.assert_incr(
                 "processor.minidumpstackwalk.run",
-                tags=["outcome:fail", "exitcode:124"],
+                tags=["outcome:fail", "exitcode:-9"],
             )
 
     def test_stackwalker_bad_output(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         dumppath = tmp_path / "dumpfile.dmp"
         dumppath.write_text("abcde")
@@ -675,7 +907,14 @@ class TestMinidumpStackwalkRule:
                 returncode=-1, stdout=b"{ff", stderr=b"boo hiss"
             )
 
-            rule.act(raw_crash, dumps, processed_crash, status)
+            # We mocked the subprocess, so we have to generate the output files we're
+            # expecting.
+            output_path = tmp_path / f"{example_uuid}.{rule.dump_field}.json"
+            output_path.write_text("{ff")
+            log_path = tmp_path / f"{example_uuid}.{rule.dump_field}.log"
+            log_path.write_text("boo hiss")
+
+            rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["mdsw_return_code"] == -1
         assert processed_crash["mdsw_status_string"] == "unknown error"
@@ -684,11 +923,14 @@ class TestMinidumpStackwalkRule:
         assert not processed_crash["success"]
         assert (
             status.notes[0]
-            == "MinidumpStackwalkRule: minidump-stackwalk: failed with -1: unknown error"
+            == "MinidumpStackwalkRule: minidump-stackwalk: failed: -1: unknown error"
         )
 
     def test_empty_minidump_shortcut(self, tmp_path):
-        rule = self.build_rule()
+        rule = MinidumpStackwalkRule(
+            symbol_tmp_path=str(tmp_path / "tmp"),
+            symbol_cache_path=str(tmp_path / "cache"),
+        )
 
         # Write a 0-byte minidump file with the correct name
         dumppath = tmp_path / "upload_file_minidump"
@@ -699,7 +941,7 @@ class TestMinidumpStackwalkRule:
         processed_crash = {}
         status = Status()
 
-        rule.act(raw_crash, dumps, processed_crash, status)
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash["mdsw_status_string"] == "EmptyMinidump"
         assert processed_crash["mdsw_stderr"] == "Shortcut for 0-bytes minidump."

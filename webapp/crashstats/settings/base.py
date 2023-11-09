@@ -6,9 +6,6 @@
 # repo. If you need to override a setting locally, use .env or environment
 # variables.
 
-# Ignore unused imports when linting. Otherwise flake8 balks at NPM_FILE_PATTERNS.
-# flake8: noqa: F401
-
 import logging
 import os
 import re
@@ -16,8 +13,10 @@ import socket
 
 from decouple import config, Csv
 import dj_database_url
-from crashstats.settings.bundles import NPM_FILE_PATTERNS, PIPELINE_CSS, PIPELINE_JS
-from socorro.lib.libdockerflow import get_release_name
+
+# NOTE(willkg): Need this on a separate line so we can ignore the unused import
+from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
+from crashstats.settings.bundles import PIPELINE_CSS, PIPELINE_JS
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -30,15 +29,24 @@ def path(*dirs):
     return os.path.join(ROOT, *dirs)
 
 
-# Debugging displays nice error messages, but leaks memory. Set this to False
-# on all server instances and True only for development.
-DEBUG = config("DEBUG", False, cast=bool)
+# Whether or not we're running in a tool environment where we want to ignore required
+# configuration
+TOOL_ENV = config("TOOL_ENV", False, cast=bool)
+if TOOL_ENV:
+    fake_values = [
+        ("ELASTICSEARCH_URL", "http://elasticsearch:9200"),
+        ("SECRET_KEY", "ou812"),
+    ]
+    for key, val in fake_values:
+        os.environ[key] = val
 
-# Set this to True to make debugging AJAX requests easier; development-only!
-DEBUG_PROPAGATE_EXCEPTIONS = config("DEBUG_PROPAGATE_EXCEPTIONS", False, cast=bool)
 
 # Whether or not we're running in the local development environment
 LOCAL_DEV_ENV = config("LOCAL_DEV_ENV", False, cast=bool)
+
+# Debugging displays nice error messages, but leaks memory. Set this to False
+# on all server instances and True only for development.
+DEBUG = config("DEBUG", False, cast=bool)
 
 SITE_ID = 1
 
@@ -181,9 +189,14 @@ TEMPLATES = [
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
+# Logging level for Crash Stats code
 LOGGING_LEVEL = config("LOGGING_LEVEL", "INFO")
 
-HOST_ID = socket.gethostname()
+# Logging level for Django logging (requests, SQL, etc)
+DJANGO_LOGGING_LEVEL = config("DJANGO_LOGGING_LEVEL", "INFO")
+
+# Name of the host this is running on. Used in logging.
+HOST_ID = config("HOST_ID", socket.gethostname())
 
 
 class AddHostID(logging.Filter):
@@ -210,7 +223,9 @@ LOGGING = {
         },
     },
     "formatters": {
-        "socorroapp": {"format": "%(asctime)s %(levelname)s - %(name)s - %(message)s"},
+        "socorroapp": {
+            "format": "%(asctime)s %(levelname)s - webapp - %(name)s - %(message)s"
+        },
         "mozlog": {
             "()": "dockerflow.logging.JsonLogFormatter",
             "logger_name": "socorro",
@@ -223,9 +238,9 @@ if LOCAL_DEV_ENV:
     # format at all, but we do want to see markus things and py.warnings.
     # So set the logging up that way.
     LOGGING["loggers"] = {
-        "django": {"handlers": ["console"], "level": LOGGING_LEVEL},
-        "django.server": {"handlers": ["console"], "level": LOGGING_LEVEL},
-        "django.request": {"handlers": ["console"], "level": LOGGING_LEVEL},
+        "django": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
+        "django.server": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
+        "django.request": {"handlers": ["console"], "level": DJANGO_LOGGING_LEVEL},
         "fillmore": {"handlers": ["console"], "level": logging.ERROR},
         "py.warnings": {"handlers": ["console"], "level": LOGGING_LEVEL},
         "markus": {"handlers": ["console"], "level": LOGGING_LEVEL},
@@ -343,22 +358,6 @@ BZAPI_TOKEN = config("BZAPI_TOKEN", "")
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
 
-ELASTICSEARCH_URLS = config(
-    "resource.elasticsearch.elasticsearch_urls", "http://localhost:9200", cast=Csv()
-)
-
-# The index schema used in our elasticsearch databases, used in the
-# Super Search Custom Query page.
-ELASTICSEARCH_INDEX_SCHEMA = config(
-    "resource.elasticsearch.elasticsearch_index", "socorro%Y%W"
-)
-
-# Number of shards per index in our Elasticsearch database.
-ES_SHARDS_PER_INDEX = 10
-
-# Default number of crashes to show on the Exploitable Crashes report
-EXPLOITABILITY_BATCH_SIZE = config("EXPLOITABILITY_BATCH_SIZE", default=250, cast=int)
-
 # Default number of days a token lasts until it expires
 TOKENS_DEFAULT_EXPIRATION_DAYS = 90
 
@@ -382,11 +381,6 @@ RATELIMIT_SUPERSEARCH_AUTHENTICATED = "100/m"
 # Path to the view that gets executed if you hit upon a ratelimit block
 RATELIMIT_VIEW = "crashstats.crashstats.views.ratelimit_blocked"
 
-# We don't want to test the migrations when we run tests.
-# We trust that syncdb matches what you'd get if you install
-# all the migrations.
-SOUTH_TESTS_MIGRATE = False
-
 # To extend any settings from above here's an example:
 # INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
@@ -402,42 +396,26 @@ MANAGERS = ADMINS
 
 CACHE_IMPLEMENTATION_FETCHES = config("CACHE_IMPLEMENTATION_FETCHES", True, cast=bool)
 
-# can be changed from null to log to test something locally
-# or if using the debug toolbar, you might give toolbar a try
-STATSD_CLIENT = config("STATSD_CLIENT", "django_statsd.clients.null")
-
 # for local development these don't matter
 STATSD_HOST = config("STATSD_HOST", "localhost")
 STATSD_PORT = config("STATSD_PORT", 8125, cast=int)
 STATSD_PREFIX = config("STATSD_PREFIX", None)
 
 # set up markus backends for metrics
-if LOCAL_DEV_ENV:
-    MARKUS_BACKENDS = [
-        {"class": "markus.backends.logging.LoggingMetrics"},
-        {
-            "class": "markus.backends.statsd.StatsdMetrics",
-            "options": {
-                "statsd_host": STATSD_HOST,
-                "statsd_port": STATSD_PORT,
-                "statsd_prefix": STATSD_PREFIX,
-            },
+MARKUS_BACKENDS = [
+    {
+        "class": "markus.backends.datadog.DatadogMetrics",
+        "options": {
+            "statsd_host": STATSD_HOST,
+            "statsd_port": STATSD_PORT,
+            "statsd_namespace": STATSD_PREFIX,
         },
-    ]
-else:
-    # Otherwise we're in a server environment and we use the datadog
-    # backend there
-    MARKUS_BACKENDS = [
-        {
-            # Log metrics to Datadog
-            "class": "markus.backends.datadog.DatadogMetrics",
-            "options": {
-                "statsd_host": STATSD_HOST,
-                "statsd_port": STATSD_PORT,
-                "statsd_namespace": STATSD_PREFIX,
-            },
-        }
-    ]
+    },
+]
+if LOCAL_DEV_ENV:
+    # Add logging backend in local dev environment so we see metrics without
+    # needing a whole statsd/grafana backend.
+    MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
 
 
 CACHES = {
@@ -457,14 +435,8 @@ CACHES = {
 
 TIME_ZONE = config("TIME_ZONE", "UTC")
 
-
-# We'll possible reuse this later in this file
-database_url = config("DATABASE_URL", "sqlite://sqlite.crashstats.db")
-
-DATABASES = {"default": dj_database_url.parse(database_url)}
-
-# Uncomment this and set to all slave DBs in use on the site.
-SLAVE_DATABASES = config("SLAVE_DATABASES", "", cast=Csv())
+DATABASE_URL = config("DATABASE_URL", "sqlite://sqlite.crashstats.db")
+DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 
 STATICFILES_FINDERS = [
@@ -482,9 +454,9 @@ PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
     "LESS_BINARY": config("LESS_BINARY", path("node_modules/.bin/lessc")),
-    "LESS_ARGUMENTS": "--global-var=\"root-path='"
-    + STATIC_ROOT
-    + "/crashstats/css/'\"",
+    "LESS_ARGUMENTS": (
+        "--global-var=\"root-path='" + STATIC_ROOT + "/crashstats/css/'\""
+    ),
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": config("UGLIFYJS_BINARY", path("node_modules/.bin/uglifyjs")),
     "UGLIFYJS_ARGUMENTS": "--mangle",
@@ -528,57 +500,9 @@ SENTRY_DSN = config("SENTRY_DSN", "")
 # Set to True enable analysis of all model fetches
 ANALYZE_MODEL_FETCHES = config("ANALYZE_MODEL_FETCHES", True, cast=bool)
 
-# This `IMPLEMENTATIONS_DATABASE_URL` is optional. By default, the
-# implementation classes will use the config coming from `DATABASE_URL`.
-# For local development you might want to connect to different databases
-# for the Django ORM and for the socorro implementation classes.
-implementations_database_url = config("IMPLEMENTATIONS_DATABASE_URL", "")
-if not implementations_database_url:
-    implementations_database_url = database_url
-implementations_config = dj_database_url.parse(implementations_database_url)
-
 # The list of valid rulesets for the Reprocessing API
+# FIXME(willkg): we can pluck this from settings or structure
 VALID_RULESETS = ["default", "regenerate_signature"]
-
-# The CrashQueueBase class to use for submitting priority and reprocessing
-# requests
-CRASHQUEUE = config(
-    "queue.crashqueue_class", "socorro.external.sqs.crashqueue.SQSCrashQueue"
-)
-
-# Config for when the models pull directly from socorro.external classes.
-SOCORRO_CONFIG = {
-    "secrets": {
-        "boto": {"secret_access_key": config("secrets.boto.secret_access_key", None)}
-    },
-    "resource": {
-        "elasticsearch": {
-            # All of these settings are repeated with sensible defaults
-            # in the implementation itself.
-            # We repeat them here so it becomes super easy to override
-            # from the way we set settings for the webapp.
-            "elasticsearch_urls": ELASTICSEARCH_URLS,
-            "elasticsearch_index": ELASTICSEARCH_INDEX_SCHEMA,
-            "elasticsearch_index_regex": config(
-                "resource.elasticsearch.elasticsearch_index_regex", "^socorro[0-9]{6}$"
-            ),
-        },
-        "boto": {
-            "access_key": config("resource.boto.access_key", None),
-            "region": config("resource.boto.region", "us-west-2"),
-            # S3 things
-            "bucket_name": config("resource.boto.bucket_name", "crashstats"),
-            "resource_class": "socorro.external.boto.connection_context.S3Connection",
-            "s3_endpoint_url": config("resource.boto.s3_endpoint_url", None),
-            # SQS things
-            "sqs_endpoint_url": config("resource.boto.sqs_endpoint_url", None),
-            "standard_queue": config("resource.boto.standard_queue", None),
-            "priority_queue": config("resource.boto.priority_queue", None),
-            "reprocessing_queue": config("resource.boto.reprocessing_queue", None),
-        },
-    },
-    "telemetrydata": {"bucket_name": config("destination.telemetry.bucket_name", None)},
-}
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
@@ -591,27 +515,33 @@ OIDC_OP_USER_ENDPOINT = config("OIDC_OP_USER_ENDPOINT", "")
 # contexts and that doesn't handle redirecting.
 OIDC_EXEMPT_URLS = [
     # Used by supersearch page as an XHR
-    "supersearch:search_fields",  # data-fields-url
-    "supersearch:search_results",  # data-results-url
+    # data-fields-url
+    "supersearch:search_fields",
+    # data-results-url
+    "supersearch:search_results",
     # Used by bugzilla.js
     "/buginfo/bug",
     # Used by signature report as an XHR
-    "signature:signature_summary",  # data-urls-summary
-    "signature:signature_reports",  # data-urls-reports
-    "signature:signature_bugzilla",  # data-urls-bugzilla
-    "signature:signature_comments",  # data-urls-comments
-    "signature:signature_correlations",  # data-urls-correlations
-    re.compile(r"^/signature/graphs/(?P<field>\w+)/$"),  # data-urls-graphs
-    re.compile(
-        r"^/signature/aggregation/(?P<aggregation>\w+)/$"
-    ),  # data-urls-aggregations
+    # data-urls-summary
+    "signature:signature_summary",
+    # data-urls-reports
+    "signature:signature_reports",
+    # data-urls-bugzilla
+    "signature:signature_bugzilla",
+    # data-urls-comments
+    "signature:signature_comments",
+    # data-urls-correlations
+    "signature:signature_correlations",
+    # data-urls-graphs
+    re.compile(r"^/signature/graphs/(?P<field>\w+)/$"),
+    # data-urls-aggregations
+    re.compile(r"^/signature/aggregation/(?P<aggregation>\w+)/$"),
 ]
 LOGOUT_REDIRECT_URL = "/"
 
 # Max number of seconds you are allowed to be logged in with OAuth2.  When the user has
 # been logged in >= this number, the user is automatically logged out.
 LAST_LOGIN_MAX = config("LAST_LOGIN_MAX", default=60 * 60 * 24, cast=int)
-
 
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_OBJECT_SRC = ("'none'",)

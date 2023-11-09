@@ -24,7 +24,7 @@ from django.utils.functional import cached_property
 
 from glom import glom
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 import crashstats.supersearch.models as supersearch_models
 from socorro.lib.libversion import generate_semver, VersionParseError
@@ -446,6 +446,12 @@ def enhance_addons(raw_crash, processed_crash):
     return ret
 
 
+def drop_beta_num(version):
+    if "b" in version:
+        return version[: version.find("b") + 1]
+    return version
+
+
 def get_versions_for_product(product, use_cache=True):
     """Returns list of recent version strings for specified product
 
@@ -464,7 +470,7 @@ def get_versions_for_product(product, use_cache=True):
 
     """
     if isinstance(product, str):
-        product = productlib.get_product_by_name(product)
+        product = libproduct.get_product_by_name(product)
 
     if use_cache:
         key = "get_versions_for_product:%s" % product.name.lower().replace(" ", "")
@@ -518,7 +524,7 @@ def get_versions_for_product(product, use_cache=True):
 
             # Add X.Yb to betas set
             if "b" in version:
-                beta_version = version[: version.find("b") + 1]
+                beta_version = drop_beta_num(version)
                 versions.add((generate_semver(beta_version), beta_version))
         except VersionParseError:
             pass
@@ -532,6 +538,39 @@ def get_versions_for_product(product, use_cache=True):
         cache.set(key, versions, timeout=(60 * 60) + random.randint(60, 120))
 
     return versions
+
+
+def get_version_json_data(url, use_cache=True):
+    """Return data at version json url.
+
+    Results for HTTP 200 responses are cached for an hour.
+
+    :arg url: the url to a json-encoded version file
+    :arg use_cache: whether or not to pull results from cache
+
+    :returns: dict
+
+    """
+    if not url:
+        return {}
+
+    if use_cache:
+        key = "get_version_json:%s" % "".join([c for c in url if c.isalnum()])
+        ret = cache.get(key)
+        if ret is not None:
+            return ret
+
+    try:
+        data = libproduct.get_version_json_data(url)
+    except libproduct.VersionDataError as exc:
+        logger.error("fetching %s kicked up error: %s", url, exc)
+        data = {}
+
+    if use_cache:
+        # Cache value for an hour plus a fudge factor in seconds
+        cache.set(key, data, timeout=(60 * 60) + random.randint(60, 120))
+
+    return data
 
 
 def get_version_context_for_product(product):
@@ -558,48 +597,70 @@ def get_version_context_for_product(product):
     versions = get_versions_for_product(product, use_cache=False)
 
     featured_versions = []
+    for item in product.featured_versions:
+        if item == "auto":
+            # Add automatically determined featured versions based on what crash reports have
+            # been collected
 
-    # Add automatically determined featured versions based on what crash reports have
-    # been collected
-    if "auto" in product.featured_versions:
-        # Map of (major, minor) -> list of (key (str), versions (str)) so we can get the
-        # most recent version of the last three major versions which we'll assume are
-        # "featured versions".
-        major_minor_to_versions = OrderedDict()
-        for version in versions:
-            # In figuring for featured versions, we don't want to include the
-            # catch-all-betas X.Yb faux version or ESR versions
-            if version.endswith(("b", "esr")):
-                continue
+            # Map of (major, minor) -> list of (key (str), versions (str)) so we can get the
+            # most recent version of the last three major versions which we'll assume are
+            # "featured versions".
+            major_minor_to_versions = OrderedDict()
+            for version in versions:
+                # In figuring for featured versions, we don't want to include the
+                # catch-all-betas X.Yb faux version or ESR versions
+                if version.endswith(("b", "esr")):
+                    continue
 
-            try:
-                semver = generate_semver(version)
-                major_minor_key = (semver.major, semver.minor)
-                major_minor_to_versions.setdefault(major_minor_key, []).append(version)
-            except VersionParseError:
-                # If this doesn't parse, then skip it
-                continue
+                try:
+                    semver = generate_semver(version)
+                    major_minor_key = (semver.major, semver.minor)
+                    major_minor_to_versions.setdefault(major_minor_key, []).append(
+                        version
+                    )
+                except VersionParseError:
+                    # If this doesn't parse, then skip it
+                    continue
 
-        # The featured versions is the most recent 3 of the list of recent versions
-        # for each major version. Since versions were sorted when we went through
-        # them, the most recent one is in index 0.
-        featured_versions = [values[0] for values in major_minor_to_versions.values()]
-        featured_versions.sort(key=lambda v: generate_semver(v), reverse=True)
-        featured_versions = featured_versions[:3]
+            # The featured versions is the most recent 3 of the list of recent versions
+            # for each major version. Since versions were sorted when we went through
+            # them, the most recent one is in index 0.
+            auto_versions = [values[0] for values in major_minor_to_versions.values()]
+            auto_versions.sort(key=lambda v: generate_semver(v), reverse=True)
+            featured_versions.extend(auto_versions[:3])
 
-    # Add manually added featured versions
-    for featured_version in reversed(product.featured_versions):
-        if featured_version == "auto":
-            continue
+        else:
+            # See if the item is from version data
+            version_json_key, version_path = item.split(".", 2)
+            version_json_url = product.version_json_urls.get(version_json_key)
+            if version_json_url:
+                data = get_version_json_data(version_json_url, use_cache=False)
+                if data:
+                    version = glom(data, version_path, default="")
+                    if version:
+                        # Add X.Yb to the set
+                        if "b" in version:
+                            beta_version = drop_beta_num(version)
+                            if beta_version not in featured_versions:
+                                featured_versions.append(beta_version)
 
-        # Move the featured_version to the beginning of the versions list; this way
-        # featured versions are displayed in the order specified in the product details
-        # file
-        if featured_version in versions:
-            versions.remove(featured_version)
-        versions.insert(0, featured_version)
+                        if version not in featured_versions:
+                            featured_versions.append(version)
 
-        featured_versions.append(featured_version)
+                        continue
+
+            # Add manually added featured versions that aren't already in featured
+            # versions
+            if item not in featured_versions:
+                featured_versions.append(item)
+
+    # Move the featured_version to the beginning of the versions list; this way featured
+    # versions are displayed in the order specified in the product details file
+    for item in featured_versions:
+        if item in versions:
+            versions.remove(item)
+
+        versions.insert(0, item)
 
     # Generate the version data the context needs
     ret = [
@@ -635,16 +696,16 @@ def build_default_context(product_name=None, versions=None):
     context = {}
 
     # Build product information
-    all_products = productlib.get_products()
+    all_products = libproduct.get_products()
     context["products"] = all_products
 
     try:
         if not product_name:
-            product = productlib.get_default_product()
+            product = libproduct.get_default_product()
         else:
-            product = productlib.get_product_by_name(product_name)
-    except productlib.ProductDoesNotExist:
-        raise http.Http404("Not a recognized product")
+            product = libproduct.get_product_by_name(product_name)
+    except libproduct.ProductDoesNotExist as exc:
+        raise http.Http404("Not a recognized product") from exc
 
     context["product"] = product
 

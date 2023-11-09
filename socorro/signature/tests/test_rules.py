@@ -43,10 +43,10 @@ def test_fix_missing_module(frame, expected_function):
 class TestCSignatureTool:
     @staticmethod
     def setup_config_c_sig_tool(
-        ig=["ignored1"],
-        pr=["pre1", "pre2"],
-        si=["fnNeedNumber"],
-        td=[r"foo32\.dll.*"],
+        ig=("ignored1",),
+        pr=("pre1", "pre2"),
+        si=("fnNeedNumber",),
+        td=(r"foo32\.dll.*",),
         ss=("sentinel", ("sentinel2", lambda x: "ff" in x)),
     ):
         tool = rules.CSignatureTool()
@@ -364,6 +364,11 @@ class TestCSignatureTool:
                 "mozilla::jni::GlobalRef<mozilla::jni::Object>::operator=(mozilla::jni::Ref<mozilla::jni::Object, _jobject*> const&)&",
                 "23",  # noqa
                 "mozilla::jni::GlobalRef<T>::operator=",
+            ),
+            (
+                "mozilla::Maybe<unsigned long>::value() const &",
+                "23",  # noqa
+                "mozilla::Maybe<T>::value",
             ),
             # Normalize anonymous namespace
             ("`anonymous namespace'::foo", "23", "(anonymous namespace)::foo"),
@@ -712,6 +717,154 @@ java.lang.IllegalArgumentException: Receiver not registered: org.mozilla.gecko.G
         )
         assert sig == e
         assert notes == []
+
+
+class TestJavaExceptionSignatureTool:
+    @pytest.mark.parametrize(
+        "value",
+        [
+            None,
+            "abcde",
+            [],
+            {},
+        ],
+    )
+    def test_bad_data(self, value):
+        tool = rules.JavaExceptionSignatureTool()
+        signature, notes, debug_notes = tool.generate(value)
+        assert signature == "EMPTY: Java exception not in expected format"
+        assert notes == ["JavaExceptionSignatureTool: value not in expected format"]
+
+    @pytest.mark.parametrize(
+        "frame, expected",
+        [
+            ({}, "unknown"),
+            # Everything that can be used
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons(AddonManager.kt)",
+            ),
+            # Variations on the module
+            (
+                {
+                    "module": "",
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": None,
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            (
+                {
+                    "function": "getFenixAddons",
+                    "filename": "AddonManager.kt",
+                },
+                "getFenixAddons(AddonManager.kt)",
+            ),
+            # Variations on function
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": None,
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "filename": "AddonManager.kt",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt(AddonManager.kt)",
+            ),
+            # Variations on filename
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": "",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                    "filename": None,
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+            (
+                {
+                    "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                    "function": "getFenixAddons",
+                },
+                "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons",
+            ),
+        ],
+    )
+    def test_normalize_frame(self, frame, expected):
+        tool = rules.JavaExceptionSignatureTool()
+        assert tool.normalize_frame(frame) == expected
+
+    @pytest.mark.parametrize(
+        "stacktrace, expected",
+        [
+            (
+                {
+                    "stacktrace": {
+                        "frames": [
+                            {
+                                "module": "org.mozilla.fenix.ext.AddonManagerKt",
+                                "function": "getFenixAddons",
+                                "filename": "AddonManager.kt",
+                            },
+                        ],
+                        "type": "IOException",
+                        "module": "java.io",
+                    },
+                },
+                (
+                    "java.io.IOException: at "
+                    + "org.mozilla.fenix.ext.AddonManagerKt.getFenixAddons(AddonManager.kt)"
+                ),
+            ),
+            (
+                {
+                    "stacktrace": {
+                        "frames": [],
+                        "type": "RemoteException",
+                        "module": "android.os",
+                    },
+                },
+                "android.os.RemoteException",
+            ),
+        ],
+    )
+    def test_generate(self, stacktrace, expected):
+        java_exception = {"exception": {"values": [stacktrace]}}
+        tool = rules.JavaExceptionSignatureTool()
+        signature, notes, debug_notes = tool.generate(java_exception)
+        assert signature == expected
 
 
 #  rules testing section
@@ -1916,3 +2069,28 @@ class TestSignatureParentIDNotEqualsChildID:
         assert result.notes == [
             'SignatureParentIDNotEqualsChildID: Signature replaced with MOZ_RELEASE_ASSERT, was: "fooo::baar"'  # noqa
         ]
+
+
+class TestHungProcess:
+    def test_predicate_no_match(self):
+        result = generator.Result()
+        result.signature = "hello"
+        rule = rules.HungProcess()
+        assert rule.predicate({}, result) is False
+
+    def test_predicate_match(self):
+        crash_data = {"hang": "ui"}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.HungProcess()
+        assert rule.predicate(crash_data, result) is True
+
+    def test_action_success(self):
+        crash_data = {"hang": "ui"}
+        result = generator.Result()
+        result.signature = "Text"
+        rule = rules.HungProcess()
+        action_result = rule.action(crash_data, result)
+
+        assert action_result is True
+        assert result.signature == "hang: ui | Text"

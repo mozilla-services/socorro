@@ -9,7 +9,6 @@ from unittest import mock
 
 from django.core.cache import cache
 from django.contrib.auth.models import User, Permission
-from django.conf import settings
 from django.forms import ValidationError
 from django.urls import reverse
 from django.utils.encoding import smart_str
@@ -18,7 +17,7 @@ from markus.testing import MetricsMock
 import pyquery
 import pytest
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.api.views import (
     api_models_and_names,
     is_valid_model_class,
@@ -29,9 +28,6 @@ from crashstats.crashstats.models import (
     BugAssociation,
     MissingProcessedCrash,
     NoOpMiddleware,
-    ProcessedCrash,
-    RawCrash,
-    Reprocessing,
     SocorroMiddleware,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
@@ -122,7 +118,7 @@ class TestViews(BaseTestViews):
         """Verifies Cache-Control header for models that cache results"""
         url = reverse("api:model_wrapper", args=("NoOp",))
         response = self.client.get(
-            url, {"product": productlib.get_default_product().name}
+            url, {"product": libproduct.get_default_product().name}
         )
         assert response.status_code == 200
         assert response["Cache-Control"]
@@ -160,7 +156,7 @@ class TestViews(BaseTestViews):
             current_limit = 3  # see above mentioned settings override
             # Double to avoid
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
-            for i in range(current_limit * 2):
+            for _ in range(current_limit * 2):
                 response = self.client.get(
                     url, {"product": "good"}, HTTP_X_REAL_IP="12.12.12.12"
                 )
@@ -183,20 +179,23 @@ class TestViews(BaseTestViews):
             )
             assert response.status_code == 200
 
-            for i in range(current_limit):
+            for _ in range(current_limit):
                 response = self.client.get(url, {"product": "good"})
             assert response.status_code == 200
 
             # But even being logged in has a limit.
             authenticated_limit = 6  # see above mentioned settings override
             assert authenticated_limit > current_limit
-            for i in range(authenticated_limit * 2):
+            for _ in range(authenticated_limit * 2):
                 response = self.client.get(url, {"product": "good"})
             # Even if you're authenticated - sure the limit is higher -
             # eventually you'll run into the limit there too.
             assert response.status_code == 429
 
-    def test_ProcessedCrash(self):
+
+class TestProcessedCrashAPI(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.ProcessedCrash.get_implementation")
+    def test_api(self, mock_implementation):
         public_data = {
             "addons_checked": None,
             "address": "0x8",
@@ -211,7 +210,6 @@ class TestViews(BaseTestViews):
             "process_type": "parent",
             "product": "WaterWolf",
             "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
-            "release_channel": "nightly",
             "release_channel": "nightly",
             "signature": "FakeSignature1",
             "success": True,
@@ -230,7 +228,7 @@ class TestViews(BaseTestViews):
                 return dict(**public_data, **protected_data)
             raise NotImplementedError
 
-        ProcessedCrash.implementation().get.side_effect = mocked_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         # If you don't specify a crash id, you get an HTTP 400
         url = reverse("api:model_wrapper", args=("ProcessedCrash",))
@@ -266,7 +264,10 @@ class TestViews(BaseTestViews):
         for key in protected_data.keys():
             assert key in dump
 
-    def test_RawCrash(self):
+
+class TestRawCrashAPI(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.RawCrash.get_implementation")
+    def test_api(self, mock_implementation):
         public_data = {
             "AdapterDeviceID": "0x  46",
             "AdapterVendorID": "0x8086",
@@ -291,12 +292,12 @@ class TestViews(BaseTestViews):
             "URL": "http://system.gaiamobile.org:8080/",
         }
 
-        def mocked_implementation_get(**params):
+        def mocked_get(**params):
             if "uuid" in params and params["uuid"] == "abc123":
                 return dict(**public_data, **protected_data)
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_implementation_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         # No crash id yields HTTP 400
         url = reverse("api:model_wrapper", args=("RawCrash",))
@@ -335,13 +336,14 @@ class TestViews(BaseTestViews):
         for key in protected_data.keys():
             assert key in dump
 
-    def test_RawCrash_binary_blob(self):
-        def mocked_implementation_get(**params):
+    @mock.patch("crashstats.crashstats.models.RawCrash.get_implementation")
+    def test_binary_blob(self, mock_implementation):
+        def mocked_get(**params):
             if "uuid" in params and params["uuid"] == "abc":
                 return "\xe0"
             raise NotImplementedError
 
-        RawCrash.implementation().get.side_effect = mocked_implementation_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(url, {"crash_id": "abc", "format": "raw"})
@@ -366,17 +368,16 @@ class TestViews(BaseTestViews):
         assert response["Content-Disposition"] == 'attachment; filename="abc.dmp"'
         assert response["Content-Type"] == "application/octet-stream"
 
-    def test_RawCrash_invalid_crash_id(self):
-        # NOTE(alexisdeschamps): this undoes the mocking of the implementation so we can test
-        # the implementation code.
-        RawCrash.implementation = self._mockeries[RawCrash]
+    def test_invalid_crash_id(self):
         url = reverse("api:model_wrapper", args=("RawCrash",))
         response = self.client.get(
             url, {"crash_id": "821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh"}
         )
         assert response.status_code == 400
 
-    def test_Bugs(self):
+
+class TestBugs(BaseTestViews):
+    def test_api(self):
         BugAssociation.objects.create(bug_id="999999", signature="OOM | small")
         url = reverse("api:model_wrapper", args=("Bugs",))
         response = self.client.get(url)
@@ -392,7 +393,9 @@ class TestViews(BaseTestViews):
             "total": 1,
         }
 
-    def test_SignaturesForBugs(self):
+
+class TestSignaturesForBugs(BaseTestViews):
+    def test_api(self):
         BugAssociation.objects.create(bug_id="999999", signature="OOM | small")
 
         url = reverse("api:model_wrapper", args=("SignaturesByBugs",))
@@ -409,13 +412,18 @@ class TestViews(BaseTestViews):
             "total": 1,
         }
 
-    def test_Field(self):
+
+class TestField(BaseTestViews):
+    def test_api(self):
         url = reverse("api:model_wrapper", args=("Field",))
         response = self.client.get(url)
         assert response.status_code == 404
 
-    def test_SuperSearch(self):
-        def mocked_supersearch_get(**params):
+
+class TestSuperSearch(BaseTestViews):
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api(self, mock_implementation):
+        def mocked_get(**params):
             restricted_params = ("_facets", "_aggs.signature", "_histogram.date")
             for key in restricted_params:
                 if key in params:
@@ -438,7 +446,7 @@ class TestViews(BaseTestViews):
                 "total": 0,
             }
 
-        SuperSearch.implementation().get.side_effect = mocked_supersearch_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("SuperSearch",))
         response = self.client.get(url)
@@ -467,8 +475,13 @@ class TestViews(BaseTestViews):
         response = self.client.get(url, {"product": ["WaterWolf", "NightTrain"]})
         assert response.status_code == 200
 
-    def test_SuperSearchUnredacted(self):
-        def mocked_supersearch_get(**params):
+
+class TestSuperSearchUnredacted(BaseTestViews):
+    @mock.patch(
+        "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
+    )
+    def test_api(self, mock_implementation):
+        def mocked_get(**params):
             assert "url" in params
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
@@ -486,7 +499,7 @@ class TestViews(BaseTestViews):
                 "total": 0,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        mock_implementation.return_value.get.side_effect = mocked_get
 
         url = reverse("api:model_wrapper", args=("SuperSearchUnredacted",))
         response = self.client.get(url, {"url": "example.com"})
@@ -517,7 +530,10 @@ class TestViews(BaseTestViews):
         )
         assert response.status_code == 200
 
-    def test_Reprocessing(self):
+
+class TestReprocessing(BaseTestViews):
+    @mock.patch("crashstats.crashstats.models.Reprocessing.get_implementation")
+    def test_api(self, mock_implementation):
         crash_id = create_new_ooid()
 
         def mocked_publish(queue, crash_ids):
@@ -525,7 +541,7 @@ class TestViews(BaseTestViews):
             assert crash_ids == [crash_id]
             return True
 
-        Reprocessing.implementation().publish = mocked_publish
+        mock_implementation.return_value.publish.side_effect = mocked_publish
 
         url = reverse("api:model_wrapper", args=("Reprocessing",))
         response = self.client.get(url)
@@ -575,16 +591,16 @@ class TestCrashVerify:
             }
 
         with mock.patch(
-            "crashstats.supersearch.models.SuperSearch.implementation"
+            "crashstats.supersearch.models.SuperSearch.get_implementation"
         ) as mock_ss:
             mock_ss.return_value.get.side_effect = mocked_supersearch_get
             yield
 
-    def create_s3_buckets(self, boto_helper):
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.create_bucket(bucket)
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.create_bucket(telemetry_bucket)
+    def create_s3_buckets(self, s3_helper):
+        bucket = s3_helper.get_crashstorage_bucket()
+        s3_helper.create_bucket(bucket)
+        telemetry_bucket = s3_helper.get_telemetry_bucket()
+        s3_helper.create_bucket(telemetry_bucket)
 
     def test_bad_uuid(self, client):
         url = reverse("api:crash_verify")
@@ -594,8 +610,8 @@ class TestCrashVerify:
         data = json.loads(resp.content)
         assert data == {"error": "unknown crash id"}
 
-    def test_elastcsearch_has_crash(self, boto_helper, client):
-        self.create_s3_buckets(boto_helper)
+    def test_elastcsearch_has_crash(self, s3_helper, client):
+        self.create_s3_buckets(s3_helper)
 
         uuid = create_new_ooid()
 
@@ -614,15 +630,15 @@ class TestCrashVerify:
             "s3_telemetry_crash": False,
         }
 
-    def test_raw_crash_has_crash(self, boto_helper, client):
-        self.create_s3_buckets(boto_helper)
+    def test_raw_crash_has_crash(self, s3_helper, client):
+        self.create_s3_buckets(s3_helper)
 
         uuid = create_new_ooid()
         crash_data = {"submitted_timestamp": "2018-03-14-09T22:21:18.646733+00:00"}
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
+        bucket = s3_helper.get_crashstorage_bucket()
         raw_crash_key = "v1/raw_crash/20%s/%s" % (uuid[-6:], uuid)
-        boto_helper.upload_fileobj(
+        s3_helper.upload_fileobj(
             bucket_name=bucket,
             key=raw_crash_key,
             data=json.dumps(crash_data).encode("utf-8"),
@@ -643,8 +659,8 @@ class TestCrashVerify:
             "s3_telemetry_crash": False,
         }
 
-    def test_processed_has_crash(self, boto_helper, client):
-        self.create_s3_buckets(boto_helper)
+    def test_processed_has_crash(self, s3_helper, client):
+        self.create_s3_buckets(s3_helper)
 
         uuid = create_new_ooid()
         crash_data = {
@@ -653,8 +669,8 @@ class TestCrashVerify:
             "completed_datetime": "2022-03-14 10:56:50.902884",
         }
 
-        bucket = settings.SOCORRO_CONFIG["resource"]["boto"]["bucket_name"]
-        boto_helper.upload_fileobj(
+        bucket = s3_helper.get_crashstorage_bucket()
+        s3_helper.upload_fileobj(
             bucket_name=bucket,
             key="v1/processed_crash/%s" % uuid,
             data=json.dumps(crash_data, cls=DateTimeEncoder).encode("utf-8"),
@@ -675,8 +691,8 @@ class TestCrashVerify:
             "s3_telemetry_crash": False,
         }
 
-    def test_telemetry_has_crash(self, boto_helper, client):
-        self.create_s3_buckets(boto_helper)
+    def test_telemetry_has_crash(self, s3_helper, client):
+        self.create_s3_buckets(s3_helper)
 
         uuid = create_new_ooid()
         crash_data = {
@@ -685,8 +701,8 @@ class TestCrashVerify:
             "uuid": uuid,
         }
 
-        telemetry_bucket = settings.SOCORRO_CONFIG["telemetrydata"]["bucket_name"]
-        boto_helper.upload_fileobj(
+        telemetry_bucket = s3_helper.get_telemetry_bucket()
+        s3_helper.upload_fileobj(
             bucket_name=telemetry_bucket,
             key="v1/crash_report/20%s/%s" % (uuid[-6:], uuid),
             data=json.dumps(crash_data).encode("utf-8"),

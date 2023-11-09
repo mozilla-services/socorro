@@ -134,7 +134,9 @@ def retry(
                     # If last attempt, raise MaxAttemptsError which will chain the
                     # current errror
                     if not wait_times:
-                        raise MaxAttemptsError("Maximum retry attempts: %r" % repr(exc))
+                        raise MaxAttemptsError(
+                            f"Maximum retry attempts: {exc!r}"
+                        ) from exc
 
                 sleep_function(next(wait_times))
                 attempts += 1

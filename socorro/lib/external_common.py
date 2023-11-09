@@ -9,8 +9,6 @@ Common functions for external modules.
 import datetime
 import json
 
-from configman.dotdict import DotDict
-
 from socorro.lib import BadArgumentError
 import socorro.lib.libdatetime as dtutil
 
@@ -18,15 +16,19 @@ import socorro.lib.libdatetime as dtutil
 def parse_arguments(filters, arguments, modern=False):
     """
     Return a dict of parameters.
+
     Take a list of filters and for each try to get the corresponding
     value in arguments or a default value. Then check that value's type.
     The @modern parameter indicates how the arguments should be
     interpreted. The old way is that you always specify a list and in
     the list you write the names of types as strings. I.e. instad of
     `str` you write `'str'`.
+
     The modern way allows you to specify arguments by real Python types
     and entering it as a list means you accept and expect it to be a list.
+
     For example, using the modern way:
+
         filters = [
             ("param1", "default", [str]),
             ("param2", None, int),
@@ -42,7 +44,9 @@ def parse_arguments(filters, arguments, modern=False):
             "param2": 0,
             "param3": ["list", "of", "4", "values"]
         }
+
     And an example for the old way:
+
         filters = [
             ("param1", "default", ["list", "str"]),
             ("param2", None, "int"),
@@ -58,10 +62,12 @@ def parse_arguments(filters, arguments, modern=False):
             "param2": 0,
             "param3": ["list", "of", "4", "values"]
         }
-    The reason for having the modern and the non-modern way is
-    transition of legacy code. One day it will all be the modern way.
+
+    The reason for having the modern and the non-modern way is transition of legacy
+    code. One day it will all be the modern way.
+
     """
-    params = DotDict()
+    params = {}
 
     for i in filters:
         count = len(i)
@@ -122,8 +128,8 @@ def check_type(param, datatype):
     if getattr(datatype, "clean", None) and callable(datatype.clean):
         try:
             return datatype.clean(param)
-        except ValueError:
-            raise BadArgumentError(param)
+        except ValueError as exc:
+            raise BadArgumentError(param) from exc
 
     elif isinstance(datatype, str):
         # You've given it something like `'bool'` as a string.

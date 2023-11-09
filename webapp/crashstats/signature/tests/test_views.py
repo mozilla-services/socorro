@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
-from urllib.parse import quote
 from unittest import mock
+from urllib.parse import quote
 
 import pyquery
 
@@ -12,496 +13,512 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats import models
-from crashstats.crashstats.tests.test_views import BaseTestViews
-from crashstats.supersearch.models import SuperSearchUnredacted
+from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
-DUMB_SIGNATURE = "hang | mozilla::wow::such_signature(smth*)"
+TEST_SIGNATURE = "shutdownhang | js::NewProxyObject"
 
 
-class TestViews(BaseTestViews):
-    def setUp(self):
-        super().setUp()
-        # Mock get_versions_for_product() so it doesn't hit supersearch breaking the
-        # supersearch mocking
-        self.mock_gvfp = mock.patch(
-            "crashstats.crashstats.utils.get_versions_for_product"
-        )
-        self.mock_gvfp.return_value = ["20.0", "19.1", "19.0", "18.0"]
-        self.mock_gvfp.start()
+def get_date_range(crash_id=None, date=None):
+    if crash_id and not date:
+        date = date_from_ooid(crash_id) - datetime.timedelta(days=1)
+    if not date:
+        raise Exception("crash_id or date must be provided")
+    start_date = date.strftime("%Y-%m-%d")
+    end_date = (date + datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+    return start_date, end_date
 
-    def tearDown(self):
-        self.mock_gvfp.stop()
-        super().tearDown()
 
-    def test_signature_report(self):
+class TestViews:
+    def test_signature_report(self, client, db, es_helper):
         url = reverse("signature:signature_report")
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
-        assert DUMB_SIGNATURE in smart_str(response.content)
+        assert TEST_SIGNATURE in smart_str(response.content)
         assert "Loading" in smart_str(response.content)
 
-    def test_signature_reports(self):
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
-            assert "uuid" in params["_columns"]
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
+    def test_signature_reports(self, client, db, es_helper):
+        def build_crash_data(crash_id, **params):
+            data = {
+                "date_processed": date_to_string(date_from_ooid(crash_id)),
+                "uuid": crash_id,
+                "product": "Firefox",
+                "signature": TEST_SIGNATURE,
+                "version": "1.0",
+                "os_name": "Linux",
+            }
+            data.update(params)
+            return data
 
-            if "product" in params:
-                results = {
-                    "hits": [
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "f74a5763-3270-4151-9c49-853710220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 888981,
-                            "cpu_info": "FakeAMD family 20 model 42",
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": 888981,
-                            "cpu_info": "AuthenticAMD family 20 model 1",
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": None,
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "2e982308-dc57-41a1-b997-b56f40220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "build_id": None,
-                        },
-                    ],
-                    "total": 4,
-                }
-                results["hits"] = self.only_certain_columns(
-                    results["hits"], params["_columns"]
-                )
-                return results
+        crash1_id = create_new_ooid()
+        crash1 = build_crash_data(
+            crash1_id,
+            build=888981,
+            cpu_info="FakeAMD family 20 model 42",
+        )
+        crash2_id = create_new_ooid()
+        crash2 = build_crash_data(
+            crash2_id,
+            build=888981,
+            cpu_info="AuthenticAMD family 20 model 1",
+        )
+        crash3_id = create_new_ooid()
+        crash3 = build_crash_data(crash3_id, build=None)
+        crash4_id = create_new_ooid()
+        crash4 = build_crash_data(crash4_id, build=None)
 
-            return {"hits": [], "total": 0}
+        for crash_data in [crash1, crash2, crash3, crash4]:
+            es_helper.index_crash(
+                raw_crash={}, processed_crash=crash_data, refresh=False
+            )
+        es_helper.refresh()
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        start_date, end_date = get_date_range(crash1_id)
+        crash1_date_processed = date_from_ooid(crash1_id).strftime("%Y-%m-%d %H:%M:%S")
 
         # Test with no results.
         url = reverse("signature:signature_reports")
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "date": "2012-01-01"}
+        response = client.get(
+            url,
+            {
+                "signature": "wrong signature",
+                "product": "Firefox",
+                "date": [f">={start_date}", f"<{end_date}"],
+            },
         )
-
         assert response.status_code == 200
         assert 'table id="reports-list"' not in smart_str(response.content)
         assert "No results were found" in smart_str(response.content)
 
         # Test with results.
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "product": "WaterWolf"}
+        response = client.get(
+            url,
+            {
+                "signature": TEST_SIGNATURE,
+                "product": "Firefox",
+                "date": [f">={start_date}", f"<{end_date}"],
+            },
         )
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
-        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
-        assert "888981" in smart_str(response.content)
-        assert "Linux" in smart_str(response.content)
-        assert "2017-01-31 23:12:57" in smart_str(response.content)
-        assert "AMD" in smart_str(response.content)
-        assert "Cpu info" not in smart_str(response.content)
+        assert crash1["uuid"] in smart_str(response.content)
+        assert str(crash1["build"]) in smart_str(response.content)
+        assert crash1["os_name"] in smart_str(response.content)
+        assert crash1_date_processed in smart_str(response.content)
+        # The cpu_info doesn't show up in the reports list by default
+        assert crash1["cpu_info"] not in smart_str(response.content)
 
         # Test with a different columns list.
-        response = self.client.get(
+        response = client.get(
             url,
             {
-                "signature": DUMB_SIGNATURE,
-                "product": "WaterWolf",
+                "signature": TEST_SIGNATURE,
+                "product": "Firefox",
+                "date": [f">={start_date}", f"<{end_date}"],
                 "_columns": ["build_id", "platform"],
             },
         )
         assert response.status_code == 200
         assert 'table id="reports-list"' in smart_str(response.content)
         # The build and platform appear
-        assert "888981" in smart_str(response.content)
-        assert "Linux" in smart_str(response.content)
+        assert str(crash1["build"]) in smart_str(response.content)
+        assert crash1["os_name"] in smart_str(response.content)
         # The crash id is always shown
-        assert "f74a5763-3270-4151-9c49-853710220208" in smart_str(response.content)
+        assert crash1["uuid"] in smart_str(response.content)
         # The version and date do not appear
-        assert "1.0" not in smart_str(response.content)
-        assert "2017" not in smart_str(response.content)
+        assert crash1["version"] not in smart_str(response.content)
+        assert crash1_date_processed not in smart_str(response.content)
+
+    def test_missing_parameters(self, client, db, es_helper):
+        url = reverse("signature:signature_reports")
 
         # Test missing parameter.
-        response = self.client.get(url)
+        response = client.get(url)
         assert response.status_code == 400
 
-        response = self.client.get(url, {"signature": ""})
+        response = client.get(url, {"signature": ""})
         assert response.status_code == 400
 
-    def test_parameters(self):
+    def test_parameter_parsing(self, client, db, es_helper):
+        calls = []
+
         def mocked_supersearch_get(**params):
-            # Verify that all expected parameters are in the URL.
-            assert "product" in params
-            assert "WaterWolf" in params["product"]
-            assert "NightTrain" in params["product"]
-
-            assert "address" in params
-            assert "0x0" in params["address"]
-            assert "0xa" in params["address"]
-
-            assert "reason" in params
-            assert "^hello" in params["reason"]
-            assert "$thanks" in params["reason"]
-
-            assert "java_stack_trace" in params
-            assert "Exception" in params["java_stack_trace"]
-
+            calls.append(params)
             return {"hits": [], "facets": "", "total": 0}
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        with mock.patch(
+            "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
+        ) as mocked_get_implementation:
+            mocked_get_implementation.return_value.get.side_effect = (
+                mocked_supersearch_get
+            )
 
-        url = reverse("signature:signature_reports")
-        response = self.client.get(
-            url,
-            {
-                "signature": DUMB_SIGNATURE,
-                "product": ["WaterWolf", "NightTrain"],
-                "address": ["0x0", "0xa"],
-                "reason": ["^hello", "$thanks"],
-                "java_stack_trace": "Exception",
-            },
-        )
-        assert response.status_code == 200
+            date = utc_now().strftime("%Y-%m-%d")
 
-    def test_signature_reports_pagination(self):
+            url = reverse("signature:signature_reports")
+            response = client.get(
+                url,
+                {
+                    "signature": TEST_SIGNATURE,
+                    "product": ["Firefox", "Thunderbird"],
+                    "address": ["0x0", "0xa"],
+                    "reason": ["^hello", "$thanks"],
+                    "date": [f">={date}"],
+                    "java_stack_trace": "Exception",
+                },
+            )
+            assert response.status_code == 200
+            # First call is the call to get_versions_for_product(), so we ignore
+            # that
+            assert len(calls) == 2
+            params = calls[1]
+
+            # Verify that all expected parameters are there
+            assert "Firefox" in params["product"]
+            assert "Thunderbird" in params["product"]
+            assert "0x0" in params["address"]
+            assert "0xa" in params["address"]
+            assert "^hello" in params["reason"]
+            assert "$thanks" in params["reason"]
+            assert "Exception" in params["java_stack_trace"]
+
+    def test_signature_reports_pagination(self, client, db, es_helper):
         """Test that the pagination of results works as expected"""
 
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
+        def build_crash_data(i):
+            # Make crash ids unique with the first 6 characters being i
+            crash_id = create_new_ooid()
+            crash_id = f"{i:06d}{crash_id[6:]}"
 
-            # Make sure a negative page does not lead to negative offset value.
-            # But instead it is considered as the page 1 and thus is not added.
-            assert params.get("_results_offset") == 0
+            # Make the date_processed unique and sortable by adding i * 5 minutes
+            date = date_from_ooid(crash_id) + datetime.timedelta(minutes=i * 5)
 
-            hits = []
-            for i in range(140):
-                crash_id = f"{i:04d}b443-1b51-402b-b2c5-ccd630220208"
-                hits.append(
-                    {
-                        "signature": "nsASDOMWindowEnumerator::GetNext()",
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": crash_id,
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "platform": "Linux",
-                        "build_id": 888981,
-                    }
-                )
             return {
-                "hits": self.only_certain_columns(hits, params["_columns"]),
-                "facets": "",
-                "total": len(hits),
+                "date_processed": date_to_string(date),
+                "uuid": crash_id,
+                "signature": TEST_SIGNATURE,
+                "product": "Firefox",
+                "version": "1.0",
+                "os_name": "Linux",
+                "build": 888981,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        crash_ids = []
+        for i in range(140):
+            data = build_crash_data(i)
+            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            crash_ids.append(data["uuid"])
 
+        es_helper.refresh()
+
+        start_date, end_date = get_date_range(crash_ids[0])
         url = reverse("signature:signature_reports")
 
-        response = self.client.get(
+        response = client.get(
             url,
             {
-                "signature": DUMB_SIGNATURE,
-                "product": ["WaterWolf"],
+                "signature": TEST_SIGNATURE,
+                "product": ["Firefox"],
+                "date": [f">={start_date}", f"<{end_date}"],
+                "page": "1",
                 "_columns": ["platform"],
+                "_sort": "-date",
             },
         )
 
         assert response.status_code == 200
-        assert "140" in smart_str(response.content)
+
+        doc = pyquery.PyQuery(response.content)
+        crashids = doc("a.crash-id")
+
+        # Assert that 50 crashes are rendered--that's a full page
+        assert len(crashids) == 50
+
+        # Newest crash should be in the page
+        assert crash_ids[-1] in smart_str(response.content)
+
+        # Oldest crash should not be in the page
+        assert crash_ids[0] not in smart_str(response.content)
 
         # Check that the pagination URL contains all three expected parameters.
-        doc = pyquery.PyQuery(response.content)
         next_page_url = str(doc(".pagination a").eq(0))
-        assert "product=WaterWolf" in next_page_url
+        assert "product=Firefox" in next_page_url
         assert "_columns=platform" in next_page_url
         assert "page=2" in next_page_url
 
         # Verify white spaces are correctly encoded.
-        # Note we use `quote` and not `quote_plus`, so white spaces are
-        # turned into '%20' instead of '+'.
-        assert quote(DUMB_SIGNATURE) in next_page_url
+        # Note we use `quote` and not `quote_plus`, so white spaces are turned into
+        # '%20' instead of '+'.
+        assert quote(TEST_SIGNATURE) in next_page_url
 
         # Test that a negative page value does not break it.
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE, "page": "-1"})
+        response = client.get(url, {"signature": TEST_SIGNATURE, "page": "-1"})
         assert response.status_code == 200
 
-    def test_signature_aggregation(self):
-        def mocked_supersearch_get(**params):
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
+    def test_signature_aggregation(self, client, db, es_helper):
+        def build_crash_data(i, products):
+            # Make crash ids unique with the first 6 characters being i
+            crash_id = create_new_ooid()
+            crash_id = f"{i:06d}{crash_id[6:]}"
 
-            assert "_facets" in params
+            # Make the date_processed unique and sortable by adding i minutes
+            date = date_from_ooid(crash_id) + datetime.timedelta(minutes=i)
 
-            if "product" in params["_facets"]:
-                return {
-                    "hits": [],
-                    "facets": {
-                        "product": [
-                            {"term": "windows", "count": 42},
-                            {"term": "linux", "count": 1337},
-                            {"term": "mac", "count": 3},
-                        ]
-                    },
-                    "total": 1382,
-                }
+            return {
+                "date_processed": date_to_string(date),
+                "uuid": crash_id,
+                "signature": TEST_SIGNATURE,
+                "product": products[i],
+                "version": "1.0",
+                "build": 888981,
+            }
 
-            # the default
-            return {"hits": [], "facets": {"platform": []}, "total": 0}
+        products = []
+        products.extend(["Firefox"] * 9)
+        products.extend(["Fenix"] * 5)
+        products.extend(["Thunderbird"] * 2)
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        crash_ids = []
+        for i in range(len(products)):
+            data = build_crash_data(i, products)
+            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            crash_ids.append(data["uuid"])
 
-        # Test with no results.
+        es_helper.refresh()
+
+        # Aggregate on platform--there's no data, so no results.
         url = reverse("signature:signature_aggregation", args=("platform",))
-
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
         assert "Product" not in smart_str(response.content)
         assert "No results were found" in smart_str(response.content)
 
-        # Test with results.
+        # Aggregate on product
         url = reverse("signature:signature_aggregation", args=("product",))
-
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
         assert "Product" in smart_str(response.content)
-        assert "1337" in smart_str(response.content)
-        assert "linux" in smart_str(response.content)
-        assert str(int(1337 / 1382 * 100)) in smart_str(response.content)
-        assert "windows" in smart_str(response.content)
-        assert "mac" in smart_str(response.content)
+        assert "Firefox" in smart_str(response.content)
+        assert "Fenix" in smart_str(response.content)
+        assert "Thunderbird" in smart_str(response.content)
 
-    def test_signature_graphs(self):
-        def mocked_supersearch_get(**params):
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
-
-            assert "_histogram.date" in params
-            assert "_facets" in params
-
-            if "product" in params["_facets"]:
-                return {
-                    "hits": [],
-                    "total": 4,
-                    "facets": {
-                        "product": [{"count": 4, "term": "WaterWolf"}],
-                        "histogram_date": [
-                            {
-                                "count": 2,
-                                "term": "2015-08-05T00:00:00+00:00",
-                                "facets": {
-                                    "product": [{"count": 2, "term": "WaterWolf"}]
-                                },
-                            },
-                            {
-                                "count": 2,
-                                "term": "2015-08-06T00:00:00+00:00",
-                                "facets": {
-                                    "product": [{"count": 2, "term": "WaterWolf"}]
-                                },
-                            },
-                        ],
-                    },
-                }
+    def test_signature_graphs(self, client, db, es_helper):
+        def build_crash_data(i, days, product):
+            date = utc_now() - datetime.timedelta(days=days)
+            crash_id = create_new_ooid(date)
 
             return {
-                "hits": [],
-                "total": 0,
-                "facets": {"platform": [], "signature": [], "histogram_date": []},
+                "date_processed": date_to_string(date),
+                "uuid": crash_id,
+                "signature": TEST_SIGNATURE,
+                "product": product,
+                "version": "1.0",
+                "build": 888981,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        test_data = [
+            (0, "Firefox"),
+            (0, "Fenix"),
+            (0, "Fenix"),
+            (0, "Firefox"),
+            (0, "Firefox"),
+            (0, "Thunderbird"),
+            (1, "Firefox"),
+            (1, "Fenix"),
+            (1, "Firefox"),
+            (1, "Firefox"),
+            (2, "Firefox"),
+            (2, "Firefox"),
+            (2, "Firefox"),
+        ]
 
-        # Test with no results
+        crash_ids = []
+        for i, item in enumerate(test_data):
+            data = build_crash_data(i, days=item[0], product=item[1])
+            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            crash_ids.append(data["uuid"])
+
+        es_helper.refresh()
+
+        # Graph platform which has no data
         url = reverse("signature:signature_graphs", args=("platform",))
-
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
         assert "application/json" in response["content-type"]
         struct = json.loads(response.content)
+
+        # We have three days worth of stuff
         assert "aggregates" in struct
-        assert len(struct["aggregates"]) == 0
+        assert len(struct["aggregates"]) == 3
+
+        # We have no kinds of platform
         assert "term_counts" in struct
         assert len(struct["term_counts"]) == 0
 
-        # Test with results
+        # Graph product which has data
         url = reverse("signature:signature_graphs", args=("product",))
-
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
         assert "application/json" in response["content-type"]
         struct = json.loads(response.content)
-        assert "aggregates" in struct
-        assert len(struct["aggregates"]) == 2
-        assert "term_counts" in struct
-        assert len(struct["term_counts"]) == 1
 
-    def test_signature_comments_no_permission(self):
+        # We have 3 days worth of stuff
+        assert "aggregates" in struct
+        assert len(struct["aggregates"]) == 3
+
+        # We have three kinds of products: Firefox, Fenix, Thunderbird
+        assert "term_counts" in struct
+        assert len(struct["term_counts"]) == 3
+
+    def test_signature_comments_permissions(self, client, db, es_helper, user_helper):
         """Verify comments are not viewable without view_pii."""
         url = reverse("signature:signature_comments")
 
-        response = self.client.get(url, {"signature": "whatever"})
+        response = client.get(url, {"signature": "whatever"})
         assert response.status_code == 403
 
-    def test_signature_comments(self):
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
+        # Log in with user with protected data access
+        user = user_helper.create_protected_user()
+        client.force_login(user)
 
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
+        response = client.get(url, {"signature": "whatever"})
+        assert response.status_code == 200
 
-            assert "user_comments" in params
-            assert params["user_comments"] == ["!__null__"]
+    def test_signature_comments(self, client, db, es_helper, user_helper):
+        def build_crash_data(crash_id, **params):
+            data = {
+                "date_processed": date_to_string(date_from_ooid(crash_id)),
+                "uuid": crash_id,
+                "product": "Firefox",
+                "signature": TEST_SIGNATURE,
+                "version": "1.0",
+                "os_name": "Linux",
+            }
+            data.update(params)
+            return data
 
-            if "product" in params:
-                results = {
-                    "hits": [
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "2e982308-dc57-41a1-b997-b56f40220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "user_comments": "hello there people!",
-                            "useragent_locale": "locale1",
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "e325b443-1b51-402b-b2c5-ccd630220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "user_comments": "I love Mozilla",
-                            "useragent_locale": "locale2",
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "63e199c4-d0a6-4386-93c7-8d72a0220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "user_comments": "this product is awesome",
-                            "useragent_locale": "locale3",
-                        },
-                        {
-                            "date": "2017-01-31T23:12:57",
-                            "uuid": "f74a5763-3270-4151-9c49-853710220208",
-                            "product": "WaterWolf",
-                            "version": "1.0",
-                            "platform": "Linux",
-                            "user_comments": "WaterWolf Y U SO GOOD?",
-                            "useragent_locale": "locale4",
-                        },
-                    ],
-                    "total": 4,
-                }
-                results["hits"] = self.only_certain_columns(
-                    results["hits"], params["_columns"]
-                )
-                return results
+        crash1_id = create_new_ooid()
+        crash1 = build_crash_data(
+            crash1_id,
+            user_comments="hello!",
+            useragent_locale="locale1",
+        )
+        crash2_id = create_new_ooid()
+        crash2 = build_crash_data(
+            crash2_id,
+            user_comments="love mozilla",
+            useragent_locale="locale2",
+        )
+        crash3_id = create_new_ooid()
+        crash3 = build_crash_data(
+            crash3_id,
+            user_comments="product is awesome",
+            useragent_locale="locale3",
+        )
+        crash4_id = create_new_ooid()
+        crash4 = build_crash_data(
+            crash4_id,
+            user_comments="it crashed",
+            useragent_locale="locale4",
+        )
 
-            return {"hits": [], "total": 0}
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        for crash_data in [crash1, crash2, crash3, crash4]:
+            es_helper.index_crash(
+                raw_crash={}, processed_crash=crash_data, refresh=False
+            )
+        es_helper.refresh()
 
         url = reverse("signature:signature_comments")
-
-        user = self._login()
-        user.groups.add(self._create_group_with_permission("view_pii"))
-        assert user.has_perm("crashstats.view_pii")
-
-        # Test with no results.
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
+        user = user_helper.create_protected_user()
+        client.force_login(user)
+        response = client.get(url, {"signature": TEST_SIGNATURE, "product": "Firefox"})
         assert response.status_code == 200
-        assert "Crash ID" not in smart_str(response.content)
-        assert "No comments were found" in smart_str(response.content)
-
-        # Test with results.
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "product": "WaterWolf"}
-        )
-        assert response.status_code == 200
-        assert "2e982308-dc57-41a1-b997-b56f40220208" in smart_str(response.content)
         assert "Crash ID" in smart_str(response.content)
-        assert "hello there" in smart_str(response.content)
-        assert "WaterWolf Y U SO GOOD" in smart_str(response.content)
-        assert "locale1" in smart_str(response.content)
+        assert crash1_id in smart_str(response.content)
+        assert "hello!" in smart_str(response.content)
+        assert "love mozilla" in smart_str(response.content)
+        assert "product is awesome" in smart_str(response.content)
+        assert "it crashed" in smart_str(response.content)
 
-    def test_signature_comments_pagination(self):
+    def test_signature_comments_pagination(self, client, db, es_helper, user_helper):
         """Test that the pagination of comments works as expected"""
 
-        def mocked_supersearch_get(**params):
-            assert "_columns" in params
+        def build_crash_data(i):
+            # Make crash ids unique with the first 6 characters being i
+            crash_id = create_new_ooid()
+            crash_id = f"{i:06d}{crash_id[6:]}"
 
-            if params.get("_results_offset") != 0:
-                hits_range = range(100, 140)
-            else:
-                hits_range = range(100)
-
-            hits = []
-            for i in hits_range:
-                crash_id = f"{i:04d}b443-1b51-402b-b2c5-ccd630220208"
-                hits.append(
-                    {
-                        "date": "2017-01-31T23:12:57",
-                        "uuid": crash_id,
-                        "user_comments": "hi",
-                    }
-                )
+            # Make the date_processed unique and sortable by adding i * 5 minutes
+            date = date_from_ooid(crash_id) + datetime.timedelta(minutes=i * 5)
 
             return {
-                "hits": self.only_certain_columns(hits, params["_columns"]),
-                "total": 140,
+                "date_processed": date_to_string(date),
+                "uuid": crash_id,
+                "signature": TEST_SIGNATURE,
+                "product": "Firefox",
+                "version": "1.0",
+                "os_name": "Linux",
+                "user_comments": f"it crashed ==={i}===:",
+                "build": 888981,
             }
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        crash_ids = []
+        for i in range(140):
+            data = build_crash_data(i)
+            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            crash_ids.append(data["uuid"])
 
-        user = self._login()
-        user.groups.add(self._create_group_with_permission("view_pii"))
-        assert user.has_perm("crashstats.view_pii")
+        es_helper.refresh()
 
+        user = user_helper.create_protected_user()
+        client.force_login(user)
+
+        start_date, end_date = get_date_range(crash_ids[0])
         url = reverse("signature:signature_comments")
 
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "product": ["WaterWolf"]}
+        response = client.get(
+            url,
+            {
+                "signature": TEST_SIGNATURE,
+                "product": ["Firefox"],
+                "date": [f">={start_date}", f"<{end_date}"],
+            },
         )
+        doc = pyquery.PyQuery(response.content)
 
         assert response.status_code == 200
-        assert "140" in smart_str(response.content)
-        assert "99" in smart_str(response.content)
-        assert "139" not in smart_str(response.content)
+        # Newest crash is rendered
+        assert crash_ids[-1] in smart_str(response.content)
+        assert "===139===" in smart_str(response.content)
+        # Oldest crash is not rendered
+        assert crash_ids[0] not in smart_str(response.content)
+        assert "===0===" not in smart_str(response.content)
 
         # Check that the pagination URL contains all expected parameters.
         doc = pyquery.PyQuery(response.content)
         next_page_url = str(doc(".pagination a").eq(0))
-        assert "product=WaterWolf" in next_page_url
+        assert "product=Firefox" in next_page_url
         assert "page=2" in next_page_url
 
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE, "page": "2"})
+        response = client.get(
+            url,
+            {
+                "signature": TEST_SIGNATURE,
+                "product": ["Firefox"],
+                "date": [f">={start_date}", f"<{end_date}"],
+                "page": 3,
+            },
+        )
         assert response.status_code == 200
-        assert "140" in smart_str(response.content)
-        assert "99" not in smart_str(response.content)
-        assert "139" in smart_str(response.content)
+        # Newest crash is not rendered--it was on page 1
+        assert crash_ids[-1] not in smart_str(response.content)
+        assert "===139===" not in smart_str(response.content)
+        # Oldest crash is rendered
+        assert crash_ids[0] in smart_str(response.content)
+        assert "===0===" in smart_str(response.content)
 
-    def test_signature_summary(self):
+    def test_signature_summary(self, client, db, es_helper):
         models.GraphicsDevice.objects.create(
             vendor_hex="0x0086",
             adapter_hex="0x1234",
@@ -515,100 +532,81 @@ class TestViews(BaseTestViews):
             adapter_name="Other",
         )
 
-        def mocked_supersearch_get(**params):
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
-
-            res = {
-                "hits": [],
-                "total": 4,
-                "facets": {
-                    "platform_pretty_version": [{"count": 4, "term": "Windows 7"}],
-                    "cpu_arch": [{"count": 4, "term": "x86"}],
-                    "process_type": [{"count": 4, "term": "parent"}],
-                    "product": [
-                        {
-                            "count": 4,
-                            "term": "WaterWolf",
-                            "facets": {
-                                "version": [
-                                    {
-                                        "term": "2.1b99",
-                                        "count": 2,
-                                        "facets": {
-                                            "cardinality_install_time": {"value": 2}
-                                        },
-                                    },
-                                    {
-                                        "term": "1.0",
-                                        "count": 2,
-                                        "facets": {
-                                            "cardinality_install_time": {"value": 2}
-                                        },
-                                    },
-                                ]
-                            },
-                        }
-                    ],
-                    "adapter_vendor_id": [
-                        {
-                            "term": "0x0086",
-                            "count": 4,
-                            "facets": {
-                                "adapter_device_id": [
-                                    {"term": "0x1234", "count": 2},
-                                    {"term": "0x1239", "count": 2},
-                                ]
-                            },
-                        }
-                    ],
-                    "android_cpu_abi": [
-                        {
-                            "term": "armeabi-v7a",
-                            "count": 4,
-                            "facets": {
-                                "android_manufacturer": [
-                                    {
-                                        "term": "ZTE",
-                                        "count": 4,
-                                        "facets": {
-                                            "android_model": [
-                                                {
-                                                    "term": "roamer2",
-                                                    "count": 4,
-                                                    "facets": {
-                                                        "android_version": [
-                                                            {"term": "15", "count": 4}
-                                                        ]
-                                                    },
-                                                }
-                                            ]
-                                        },
-                                    }
-                                ]
-                            },
-                        }
-                    ],
-                    "histogram_uptime": [
-                        {"count": 2, "term": 0},
-                        {"count": 2, "term": 60},
-                    ],
-                },
+        def build_crash_data(**params):
+            crash_id = params.pop("crash_id", create_new_ooid())
+            data = {
+                "date_processed": date_to_string(date_from_ooid(crash_id)),
+                "uuid": crash_id,
+                "product": "Fenix",
+                "signature": TEST_SIGNATURE,
+                "version": "1.0",
+                "process_type": "content",
+                "cpu_arch": "arm64",
+                "os_pretty_version": "Android",
             }
+            data.update(params)
+            return data
 
-            return res
+        crash_data = [
+            build_crash_data(
+                version="100.1.2",
+                adapter_device_id="0x1234",
+                adapter_vendor_id="0x0086",
+                android_cpu_abi="arm64-v8a",
+                android_manufacturer="Joan",
+                android_model="Jet",
+                android_version=15,
+                uptime=1000,
+            ),
+            build_crash_data(
+                version="100.1.2",
+                adapter_device_id="0x1234",
+                adapter_vendor_id="0x0086",
+                android_cpu_abi="arm64-v8a",
+                android_manufacturer="Jerry",
+                android_model="Racecar",
+                android_version=15,
+                uptime=1000,
+            ),
+            build_crash_data(
+                version="102.1.1",
+                adapter_device_id="0x1239",
+                adapter_vendor_id="0x0086",
+                android_cpu_abi="arm64-v8a",
+                android_manufacturer="Jerry",
+                android_model="Racecar",
+                android_version=15,
+                uptime=5000,
+            ),
+            build_crash_data(
+                version="102.1.1",
+                adapter_device_id="0x1239",
+                adapter_vendor_id="0x0086",
+                android_cpu_abi="arm64-v8a",
+                android_manufacturer="Jerry",
+                android_model="Racecar",
+                android_version=15,
+                uptime=5000,
+            ),
+        ]
+        for item in crash_data:
+            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+        es_helper.refresh()
 
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
+        start_date, end_date = get_date_range(date=utc_now())
 
-        # Test with no results
         url = reverse("signature:signature_summary")
-
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "product": "WaterWolf", "version": "1.0"}
+        response = client.get(
+            url,
+            {
+                "signature": TEST_SIGNATURE,
+                "product": "Fenix",
+                "date": [f">={start_date}", f"<{end_date}"],
+            },
         )
         assert response.status_code == 200
 
-        # Make sure all boxes are there.
+        # Make sure all boxes are there
         assert "Operating System" in smart_str(response.content)
         assert "Uptime Range" in smart_str(response.content)
         assert "Product" in smart_str(response.content)
@@ -617,64 +615,43 @@ class TestViews(BaseTestViews):
         assert "Mobile Devices" in smart_str(response.content)
         assert "Graphics Adapter" in smart_str(response.content)
 
-        # Check that some of the expected values are there.
-        assert "Windows 7" in smart_str(response.content)
-        assert "x86" in smart_str(response.content)
-        assert "WaterWolf" in smart_str(response.content)
-        assert "2.1b99" in smart_str(response.content)
-        assert "parent" in smart_str(response.content)
-        assert "&lt; 1 min" in smart_str(response.content)
-        assert "1-5 min" in smart_str(response.content)
-        assert "ZTE" in smart_str(response.content)
+        # Check that some of the expected values are there
+
+        # Operating system
+        assert "Android" in smart_str(response.content)
+
+        # Product
+        assert "Fenix" in smart_str(response.content)
+        assert "102.1.1" in smart_str(response.content)
+
+        # Process type
+        assert "content" in smart_str(response.content)
+
+        # Graphics Adapter
         assert "Intel (0x0086)" in smart_str(response.content)
 
-        response = self.client.get(url, {"signature": DUMB_SIGNATURE})
-        assert response.status_code == 200
+        # Uptime Range
+        assert "15-60 min" in smart_str(response.content)
 
-    def test_signature_summary_with_many_hexes(self):
-        def mocked_supersearch_get(**params):
-            assert "signature" in params
-            assert params["signature"] == ["=" + DUMB_SIGNATURE]
+        # Mobile devices content
+        assert "arm64-v8a" in smart_str(response.content)
+        assert "Jerry" in smart_str(response.content)
 
-            adapters = [{"term": f"0x{i:0>4}", "count": 1} for i in range(50)]
-            vendors = [
-                {
-                    "term": f"0x{i:0>4}",
-                    "count": 50,
-                    "facets": {"adapter_device_id": adapters},
-                }
-                for i in range(3)
-            ]
-
-            res = {"hits": [], "total": 4, "facets": {"adapter_vendor_id": vendors}}
-
-            return res
-
-        SuperSearchUnredacted.implementation().get.side_effect = mocked_supersearch_get
-
-        # Test with no results
-        url = reverse("signature:signature_summary")
-
-        response = self.client.get(
-            url, {"signature": DUMB_SIGNATURE, "product": "WaterWolf", "version": "1.0"}
-        )
-        assert response.status_code == 200
-
-    def test_signature_bugzilla(self):
+    def test_signature_bugzilla(self, client, db, es_helper):
         models.BugAssociation.objects.create(bug_id=111111, signature="Something")
         models.BugAssociation.objects.create(bug_id=111111, signature="OOM | small")
         models.BugAssociation.objects.create(bug_id=123456789, signature="Something")
 
         # Test with signature that has no bugs
         url = reverse("signature:signature_bugzilla")
-        response = self.client.get(
+        response = client.get(
             url, {"signature": "hang | mozilla::wow::such_signature(smth*)"}
         )
         assert response.status_code == 200
         assert "There are no bugs" in smart_str(response.content)
 
         # Test with signature that has bugs and related bugs
-        response = self.client.get(url, {"signature": "Something"})
+        response = client.get(url, {"signature": "Something"})
         assert response.status_code == 200
         assert "123456789" in smart_str(response.content)
         assert "111111" in smart_str(response.content)

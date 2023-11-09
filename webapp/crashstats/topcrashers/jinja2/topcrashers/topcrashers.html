@@ -51,6 +51,24 @@
 
         <div class="tc-filters-block">
           <ul class="tc-filter">
+            <li class="tc-selector-heading">Report Type:</li>
+            <li>
+              <a href="{{ change_query_string(_report_type='any') }}"
+                 {% if query.report_type == 'any' %} class="selected"{% endif %}
+              >Any</a>
+            </li>
+            <li>
+              <a href="{{ change_query_string(_report_type='crash') }}"
+                 {% if query.report_type == 'crash' %} class="selected"{% endif %}
+              >Crash</a>
+            </li>
+            <li>
+              <a href="{{ change_query_string(_report_type='hang') }}"
+                 {% if query.report_type == 'hang' %} class="selected"{% endif %}
+              >Hang</a>
+            </li>
+          </ul>
+          <ul class="tc-filter">
             <li class="tc-selector-heading">Report Date:</li>
             <li>
               <a href="{{ change_query_string(_tcbs_mode=None) }}"

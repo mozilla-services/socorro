@@ -3,16 +3,18 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-from functools import cache
+import functools
+import hashlib
 from pathlib import Path
 
 import docutils.core
 
-from django.conf import settings
 from django import http
+from django.conf import settings
+from django.core.cache import cache
 from django.shortcuts import render
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats.decorators import pass_default_context, track_view
 from crashstats.supersearch.models import SuperSearch, SuperSearchFields
 from socorro.lib.libdockerflow import get_version_info, get_release_name
@@ -27,7 +29,8 @@ OPERATORS_BOOLEAN = ["__true__"]
 OPERATORS_FLAG = ["__null__"]
 OPERATORS_MAP = {
     "string": OPERATORS_BASE + OPERATORS_STRING + OPERATORS_FLAG,
-    "number": OPERATORS_BASE + OPERATORS_RANGE,
+    "float": OPERATORS_BASE + OPERATORS_RANGE,
+    "integer": OPERATORS_BASE + OPERATORS_RANGE,
     "date": OPERATORS_RANGE,
     "bool": OPERATORS_BOOLEAN,
     "flag": OPERATORS_FLAG,
@@ -43,7 +46,7 @@ def home(request, default_context=None):
     return render(request, "docs/home.html", context)
 
 
-@cache
+@functools.cache
 def read_whatsnew():
     """Reads the WHATSNEW.rst file, parses it, and returns the HTML
 
@@ -92,7 +95,7 @@ def protected_data_access(request, default_context=None):
     return render(request, "docs/protected_data_access.html", context)
 
 
-@cache
+@functools.cache
 def get_annotation_schema_data():
     annotation_schema = get_schema("raw_crash.schema.yaml")
 
@@ -102,7 +105,7 @@ def get_annotation_schema_data():
     return annotation_fields
 
 
-@cache
+@functools.cache
 def get_processed_schema_data():
     processed_schema = get_schema("processed_crash.schema.yaml")
 
@@ -123,7 +126,7 @@ def datadictionary_index(request, default_context=None):
     return render(request, "docs/datadictionary/index.html", context)
 
 
-@cache
+@functools.cache
 def get_processed_field_for_annotation(field):
     field_data = get_processed_schema_data()
     for key, value in field_data.items():
@@ -153,20 +156,35 @@ def get_indexed_example_data(field):
         return [item["term"] for item in resp["facets"][field]]
 
 
-@track_view
-@pass_default_context
-def datadictionary_field_doc(request, dataset, field, default_context=None):
+class DatasetNotFound(Exception):
+    pass
+
+
+class FieldNotFound(Exception):
+    pass
+
+
+DATASET_TO_SCHEMA = {
+    "annotation": get_schema("raw_crash.schema.yaml"),
+    "processed": get_schema("processed_crash.schema.yaml"),
+}
+
+
+def generate_field_doc(dataset, field):
+    try:
+        schema = DATASET_TO_SCHEMA[dataset]
+    except KeyError as exc:
+        raise DatasetNotFound() from exc
+
+    field_hash = hashlib.md5(field.encode("utf-8")).hexdigest()
+    cache_key = f"datadictionary:generate_field_doc:{dataset}:{field_hash}"
+
+    ret = cache.get(cache_key)
+    if ret is not None:
+        return ret
+
     field_path = field.split("/")
     field_name = field_path[-1]
-
-    context = default_context or {}
-
-    if dataset == "annotation":
-        schema = get_schema("raw_crash.schema.yaml")
-    elif dataset == "processed":
-        schema = get_schema("processed_crash.schema.yaml")
-    else:
-        return http.HttpResponseNotFound("Dataset not found")
 
     # Find the field item they want to view documentation for
     field_data = schema
@@ -174,7 +192,7 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
         if path_item == "[]":
             field_data = field_data.get("items")
             if field_data is None:
-                return http.HttpResponseNotFound("Field not found")
+                raise FieldNotFound()
 
             continue
 
@@ -189,13 +207,13 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
             }
             field_data = nicknamed_fields.get(path_item)
             if field_data is None:
-                return http.HttpResponseNotFound("Field not found")
+                raise FieldNotFound()
             continue
 
-        return http.HttpResponseNotFound("Field not found")
+        raise FieldNotFound()
 
     if field_data is None:
-        return http.HttpResponseNotFound("Field not found")
+        raise FieldNotFound()
 
     # Get description and examples and render it as markdown
     description = field_data.get("description") or "no description"
@@ -234,26 +252,42 @@ def datadictionary_field_doc(request, dataset, field, default_context=None):
         ("/".join(field_path[0 : i + 1]), field_path[i]) for i in range(len(field_path))
     ]
 
-    context.update(
-        {
-            "dataset": dataset,
-            "field_name": field_name,
-            "field_path_breadcrumbs": field_path_breadcrumbs,
-            "field_path": field,
-            "field_data": field_data,
-            "description": description,
-            "data_reviews": field_data.get("data_reviews") or [],
-            "example_data": example_data,
-            "products_for_field": products,
-            "search_field": search_field,
-            "search_field_query_type": search_field_query_type,
-            "source_annotation": field_data.get("source_annotation") or "",
-            "processed_field": processed_field,
-            "type": field_data["type"],
-            "permissions": field_data["permissions"],
-        }
-    )
+    doc_data = {
+        "dataset": dataset,
+        "field_name": field_name,
+        "field_path_breadcrumbs": field_path_breadcrumbs,
+        "field_path": field,
+        "field_data": field_data,
+        "description": description,
+        "data_reviews": field_data.get("data_reviews") or [],
+        "example_data": example_data,
+        "products_for_field": products,
+        "search_field": search_field,
+        "search_field_query_type": search_field_query_type,
+        "source_annotation": field_data.get("source_annotation") or "",
+        "processed_field": processed_field,
+        "type": field_data["type"],
+        "permissions": field_data["permissions"],
+    }
 
+    cache.set(cache_key, doc_data, timeout=60)
+
+    return doc_data
+
+
+@track_view
+@pass_default_context
+def datadictionary_field_doc(request, dataset, field, default_context=None):
+    try:
+        doc_data = generate_field_doc(dataset, field)
+    except DatasetNotFound:
+        return http.HttpResponseNotFound("Dataset not found")
+    except FieldNotFound:
+        return http.HttpResponseNotFound("Field not found")
+
+    context = default_context or {}
+
+    context.update(doc_data)
     return render(request, "docs/datadictionary/field_doc.html", context)
 
 
@@ -282,7 +316,7 @@ def get_valid_version(active_versions, product_name):
 def supersearch_home(request, default_context=None):
     context = default_context or {}
 
-    product_name = productlib.get_default_product().name
+    product_name = libproduct.get_default_product().name
     context["product_name"] = product_name
     context["version"] = get_valid_version(context["active_versions"], product_name)
 
@@ -294,7 +328,7 @@ def supersearch_home(request, default_context=None):
 def supersearch_examples(request, default_context=None):
     context = default_context or {}
 
-    product_name = productlib.get_default_product().name
+    product_name = libproduct.get_default_product().name
     context["product_name"] = product_name
     context["version"] = get_valid_version(context["active_versions"], product_name)
     context["today"] = datetime.datetime.utcnow().date()
@@ -325,7 +359,7 @@ def supersearch_api(request, default_context=None):
     )
 
     date_number_fields = [
-        x for x in all_fields if x["query_type"] in ("number", "date")
+        x for x in all_fields if x["query_type"] in ("integer", "float", "date")
     ]
 
     context["all_fields"] = all_fields

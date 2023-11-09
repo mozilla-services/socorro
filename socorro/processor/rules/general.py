@@ -39,7 +39,7 @@ class DeNullRule(Rule):
         # return it as is
         return s
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         had_nulls = False
 
         # Go through the raw crash and de-null keys and values
@@ -66,7 +66,7 @@ class DeNoneRule(Rule):
 
     """
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         had_nones = False
 
         # Remove keys that have None values
@@ -80,7 +80,7 @@ class DeNoneRule(Rule):
 
 
 class IdentifierRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         if "uuid" in raw_crash:
             processed_crash["crash_id"] = raw_crash["uuid"]
             processed_crash["uuid"] = raw_crash["uuid"]
@@ -103,7 +103,7 @@ class CPUInfoRule(Rule):
         "x86_64": "amd64",
     }
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # This is the CPU info of the machine the product was running on
         processed_crash["cpu_info"] = glom(
             processed_crash, "json_dump.system_info.cpu_info", default="unknown"
@@ -124,24 +124,18 @@ class CPUInfoRule(Rule):
 
         processed_crash["cpu_arch"] = cpu_arch
 
-        # The cpu_microcode_version is populated by stackwalker, but if it's not there,
-        # then degrade to the CPUMicrocodeVersion crash annotation value
+        # The cpu_microcode_version is populated by minidump-stackwalk which gets it from
+        # either the minidump or the CPUMicrocodeVersion crash annotation value; as
+        # of minidump-stackwalk v0.16.0, the value is always a hexstring.
         cpu_microcode_version = glom(
             processed_crash, "json_dump.system_info.cpu_microcode_version", default=None
         )
         if cpu_microcode_version is not None:
-            # This is a u32, so we convert it to a hex string
-            processed_crash["cpu_microcode_version"] = hex(cpu_microcode_version)
-        else:
-            # This is a hex string
-            cpu_microcode_version = raw_crash.get("CPUMicrocodeVersion")
-
-            if cpu_microcode_version:
-                processed_crash["cpu_microcode_version"] = cpu_microcode_version
+            processed_crash["cpu_microcode_version"] = cpu_microcode_version
 
 
 class OSInfoRule(Rule):
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         os_name = glom(
             processed_crash, "json_dump.system_info.os", default="Unknown"
         ).strip()
@@ -169,7 +163,7 @@ class CrashReportKeysRule(Rule):
 
         return key
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         all_keys = set(raw_crash.keys()) | set(dumps.keys())
 
         # Go through and remove obviously invalid keys
@@ -188,5 +182,5 @@ class CrashReportKeysRule(Rule):
 class CollectorMetadataRule(Rule):
     """Copies collector metadata to processed crash"""
 
-    def action(self, raw_crash, dumps, processed_crash, status):
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         processed_crash["collector_metadata"] = raw_crash.get("metadata", {})

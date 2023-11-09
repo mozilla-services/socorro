@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from session_csrf import anonymous_csrf
 
-from crashstats import productlib
+from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
     check_days_parameter,
@@ -42,6 +42,7 @@ def get_topcrashers_stats(**kwargs):
         "is_garbage_collecting",
         "dom_fission_enabled",
         "process_type",
+        "report_type",
         "startup_crash",
         "_histogram.uptime",
         "_cardinality.install_time",
@@ -53,6 +54,9 @@ def get_topcrashers_stats(**kwargs):
 
     if params.get("process_type") in ("any", "all"):
         params["process_type"] = None
+
+    if params.get("report_type") in ("any", "all"):
+        params["report_type"] = None
 
     if range_type == "build":
         params["build_id"] = [
@@ -118,21 +122,22 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     result_count = form.cleaned_data["_facets_size"]
     tcbs_mode = form.cleaned_data["_tcbs_mode"]
     range_type = form.cleaned_data["_range_type"]
+    report_type = form.cleaned_data["_report_type"]
 
     range_type = "build" if range_type == "build" else "report"
+    report_type = report_type or "crash"
 
     if not tcbs_mode or tcbs_mode not in ("realtime", "byday"):
         tcbs_mode = "realtime"
 
     try:
-        product = productlib.get_product_by_name(product_name)
-    except productlib.ProductDoesNotExist:
+        product = libproduct.get_product_by_name(product_name)
+    except libproduct.ProductDoesNotExist:
         return http.HttpResponseBadRequest("Unrecognized product")
 
     context["product"] = product
 
     if not versions:
-        # :(
         # simulate what the nav.js does which is to take the latest version
         # for this product.
         for pv in context["active_versions"][product.name]:
@@ -197,6 +202,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         "result_count": str(result_count),
         "mode": tcbs_mode,
         "range_type": range_type,
+        "report_type": report_type,
         "end_date": end_date,
         "start_date": end_date - datetime.timedelta(days=days),
     }
@@ -206,6 +212,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         version=versions,
         platform=os_name,
         process_type=crash_type,
+        report_type=report_type,
         date=[
             "<" + end_date.isoformat(),
             ">=" + context["query"]["start_date"].isoformat(),

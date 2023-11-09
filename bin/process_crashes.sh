@@ -47,11 +47,11 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 
 # Make the bucket and sync contents
 ./bin/socorro_aws_s3.sh mb s3://dev-bucket/
-./bin/socorro_aws_s3.sh cp --recursive "${DATADIR}" s3://dev-bucket/
-./bin/socorro_aws_s3.sh ls --recursive s3://dev-bucket/
+./bin/socorro_aws_s3.sh cp --recursive "${DATADIR}" "s3://${CRASHSTORAGE_S3_BUCKET}/"
+./bin/socorro_aws_s3.sh ls --recursive "s3://${CRASHSTORAGE_S3_BUCKET}/"
 
 # Add crash ids to queue
-./socorro-cmd sqs publish local-dev-standard $@
+./socorro-cmd sqs publish "${SQS_STANDARD_QUEUE}" $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"

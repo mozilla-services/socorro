@@ -6,16 +6,18 @@
 
 # Usage: bin/run_processor.sh
 #
-# Runs the processor.
+# Runs processor process manager.
 #
 # Note: This should be called from inside a container.
 
 set -euo pipefail
 
-CMDPREFIX="${CMDPREFIX:-}"
+PROCESSOR_WORKERS=${PROCESSOR_WORKERS:-"1"}
 
-# Add /stackwalk to the path
-PATH=/stackwalk:${PATH:-}
-
-# Run the processor
-${CMDPREFIX} python /app/socorro/processor/processor_app.py
+# Run honcho with PROCESSOR_WORKERS number of processor worker processes
+honcho \
+    --procfile /app/processor/Procfile \
+    --app-root /app \
+    --no-prefix \
+    start \
+    --concurrency "processor=${PROCESSOR_WORKERS}"

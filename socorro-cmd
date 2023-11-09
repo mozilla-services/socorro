@@ -24,52 +24,57 @@ import types
 
 import click
 
-from socorro.app.socorro_app import App
+
+sys.path.insert(0, "bin")
+sys.path.insert(0, "webapp")
 
 
 def wrapped(text, width=80):
     """Wraps a block of text"""
-    return '\n'.join(textwrap.wrap(text, width=width))
+    return "\n".join(textwrap.wrap(text, width=width))
 
 
 def showcommands_cmd(argv):
     """Sub command to show location of all command runners"""
     parser = argparse.ArgumentParser(
-        description='Shows socorro-cmd subcommands and runner paths.'
+        description="Shows socorro-cmd subcommands and runner paths."
     )
     parser.parse_args(argv)
 
-    print('Available commands and runners for socorro-cmd:')
-    print('')
+    print("Available commands and runners for socorro-cmd:")
+    print("")
 
     for group in COMMANDS:
-        print('%s:' % group.name)
+        print(f"{group.name}:")
         for cmd, runner in group:
             if not isinstance(runner, str):
-                runner = '%s in %s' % (runner.__name__, inspect.getfile(runner))
-            print('  %-24s %s' % (cmd, runner))
-        print('')
+                runner = f"{runner.__name__} in {inspect.getfile(runner)}"
+            print(f"  {cmd:<24} {runner}")
+        print("")
 
 
 def django_cmd(cmd):
     """Run a Django command."""
+
     def _django_cmd(argv):
-        argv = ['socorro-cmd', cmd] + argv
-        sys.path.insert(0, 'webapp')
+        argv = ["socorro-cmd", cmd] + argv
         import manage
+
         manage.main(argv)
+
     return _django_cmd
 
 
 def import_path(python_path):
     """Import a name from a module."""
-    module_path, name = python_path.rsplit('.', 1)
+    module_path, name = python_path.rsplit(".", 1)
     module = importlib.import_module(module_path)
     return getattr(module, name)
 
 
 class Group:
     """Defines a grouping of commands"""
+
     def __init__(self, name, cmd_to_run_map):
         self.name = name
         self.cmd_to_run_map = cmd_to_run_map
@@ -83,45 +88,42 @@ class Group:
 
 COMMANDS = [
     Group(
-        "Crash processing utilities", {
+        "Crash processing utilities",
+        {
             "fetch_crashids": import_path("socorro.scripts.fetch_crashids.main"),
             "fetch_crash_data": import_path("socorro.scripts.fetch_crash_data.main"),
             "reprocess": import_path("socorro.scripts.reprocess.main"),
             "fetch_missing": import_path("socorro.scripts.fetch_missing.main"),
-        }
+        },
     ),
     Group(
-        "Local development environment maintenance", {
-            "upload_telemetry_schema": import_path(
-                "socorro.external.boto.upload_telemetry_schema.UploadTelemetrySchema"
-            ),
+        "Local development environment maintenance",
+        {
+            "upload_telemetry_schema": import_path("upload_telemetry_schema.main"),
             "db": import_path("socorro.scripts.db.db_group"),
-            "es": import_path("socorro.scripts.es.es_group"),
-            "sqs": import_path("socorro.scripts.sqs_cli.main"),
-        }
+            "es": import_path("es_cli.main"),
+            "sqs": import_path("sqs_cli.main"),
+        },
     ),
     Group(
-        "Services", {
+        "Services",
+        {
             "cronrun": django_cmd("cronrun"),
-            "processor": import_path("socorro.processor.processor_app.ProcessorApp"),
-        }
+        },
     ),
     Group(
-        "Miscellaneous", {
+        "Miscellaneous",
+        {
             "showcommands": showcommands_cmd,
             "signature": import_path("socorro.signature.cmd_signature.main"),
             "signature-doc": import_path("socorro.signature.cmd_doc.main"),
-        }
-    )
+        },
+    ),
 ]
 
 
 def import_and_run(app):
-    """Takes a runner and runs it
-
-    Runners can be either a function or a Socorro App.
-
-    """
+    """Takes a runner and runs it."""
     # If the app is a main function, we run it as is
     if isinstance(app, types.FunctionType):
         sys.exit(app(sys.argv[1:]))
@@ -131,43 +133,37 @@ def import_and_run(app):
     if isinstance(app, click.core.Group):
         app()
 
-    # If the app is a Socorro App, we run it using the Socorro App main
-    if issubclass(app, App):
-        sys.exit(app.run())
-
-    print('ProgrammerError: Unknown runner type')
+    print("ProgrammerError: Unknown runner type")
     sys.exit(1)
 
 
 def build_epilog():
     """Builds the epilog containing the groups and commands"""
     output = []
-    output.append('Available commands:')
-    output.append('\n')
+    output.append("Available commands:")
+    output.append("\n")
     for group in COMMANDS:
-        output.append('%s:' % group.name)
-        for cmd, runner in group:
-            output.append('  %s' % cmd)
-        output.append('\n')
+        output.append(f"{group.name}:")
+        for cmd, _ in group:
+            output.append(f"  {cmd}")
+        output.append("\n")
 
-    output.append('')
+    output.append("")
     output.append('Type "socorro-cmd CMD --help" for help on any command.')
-    output.append('')
+    output.append("")
     output.append(
         wrapped(
-            'All commands need to be run in a Docker container. Service commands are run in '
+            "All commands need to be run in a Docker container. Service commands are run in "
             'the related container. For example, the "processor" command should run in the '
             '"processor" container. All other commands should be run in the processor '
-            'container.'
+            "container."
         )
     )
-    output.append('')
+    output.append("")
     output.append(
-        wrapped(
-            'For more documentation, see <https://socorro.readthedocs.io/>.'
-        )
+        wrapped("For more documentation, see <https://socorro.readthedocs.io/>.")
     )
-    return '\n'.join(output)
+    return "\n".join(output)
 
 
 def get_runner(cmd):
@@ -181,34 +177,26 @@ def get_runner(cmd):
 def cmd_main():
     # Build a basic parser so we can take advantage of --help
     parser = argparse.ArgumentParser(
-        prog='socorro-cmd',
+        prog="socorro-cmd",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=build_epilog()
+        epilog=build_epilog(),
     )
-    parser.add_argument(
-        'cmd',
-        nargs='?',
-        help='command to run'
-    )
-    parser.add_argument(
-        'arg',
-        nargs='*',
-        help='command arguments'
-    )
+    parser.add_argument("cmd", nargs="?", help="command to run")
+    parser.add_argument("arg", nargs="*", help="command arguments")
 
-    if not sys.argv[1:] or sys.argv[1] in ('-h', '--help'):
+    if not sys.argv[1:] or sys.argv[1] in ("-h", "--help"):
         parser.print_help()
         return 0
 
     cmd = sys.argv[1]
     runner = get_runner(cmd)
     if runner is None:
-        parser.error('"%s" is not a valid command; see --help for command list' % cmd)
+        parser.error(f"{cmd!r} is not a valid command; see --help for command list")
 
     # Rewrite sys.argv so anything that parses sys.argv has the right one
-    sys.argv = [sys.argv[0] + ' ' + cmd] + sys.argv[2:]
+    sys.argv = [sys.argv[0] + " " + cmd] + sys.argv[2:]
     import_and_run(runner)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cmd_main()

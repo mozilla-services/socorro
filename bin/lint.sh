@@ -12,29 +12,30 @@
 
 set -euo pipefail
 
-BLACKARGS=("--line-length=88" "--target-version=py36" docker socorro webapp bin)
+FILES="socorro-cmd docker socorro webapp bin"
+PYTHON_VERSION=$(python --version)
+
 
 if [[ "${1:-}" == "--fix" ]]; then
-    echo ">>> black fix"
-    black "${BLACKARGS[@]}"
+    echo ">>> black fix (${PYTHON_VERSION})"
+    black $FILES
 
 else
-    echo ">>> flake8 ($(python --version))"
-    cd /app
-    flake8
+    echo ">>> ruff (${PYTHON_VERSION})"
+    ruff $FILES
 
-    echo ">>> black (python)"
-    black --check "${BLACKARGS[@]}"
+    echo ">>> black (${PYTHON_VERSION})"
+    black --check $FILES
 
-    echo ">>> license check (python)"
+    echo ">>> license check (${PYTHON_VERSION})"
     if [[ -d ".git" ]]; then
-        # If the .git directory exists, we can let license_check.py do
+        # If the .git directory exists, we can let license-check.py do
         # git ls-files.
-        python bin/license_check.py
+        python bin/license-check.py
     else
         # The .git directory doesn't exist, so run it on all the Python
         # files in the tree.
-        python bin/license_check.py .
+        python bin/license-check.py .
     fi
 
     echo ">>> eslint (js)"

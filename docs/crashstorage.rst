@@ -175,7 +175,8 @@ Here is an explanation of each properties of a field:
     Specifies how values are validated when passed to filters of this field
     in Super Search.
 
-    Possible values: ``str``, ``enum``, ``bool``, ``int``, ``datetime``,
+    Possible values: ``str``, ``enum``, ``bool``, ``int``, ``float``,
+    ``datetime``,
 
 **permissions_needed**
     Permissions needed for a user to access this field.
@@ -282,6 +283,6 @@ All of this is done in a single S3 bucket.
 
 The "directory" hierarchy of that bucket looks like this:
 
-* ``{prefix}/v2/{name_of_thing}/{entropy}/{date}/{id}``: Raw crash data.
+* ``{prefix}/v1/{name_of_thing}/{date}/{id}``: Raw crash data.
 * ``{prefix}/v1/{name_of_thing}/{id}``: Processed crash data, dumps, dump_names,
   and other things.

@@ -172,8 +172,8 @@ services:
     environment:
       # Create the superuser account
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=aPassword
-      - POSTGRES_DB=breakpad
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=socorro
 
   # https://hub.docker.com/r/localstack/localstack/
   # localstack running a fake AWS S3 and SQS

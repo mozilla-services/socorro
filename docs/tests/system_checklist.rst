@@ -4,18 +4,20 @@
 Socorro Test Checklist
 ======================
 
+Last updated: February 16th, 2023
+
 This is a high-level system-wide checklist for making sure Socorro is working
 correctly in a specific environment. It's a helpful template for figuring out
 what you need to check if you're pushing out a significant change.
 
-**Note:** This is used infrequently, so if you're about to make a significant change,
-you should go through the checklist to make sure the checklist is correct and
-that everything is working as expected and fix anything that's wrong, THEN
-make your change, then go through the checklist again.
+.. Note::
+
+   This is used infrequently! If you're about to make a significant change, you
+   should go through the checklist to make sure the checklist is correct and
+   that everything is working as expected and fix anything that's wrong, THEN
+   make your change and go through the checklist again.
 
 Lonnen the bear says, "Only you can prevent production fires!"
-
-Last updated: February 6th, 2018
 
 
 How to use
@@ -24,13 +26,13 @@ How to use
 "Significant change" can mean any number of things, so this is just a template.
 You should do the following:
 
-1. Copy and paste the contents of this into a Google Doc, Etherpad, or
-   whatever system you plan to use to keep track of status and outstanding
-   issues.
+1. Copy and paste the contents of this into a Google Doc or whatever system you
+   plan to use to keep track of status and outstanding issues.
 
 2. Go through what you copy-and-pasted, remove things that don't make sense,
-   and add additional things that are important. (Please uplift any changes
-   via PR to this document that are interesting.)
+   and add additional things that are important.
+
+   Please uplift any changes via PR to this document that are interesting.
 
 
 Checklist
@@ -54,7 +56,7 @@ Checklist
 
     Make sure we can run migrations
 
-    * Django migrations
+    * Run Django migrations
 
       Local dev environment:
 
@@ -64,7 +66,7 @@ Checklist
 
       -stage/-prod:
 
-      1. See Mana
+      1. See Confluence
 
 
     Collector (Antenna)
@@ -88,34 +90,30 @@ Checklist
 
     Is the processor process running?
 
-    * Log into a logging node and check logs for errors:
+    * Process some crash reports.
+    * Check logs.
 
-      Do: "tail -f /var/log/raw/socorro.processor.docker.processor.log"
+      * local dev environment: run the processor and look at stdout
+      * stage/prod: check Google Cloud Console logging and filter for "error"
 
-      To check for errors grep for "ERRORS".
-
-    * Check Grafana "processor.save_processed_crash" for appropriate
+    * Check Grafana "processor.save_processed_crash" metric for appropriate
       environment.
 
-      * localdev: Check the logging in the console
-      * stage: https://earthangel-b40313e5.influxcloud.net/d/mTjlP_8Zz/socorro-stage-megamaster-remix?orgId=1
-      * prod: https://earthangel-b40313e5.influxcloud.net/d/LysVjx8Zk/socorro-prod-megamaster-remix?orgId=1
+      * localdev: Check METRICS logging in the console
+      * stage: check Grafana stage dashboard
+      * prod: check Grafana prod dashboard
 
-    Is the processor saving to ES? S3?
+    Is the processor saving crash data to Elasticsearch? To S3?
 
-    * Check Grafana
-      "processor.es.ESCrashStorageRedactedJsonDump.save_processed_crash.avg"
+    * Check Grafana "processor.es.save_processed_crash"
 
-    * Check Grafana
-      "processor.s3.BotoS3CrashStorage.save_processed_crash" for
-      appropriate environment.
+    * Check Grafana "processor.s3.save_processed_crash"
 
-    Submit a crash or reprocess a crash. Wait a few minutes. Verify the crash was
-    processed and made it to S3 and Elasticsearch.
+    * Check Grafana "processor.telemetry.save_processed_crash"
 
-    **FIXME:** We should write a script that uses envconsul to provide vars and takes
-    a uuid via the command line and then checks all the things to make sure it's
-    there. This assumes we don't already have one--we might!
+    Submit a crash or reprocess a crash. Wait a few minutes. Use the
+    CrashVerify API to verify the crash was processed and saved in all crash
+    storage destinations.
 
 
     Webapp
@@ -123,44 +121,78 @@ Checklist
 
     Is the webapp up?
 
-    * Use a browser and check the healthcheck (/monitoring/healthcheck)
+    * Use a browser and check the healthcheck.
+
+      * local dev: http://localhost:8000/__heartbeat__
+      * stage: https://crash-stats.allizom.org/__heartbeat__
+      * prod: https://crash-stats.mozilla.org/__heartbeat__
 
       It should say "ok: true".
 
     Is the webapp throwing errors?
 
     * Check Sentry for errors
-    * Log into a logging node and check logs for errors:
-
-      Do: "tail -f /var/log/raw/socorro.webapp.docker.webapp.log"
+    * Check logs for errors
 
     Do webapp errors make it to Sentry?
 
-    * Log into the webapp, go to the Admin, and use the Crash Me Now tool
+    * local dev: http://localhost:8000/__broken__ with username/password
+    * stage: https://crash-stats.allizom.org/__broken__ with username/password
+    * prod: https://crash-stats.mozilla.org/__broken__ with username/password
 
     Are there JavaScript errors in the webapp?
 
-    * While checking individual pages below, open the DevTools console and watch
-      for JavaScript errors.
+    * While checking individual pages below, open the DevTools console and
+      watch for JavaScript errors.
 
     Can we log into the webapp?
 
     * Log in and check the profile page.
 
-    Is the product home page working?
+    Is the home page working?
 
-    * Check the Firefox product home page (/ redirects to /home/product/Firefox)
+    * Check /.
+    * Make sure products are listed.
+    * Make sure product links go to product home pages.
+    * Make sure featured versions are listed in top nav bar.
 
-    Is super search working?
+    Is quick search from the navbar working?
 
-    * Click "Super Search" and make a search that is not likely to be cached.
-      For example, filter on a specific date.
+    * Enter in a signature. Do you get search results?
+    * Enter in a crash report id. Do you get a report view for that crash report?
+    * Enter in "bp-" and the crash report id. Do you get a report view for that
+      crash report?
 
-    Top Crashers Signature report and Report index
+    Go to Super Search. Is it working?
 
-    1. Browse to Top Crashers
-    2. Click on a crash signature to browse to Signature report
-    3. Click on a crash ID to browse to report index
+    * Click "Super Search" and make a search.
+    * Facet on something like "products".
+    * Add a column like "dom fission enabled".
+    * Filter on a new field like "crash report keys" "contains" "Accessibility"
+
+    Go to Top Crashers report.
+
+    * Click on selection buttons. Do they filter the top crashers report?
+    * Click on a signature. Does it go to the signature report page?
+
+    Go to Signature Report.
+
+    * Click through the tabs.
+    * Add an additional aggregation. Try "dom fission enabled".
+
+    Pick a crash report and go to report view.
+
+    * Click through tabs.
+    * Log out. Is it showing protected data?
+    * Log in with account that has protected data access. Is it showing
+      protected data?
+
+    Test APIs.
+
+    * RawCrash API
+    * ProcessedCrash API
+    * SuperSearch API
+    * VersionString API
 
 
     Crontabber
@@ -173,11 +205,7 @@ Checklist
     Is cronrun throwing errors?
 
     * Check Sentry for errors
-    * Log into a logging node and check logs for errors:
-
-      Do: "tail -f /var/log/raw/socorro.crontabber.docker.crontabber.log"
-
-      To check for errors, grep for "ERROR".
+    * Check logs for errors
 
 
     Stage submitter

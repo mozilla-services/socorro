@@ -200,13 +200,15 @@ def timesince(d, now):
         # We'll use the last chunk (highest granularity)
         _, name = chunks[-1]
         return name(0)
-    for i, (seconds, name) in enumerate(chunks):
+    i = 0
+    for seconds, _ in chunks:
         if seconds > 0:
             count = since // seconds
             if count != 0:
                 break
         else:
             count = since
+        i += 1
 
     result = name(count)
     if i + 1 < len(chunks):

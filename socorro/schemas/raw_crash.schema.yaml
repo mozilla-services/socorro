@@ -513,6 +513,16 @@ properties:
     type: string
     permissions: ["public"]
 
+  Hang:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1716946#c25
+    description: >
+      Set if the crash was the result of a hang, with a value which describes
+      the type of hang. The value is one of `ui` for user interface hangs or
+      `shutdown` for shutdown hangs.
+    type: string
+    permissions: ["public"]
+
   HasDeviceTouchScreen:
     data_reviews:
       - unknown
@@ -599,13 +609,14 @@ properties:
 
   JavaException:
     data_reviews:
-      - unknown
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1671654#c1
     description: |
       JSON structured Java stack trace, only present on Firefox for Android if
       we encounter an uncaught Java exception.
 
       Parts of the JSON structure can contain sensitive data.
     bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1671654
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1675560
     type: string
     permissions: ["protected"]
@@ -832,6 +843,39 @@ properties:
     type: string
     permissions: ["public"]
 
+  QuotaManagerShutdownTimeout:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1672369#c9
+    description: |
+      This annotation is present if the quota manager shutdown (resp. the
+      shutdown of the quota manager clients) was not finished in time and the
+      browser was crashed instead of waiting for the shutdown to finish. The
+      status of objects which were blocking completion of the shutdown when
+      reaching the timeout is contained in the annotation.
+
+      In the case of IndexedDB, objects are divided into three groups:
+      FactoryOperations, LiveDatabases and DatabaseMaintenances.
+
+      In the case of LocalStorage, objects are divided into three groups:
+      PrepareDatastoreOperations, Datastores and LiveDatabases.
+
+      In the case of Cache API, objects are in one group only:
+      Managers.
+
+      Each group is reported separately and contains the number of objects in
+      the group and the status of individual objects in the group (duplicate
+      entries are removed): "GroupName: N (objectStatus1, objectStatus2, ...)"
+      where N is the number of objects in the group.
+
+      The status of individual objects is constructed by taking selected object
+      properties. Properties which contain origin strings are anonymized.
+
+      In addition, intermediate steps are recorded for change events after
+      shutdown started. These include the time difference and the type of
+      object.
+    type: string
+    permissions: ["public"]
+
   ReleaseChannel:
     data_reviews:
       - unknown
@@ -839,7 +883,7 @@ properties:
       The update channel that the product is on. Typically `nightly`, `aurora`,
       `beta`, `release`, or `esr`. This may also be other values like
       `release-cck-partner`.
-    type: string
+    type: ["string", "null"]
     examples:
       - "nightly"
       - "aurora"
@@ -879,6 +923,15 @@ properties:
       Shutdown step at which the browser crashed, can be set to
       `quit-application`, `profile-change-teardown`, `profile-before-change`,
       `xpcom-will-shutdown` or `xpcom-shutdown`.
+    type: string
+    permissions: ["public"]
+
+  ShutdownReason:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1825917
+    description: >
+      One out of `Unknown`, `AppClose`, `AppRestart`, `OSForceClose`,
+      `OSSessionEnd`, `OSShutdown` or `WinUnexpectedMozQuit`.
     type: string
     permissions: ["public"]
 

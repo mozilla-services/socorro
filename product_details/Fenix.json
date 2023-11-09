@@ -3,7 +3,14 @@
   "description": "Firefox for Android browser",
   "home_page_sort": 2,
 
-  "featured_versions": ["auto"],
+  "featured_versions": [
+    "product_details.version",
+    "product_details.beta_version",
+    "product_details.nightly_version"
+  ],
+  "version_json_urls": {
+    "product_details": "https://product-details.mozilla.org/1.0/mobile_versions.json"
+  },
   "in_buildhub": false,
   "bug_links": [
     [

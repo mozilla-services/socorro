@@ -7,7 +7,6 @@ from contextlib import suppress
 import datetime
 import re
 
-from configman import class_converter, Namespace, RequiredConfig
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl import A, F, Q, Search
 
@@ -48,26 +47,17 @@ def prune_invalid_indices(indices, policy, template):
     return list(set(indices) & set(valid_indices))
 
 
-class SuperSearch(RequiredConfig, SearchBase):
-    required_config = Namespace()
-    required_config.add_option(
-        "elasticsearch_class",
-        doc="a class that implements the ES connection object",
-        default="socorro.external.es.connection_context.ConnectionContext",
-        from_string_converter=class_converter,
-    )
-
-    def __init__(self, config):
+class SuperSearch(SearchBase):
+    def __init__(self, crashstorage):
         """Create a SuperSearch instance.
 
-        :arg context: an Elasticsearch ConnectionContext instance
+        :arg crashstorage: an ESCrashStorage instance
 
         """
-        self.config = config
-        self.context = self.config.elasticsearch_class(self.config)
+        self.crashstorage = crashstorage
 
     def get_connection(self):
-        with self.context() as conn:
+        with self.crashstorage.client() as conn:
             return conn
 
     def get_indices(self, dates):
@@ -81,7 +71,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 end_date = date.value
 
         return generate_list_of_indexes(
-            start_date, end_date, self.context.get_index_template()
+            start_date, end_date, self.crashstorage.get_index_template()
         )
 
     def format_field_names(self, hit):
@@ -115,13 +105,13 @@ class SuperSearch(RequiredConfig, SearchBase):
     def get_field_name(self, value, full=True):
         try:
             field_ = self.all_fields[value]
-        except KeyError:
-            raise BadArgumentError(value, msg='Unknown field "%s"' % value)
+        except KeyError as exc:
+            raise BadArgumentError(value, msg=f"Unknown field {value!r}") from exc
 
         if not field_["is_returned"]:
             # Returning this field is not allowed.
             raise BadArgumentError(
-                value, msg='Field "%s" is not allowed to be returned' % value
+                value, msg=f"Field {value!r} is not allowed to be returned"
             )
 
         field_name = get_search_key(field_)
@@ -190,26 +180,26 @@ class SuperSearch(RequiredConfig, SearchBase):
         # Find the indices to use to optimize the elasticsearch query.
         indices = self.get_indices(params["date"])
 
-        if "%" in self.context.get_index_template():
+        if "%" in self.crashstorage.get_index_template():
             # If the index template is date-centric, remove indices before the retention
             # policy because they're not valid to search through and probably don't
             # exist
-            policy = datetime.timedelta(weeks=self.context.get_retention_policy())
-            template = self.context.get_index_template()
+            policy = datetime.timedelta(weeks=self.crashstorage.get_retention_policy())
+            template = self.crashstorage.get_index_template()
             indices = prune_invalid_indices(indices, policy, template)
 
         # Create and configure the search object.
         search = Search(
             using=self.get_connection(),
             index=indices,
-            doc_type=self.context.get_doctype(),
+            doc_type=self.crashstorage.get_doctype(),
         )
 
         # Create filters.
         filters = []
         histogram_intervals = {}
 
-        for field, sub_params in params.items():
+        for sub_params in params.values():
             sub_filters = None
             for param in sub_params:
                 if param.name.startswith("_"):
@@ -224,7 +214,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                         if results_number > 1000:
                             raise BadArgumentError(
                                 "_results_number",
-                                msg=("_results_number cannot be greater " "than 1,000"),
+                                msg="_results_number cannot be greater than 1,000",
                             )
                         if results_number < 0:
                             raise BadArgumentError(
@@ -244,7 +234,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                             raise BadArgumentError("_facets_size greater than 10,000")
 
                     for f in self.histogram_fields:
-                        if param.name == "_histogram_interval.%s" % f:
+                        if param.name == f"_histogram_interval.{f}":
                             histogram_intervals[f] = param.value[0]
 
                     # Don't use meta parameters in the query.
@@ -301,7 +291,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_range:
                     filter_type = "range"
@@ -315,7 +305,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                 elif param.operator == "@":
                     filter_type = "regexp"
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
                     filter_type = "query"
@@ -323,7 +313,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
                     if field_data["has_full_version"]:
-                        search_key = "%s.full" % search_key
+                        search_key = f"{search_key}.full"
 
                     q_args = {}
                     q_args[search_key] = (
@@ -464,24 +454,24 @@ class SuperSearch(RequiredConfig, SearchBase):
                     shards = None
                     break
 
-            except RequestError as exception:
+            except RequestError as exc:
                 # Try to handle it gracefully if we can find out what
                 # input was bad and caused the exception.
                 # Not an ElasticsearchParseException exception
                 with suppress(IndexError):
-                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(
-                        exception.error
-                    )[-1]
+                    bad_input = ELASTICSEARCH_PARSE_EXCEPTION_REGEX.findall(exc.error)[
+                        -1
+                    ]
                     # Loop over the original parameters to try to figure
                     # out which *key* had the bad input.
                     for key, value in kwargs.items():
                         if value == bad_input:
-                            raise BadArgumentError(key)
+                            raise BadArgumentError(key) from exc
 
                 # If it's a search parse exception, but we don't know what key is the
                 # problem, raise a general BadArgumentError
-                if "Failed to parse source" in str(exception):
-                    raise BadArgumentError("Malformed supersearch query.")
+                if "Failed to parse source" in str(exc):
+                    raise BadArgumentError("Malformed supersearch query.") from exc
 
                 # Re-raise the original exception
                 raise
@@ -546,7 +536,7 @@ class SuperSearch(RequiredConfig, SearchBase):
                         param, histogram_bucket, facets_size, histogram_intervals
                     )
 
-                search.aggs.bucket("histogram_%s" % f, histogram_bucket)
+                search.aggs.bucket(f"histogram_{f}", histogram_bucket)
 
     def _get_histogram_agg(self, field, intervals):
         histogram_type = (
@@ -576,13 +566,13 @@ class SuperSearch(RequiredConfig, SearchBase):
                 if field_name not in self.histogram_fields:
                     continue
 
-                bucket_name = "histogram_%s" % field_name
+                bucket_name = f"histogram_{field_name}"
                 bucket = self._get_histogram_agg(field_name, histogram_intervals)
 
             elif field.startswith("_cardinality"):
                 field_name = field[len("_cardinality.") :]
 
-                bucket_name = "cardinality_%s" % field_name
+                bucket_name = f"cardinality_{field_name}"
                 bucket = self._get_cardinality_agg(field_name)
 
             else:

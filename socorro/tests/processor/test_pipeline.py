@@ -2,18 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import json
-import os
-from pathlib import Path
 from unittest.mock import ANY
 
-from configman import ConfigurationManager
-from configman.dotdict import DotDict
 import freezegun
+from fillmore.test import diff_event
 
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.processor_app import ProcessorApp
-from socorro.processor.processor_pipeline import ProcessorPipeline
+from socorro.processor.pipeline import Pipeline
 from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
 from socorro.processor.rules.base import Rule
 
@@ -21,25 +17,6 @@ from socorro.processor.rules.base import Rule
 class BadRule(Rule):
     def action(self, *args, **kwargs):
         raise KeyError("pii")
-
-
-def set_up_sentry():
-    """Sets up sentry using SENTRY_DSN"""
-    # FIXME(willkg): SENTRY_DSN is where we're putting the SENTRY_DSN even if there
-    # are components that are configured in other ways.
-    sentry_dsn = os.environ.get("SENTRY_DSN")
-    if not sentry_dsn:
-        raise Exception("SENTRY_DSN is not defined in os.environ")
-
-    # This basedir is relative to this file
-    basedir = Path(__file__).resolve().parent.parent.parent
-
-    # We need the same configuration of Sentry as what the ProcessorApp creates
-    ProcessorApp.configure_sentry(
-        basedir=basedir,
-        host_id="test_processor",
-        sentry_dsn=sentry_dsn,
-    )
 
 
 # NOTE(willkg): If this changes, we should update it and look for new things that should
@@ -53,25 +30,30 @@ RULE_ERROR_EVENT = {
             "build": ANY,
             "name": "CPython",
             "version": ANY,
-        }
+        },
+        "trace": {
+            "parent_span_id": None,
+            "span_id": ANY,
+            "trace_id": ANY,
+        },
     },
     "environment": "production",
     "event_id": ANY,
     "exception": {
         "values": [
             {
-                "mechanism": None,
+                "mechanism": {"handled": True, "type": "generic"},
                 "module": None,
                 "stacktrace": {
                     "frames": [
                         {
-                            "abs_path": "/app/socorro/processor/processor_pipeline.py",
+                            "abs_path": "/app/socorro/processor/pipeline.py",
                             "context_line": ANY,
-                            "filename": "socorro/processor/processor_pipeline.py",
+                            "filename": "socorro/processor/pipeline.py",
                             "function": "process_crash",
                             "in_app": True,
                             "lineno": ANY,
-                            "module": "socorro.processor.processor_pipeline",
+                            "module": "socorro.processor.pipeline",
                             "post_context": ANY,
                             "pre_context": ANY,
                         },
@@ -87,13 +69,13 @@ RULE_ERROR_EVENT = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/app/socorro/tests/processor/test_processor_pipeline.py",
+                            "abs_path": "/app/socorro/tests/processor/test_pipeline.py",
                             "context_line": ANY,
-                            "filename": "socorro/tests/processor/test_processor_pipeline.py",
+                            "filename": "socorro/tests/processor/test_pipeline.py",
                             "function": "action",
                             "in_app": True,
                             "lineno": ANY,
-                            "module": "socorro.tests.processor.test_processor_pipeline",
+                            "module": "socorro.tests.processor.test_pipeline",
                             "post_context": ANY,
                             "pre_context": ANY,
                         },
@@ -105,7 +87,7 @@ RULE_ERROR_EVENT = {
         ]
     },
     "extra": {
-        "rule": "socorro.tests.processor.test_processor_pipeline.BadRule",
+        "rule": "socorro.tests.processor.test_pipeline.BadRule",
     },
     "level": "error",
     "modules": ANY,
@@ -125,64 +107,46 @@ RULE_ERROR_EVENT = {
         "packages": [{"name": "pypi:sentry-sdk", "version": ANY}],
         "version": ANY,
     },
-    "server_name": "test_processor",
+    "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
 }
 
 
-class TestProcessorPipeline:
-    def get_config(self):
-        # Retrieve config for a ProcessorPipeline
-        cm = ConfigurationManager(
-            definition_source=ProcessorPipeline.get_required_config(),
-            values_source_list=[],
-        )
-        config = cm.get_config()
-        return config
-
-    def test_rule_error(self, sentry_helper):
-        set_up_sentry()
+class TestPipeline:
+    def test_rule_error(self, tmp_path, sentry_helper):
+        ProcessorApp()._set_up_sentry()
 
         with sentry_helper.reuse() as sentry_client:
-            config = self.get_config()
-
             # Test with Sentry enabled (dsn set)
             raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
-            processed_crash = DotDict()
+            processed_crash = {}
 
-            processor = ProcessorPipeline(config, rules={"default": [BadRule()]})
-            processor.process_crash("default", raw_crash, {}, processed_crash)
+            rulesets = {"default": [BadRule()]}
+            processor = Pipeline(rulesets=rulesets)
+            processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
             notes = processed_crash["processor_notes"].split("\n")
             assert notes[1] == (
                 "ruleset 'default' "
-                + "rule 'socorro.tests.processor.test_processor_pipeline.BadRule' "
+                + "rule 'socorro.tests.processor.test_pipeline.BadRule' "
                 + "failed: KeyError"
             )
 
             (event,) = sentry_client.events
 
-            # If this test fails, this will print out the new event that you can copy
-            # and paste and then edit above
-            print(json.dumps(event, indent=4, sort_keys=True))
+            # Assert that the event is what we expected
+            differences = diff_event(event, RULE_ERROR_EVENT)
+            assert differences == []
 
-            # Assert that there are no frame-local variables
-            assert event == RULE_ERROR_EVENT
-
-    def test_process_crash_existing_processed_crash(self):
-        raw_crash = DotDict({"uuid": "1"})
+    def test_process_crash_existing_processed_crash(self, tmp_path):
+        raw_crash = {"uuid": "1"}
         dumps = {}
-        processed_crash = DotDict(
-            {
-                "processor_notes": "previousnotes",
-            }
-        )
+        processed_crash = {"processor_notes": "previousnotes"}
 
-        pipeline = ProcessorPipeline(
-            self.get_config(), rules={"default": [CPUInfoRule(), OSInfoRule()]}
-        )
+        rulesets = {"default": [CPUInfoRule(), OSInfoRule()]}
+        pipeline = Pipeline(rulesets=rulesets)
 
         now = utc_now()
         with freezegun.freeze_time(now):
@@ -191,6 +155,7 @@ class TestProcessorPipeline:
                 raw_crash=raw_crash,
                 dumps=dumps,
                 processed_crash=processed_crash,
+                tmpdir=str(tmp_path),
             )
 
         assert processed_crash["success"] is True
