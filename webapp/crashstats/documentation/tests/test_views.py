@@ -107,22 +107,6 @@ def test_memory_dump_access_redirect(client, db):
     assert response.url == reverse("documentation:protected_data_access")
 
 
-def test_signup_renders(client, db):
-    url = reverse("documentation:signup")
-    with MetricsMock() as metrics_mock:
-        response = client.get(url)
-    assert response.status_code == 200
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/signup/",
-            "status:200",
-        ],
-    )
-
-
 def test_datadictionary_index(client, db):
     url = reverse("documentation:datadictionary_index")
     response = client.get(url)

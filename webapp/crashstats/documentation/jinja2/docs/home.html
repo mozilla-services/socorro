@@ -4,30 +4,55 @@
 
 {% block doc_content %}
   <div class="body">
-    <h1 id="filebug">How to file a bug</h1>
+    <h1 id="filebug">Need help?</h1>
     <p>
-      <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General">File a bug report</a> if you notice bugs on Crash Stats.
+      If you <b>found a bug</b>, please
+      <a href="https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&component=General">file a bug report</a>.
+    </p>
+    <p>
+      If you <b>want to add support for a new product</b> or <b>remove support for an existing product</b>, see
+      <a href="https://mozilla-hub.atlassian.net/wiki/spaces/CS1/pages/6849069/Crash+Stats+Crash+Reports+Crash+ingestion+Socorro+Antenna">our Confluence page</a>.
+    </p>
+    <p>
+      If you <b>want to change signature generation</b>, see
+      <a href="https://socorro.readthedocs.io/en/latest/signaturegeneration.html">Socorro signature generation documentation</a>
+      for documentation on how Socorro's signature generation works and how to
+      request and make changes to it.
+    </p>
+    <p>
+      If you <b>want to add support for new crash annotations</b>, see
+      <a href="https://socorro.readthedocs.io/en/latest/annotations.html">Socorro crash annotations documentation</a>
+      for documentation on how to do that and how to request support for those
+      annotations in Crash Stats and Telemetry.
+    </p>
+    <p>
+      <b>For any other needs</b>, see
+      <a href="https://mozilla-hub.atlassian.net/wiki/spaces/CS1/pages/6849069/Crash+Stats+Crash+Reports+Crash+ingestion+Socorro+Antenna">our Confluence page</a>.
     </p>
 
-    <h1 id="signature">How to fix signature generation</h1>
+    <h1 id="accounts">Accounts on Crash Stats</h1>
     <p>
-      See <a href="https://socorro.readthedocs.io/en/latest/signaturegeneration.html">
-      Socorro signature generation documentation</a> for documentation on how
-      Socorro's signature generation works and how to request and make changes
-      to it.
+      Sign up to create an account if you require one of the following:
     </p>
-
-    <h1 id="product">How to add support for new products</h1>
+    <ul class="list-inside list-disc">
+      <li>
+        <b>Protected data access.</b> See
+        <a href="{{ url('documentation:protected_data_access') }}">protected data access documentation</a>
+        for details.
+      </li>
+      <li>
+        <b>API tokens.</b>
+      </li>
+    </ul>
     <p>
-      See <a href="https://socorro.readthedocs.io/en/latest/products.html">
-      Socorro product support documentation</a> for documentation on how to
-      add new supported products.
+      If you don't need one of those things, then signing up for an account doesn't help you.
     </p>
     <p>
-      See <a href="https://socorro.readthedocs.io/en/latest/annotations.html">
-      Socorro crash annotations documentation</a> for documentation on how
-      to add crash annotations to your crash report and how to request
-      support for those annotations in Crash Stats and Telemetry.
+      Crash Stats accounts are created the first time you log in. You can log in using
+      the <em>Log in</em> link in the upper right hand corner.
+    </p>
+    <p>
+      If you are a Mozilla employee, please log in using your LDAP account.
     </p>
 
     <h1 id="code">Socorro developer documentation</h1>
