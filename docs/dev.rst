@@ -171,10 +171,14 @@ additional details by posting comments in the bug.
 Pull requests
 -------------
 
-Pull request summary should indicate the bug the pull request addresses. For
+Pull request summary should indicate the bug the pull request addresses. Use a hyphen between "bug" and the bug ID(s). For
 example::
 
-    bug nnnnnnn: removed frob from tree class
+    bug-nnnnnnn: removed frog from tree class
+
+For multiple bugs fixed within a single pull request, list the bugs out individually. For example::
+   
+   bug-nnnnnnn, bug-nnnnnnn: removed frog from tree class
 
 Pull request descriptions should cover at least some of the following:
 
@@ -188,7 +192,7 @@ After creating a pull request, attach the pull request to the relevant bugs.
 
 We use the `rob-bugson Firefox addon
 <https://addons.mozilla.org/en-US/firefox/addon/rob-bugson/>`_. If the pull
-request has "bug nnnnnnn: ..." in the summary, then rob-bugson will see that
+request has "bug-nnnnnnn: ..." or "bug-nnnnnnn, bug-nnnnnnn: ..." in the summary, then rob-bugson will see that
 and create a "Attach this PR to bug ..." link.
 
 Then ask someone to review the pull request. If you don't know who to ask, look
@@ -274,9 +278,13 @@ We're using:
 Git conventions
 ---------------
 
-First line is a summary of the commit. It should start with::
+First line is a summary of the commit. It should start with the bug number. Use a hyphen between "bug" and the bug ID(s). For example::
 
-   bug nnnnnnn: summary
+   bug-nnnnnnn: summary
+
+For multiple bugs fixed within a single commit, list the bugs out individually. For example::
+
+   bug-nnnnnnn, bug-nnnnnnn: summary
 
 After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context.
