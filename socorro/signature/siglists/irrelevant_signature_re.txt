@@ -135,6 +135,7 @@ mozilla::ipc::WriteIPDLParam
 mozilla::HashMap
 mozilla::HashSet
 mozilla::MediaRawData::Data
+mozilla::Monitor::Lock
 mozilla::Monitor::Wait
 mozilla::MozPromiseHolderBase
 mozilla::MozPromiseRefcountable::Release
