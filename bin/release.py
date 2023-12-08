@@ -18,7 +18,7 @@ requires the tomli library.
 See https://github.com/willkg/socorro-release/#readme for details.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 617689e3e94b556265fbf6bddc10d63e44a08689
+sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
 
 """
 
@@ -27,6 +27,7 @@ import configparser
 import datetime
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -154,9 +155,15 @@ def get_remote_name(github_user):
     # Figure out remote to push tag to
     remote_output = check_output("git remote -v")
 
+    def check_ssh(github_user, remote_url):
+        return f":{github_user}/" in remote_url
+
+    def check_https(github_user, remote_url):
+        return f"/{github_user}/" in remote_url
+
     for line in remote_output.splitlines():
         line = line.split("\t")
-        if f":{github_user}/" in line[1]:
+        if check_ssh(github_user, line[1]) or check_https(github_user, line[1]):
             return line[0]
 
     raise Exception(f"Can't figure out remote name for {github_user}.")
@@ -344,6 +351,7 @@ def run():
         resp = fetch_history_from_github(github_user, github_project, first_commit)
 
     commits_since_tag = []
+    bug_name_prefix_regexp = re.compile(r"bug-([\d]+)", re.IGNORECASE)
     for commit in resp["commits"]:
         # Skip merge commits
         if len(commit["parents"]) > 1:
@@ -357,6 +365,10 @@ def run():
         summary = commit["commit"]["message"]
         summary = summary.splitlines()[0]
         summary = summary[:80]
+        # Bug 1868455: While GitHub autolinking doesn't suport spaces, Bugzilla autolinking
+        # doesn't support hyphens.
+        if args.cmd == "make-bug":
+            summary = bug_name_prefix_regexp.sub(r"bug \1", summary)
 
         # Figure out who did the commit prefering GitHub usernames
         who = commit["author"]

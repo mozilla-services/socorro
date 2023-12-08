@@ -12,7 +12,7 @@ This requires Python 3 to run.
 See https://github.com/willkg/socorro-release/#readme for details.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 617689e3e94b556265fbf6bddc10d63e44a08689
+sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
 
 """
 

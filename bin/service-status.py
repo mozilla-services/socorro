@@ -16,7 +16,7 @@ If you want to use ``pyproject.toml`` and you're using Python <3.11, this also
 requires the tomli library.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 617689e3e94b556265fbf6bddc10d63e44a08689
+sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
 
 """
 
