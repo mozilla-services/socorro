@@ -4,7 +4,7 @@
 
 import datetime
 import time
-from urllib.parse import quote_plus, parse_qs, urlparse
+from urllib.parse import quote_plus, parse_qs, urlsplit
 
 import pytest
 
@@ -139,7 +139,7 @@ class Test_generate_create_bug_url:
 
     @staticmethod
     def _extract_query_string(url):
-        return parse_qs(urlparse(url).query)
+        return parse_qs(urlsplit(url).query)
 
     @staticmethod
     def _create_frame(

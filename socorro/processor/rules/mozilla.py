@@ -9,7 +9,7 @@ import gzip
 import json
 import re
 from typing import Any
-from urllib.parse import unquote_plus, urlparse, urlunparse
+from urllib.parse import unquote_plus, urlsplit
 from zlib import error as ZlibError
 
 from glom import glom
@@ -1021,7 +1021,7 @@ class ModuleURLRewriteRule(Rule):
                 continue
 
             url = module["symbol_url"]
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
 
             if "localhost" in parsed.netloc:
                 # If this is a localhost url, then remove it.
@@ -1033,7 +1033,7 @@ class ModuleURLRewriteRule(Rule):
             if "symbols.mozilla.org" in parsed.netloc:
                 # If this is a symbols.mozilla.org url, remove the querystring.
                 parsed = parsed._replace(query="")
-                module["symbol_url"] = urlunparse(parsed)
+                module["symbol_url"] = parsed.geturl()
 
 
 class DistributionIdRule(Rule):

@@ -4,7 +4,7 @@
 
 import functools
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import markus
 from markus.utils import generate_tag
@@ -155,7 +155,7 @@ def track_view(view):
         if referer:
             # If the referer host is the same as the request host that implies that the
             # API was used as an AJAX request in our main webapp itself.
-            referer_host = urlparse(referer).netloc
+            referer_host = urlsplit(referer).netloc
             if referer_host == request.headers.get("Host"):
                 is_ajax = True
 
