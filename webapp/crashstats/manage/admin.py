@@ -4,7 +4,7 @@
 
 import json
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import requests
 
@@ -31,7 +31,7 @@ def site_status(request):
     # Get version information for deployed parts
     version_info = {}
     for url in settings.OVERVIEW_VERSION_URLS.split(","):
-        hostname = urlparse(url).netloc
+        hostname = urlsplit(url).netloc
         url = url.strip()
         try:
             data = requests.get(url).json()

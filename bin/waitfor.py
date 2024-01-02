@@ -15,7 +15,7 @@ import argparse
 import socket
 import urllib.error
 import urllib.request
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlsplit
 import sys
 import time
 
@@ -41,12 +41,12 @@ def main(args):
     ok_codes = [int(code.strip()) for code in parsed.codes.split(",")]
 
     url = parsed.url
-    parsed_url = urlparse(url)
+    parsed_url = urlsplit(url)
     if "@" in parsed_url.netloc:
         netloc = parsed_url.netloc
         netloc = netloc[netloc.find("@") + 1 :]
         parsed_url = parsed_url._replace(netloc=netloc)
-        url = urlunparse(parsed_url)
+        url = parsed_url.geturl()
 
     if parsed.verbose:
         print(

@@ -8,7 +8,7 @@
 
 import json
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import click
 import jsonschema
@@ -106,7 +106,7 @@ def validate_and_test(ctx, crashes_per_url, url):
             # To make it easy for people, if someone pastes the URL
             # of a regular SuperSearch page (and not the API URL), then
             # automatically convert it for them.
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
             if parsed.path == "/search/":
                 parsed = parsed._replace(path="/api/SuperSearch/")
                 parsed = parsed._replace(fragment=None)

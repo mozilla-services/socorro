@@ -7,7 +7,7 @@
 # Usage: ./bin/db.py CMD
 
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import click
 import psycopg2
@@ -34,7 +34,7 @@ def create_database(ctx):
     if not dsn:
         raise click.ClickException("DATABASE_URL is not defined in environment")
 
-    parsed = urlparse(dsn)
+    parsed = urlsplit(dsn)
     db_name = parsed.path[1:]
     adjusted_dsn = dsn[: -(len(db_name) + 1)]
 
@@ -56,7 +56,7 @@ def drop_database(ctx):
     if not dsn:
         raise click.ClickException("DATABASE_URL is not defined in environment")
 
-    parsed = urlparse(dsn)
+    parsed = urlsplit(dsn)
     db_name = parsed.path[1:]
     adjusted_dsn = dsn[: -(len(db_name) + 1)]
 

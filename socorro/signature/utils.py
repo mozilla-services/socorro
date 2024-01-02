@@ -6,7 +6,7 @@
 import contextlib
 import copy
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 from glom import glom, assign
 
@@ -411,7 +411,7 @@ def parse_crashid(item):
         return item[3:]
 
     if item.startswith("http"):
-        parsed = urlparse(item)
+        parsed = urlsplit(item)
         path = parsed.path
         if path.startswith("/report/index"):
             crash_id = path.split("/")[-1]

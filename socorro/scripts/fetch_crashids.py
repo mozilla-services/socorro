@@ -5,7 +5,7 @@
 import argparse
 import datetime
 from functools import total_ordering
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlsplit, parse_qs
 
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.librequests import session_with_retries
@@ -115,7 +115,7 @@ def fetch_crashids(host, params, num_results):
 
 def extract_params(url):
     """Parses out params from the query string and drops any that start with _"""
-    parsed = urlparse(url)
+    parsed = urlsplit(url)
     params = parse_qs(parsed.query)
 
     for key in list(params.keys()):
