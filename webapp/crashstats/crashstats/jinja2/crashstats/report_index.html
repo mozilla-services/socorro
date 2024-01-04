@@ -215,6 +215,12 @@
                       {{ report.application_build_id }}
                     </td>
                   </tr>
+                  <tr title="{{ fields_desc['processed_crash.android_packagename'] }}">
+                    <th scope="row">Android PackageName</th>
+                    <td>
+                      {{ report.android_packagename }}
+                    </td>
+                  </tr>
                 {% endif %}
 
                 {# OS #}

@@ -802,6 +802,7 @@ FIELDS = {
             "type": "multi_field",
         },
     },
+    "android_packagename": keyword_field(name="android_packagename"),
     "android_version": {
         "data_validation_type": "str",
         "form_field_choices": [],
