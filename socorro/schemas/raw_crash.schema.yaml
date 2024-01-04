@@ -243,6 +243,16 @@ properties:
     type: string
     permissions: ["public"]
 
+  Android_PackageName:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1564483#c4
+    description: >
+      The package name of an Android application that uniquely identifies the
+      application on the device, Google Play Store, and third-party Android
+      stores. e.g. "com.example.referencebrowser"
+    type: string
+    permissions: ["public"]
+
   Android_Version:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1564483#c4

@@ -2244,6 +2244,14 @@ properties:
     type: string
     permissions: ["public"]
     source_annotation: Android_Model
+  android_packagename:
+    description: >
+      The package name of an Android application that uniquely identifies the
+      application on the device, Google Play Store, and third-party Android
+      stores. e.g. "com.example.referencebrowser"
+    type: string
+    permissions: ["public"]
+    source_annotation: Android_PackageName
   android_version:
     description: >
       The developer preview revision of a prerelease SDK plus The current
