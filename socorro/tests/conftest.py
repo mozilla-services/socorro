@@ -11,6 +11,7 @@ import io
 import logging
 import os
 import pathlib
+import uuid
 import sys
 
 import boto3
@@ -77,6 +78,19 @@ def caplogpp(caplog):
 
     for logger in changed_loggers:
         logger.propagate = False
+
+
+class DebugIdHelper:
+    """Breakpad debug id helper class."""
+
+    def generate(self):
+        """Returns 33-character uppercase hex string"""
+        return uuid.uuid4().hex.upper() + "A"
+
+
+@pytest.fixture
+def debug_id_helper():
+    yield DebugIdHelper()
 
 
 class S3Helper:
