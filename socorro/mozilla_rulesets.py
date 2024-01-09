@@ -34,6 +34,7 @@ from socorro.processor.rules.mozilla import (
     FenixVersionRewriteRule,
     JavaProcessRule,
     MajorVersionRule,
+    MissingSymbolsRule,
     ModulesInStackRule,
     ModuleURLRewriteRule,
     MacCrashInfoRule,
@@ -104,6 +105,7 @@ DEFAULT_RULESET = [
     OSPrettyVersionRule(),
     TopMostFilesRule(),
     ModulesInStackRule(),
+    MissingSymbolsRule(),
     ThemePrettyNameRule(),
     MemoryReportExtraction(),
     # generate signature now that we've done all the processing it depends on

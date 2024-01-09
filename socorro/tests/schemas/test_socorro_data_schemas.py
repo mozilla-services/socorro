@@ -524,6 +524,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "memory_measures.vsize",
     "memory_measures.vsize_max_contiguous",
     "minidump_sha256_hash",
+    "missing_symbols",
     "modules_in_stack",
     "moz_crash_reason",
     "oom_allocation_size",

@@ -1617,6 +1617,18 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {"type": "string"},
     },
+    "missing_symbols": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "missing_symbols",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "missing_symbols",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+    },
     "modules_in_stack": {
         "data_validation_type": "str",
         "form_field_choices": [],

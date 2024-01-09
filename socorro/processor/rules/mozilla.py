@@ -626,10 +626,57 @@ class TopMostFilesRule(Rule):
                 return
 
 
+class MissingSymbolsRule(Rule):
+    """
+    Adds ``missing_symbols`` field where the value is a semi-colon separated set of
+    ``module/version/debugid`` strings for modules where the stackwalker couldn't find a
+    symbols file.
+    """
+
+    # Filenames should contain A-Za-z0-9_.- and that's it.
+    BAD_FILENAME_CHARACTERS = re.compile(r"[^a-zA-Z0-9_\.-]", re.IGNORECASE)
+
+    # Debug ids are hex strings
+    BAD_DEBUGID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
+
+    NULL_DEBUG_ID = "0" * 33
+
+    def format_module(self, item):
+        filename = item["filename"]
+        filename = self.BAD_FILENAME_CHARACTERS.sub("", filename)
+
+        version = item.get("version", "") or "None"
+        version = version.replace("/", "\\/")
+
+        debugid = item.get("debug_id", self.NULL_DEBUG_ID)
+        debugid = self.BAD_DEBUGID_CHARACTERS.sub("", debugid)
+
+        return f"{filename}/{version}/{debugid}"
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return "json_dump" in processed_crash
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        modules = processed_crash["json_dump"].get("modules")
+
+        if not modules:
+            return
+
+        missing_symbols = [
+            self.format_module(module)
+            for module in modules
+            if module.get("filename") and module.get("missing_symbols") is True
+        ]
+        if missing_symbols:
+            missing_symbols.sort()
+            processed_crash["missing_symbols"] = ";".join(missing_symbols)
+
+
 class ModulesInStackRule(Rule):
     """
-    Adds value with semi-colon separated set of "module/debugid" strings for
-    all the modules that show up in the stack of the crashing thread.
+    Adds ``modules_in_stack`` field where the value is a semi-colon separated set of
+    ``module/debugid`` strings for all the modules that show up in the stack of the
+    crashing thread.
     """
 
     # Filenames should contain A-Za-z0-9_.- and that's it.
