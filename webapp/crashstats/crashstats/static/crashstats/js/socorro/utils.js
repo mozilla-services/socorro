@@ -184,6 +184,7 @@
         var params = {};
         var queries;
         var temp;
+        var firstEquals;
         var i;
         var len;
 
@@ -197,7 +198,8 @@
 
         // Convert the array of strings into an object
         for (i = 0; i < len; i++) {
-          temp = queries[i].split('=');
+          firstEquals = queries[i].indexOf('=');
+          temp = [queries[i].slice(0, firstEquals), queries[i].slice(firstEquals + 1)];
           var key = temp[0];
           var value = decodeURIComponent(temp[1]);
 
