@@ -654,13 +654,10 @@ class MissingSymbolsRule(Rule):
         return f"{filename}/{version}/{debugid}"
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return "json_dump" in processed_crash
+        return bool(glom(processed_crash, "json_dump.modules", default=[]))
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        modules = processed_crash["json_dump"].get("modules")
-
-        if not modules:
-            return
+        modules = processed_crash["json_dump"]["modules"]
 
         missing_symbols = [
             self.format_module(module)
