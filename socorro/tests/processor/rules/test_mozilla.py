@@ -1440,10 +1440,6 @@ class TestTopMostFilesRule:
         assert "topmost_filenames" not in processed_crash
 
 
-def generate_debug_id():
-    """Generates a valid debug id."""
-
-
 class TestMissingSymbolsRule:
     def test_basic(self, tmp_path, debug_id_helper):
         raw_crash = {}
