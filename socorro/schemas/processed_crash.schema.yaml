@@ -351,6 +351,13 @@ definitions:
             permissions: ["public"]
         type: ["object", "null"]
         permissions: ["public"]
+      mac_boot_args:
+        description: |
+          MacOS-specific boot args from the MozMacosBootargsStream.
+
+          Can consist of unique values and can contain identiifers.
+        type: ["string"]
+        permissions: ["protected"]
       mac_crash_info:
         description: MacOS-specific extended `crash_info`.
         properties:
@@ -2544,12 +2551,20 @@ properties:
     permissions: ["public"]
     source_annotation: Hang
   has_device_touch_screen:
-    description:
+    description: >
       Set to 1 if the device had a touch-screen, this only applies to Firefox
       desktop. On mobile devices we assume a touch-screen is always present.
     type: boolean
     permissions: ["public"]
     source_annotation: HasDeviceTouchScreen
+  has_mac_boot_args:
+    description: |
+      Set to True if the crash report minidump had a non-empty `mac_boot_args`
+      value. Omitted otherwise.
+
+      See also `mac_boot_args` field.
+    type: boolean
+    permissions: ["public"]
   install_age:
     description: >
       Length of time since the current version of the product was installed.
@@ -2662,9 +2677,19 @@ properties:
     type: integer
     permissions: ["public"]
     source_annotation: MacAvailableMemorySysctl
+  mac_boot_args:
+    description: |
+      MacOS-specific boot args from the MozMacosBootargsStream. Extracted from
+      minidump.
+
+      Can consist of unique values and can contain identiifers.
+
+      See also `has_mac_boot_args`.
+    type: ["string"]
+    permissions: ["protected"]
   mac_crash_info:
     description: >
-      JSON-encoded Mac OS X `__crash_info` data.
+      JSON-encoded Mac OS X `__crash_info` data. Extracted from minidump.
     type: string
     permissions: ["public"]
   mac_memory_pressure:
