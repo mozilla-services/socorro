@@ -449,6 +449,33 @@ class BreadcrumbsRule(Rule):
             status.add_note(f"Breadcrumbs: malformed: {jexc.message}")
 
 
+class MacBootArgsRule(Rule):
+    """Extracts mac_boot_args from json_dump
+
+    If there's a mac_boot_args in the json_dump and it's not an empty value, this
+    copies it to the processed_crash.
+
+    """
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return bool(glom(processed_crash, "json_dump.mac_boot_args", default=None))
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        value = processed_crash["json_dump"]["mac_boot_args"]
+
+        if not isinstance(value, str):
+            status.add_note(
+                f"MacBootArgsRule: mac_boot_args is {type(value).__qualname__} and not str"
+            )
+            return
+
+        # Ignore empty values
+        value = value.strip()
+        if value:
+            processed_crash["mac_boot_args"] = value
+            processed_crash["has_mac_boot_args"] = True
+
+
 class MacCrashInfoRule(Rule):
     """Extracts mac_crash_info from json_dump
 

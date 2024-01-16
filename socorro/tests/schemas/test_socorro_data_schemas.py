@@ -354,6 +354,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "graphics_startup_test",
     "hang",
     "has_device_touch_screen",
+    "has_mac_boot_args",
     "install_age",
     "install_time",
     "ipc_channel_error",

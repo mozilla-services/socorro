@@ -24,6 +24,7 @@ from socorro.processor.rules.mozilla import (
     ESRVersionRewrite,
     FenixVersionRewriteRule,
     JavaProcessRule,
+    MacBootArgsRule,
     MacCrashInfoRule,
     MajorVersionRule,
     MissingSymbolsRule,
@@ -789,6 +790,58 @@ class TestDatesAndTimesRule:
         assert processed_crash["uptime"] == 20116
         assert processed_crash["last_crash"] is None
         assert status.notes == []
+
+
+class TestMacBootArgsRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            ({}, False),
+            ({"json_dump": {}}, False),
+            ({"json_dump": {"mac_boot_args": None}}, False),
+            ({"json_dump": {"mac_boot_args": ""}}, False),
+        ],
+    )
+    def test_predicate(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        result = rule.predicate(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "processed, mac_boot_args, has_mac_boot_args",
+        [
+            ({"json_dump": {"mac_boot_args": "-v"}}, "-v", True),
+            ({"json_dump": {"mac_boot_args": "  -v  "}}, "-v", True),
+        ],
+    )
+    def test_valid_value(self, tmp_path, processed, mac_boot_args, has_mac_boot_args):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert processed["mac_boot_args"] == mac_boot_args
+        assert processed["has_mac_boot_args"] == has_mac_boot_args
+
+    def test_not_string(self, tmp_path):
+        raw_crash = {}
+        processed = {"json_dump": {"mac_boot_args": 5}}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert "mac_boot_args" not in processed
+        assert "has_mac_boot_args" not in processed
+        assert "MacBootArgsRule: mac_boot_args is int and not str" in status.notes
 
 
 class TestMacCrashInfoRule:
