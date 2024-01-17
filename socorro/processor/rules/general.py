@@ -96,13 +96,6 @@ class CPUInfoRule(Rule):
 
     """
 
-    # Map of Android_CPU_ABI values to cpu_arch values
-    ANDROID_CPU_ABI_MAP = {
-        "armeabi-v7a": "arm",
-        "arm64-v8a": "arm64",
-        "x86_64": "amd64",
-    }
-
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # This is the CPU info of the machine the product was running on
         processed_crash["cpu_info"] = glom(
@@ -118,10 +111,6 @@ class CPUInfoRule(Rule):
         cpu_arch = glom(
             processed_crash, "json_dump.system_info.cpu_arch", default="unknown"
         )
-        if cpu_arch == "unknown" and "Android_CPU_ABI" in raw_crash:
-            android_cpu_abi = raw_crash["Android_CPU_ABI"]
-            cpu_arch = self.ANDROID_CPU_ABI_MAP.get(android_cpu_abi, android_cpu_abi)
-
         processed_crash["cpu_arch"] = cpu_arch
 
         # The cpu_microcode_version is populated by minidump-stackwalk which gets it from
