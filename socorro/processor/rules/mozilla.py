@@ -17,7 +17,6 @@ import jsonschema
 import markus
 import sentry_sdk
 
-from socorro.lib import libjava
 from socorro.lib import libsocorrodataschema
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
@@ -388,31 +387,6 @@ class DatesAndTimesRule(Rule):
             last_crash = None
             status.add_note('"SecondsSinceLastCrash" larger than MAXINT - set to NULL')
         processed_crash["last_crash"] = last_crash
-
-
-class JavaProcessRule(Rule):
-    """Process JavaStackTrace."""
-
-    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return bool(raw_crash.get("JavaStackTrace", None))
-
-    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        if "JavaStackTrace" in raw_crash:
-            # The java_stack_trace_raw version can contain PII in the exception message
-            # and should be treated as protected data
-            processed_crash["java_stack_trace_raw"] = raw_crash["JavaStackTrace"]
-
-            # The java_stack_trace is a sanitizzed version of java_stack_trace_raw
-            try:
-                parsed_java_stack_trace = libjava.parse_java_stack_trace(
-                    raw_crash["JavaStackTrace"]
-                )
-                java_stack_trace = parsed_java_stack_trace.to_public_string()
-            except libjava.MalformedJavaStackTrace:
-                status.add_note("JavaProcessRule: malformed JavaStackTrace")
-                java_stack_trace = "malformed"
-
-            processed_crash["java_stack_trace"] = java_stack_trace
 
 
 class BreadcrumbsRule(Rule):
