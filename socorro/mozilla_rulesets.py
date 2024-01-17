@@ -20,6 +20,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
+from socorro.processor.rules.java import JavaStackTraceRule
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 from socorro.processor.rules.mozilla import (
     AccessibilityRule,
@@ -32,7 +33,6 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
-    JavaProcessRule,
     MajorVersionRule,
     MissingSymbolsRule,
     ModulesInStackRule,
@@ -91,7 +91,7 @@ DEFAULT_RULESET = [
     OutOfMemoryBinaryRule(),
     PHCRule(),
     BreadcrumbsRule(schema=get_schema("processed_crash.schema.yaml")),
-    JavaProcessRule(),
+    JavaStackTraceRule(),
     MacBootArgsRule(),
     MacCrashInfoRule(),
     MozCrashReasonRule(),
