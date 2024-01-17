@@ -800,6 +800,7 @@ class TestMacBootArgsRule:
             ({"json_dump": {}}, False),
             ({"json_dump": {"mac_boot_args": None}}, False),
             ({"json_dump": {"mac_boot_args": ""}}, False),
+            ({"json_dump": {"mac_boot_args": "-v"}}, True),
         ],
     )
     def test_predicate(self, tmp_path, processed, expected):
