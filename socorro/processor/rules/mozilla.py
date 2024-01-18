@@ -848,16 +848,20 @@ class BetaVersionRule(Rule):
 
 
 class OSPrettyVersionRule(Rule):
-    """Populate os_pretty_version with most readable operating system version string.
+    """Sets os_pretty_version with most readable operating system version string.
 
     This rule attempts to extract the most useful, singular, human understandable field
-    for operating system version. This should always be attempted.
+    for operating system version.
+
+    * os_pretty_version
 
     For Windows, this is a lookup against a map.
 
     For Mac OSX, this pulls from os_name and os_version.
 
     For Linux, this uses json_dump.lsb_release.description if it's available.
+
+    Must be run after OSInfoRule.
 
     """
 
@@ -879,60 +883,97 @@ class OSPrettyVersionRule(Rule):
         # NOTE(willkg): Windows 11 is 10.0.21996 and higher, so it's not in this map
     }
 
+    def parse_version(self, os_version):
+        if not os_version or not isinstance(os_version, str):
+            return None
+
+        match = self.MAJOR_MINOR_RE.match(os_version)
+        if match is None:
+            # The version number is missing or invalid, there's nothing more to do
+            return None
+
+        major_version = int(match.group(1))
+        minor_version = int(match.group(2))
+
+        return (major_version, minor_version)
+
+    def compute_windows_pretty_version(self, os_name, os_version, processed_crash):
+        result = self.parse_version(os_version)
+        if result is None:
+            return os_name
+
+        major_version, minor_version = result
+
+        if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":
+            pretty_version = "Windows 11"
+
+        else:
+            windows_version = f"{major_version}.{minor_version}"
+            pretty_version = self.WINDOWS_VERSIONS.get(
+                windows_version, "Windows Unknown"
+            )
+
+        return pretty_version
+
+    def compute_macos_pretty_version(self, os_name, os_version, processed_crash):
+        result = self.parse_version(os_version)
+        if result is None:
+            return os_name
+
+        major_version, minor_version = result
+
+        # https://en.wikipedia.org/wiki/MacOS#Release_history
+        if major_version >= 11:
+            # NOTE(willkg): this assumes Apple versions macOS with just the major
+            # version going forward.
+            pretty_version = "macOS %s" % major_version
+        elif major_version >= 10 and minor_version >= 0:
+            pretty_version = "OS X %s.%s" % (major_version, minor_version)
+        else:
+            pretty_version = "OS X Unknown"
+
+        return pretty_version
+
+    def compute_linux_pretty_version(self, processed_crash):
+        pretty_version = glom(
+            processed_crash, "json_dump.lsb_release.description", default=""
+        )
+        pretty_version = pretty_version or "Linux"
+        return pretty_version
+
+    def compute_android_pretty_version(self, os_name, os_version):
+        if os_version:
+            return f"{os_name} {os_version}"
+        return os_name
+
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # we will overwrite this field with the current best option
         # in stages, as we divine a better name
         processed_crash["os_pretty_version"] = None
 
-        pretty_name = processed_crash.get("os_name")
-        if not isinstance(pretty_name, str):
-            # This data is bogus or isn't there, there's nothing we can do.
-            return True
+        os_name = processed_crash.get("os_name")
+        os_version = processed_crash.get("os_version")
 
-        # At this point, os_name is the best info we have
-        processed_crash["os_pretty_version"] = pretty_name
-
-        os_version = processed_crash.get("os_version") or ""
-        match = self.MAJOR_MINOR_RE.match(os_version)
-        if match is None:
-            # The version number is missing or invalid, there's nothing more to do
-            return True
-
-        major_version = int(match.group(1))
-        minor_version = int(match.group(2))
-
-        os_name = processed_crash.get("os_name") or ""
-
-        if os_name.lower().startswith("windows"):
-            if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":
-                windows_version = "Windows 11"
-
-            else:
-                windows_version = self.WINDOWS_VERSIONS.get(
-                    "%s.%s" % (major_version, minor_version), "Windows Unknown"
-                )
-
-            processed_crash["os_pretty_version"] = windows_version
-            return
-
-        elif os_name == "Mac OS X":
-            # https://en.wikipedia.org/wiki/MacOS#Release_history
-            if major_version >= 11:
-                # NOTE(willkg): this assumes Apple versions macOS with just the major
-                # version going forward.
-                pretty_name = "macOS %s" % major_version
-            elif major_version >= 10 and minor_version >= 0:
-                pretty_name = "OS X %s.%s" % (major_version, minor_version)
-            else:
-                pretty_name = "OS X Unknown"
-
-        elif os_name == "Linux":
-            pretty_name = (
-                glom(processed_crash, "json_dump.lsb_release.description", default="")
-                or pretty_name
+        if os_name and os_name.startswith("Windows"):
+            pretty_version = self.compute_windows_pretty_version(
+                os_name, os_version, processed_crash
             )
 
-        processed_crash["os_pretty_version"] = pretty_name
+        elif os_name == "Mac OS X":
+            pretty_version = self.compute_macos_pretty_version(
+                os_name, os_version, processed_crash
+            )
+
+        elif os_name == "Linux":
+            pretty_version = self.compute_linux_pretty_version(processed_crash)
+
+        elif os_name == "Android":
+            pretty_version = self.compute_android_pretty_version(os_name, os_version)
+
+        else:
+            pretty_version = os_name
+
+        processed_crash["os_pretty_version"] = pretty_version
 
 
 class ThemePrettyNameRule(Rule):

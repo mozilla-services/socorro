@@ -4,7 +4,10 @@
 
 from socorro import settings
 from socorro.lib.libsocorrodataschema import get_schema
-from socorro.processor.rules.android import AndroidCPUInfoRule
+from socorro.processor.rules.android import (
+    AndroidCPUInfoRule,
+    AndroidOSInfoRule,
+)
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
@@ -103,6 +106,7 @@ DEFAULT_RULESET = [
     AndroidCPUInfoRule(),
     DistributionIdRule(),
     OSInfoRule(),
+    AndroidOSInfoRule(),
     BetaVersionRule(
         version_string_api=settings.BETAVERSIONRULE_VERSION_STRING_API,
     ),

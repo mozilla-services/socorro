@@ -2848,12 +2848,16 @@ properties:
       For Linux, this is derived from `lsb_release.description` in the
       stackwalker output from the minidump and degrades to the `os_name` if
       that information isn't available.
+
+      For Android, this is "Android" plus the sdk version.
     type: string
     permissions: ["public"]
   os_version:
-    description: >
+    description: |
       Version of the operating system. This comes from `system_info.os_ver`
       from the stackwalker output of the minidump.
+
+      For Android, this is the sdk version.
     type: string
     permissions: ["public"]
   phc_alloc_stack:

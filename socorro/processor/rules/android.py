@@ -33,3 +33,32 @@ class AndroidCPUInfoRule(Rule):
         cpu_arch = self.ANDROID_CPU_ABI_MAP.get(android_cpu_abi, android_cpu_abi)
 
         processed_crash["cpu_arch"] = cpu_arch
+
+
+class AndroidOSInfoRule(Rule):
+    """Fill in os fields using Android_Version contents
+
+    * os_name
+    * os_version
+
+    Note: This rule must run after OSInfoRule.
+
+    """
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        os_name = processed_crash.get("os_name", "unknown").lower()
+        return os_name in ("unknown", "android") and "Android_Version" in raw_crash
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        processed_crash["os_name"] = "Android"
+        # NOTE(willkg): Android_Version holds the sdk version then a space then the
+        # release name in parentheses like "23 (REL)". We just want the version part.
+        android_sdk_version = raw_crash["Android_Version"].split(" ")[0]
+
+        # Make sure the version is a number, but we want to store it as a string.
+        try:
+            int(android_sdk_version)
+        except ValueError:
+            return
+
+        processed_crash["os_version"] = android_sdk_version
