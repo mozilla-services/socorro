@@ -1822,6 +1822,9 @@ class TestOsPrettyName:
             ("Linux", "5.17-0.1 #2 SMP PREEMPT", "Linux"),
             # Linux with - in version
             ("Linux", "3.14-2-686-pae #1 SMP Debian 3.14.15-2", "Linux"),
+            # Android versions
+            ("Android", None, "Android"),
+            ("Android", "23", "Android 23"),
         ],
     )
     def test_everything_we_hoped_for(self, tmp_path, os_name, os_version, expected):
@@ -1875,16 +1878,6 @@ class TestOsPrettyName:
         rule = OSPrettyVersionRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["os_pretty_version"] == expected
-
-    def test_dotdict(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
-        status = Status()
-
-        rule = OSPrettyVersionRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-        assert processed_crash["os_pretty_version"] == "Windows 10"
 
     def test_none(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)
