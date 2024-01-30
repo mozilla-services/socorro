@@ -11,14 +11,14 @@ import os
 import re
 import socket
 
-from everett.manager import ConfigManager, parse_bool
+from everett.manager import ConfigManager, ListOf, parse_bool
 import dj_database_url
 
 # NOTE(willkg): Need this on a separate line so we can ignore the unused import
 from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
 from crashstats.settings.bundles import PIPELINE_CSS, PIPELINE_JS
 
-config = ConfigManager.basic_config()
+_config = ConfigManager.basic_config()
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -30,16 +30,14 @@ def path(*dirs):
     return os.path.join(ROOT, *dirs)
 
 
-def parse_csv(val: str) -> list[str]:
-    return [v.strip() for v in val.split(",")]
-
-
-TOOL_ENV = config(
+TOOL_ENV = _config(
     "TOOL_ENV",
     default="false",
     parser=parse_bool,
-    doc="Whether or not we're running in a tool environment where we want to ignore"
-    " required configuration",
+    doc=(
+        "Whether or not we're running in a tool environment where we want to ignore "
+        "required configuration"
+    ),
 )
 if TOOL_ENV:
     fake_values = [
@@ -50,19 +48,21 @@ if TOOL_ENV:
         os.environ[key] = val
 
 
-LOCAL_DEV_ENV = config(
+LOCAL_DEV_ENV = _config(
     "LOCAL_DEV_ENV",
     default="false",
     parser=parse_bool,
     doc="Whether or not we're running in the local development environment",
 )
 
-DEBUG = config(
+DEBUG = _config(
     "DEBUG",
     default="false",
     parser=parse_bool,
-    doc="Debugging displays nice error messages, but leaks memory. Set this to false"
-    " on all server instances and true only for development.",
+    doc=(
+        "Debugging displays nice error messages, but leaks memory. Set this to false "
+        "on all server instances and true only for development."
+    ),
 )
 
 SITE_ID = 1
@@ -76,7 +76,7 @@ MEDIA_ROOT = path("media")
 # trailing slash if there is a path component (optional in other cases).
 MEDIA_URL = "/media/"
 
-STATIC_ROOT = config(
+STATIC_ROOT = _config(
     "STATIC_ROOT",
     default=path("static"),
     doc="Absolute path to the directory static files should be collected to.",
@@ -85,7 +85,7 @@ STATIC_ROOT = config(
 # URL prefix for static files
 STATIC_URL = "/static/"
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", parser=parse_csv)
+ALLOWED_HOSTS = _config("ALLOWED_HOSTS", default="", parser=ListOf(str))
 
 
 # Defines the views served for root URLs.
@@ -209,17 +209,17 @@ TEMPLATES = [
 # Always generate a CSRF token for anonymous users.
 ANON_ALWAYS = True
 
-LOGGING_LEVEL = config(
+LOGGING_LEVEL = _config(
     "LOGGING_LEVEL", default="INFO", doc="Logging level for Crash Stats code"
 )
 
-DJANGO_LOGGING_LEVEL = config(
+DJANGO_LOGGING_LEVEL = _config(
     "DJANGO_LOGGING_LEVEL",
     default="INFO",
     doc="Logging level for Django logging (requests, SQL, etc)",
 )
 
-HOST_ID = config(
+HOST_ID = _config(
     "HOST_ID",
     default=socket.gethostname(),
     doc="Name of the host this is running on. Used in logging.",
@@ -376,13 +376,13 @@ CRASH_ID_PREFIX = "bp-"
 # If true, allow robots to spider the site
 ENGAGE_ROBOTS = False
 
-BZAPI_BASE_URL = config(
+BZAPI_BASE_URL = _config(
     "BZAPI_BASE_URL",
     default="https://bugzilla.mozilla.org/rest",
     doc="Base URL for Bugzilla API",
 )
 
-BZAPI_TOKEN = config("BZAPI_TOKEN", default="", doc="Bugzilla API token")
+BZAPI_TOKEN = _config("BZAPI_TOKEN", default="", doc="Bugzilla API token")
 
 # Base URL for Buildhub
 BUILDHUB_BASE_URL = "https://buildhub.moz.tools/"
@@ -423,14 +423,14 @@ MANAGERS = ADMINS
 # Below are settings that can be overridden using
 # environment variables.
 
-CACHE_IMPLEMENTATION_FETCHES = config(
+CACHE_IMPLEMENTATION_FETCHES = _config(
     "CACHE_IMPLEMENTATION_FETCHES", default="true", parser=parse_bool
 )
 
 # for local development these don't matter
-STATSD_HOST = config("STATSD_HOST", default="localhost")
-STATSD_PORT = config("STATSD_PORT", default="8125", parser=int)
-STATSD_PREFIX = config("STATSD_PREFIX", default="") or None
+STATSD_HOST = _config("STATSD_HOST", default="localhost")
+STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int)
+STATSD_PREFIX = _config("STATSD_PREFIX", default="") or None
 
 # set up markus backends for metrics
 MARKUS_BACKENDS = [
@@ -452,9 +452,9 @@ if LOCAL_DEV_ENV:
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-        "LOCATION": config("CACHE_LOCATION", default="127.0.0.1:11211"),
-        "TIMEOUT": config("CACHE_TIMEOUT", default="500", parser=int),
-        "KEY_PREFIX": config("CACHE_KEY_PREFIX", default="socorro"),
+        "LOCATION": _config("CACHE_LOCATION", default="127.0.0.1:11211"),
+        "TIMEOUT": _config("CACHE_TIMEOUT", default="500", parser=int),
+        "KEY_PREFIX": _config("CACHE_KEY_PREFIX", default="socorro"),
         "OPTIONS": {
             # Seconds to wait for send/recv calls
             "timeout": 5,
@@ -464,9 +464,9 @@ CACHES = {
     }
 }
 
-TIME_ZONE = config("TIME_ZONE", default="UTC")
+TIME_ZONE = _config("TIME_ZONE", default="UTC")
 
-DATABASE_URL = config("DATABASE_URL", default="sqlite://sqlite.crashstats.db")
+DATABASE_URL = _config("DATABASE_URL", default="sqlite://sqlite.crashstats.db")
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 
@@ -484,17 +484,17 @@ STATICFILES_STORAGE = "pipeline.storage.PipelineManifestStorage"
 PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
-    "LESS_BINARY": config("LESS_BINARY", default=path("node_modules/.bin/lessc")),
+    "LESS_BINARY": _config("LESS_BINARY", default=path("node_modules/.bin/lessc")),
     "LESS_ARGUMENTS": (
         "--global-var=\"root-path='" + STATIC_ROOT + "/crashstats/css/'\""
     ),
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
-    "UGLIFYJS_BINARY": config(
+    "UGLIFYJS_BINARY": _config(
         "UGLIFYJS_BINARY", default=path("node_modules/.bin/uglifyjs")
     ),
     "UGLIFYJS_ARGUMENTS": "--mangle",
     "CSS_COMPRESSOR": "pipeline.compressors.cssmin.CSSMinCompressor",
-    "CSSMIN_BINARY": config("CSSMIN_BINARY", default=path("node_modules/.bin/cssmin")),
+    "CSSMIN_BINARY": _config("CSSMIN_BINARY", default=path("node_modules/.bin/cssmin")),
     # Don't wrap javascript code in... `(...code...)();`
     # because possibly much code has been built with the assumption that
     # things will be made available globally.
@@ -506,50 +506,54 @@ PIPELINE = {
     "SHOW_ERRORS_INLINE": False,
 }
 
-NPM_ROOT_PATH = config("NPM_ROOT_PATH", default=ROOT)
+NPM_ROOT_PATH = _config("NPM_ROOT_PATH", default=ROOT)
 
-SECRET_KEY = config(
+SECRET_KEY = _config(
     "SECRET_KEY",
     doc="Make this unique, and don't share it with anybody. It cannot be blank.",
 )
 
-SESSION_COOKIE_SECURE = config(
+SESSION_COOKIE_SECURE = _config(
     "SESSION_COOKIE_SECURE",
     default="true",
     parser=parse_bool,
-    doc="If you intend to run WITHOUT HTTPS, such as local development,"
-    " then set this to false",
+    doc=(
+        "If you intend to run WITHOUT HTTPS, such as local development, "
+        "then set this to false"
+    ),
 )
 
-SESSION_COOKIE_HTTPONLY = config(
+SESSION_COOKIE_HTTPONLY = _config(
     "SESSION_COOKIE_HTTPONLY",
     default="true",
     parser=parse_bool,
     doc="By default, use HTTPONLY cookies",
 )
 
-X_FRAME_OPTIONS = config(
+X_FRAME_OPTIONS = _config(
     "X_FRAME_OPTIONS",
     default="DENY",
-    doc="By default, we don't want to be inside a frame."
-    " If you need to override this you can use the"
-    " `django.views.decorators.clickjacking.xframe_options_sameorigin`"
-    " decorator on specific views that can be in a frame.",
+    doc=(
+        "By default, we don't want to be inside a frame. "
+        "If you need to override this you can use the "
+        "`django.views.decorators.clickjacking.xframe_options_sameorigin` "
+        "decorator on specific views that can be in a frame."
+    ),
 )
 
-OVERVIEW_VERSION_URLS = config(
+OVERVIEW_VERSION_URLS = _config(
     "OVERVIEW_VERSION_URLS",
     default="",
     doc="Comma-separated list of urls that serve version information in JSON format",
 )
 
-SENTRY_DSN = config(
+SENTRY_DSN = _config(
     "SENTRY_DSN",
     default="",
     doc="Sentry aggregates reports of uncaught errors and other events",
 )
 
-ANALYZE_MODEL_FETCHES = config(
+ANALYZE_MODEL_FETCHES = _config(
     "ANALYZE_MODEL_FETCHES",
     default="true",
     parser=parse_bool,
@@ -562,11 +566,11 @@ VALID_RULESETS = ["default", "regenerate_signature"]
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
-OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
-OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
-OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
-OIDC_OP_TOKEN_ENDPOINT = config("OIDC_OP_TOKEN_ENDPOINT", default="")
-OIDC_OP_USER_ENDPOINT = config("OIDC_OP_USER_ENDPOINT", default="")
+OIDC_RP_CLIENT_ID = _config("OIDC_RP_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = _config("OIDC_RP_CLIENT_SECRET", default="")
+OIDC_OP_AUTHORIZATION_ENDPOINT = _config("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
+OIDC_OP_TOKEN_ENDPOINT = _config("OIDC_OP_TOKEN_ENDPOINT", default="")
+OIDC_OP_USER_ENDPOINT = _config("OIDC_OP_USER_ENDPOINT", default="")
 # List of urls that are exempt from session refresh because they're used in XHR
 # contexts and that doesn't handle redirecting.
 OIDC_EXEMPT_URLS = [
@@ -595,12 +599,14 @@ OIDC_EXEMPT_URLS = [
 ]
 LOGOUT_REDIRECT_URL = "/"
 
-LAST_LOGIN_MAX = config(
+LAST_LOGIN_MAX = _config(
     "LAST_LOGIN_MAX",
     default=str(60 * 60 * 24),
     parser=int,
-    doc="Max number of seconds you are allowed to be logged in with OAuth2. When the"
-    " user has been logged in >= this number, the user is automatically logged out.",
+    doc=(
+        "Max number of seconds you are allowed to be logged in with OAuth2. When the"
+        "user has been logged in >= this number, the user is automatically logged out."
+    ),
 )
 
 CSP_DEFAULT_SRC = ("'self'",)
@@ -615,30 +621,36 @@ CSP_CONNECT_SRC = ("'self'",)
 
 CSP_REPORT_URI = ("/__cspreport__",)
 
-NUMBER_OF_FEATURED_VERSIONS = config(
+NUMBER_OF_FEATURED_VERSIONS = _config(
     "NUMBER_OF_FEATURED_VERSIONS",
     default="4",
     parser=int,
-    doc="This is the number of versions to display if a particular product"
-    " has no 'featured versions'. Then we use the active versions, but capped"
-    " up to this number.",
+    doc=(
+        "This is the number of versions to display if a particular product "
+        "has no 'featured versions'. Then we use the active versions, but capped "
+        "up to this number."
+    ),
 )
 
-VERSIONS_WINDOW_DAYS = config(
+VERSIONS_WINDOW_DAYS = _config(
     "VERSIONS_WINDOW_DAYS",
     default="60",
     parser=int,
-    doc="Number of days to look at for versions in crash reports. This is set"
-    " for two months. If we haven't gotten a crash report for some version in"
-    " two months, then seems like that version isn't active.",
+    doc=(
+        "Number of days to look at for versions in crash reports. This is set "
+        "for two months. If we haven't gotten a crash report for some version in "
+        "two months, then seems like that version isn't active."
+    ),
 )
 
-VERSIONS_COUNT_THRESHOLD = config(
+VERSIONS_COUNT_THRESHOLD = _config(
     "VERSIONS_COUNT_THRESHOLD",
     default="50",
     parser=int,
-    doc="Minimum number of crash reports in the VERSIONS_WINDOW_DAYS to be"
-    " considered as a valid version.",
+    doc=(
+        "Minimum number of crash reports in the VERSIONS_WINDOW_DAYS to be "
+        "considered as a valid version."
+    ),
 )
 
 # Prevents whitenoise from adding "Access-Control-Allow-Origin: *" header for static
