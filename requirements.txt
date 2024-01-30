@@ -11,7 +11,9 @@ alabaster==0.7.13 \
 asgiref==3.7.2 \
     --hash=sha256:89b2ef2247e3b562a16eef663bc0e2e703ec6468e2fa8a5cd61cd449786d4f6e \
     --hash=sha256:9e0ce3aa93a819ba5b45120216b23878cf6e8525eb3848653452b4192b92afed
-    # via django
+    # via
+    #   django
+    #   django-cors-headers
 attrs==23.1.0 \
     --hash=sha256:1f28b4522cdc2fb4256ac1a020c78acf9cba2c6b461ccd2c126f3aa8e8335d04 \
     --hash=sha256:6279836d581513a26f1bf235f9acd333bc9115683f14f7e8fae46c98fc50e015
@@ -291,9 +293,9 @@ django==3.2.23 \
     #   django-jinja
     #   djangorestframework
     #   mozilla-django-oidc
-django-cors-headers==4.3.0 \
-    --hash=sha256:25aabc94d4837678c1edf442c7f68a5f5fd151f6767b0e0b01c61a2179d02711 \
-    --hash=sha256:bd36c7aea0d070e462f3383f0dc9ef717e5fdc2b10a99c98c285f16da84ffba2
+django-cors-headers==4.3.1 \
+    --hash=sha256:0b1fd19297e37417fc9f835d39e45c8c642938ddba1acce0c1753d3edef04f36 \
+    --hash=sha256:0bf65ef45e606aff1994d35503e6b677c0b26cafff6506f8fd7187f3be840207
     # via -r requirements.in
 django-csp==3.7 \
     --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
@@ -351,9 +353,9 @@ enforce-typing==1.0.0.post1 \
     --hash=sha256:90347a61d08e7f7578d9714b4f0fd8abd9b6bc48c8ac8d46d7f290d413afabb7 \
     --hash=sha256:d3184dfdbfd7f9520c884986561751a6106c57cdd65d730470645d2d40c47e18
     # via -r requirements.in
-everett==3.2.0 \
-    --hash=sha256:80517946d9746734ff8e6bda56d629f0092083389730c72157745f8d5d43d196 \
-    --hash=sha256:cdca5fc8815f402df650444eb1a2fa24c05ef524ff3ebbae3310d17edb11ea6a
+everett==3.3.0 \
+    --hash=sha256:acb7b8f3c5fc9692a8ba14fb257e4649f87bea4856e7406c2e9b6c2cab889105 \
+    --hash=sha256:d3ecc55cc1bdf2408ca82bc8db5a3fc588fc4c0f236a6ab9599938f41970b814
     # via -r requirements.in
 exceptiongroup==1.1.3 \
     --hash=sha256:097acd85d473d75af5bb98e41b61ff7fe35efe6675e4f9370ec6ec5126d160e9 \
@@ -445,9 +447,9 @@ josepy==1.14.0 \
     --hash=sha256:308b3bf9ce825ad4d4bba76372cf19b5dc1c2ce96a9d298f9642975e64bd13dd \
     --hash=sha256:d2b36a30f316269f3242f4c2e45e15890784178af5ec54fa3e49cf9234ee22e0
     # via mozilla-django-oidc
-jsonschema==4.19.2 \
-    --hash=sha256:c9ff4d7447eed9592c23a12ccee508baf0dd0d59650615e847feb6cdca74f392 \
-    --hash=sha256:eee9e502c788e89cb166d4d37f43084e3b64ab405c795c03d343a4dbc2c810fc
+jsonschema==4.20.0 \
+    --hash=sha256:4f614fd46d8d61258610998997743ec5492a648b33cf478c1ddc23ed4598a5fa \
+    --hash=sha256:ed6231f0429ecf966f5bc8dfef245998220549cbbcf140f913b7464c52c3b6b3
     # via -r requirements.in
 jsonschema-specifications==2023.7.1 \
     --hash=sha256:05adf340b659828a004220a9613be00fa3f223f2b82002e273dee62fd50524b1 \
@@ -812,9 +814,9 @@ pytest-django==4.6.0 \
     --hash=sha256:7e90a183dec8c715714864e5dc8da99bb219502d437a9769a3c9e524af57e43a \
     --hash=sha256:ebc12a64f822a1284a281caf434d693f96bff69a9b09c677f538ecaa2f470b37
     # via -r requirements.in
-pytest-env==1.1.1 \
-    --hash=sha256:1efb8acce1f6431196150f3b30673443ff05a6fabff64539a9495cd2248adf9e \
-    --hash=sha256:2b71b37c6810f28bec790a7b373c777af87352b3a359b3de0edb9d24df5cf8b3
+pytest-env==1.1.3 \
+    --hash=sha256:aada77e6d09fcfb04540a6e462c58533c37df35fa853da78707b17ec04d17dfc \
+    --hash=sha256:fcd7dc23bb71efd3d35632bde1bbe5ee8c8dc4489d6617fb010674880d96216b
     # via -r requirements.in
 python-dateutil==2.8.2 \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
@@ -1073,9 +1075,9 @@ sphinx==5.3.0 \
     #   sphinxcontrib-jquery
     #   sphinxcontrib-qthelp
     #   sphinxcontrib-serializinghtml
-sphinx-rtd-theme==1.3.0 \
-    --hash=sha256:46ddef89cc2416a81ecfbeaceab1881948c014b1b6e4450b815311a89fb977b0 \
-    --hash=sha256:590b030c7abb9cf038ec053b95e5380b5c70d61591eb0b552063fbe7c41f0931
+sphinx-rtd-theme==2.0.0 \
+    --hash=sha256:bd5d7b80622406762073a04ef8fadc5f9151261563d47027de09910ce03afe6b \
+    --hash=sha256:ec93d0856dc280cf3aee9a4c9807c60e027c7f7b461b77aeffed682e68f0e586
     # via -r requirements.in
 sphinxcontrib-applehelp==1.0.7 \
     --hash=sha256:094c4d56209d1734e7d252f6e0b3ccc090bd52ee56807a5d9315b19c122ab15d \

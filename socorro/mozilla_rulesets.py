@@ -4,6 +4,10 @@
 
 from socorro import settings
 from socorro.lib.libsocorrodataschema import get_schema
+from socorro.processor.rules.android import (
+    AndroidCPUInfoRule,
+    AndroidOSInfoRule,
+)
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
     MinidumpSha256HashRule,
@@ -20,6 +24,7 @@ from socorro.processor.rules.general import (
     IdentifierRule,
     OSInfoRule,
 )
+from socorro.processor.rules.java import JavaStackTraceRule
 from socorro.processor.rules.memory_report_extraction import MemoryReportExtraction
 from socorro.processor.rules.mozilla import (
     AccessibilityRule,
@@ -32,10 +37,11 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
-    JavaProcessRule,
     MajorVersionRule,
+    MissingSymbolsRule,
     ModulesInStackRule,
     ModuleURLRewriteRule,
+    MacBootArgsRule,
     MacCrashInfoRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
@@ -89,21 +95,25 @@ DEFAULT_RULESET = [
     OutOfMemoryBinaryRule(),
     PHCRule(),
     BreadcrumbsRule(schema=get_schema("processed_crash.schema.yaml")),
-    JavaProcessRule(),
+    JavaStackTraceRule(),
+    MacBootArgsRule(),
     MacCrashInfoRule(),
     MozCrashReasonRule(),
     UtilityActorsNameRule(),
     ReportTypeRule(),
     # post processing of the processed crash
     CPUInfoRule(),
+    AndroidCPUInfoRule(),
     DistributionIdRule(),
     OSInfoRule(),
+    AndroidOSInfoRule(),
     BetaVersionRule(
         version_string_api=settings.BETAVERSIONRULE_VERSION_STRING_API,
     ),
     OSPrettyVersionRule(),
     TopMostFilesRule(),
     ModulesInStackRule(),
+    MissingSymbolsRule(),
     ThemePrettyNameRule(),
     MemoryReportExtraction(),
     # generate signature now that we've done all the processing it depends on

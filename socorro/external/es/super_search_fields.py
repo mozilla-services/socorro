@@ -802,6 +802,7 @@ FIELDS = {
             "type": "multi_field",
         },
     },
+    "android_packagename": keyword_field(name="android_packagename"),
     "android_version": {
         "data_validation_type": "str",
         "form_field_choices": [],
@@ -1205,6 +1206,7 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
+    "has_mac_boot_args": boolean_field(name="has_mac_boot_args"),
     "install_age": {
         "data_validation_type": "int",
         "form_field_choices": [],
@@ -1377,6 +1379,22 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "integer",
         "storage_mapping": {"type": "long"},
+    },
+    "mac_boot_args": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": True,
+        "in_database_name": "mac_boot_args",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "mac_boot_args",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {
+            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
+            "index": "analyzed",
+            "type": "string",
+        },
     },
     "mac_crash_info": {
         "data_validation_type": "str",
@@ -1615,6 +1633,18 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {"type": "string"},
+    },
+    "missing_symbols": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "missing_symbols",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "missing_symbols",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
     },
     "modules_in_stack": {
         "data_validation_type": "str",

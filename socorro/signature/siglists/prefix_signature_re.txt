@@ -173,6 +173,7 @@ o_strcat_s
 <.*>::operator()
 pages_commit
 PL_
+<\.plt ELF section in .*>
 port_
 PORT_
 _PR_

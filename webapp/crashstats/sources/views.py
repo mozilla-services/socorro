@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
@@ -53,7 +53,7 @@ def highlight_url(request):
     if not url:
         return HttpResponseBadRequest("No url specified.")
 
-    parsed = urlparse(url)
+    parsed = urlsplit(url)
 
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:

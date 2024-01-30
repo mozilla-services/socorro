@@ -24,7 +24,7 @@ import argparse
 import json
 import os
 import sys
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import requests
 
@@ -212,7 +212,7 @@ def main():
         commit = resp["commit"]
         tag = resp.get("version") or "(none)"
 
-        parsed = urlparse(resp["source"])
+        parsed = urlsplit(resp["source"])
         _, user, repo = parsed.path.split("/")
         service_name = repo
         out.row(service_name, "version", commit, tag)

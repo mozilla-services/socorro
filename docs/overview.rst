@@ -72,7 +72,7 @@ This process is complicated because each product and platform has different
 crash reporters, crash annotations, crash reporter dialogs, and other things
 and this code is spread out across a bunch of repositories.
 
-.. [1] Sending crash reports is opt-out by default.
+.. [1] Sending crash reports is off by default.
 
 
 .. seealso::

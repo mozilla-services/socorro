@@ -351,6 +351,13 @@ definitions:
             permissions: ["public"]
         type: ["object", "null"]
         permissions: ["public"]
+      mac_boot_args:
+        description: |
+          MacOS-specific boot args from the MozMacosBootargsStream.
+
+          Can consist of unique values and can contain identiifers.
+        type: ["string"]
+        permissions: ["protected"]
       mac_crash_info:
         description: MacOS-specific extended `crash_info`.
         properties:
@@ -2181,57 +2188,82 @@ properties:
     type: ["string", "null"]
     permissions: ["public"]
   android_board:
-    description: The board used by the Android device.
+    description: >
+      The name of the underlying board used by the Android device.
+      e.g. "k68v1_64"
     type: string
     permissions: ["public"]
     source_annotation: Android_Board
   android_brand:
-    description: The Android device brand.
+    description: >
+      The consumer-visible brand associated with this Android device.
+      e.g. "vivo"
     type: string
     permissions: ["public"]
     source_annotation: Android_Brand
   android_cpu_abi:
-    description: The Android primary CPU ABI being used.
+    description: >
+      The Android primary CPU ABI being used. e.g. "arm64-v8a"
     type: string
     permissions: ["public"]
     source_annotation: Android_CPU_ABI
   android_cpu_abi2:
-    description: The Android secondary CPU ABI being used.
+    description: >
+      The Android secondary CPU ABI being used. e.g. "armeabi-v7a"
     type: string
     permissions: ["public"]
     source_annotation: Android_CPU_ABI2
   android_device:
-    description: The Android device name.
+    description: >
+      Android device name. e.g. "1907"
     type: string
     permissions: ["public"]
     source_annotation: Android_Device
   android_display:
-    description: The Android display.
+    description: >
+      End-user visible display name of the build id for the Android build.
+      e.g. "SP1A.210812.003 release-keys"
     type: string
     permissions: ["public"]
     source_annotation: Android_Display
   android_fingerprint:
-    description: ''
+    description: >
+      A string that uniquely identifies the Android build. e.g.
+      "vivo/1907/1907:12/SP1A.210812.003/compiler03091510:user/release-keys"
     type: string
     permissions: ["public"]
     source_annotation: Android_Fingerprint
   android_hardware:
-    description: The Android device hardware.
+    description: >
+      The name of the Android hardware from "/proc". e.g. "mt6768"
     type: string
     permissions: ["public"]
     source_annotation: Android_Hardware
   android_manufacturer:
-    description: The Android device manufacturer.
+    description: >
+      Android device manufacturer. e.g. "vivo"
     type: string
     permissions: ["public"]
     source_annotation: Android_Manufacturer
   android_model:
-    description: The Android device model name.
+    description: >
+      End-user visible Android device model name. e.g. "vivo 1907"
     type: string
     permissions: ["public"]
     source_annotation: Android_Model
+  android_packagename:
+    description: >
+      The package name of an Android application that uniquely identifies the
+      application on the device, Google Play Store, and third-party Android
+      stores. e.g. "com.example.referencebrowser"
+    type: string
+    permissions: ["public"]
+    source_annotation: Android_PackageName
   android_version:
-    description: The Android version.
+    description: >
+      The developer preview revision of a prerelease SDK plus The current
+      development codename, or the string "REL" if this is a release build.
+      e.g. "31 (REL)"
     type: string
     permissions: ["public"]
     source_annotation: Android_Version
@@ -2519,12 +2551,20 @@ properties:
     permissions: ["public"]
     source_annotation: Hang
   has_device_touch_screen:
-    description:
+    description: >
       Set to 1 if the device had a touch-screen, this only applies to Firefox
       desktop. On mobile devices we assume a touch-screen is always present.
     type: boolean
     permissions: ["public"]
     source_annotation: HasDeviceTouchScreen
+  has_mac_boot_args:
+    description: |
+      Set to True if the crash report minidump had a non-empty `mac_boot_args`
+      value. Omitted otherwise.
+
+      See also `mac_boot_args` field.
+    type: boolean
+    permissions: ["public"]
   install_age:
     description: >
       Length of time since the current version of the product was installed.
@@ -2637,9 +2677,19 @@ properties:
     type: integer
     permissions: ["public"]
     source_annotation: MacAvailableMemorySysctl
+  mac_boot_args:
+    description: |
+      MacOS-specific boot args from the MozMacosBootargsStream. Extracted from
+      minidump.
+
+      Can consist of unique values and can contain identiifers.
+
+      See also `has_mac_boot_args`.
+    type: ["string"]
+    permissions: ["protected"]
   mac_crash_info:
     description: >
-      JSON-encoded Mac OS X `__crash_info` data.
+      JSON-encoded Mac OS X `__crash_info` data. Extracted from minidump.
     type: string
     permissions: ["public"]
   mac_memory_pressure:
@@ -2734,6 +2784,12 @@ properties:
       hash for an empty 0-bytes minidump.
     type: ["string", "null"]
     permissions: ["public"]
+  missing_symbols:
+    description: >
+      Set of `;` delimited `module/version/debugid` strings of modules that the
+      stackwalker couldn't find symbols for.
+    type: string
+    permissions: ["public"]
   modules_in_stack:
     description: >
       Set of `;` delimited `module/debugid` strings of modules that are in the
@@ -2792,12 +2848,16 @@ properties:
       For Linux, this is derived from `lsb_release.description` in the
       stackwalker output from the minidump and degrades to the `os_name` if
       that information isn't available.
+
+      For Android, this is "Android" plus the sdk version.
     type: string
     permissions: ["public"]
   os_version:
-    description: >
+    description: |
       Version of the operating system. This comes from `system_info.os_ver`
       from the stackwalker output of the minidump.
+
+      For Android, this is the sdk version.
     type: string
     permissions: ["public"]
   phc_alloc_stack:

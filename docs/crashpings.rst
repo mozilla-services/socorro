@@ -13,7 +13,7 @@ We have two different methods of collecting crash data.
     submits it to the crash ingestion pipeline where it's collected, processed,
     and available in `Crash Stats <https://crash-stats.mozilla.org/>`__.
 
-    Crash report data is opt-out by default.
+    Crash report data is off by default.
 
     Crash report data contains protected data which includes sensitive data,
     PII, etc.
@@ -40,7 +40,8 @@ We have two different methods of collecting crash data.
     ``telemetry.crash`` BigQuery table.
 
 
-    Crash ping data is opt-in by default.
+    Crash ping data is on by default and shares opt-out mechanisms with
+    Telemetry data submission.
 
     Crash ping data does not contain protected data.
 

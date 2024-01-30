@@ -23,9 +23,10 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
-    JavaProcessRule,
+    MacBootArgsRule,
     MacCrashInfoRule,
     MajorVersionRule,
+    MissingSymbolsRule,
     ModulesInStackRule,
     ModuleURLRewriteRule,
     MozCrashReasonRule,
@@ -790,6 +791,59 @@ class TestDatesAndTimesRule:
         assert status.notes == []
 
 
+class TestMacBootArgsRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            ({}, False),
+            ({"json_dump": {}}, False),
+            ({"json_dump": {"mac_boot_args": None}}, False),
+            ({"json_dump": {"mac_boot_args": ""}}, False),
+            ({"json_dump": {"mac_boot_args": "-v"}}, True),
+        ],
+    )
+    def test_predicate(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        result = rule.predicate(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "processed, mac_boot_args, has_mac_boot_args",
+        [
+            ({"json_dump": {"mac_boot_args": "-v"}}, "-v", True),
+            ({"json_dump": {"mac_boot_args": "  -v  "}}, "-v", True),
+        ],
+    )
+    def test_valid_value(self, tmp_path, processed, mac_boot_args, has_mac_boot_args):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert processed["mac_boot_args"] == mac_boot_args
+        assert processed["has_mac_boot_args"] == has_mac_boot_args
+
+    def test_not_string(self, tmp_path):
+        raw_crash = {}
+        processed = {"json_dump": {"mac_boot_args": 5}}
+        dumps = {}
+        status = Status()
+        rule = MacBootArgsRule()
+
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert "mac_boot_args" not in processed
+        assert "has_mac_boot_args" not in processed
+        assert "MacBootArgsRule: mac_boot_args is int and not str" in status.notes
+
+
 class TestMacCrashInfoRule:
     @pytest.mark.parametrize(
         "processed, expected",
@@ -912,53 +966,6 @@ class TestBreadcrumbRule:
 
         assert processed_crash == {}
         assert status.notes == ["Breadcrumbs: malformed: {} is not of type 'array'"]
-
-
-class TestJavaProcessRule:
-    def test_javastacktrace(self, tmp_path):
-        raw_crash = {
-            "JavaStackTrace": (
-                "Exception: some messge\n"
-                + "\tat org.File.function(File.java:100)\n"
-                + "\tCaused by: Exception: some other message\n"
-                + "\t\tat org.File.function(File.java:100)"
-            )
-        }
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-
-        # The entire JavaStackTrace blob
-        assert processed_crash["java_stack_trace_raw"] == raw_crash["JavaStackTrace"]
-
-        # Everything except the exception message and "Caused by" section
-        # which can contain PII
-        assert (
-            processed_crash["java_stack_trace"]
-            == "Exception\n\tat org.File.function(File.java:100)"
-        )
-
-    def test_malformed_javastacktrace(self, tmp_path):
-        raw_crash = {"JavaStackTrace": "junk\n\tat org.File.function\njunk"}
-
-        dumps = {}
-        processed_crash = {}
-        status = Status()
-
-        rule = JavaProcessRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-
-        # The entire JavaStackTrace blob
-        assert processed_crash["java_stack_trace_raw"] == raw_crash["JavaStackTrace"]
-
-        # The data is malformed, so this should just show "malformed"
-        assert processed_crash["java_stack_trace"] == "malformed"
-
-        # Make sure there's a note in the notes about it
-        assert "malformed JavaStackTrace" in status.notes[0]
 
 
 class TestModuleURLRewriteRule:
@@ -1439,6 +1446,103 @@ class TestTopMostFilesRule:
         assert "topmost_filenames" not in processed_crash
 
 
+class TestMissingSymbolsRule:
+    def test_basic(self, tmp_path, debug_id_helper):
+        raw_crash = {}
+        dumps = {}
+        debug_id_1 = debug_id_helper.generate()
+        debug_id_2 = debug_id_helper.generate()
+        debug_id_3 = debug_id_helper.generate()
+        debug_id_4 = debug_id_helper.generate()
+        processed_crash = {
+            "json_dump": {
+                "modules": [
+                    {
+                        "filename": "libxul.dll",
+                        "version": None,
+                        "debug_id": debug_id_1,
+                        "missing_symbols": True,
+                    },
+                    {
+                        "filename": "libnss3.dll",
+                        "version": "1.0",
+                        "debug_id": debug_id_2,
+                        "missing_symbols": True,
+                    },
+                    {
+                        "filename": "mozglue.dll",
+                        "debug_id": debug_id_3,
+                        "missing_symbols": None,
+                    },
+                    {
+                        "filename": "somethingmozglue.dll",
+                        "debug_id": debug_id_4,
+                        "missing_symbols": False,
+                    },
+                ],
+            },
+        }
+        status = Status()
+
+        rule = MissingSymbolsRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert (
+            processed_crash["missing_symbols"]
+            == f"libnss3.dll/1.0/{debug_id_2};libxul.dll/None/{debug_id_1}"
+        )
+
+    @pytest.mark.parametrize(
+        "processed_crash",
+        [
+            {},
+            {"modules": None},
+            {"modules": []},
+            {"modules": [{}]},
+            {"modules": [{"missing_symbols": True}]},
+            {"modules": [{"filename": "libxul.dll"}]},
+            {"modules": [{"filename": "libxul.dll", "version": "1.0"}]},
+        ],
+    )
+    def test_missing_things(self, tmp_path, processed_crash):
+        status = Status()
+        rule = MissingSymbolsRule()
+
+        rule.act({}, {}, processed_crash, str(tmp_path), status)
+        assert "missing_symbols" not in processed_crash
+
+    @pytest.mark.parametrize(
+        "item, expected",
+        [
+            (
+                {"filename": "libxul.so", "missing_symbols": True},
+                "libxul.so/None/" + MissingSymbolsRule.NULL_DEBUG_ID,
+            ),
+            (
+                {
+                    "filename": "libxul_2.dll",
+                    "version": "1.0",
+                    "debug_id": "51C36FAFFD214DB4A0D91D93B38336CEA",
+                    "missing_symbols": True,
+                },
+                "libxul_2.dll/1.0/51C36FAFFD214DB4A0D91D93B38336CEA",
+            ),
+            (
+                {
+                    "filename": " l\nib (foo)",
+                    "version": "1.0/5",
+                    "debug_id": "this is bad",
+                    "missing_symbols": True,
+                },
+                "libfoo/1.0\\/5/bad",
+            ),
+        ],
+    )
+    def test_format_module(self, item, expected):
+        rule = MissingSymbolsRule()
+        assert rule.format_module(item) == expected
+
+
 class TestModulesInStackRule:
     def test_basic(self, tmp_path):
         raw_crash = {}
@@ -1718,6 +1822,9 @@ class TestOsPrettyName:
             ("Linux", "5.17-0.1 #2 SMP PREEMPT", "Linux"),
             # Linux with - in version
             ("Linux", "3.14-2-686-pae #1 SMP Debian 3.14.15-2", "Linux"),
+            # Android versions
+            ("Android", None, "Android"),
+            ("Android", "23", "Android 23"),
         ],
     )
     def test_everything_we_hoped_for(self, tmp_path, os_name, os_version, expected):
@@ -1771,16 +1878,6 @@ class TestOsPrettyName:
         rule = OSPrettyVersionRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["os_pretty_version"] == expected
-
-    def test_dotdict(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        dumps = {}
-        processed_crash = {"os_name": "Windows NT", "os_version": "10.0.11.7600"}
-        status = Status()
-
-        rule = OSPrettyVersionRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-        assert processed_crash["os_pretty_version"] == "Windows 10"
 
     def test_none(self, tmp_path):
         raw_crash = copy.deepcopy(canonical_standard_raw_crash)

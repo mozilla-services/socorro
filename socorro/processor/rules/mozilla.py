@@ -9,7 +9,7 @@ import gzip
 import json
 import re
 from typing import Any
-from urllib.parse import unquote_plus, urlparse, urlunparse
+from urllib.parse import unquote_plus, urlsplit
 from zlib import error as ZlibError
 
 from glom import glom
@@ -17,7 +17,6 @@ import jsonschema
 import markus
 import sentry_sdk
 
-from socorro.lib import libjava
 from socorro.lib import libsocorrodataschema
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
@@ -390,31 +389,6 @@ class DatesAndTimesRule(Rule):
         processed_crash["last_crash"] = last_crash
 
 
-class JavaProcessRule(Rule):
-    """Process JavaStackTrace."""
-
-    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return bool(raw_crash.get("JavaStackTrace", None))
-
-    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        if "JavaStackTrace" in raw_crash:
-            # The java_stack_trace_raw version can contain PII in the exception message
-            # and should be treated as protected data
-            processed_crash["java_stack_trace_raw"] = raw_crash["JavaStackTrace"]
-
-            # The java_stack_trace is a sanitizzed version of java_stack_trace_raw
-            try:
-                parsed_java_stack_trace = libjava.parse_java_stack_trace(
-                    raw_crash["JavaStackTrace"]
-                )
-                java_stack_trace = parsed_java_stack_trace.to_public_string()
-            except libjava.MalformedJavaStackTrace:
-                status.add_note("JavaProcessRule: malformed JavaStackTrace")
-                java_stack_trace = "malformed"
-
-            processed_crash["java_stack_trace"] = java_stack_trace
-
-
 class BreadcrumbsRule(Rule):
     """Validate and copy over Breadcrumbs data."""
 
@@ -447,6 +421,33 @@ class BreadcrumbsRule(Rule):
             status.add_note("Breadcrumbs: malformed: not valid json")
         except jsonschema.exceptions.ValidationError as jexc:
             status.add_note(f"Breadcrumbs: malformed: {jexc.message}")
+
+
+class MacBootArgsRule(Rule):
+    """Extracts mac_boot_args from json_dump
+
+    If there's a mac_boot_args in the json_dump and it's not an empty value, this
+    copies it to the processed_crash.
+
+    """
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return bool(glom(processed_crash, "json_dump.mac_boot_args", default=None))
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        value = processed_crash["json_dump"]["mac_boot_args"]
+
+        if not isinstance(value, str):
+            status.add_note(
+                f"MacBootArgsRule: mac_boot_args is {type(value).__qualname__} and not str"
+            )
+            return
+
+        # Ignore empty values
+        value = value.strip()
+        if value:
+            processed_crash["mac_boot_args"] = value
+            processed_crash["has_mac_boot_args"] = True
 
 
 class MacCrashInfoRule(Rule):
@@ -626,10 +627,54 @@ class TopMostFilesRule(Rule):
                 return
 
 
+class MissingSymbolsRule(Rule):
+    """
+    Adds ``missing_symbols`` field where the value is a semi-colon separated set of
+    ``module/version/debugid`` strings for modules where the stackwalker couldn't find a
+    symbols file.
+    """
+
+    # Filenames should contain A-Za-z0-9_.- and that's it.
+    BAD_FILENAME_CHARACTERS = re.compile(r"[^a-zA-Z0-9_\.-]", re.IGNORECASE)
+
+    # Debug ids are hex strings
+    BAD_DEBUGID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
+
+    NULL_DEBUG_ID = "0" * 33
+
+    def format_module(self, item):
+        filename = item["filename"]
+        filename = self.BAD_FILENAME_CHARACTERS.sub("", filename)
+
+        version = item.get("version", "") or "None"
+        version = version.replace("/", "\\/")
+
+        debugid = item.get("debug_id", self.NULL_DEBUG_ID)
+        debugid = self.BAD_DEBUGID_CHARACTERS.sub("", debugid)
+
+        return f"{filename}/{version}/{debugid}"
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return bool(glom(processed_crash, "json_dump.modules", default=[]))
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        modules = processed_crash["json_dump"]["modules"]
+
+        missing_symbols = [
+            self.format_module(module)
+            for module in modules
+            if module.get("filename") and module.get("missing_symbols") is True
+        ]
+        if missing_symbols:
+            missing_symbols.sort()
+            processed_crash["missing_symbols"] = ";".join(missing_symbols)
+
+
 class ModulesInStackRule(Rule):
     """
-    Adds value with semi-colon separated set of "module/debugid" strings for
-    all the modules that show up in the stack of the crashing thread.
+    Adds ``modules_in_stack`` field where the value is a semi-colon separated set of
+    ``module/debugid`` strings for all the modules that show up in the stack of the
+    crashing thread.
     """
 
     # Filenames should contain A-Za-z0-9_.- and that's it.
@@ -803,16 +848,20 @@ class BetaVersionRule(Rule):
 
 
 class OSPrettyVersionRule(Rule):
-    """Populate os_pretty_version with most readable operating system version string.
+    """Sets os_pretty_version with most readable operating system version string.
 
     This rule attempts to extract the most useful, singular, human understandable field
-    for operating system version. This should always be attempted.
+    for operating system version.
+
+    * os_pretty_version
 
     For Windows, this is a lookup against a map.
 
     For Mac OSX, this pulls from os_name and os_version.
 
     For Linux, this uses json_dump.lsb_release.description if it's available.
+
+    Must be run after OSInfoRule.
 
     """
 
@@ -834,60 +883,97 @@ class OSPrettyVersionRule(Rule):
         # NOTE(willkg): Windows 11 is 10.0.21996 and higher, so it's not in this map
     }
 
+    def parse_version(self, os_version):
+        if not os_version or not isinstance(os_version, str):
+            return None
+
+        match = self.MAJOR_MINOR_RE.match(os_version)
+        if match is None:
+            # The version number is missing or invalid, there's nothing more to do
+            return None
+
+        major_version = int(match.group(1))
+        minor_version = int(match.group(2))
+
+        return (major_version, minor_version)
+
+    def compute_windows_pretty_version(self, os_name, os_version, processed_crash):
+        result = self.parse_version(os_version)
+        if result is None:
+            return os_name
+
+        major_version, minor_version = result
+
+        if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":
+            pretty_version = "Windows 11"
+
+        else:
+            windows_version = f"{major_version}.{minor_version}"
+            pretty_version = self.WINDOWS_VERSIONS.get(
+                windows_version, "Windows Unknown"
+            )
+
+        return pretty_version
+
+    def compute_macos_pretty_version(self, os_name, os_version, processed_crash):
+        result = self.parse_version(os_version)
+        if result is None:
+            return os_name
+
+        major_version, minor_version = result
+
+        # https://en.wikipedia.org/wiki/MacOS#Release_history
+        if major_version >= 11:
+            # NOTE(willkg): this assumes Apple versions macOS with just the major
+            # version going forward.
+            pretty_version = "macOS %s" % major_version
+        elif major_version >= 10 and minor_version >= 0:
+            pretty_version = "OS X %s.%s" % (major_version, minor_version)
+        else:
+            pretty_version = "OS X Unknown"
+
+        return pretty_version
+
+    def compute_linux_pretty_version(self, processed_crash):
+        pretty_version = glom(
+            processed_crash, "json_dump.lsb_release.description", default=""
+        )
+        pretty_version = pretty_version or "Linux"
+        return pretty_version
+
+    def compute_android_pretty_version(self, os_name, os_version):
+        if os_version:
+            return f"{os_name} {os_version}"
+        return os_name
+
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         # we will overwrite this field with the current best option
         # in stages, as we divine a better name
         processed_crash["os_pretty_version"] = None
 
-        pretty_name = processed_crash.get("os_name")
-        if not isinstance(pretty_name, str):
-            # This data is bogus or isn't there, there's nothing we can do.
-            return True
+        os_name = processed_crash.get("os_name")
+        os_version = processed_crash.get("os_version")
 
-        # At this point, os_name is the best info we have
-        processed_crash["os_pretty_version"] = pretty_name
-
-        os_version = processed_crash.get("os_version") or ""
-        match = self.MAJOR_MINOR_RE.match(os_version)
-        if match is None:
-            # The version number is missing or invalid, there's nothing more to do
-            return True
-
-        major_version = int(match.group(1))
-        minor_version = int(match.group(2))
-
-        os_name = processed_crash.get("os_name") or ""
-
-        if os_name.lower().startswith("windows"):
-            if (major_version, minor_version) == (10, 0) and os_version >= "10.0.21996":
-                windows_version = "Windows 11"
-
-            else:
-                windows_version = self.WINDOWS_VERSIONS.get(
-                    "%s.%s" % (major_version, minor_version), "Windows Unknown"
-                )
-
-            processed_crash["os_pretty_version"] = windows_version
-            return
-
-        elif os_name == "Mac OS X":
-            # https://en.wikipedia.org/wiki/MacOS#Release_history
-            if major_version >= 11:
-                # NOTE(willkg): this assumes Apple versions macOS with just the major
-                # version going forward.
-                pretty_name = "macOS %s" % major_version
-            elif major_version >= 10 and minor_version >= 0:
-                pretty_name = "OS X %s.%s" % (major_version, minor_version)
-            else:
-                pretty_name = "OS X Unknown"
-
-        elif os_name == "Linux":
-            pretty_name = (
-                glom(processed_crash, "json_dump.lsb_release.description", default="")
-                or pretty_name
+        if os_name and os_name.startswith("Windows"):
+            pretty_version = self.compute_windows_pretty_version(
+                os_name, os_version, processed_crash
             )
 
-        processed_crash["os_pretty_version"] = pretty_name
+        elif os_name == "Mac OS X":
+            pretty_version = self.compute_macos_pretty_version(
+                os_name, os_version, processed_crash
+            )
+
+        elif os_name == "Linux":
+            pretty_version = self.compute_linux_pretty_version(processed_crash)
+
+        elif os_name == "Android":
+            pretty_version = self.compute_android_pretty_version(os_name, os_version)
+
+        else:
+            pretty_version = os_name
+
+        processed_crash["os_pretty_version"] = pretty_version
 
 
 class ThemePrettyNameRule(Rule):
@@ -1021,7 +1107,7 @@ class ModuleURLRewriteRule(Rule):
                 continue
 
             url = module["symbol_url"]
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
 
             if "localhost" in parsed.netloc:
                 # If this is a localhost url, then remove it.
@@ -1033,7 +1119,7 @@ class ModuleURLRewriteRule(Rule):
             if "symbols.mozilla.org" in parsed.netloc:
                 # If this is a symbols.mozilla.org url, remove the querystring.
                 parsed = parsed._replace(query="")
-                module["symbol_url"] = urlunparse(parsed)
+                module["symbol_url"] = parsed.geturl()
 
 
 class DistributionIdRule(Rule):

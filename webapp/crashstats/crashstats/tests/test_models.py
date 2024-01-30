@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import random
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlsplit, parse_qs
 from unittest import mock
 
 import pytest
@@ -296,7 +296,7 @@ class TestMiddlewareModels(DjangoTestCase):
 
         def mocked_get(url, **options):
             assert url.startswith(settings.BZAPI_BASE_URL)
-            parsed = urlparse(url)
+            parsed = urlsplit(url)
             query = parse_qs(parsed.query)
             assert query["include_fields"] == ["summary,status,id,resolution"]
             return Response(

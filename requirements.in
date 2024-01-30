@@ -6,7 +6,7 @@ boto3==1.28.77
 click==8.1.7
 contextlib2==21.6.0
 datadog==0.47.0
-django-cors-headers==4.3.0
+django-cors-headers==4.3.1
 django_csp==3.7
 django-jinja==2.11.0
 django-npm==1.0.0
@@ -17,7 +17,7 @@ django-session-csrf==0.7.1
 dj-database-url==2.1.0
 dockerflow==2022.8.0
 enforce-typing==1.0.0.post1
-everett==3.2.0
+everett==3.3.0
 fillmore==1.1.0
 freezegun==1.2.2
 glom==23.3.0
@@ -28,7 +28,7 @@ inotify_simple==1.3.5
 isodate==0.6.1
 isoweek==1.3.3
 jinja2==3.1.2
-jsonschema==4.19.2
+jsonschema==4.20.0
 lxml==4.9.3
 markus[datadog]==4.2.0
 markdown-it-py==3.0.0
@@ -43,7 +43,7 @@ pymemcache==4.0.0
 pyquery==2.0.0
 pytest==7.4.3
 pytest-django==4.6.0
-pytest-env==1.1.1
+pytest-env==1.1.3
 python-decouple==3.8
 requests==2.31.0
 requests-mock==1.11.0
@@ -58,7 +58,7 @@ whitenoise==6.6.0
 # NOTE(willkg): awscli pins docutils to <0.17.0, so we can't update Sphinx
 # further.
 sphinx==5.3.0
-sphinx_rtd_theme==1.3.0
+sphinx_rtd_theme==2.0.0
 
 # NOTE(willkg): We need this until we update to Python 3.10.
 exceptiongroup==1.1.3
