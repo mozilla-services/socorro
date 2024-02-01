@@ -84,7 +84,7 @@ Gunicorn configuration:
 
 Webapp configuration:
 
-.. automoduleconfig:: webapp.crashstats.settings.base._config
+.. automoduleconfig:: crashstats.settings.base._config
    :show-table:
    :hide-name:
    :case: upper

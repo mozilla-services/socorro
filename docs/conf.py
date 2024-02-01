@@ -30,6 +30,9 @@ BASEDIR = Path(__file__).parent.parent
 # Insert repo base dir which will pick up Socorro things
 sys.path.insert(0, str(BASEDIR))
 
+# Insert webapp dir which will pick up Socorro things
+sys.path.insert(0, str(Path(BASEDIR) / "webapp"))
+
 # Insert this directory to pick up extensions
 sys.path.insert(0, str(Path(__file__).parent))
 

@@ -536,7 +536,7 @@ X_FRAME_OPTIONS = _config(
     doc=(
         "By default, we don't want to be inside a frame. "
         "If you need to override this you can use the "
-        "`django.views.decorators.clickjacking.xframe_options_sameorigin` "
+        "``django.views.decorators.clickjacking.xframe_options_sameorigin`` "
         "decorator on specific views that can be in a frame."
     ),
 )
