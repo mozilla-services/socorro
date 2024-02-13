@@ -60,8 +60,13 @@ updatedata: my.env  ## | Add/update necessary database data.
 	${DC} run --rm app shell /app/bin/update_data.sh
 
 .PHONY: run
-run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and all required services.
-	${DC} up processor webapp fakesentry symbolsserver
+run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required services.
+	${DC} up \
+		--attach processor \
+		--attach webapp \
+		--attach fakesentry \
+		--attach symbolserver \
+		processor webapp fakesentry symbolsserver
 
 .PHONY: runservices
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
