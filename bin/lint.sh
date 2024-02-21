@@ -17,15 +17,14 @@ PYTHON_VERSION=$(python --version)
 
 
 if [[ "${1:-}" == "--fix" ]]; then
-    echo ">>> black fix (${PYTHON_VERSION})"
-    black $FILES
+    echo ">>> ruff fix (${PYTHON_VERSION})"
+    ruff format $FILES
+    ruff check --fix $FILES
 
 else
     echo ">>> ruff (${PYTHON_VERSION})"
-    ruff $FILES
-
-    echo ">>> black (${PYTHON_VERSION})"
-    black --check $FILES
+    ruff check $FILES
+    ruff format --check $FILES
 
     echo ">>> license check (${PYTHON_VERSION})"
     if [[ -d ".git" ]]; then
