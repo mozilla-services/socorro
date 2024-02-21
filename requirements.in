@@ -61,7 +61,7 @@ sphinx_rtd_theme==2.0.0
 
 # NOTE(willkg): We need this until we update to Python 3.10.
 exceptiongroup==1.1.3
-importlib-metadata==6.8.0
+importlib-metadata==7.0.1
 typing-extensions==4.8.0
 zipp==3.17.0
 
