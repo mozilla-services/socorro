@@ -177,7 +177,7 @@ example::
     bug-nnnnnnn: removed frog from tree class
 
 For multiple bugs fixed within a single pull request, list the bugs out individually. For example::
-   
+
    bug-nnnnnnn, bug-nnnnnnn: removed frog from tree class
 
 Pull request descriptions should cover at least some of the following:
@@ -255,8 +255,7 @@ To run the reformatter:
 
 We're using:
 
-* `black <https://black.readthedocs.io/en/stable/>`_:  code formatting
-* `ruff <https://beta.ruff.rs/docs/>`_: linting
+* `ruff <https://beta.ruff.rs/docs/>`_: linting and code formatting
 
 
 HTML conventions

@@ -24,7 +24,10 @@ def sequencer(*args):
 class FakeCrashQueue:
     def new_crashes(self):
         return sequencer(
-            ((1,), {}), 2, None, ((3,), {})  # ensure both forms acceptable
+            ((1,), {}),
+            2,
+            None,
+            ((3,), {}),  # ensure both forms acceptable
         )()
 
 
