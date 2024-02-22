@@ -34,12 +34,15 @@ NPM_FILE_PATTERNS = {
     "@fortawesome/fontawesome-free": ["css/all.min.css", "webfonts/*"],
     "tablesorter": ["dist/css/theme.default.min.css", "dist/js/jquery.tablesorter.js"],
     "d3": ["dist/*"],
-    "jssha": ["dist/*.js"],
+    "jssha": ["dist/*.js", "dist/*.map"],
     "qs": ["dist/*"],
     "moment": ["moment.js"],
     "filesize": ["lib/*"],
     "underscore": ["*.js"],
-    "jquery-jsonview": ["dist/*"],
+    "jquery.json-viewer": [
+        "json-viewer/jquery.json-viewer.css",
+        "json-viewer/jquery.json-viewer.js",
+    ],
     "ace-builds": ["src/ace.js", "src/theme-monokai.js", "src/mode-json.js"],
     "jquery": ["dist/*"],
 }
@@ -225,7 +228,7 @@ PIPELINE_JS = {
         "output_filename": "js/documentation.min.js",
     },
     "jsonview": {
-        "source_filenames": ("jquery-jsonview/dist/jquery.jsonview.js",),
+        "source_filenames": ("jquery.json-viewer/json-viewer/jquery.json-viewer.js",),
         "output_filename": "js/jsonview.min.js",
     },
     "report_index": {
