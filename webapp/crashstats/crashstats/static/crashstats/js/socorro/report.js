@@ -15,7 +15,7 @@ $(document).ready(function () {
       if (container.length) {
         var jsonData = container.data('telemetryenvironment');
         try {
-          $('#telemetryenvironment-json').JSONView(jsonData);
+          $('#telemetryenvironment-json').jsonViewer(jsonData, { withLinks: false });
         } catch (ex) {
           console.warn('The data in the #telemetryenvironment-json dataset is not valid JSON');
           container.append($('<p>Error when parsing JSON. Showing raw value:</p>'));
@@ -38,7 +38,7 @@ $(document).ready(function () {
       if (container.length) {
         var jsonData = container.data('minidumpstackwalk');
         try {
-          $('#minidump-stackwalk-json').JSONView(jsonData);
+          $('#minidump-stackwalk-json').jsonViewer(jsonData, { withLinks: false });
         } catch (ex) {
           console.warn('The data in the #minidump-stackwalk-json dataset is not valid JSON');
           container.append($('<p>Error when parsing JSON. Showing raw value:</p>'));
