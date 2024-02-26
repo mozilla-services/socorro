@@ -109,6 +109,7 @@ __memmove
 __memset
 mnt@asec@org\.mozilla\.f.*\.apk@classes\.dex@0x
 MOZ_Crash
+mozalloc_abort
 mozalloc_handle_oom
 mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
@@ -165,12 +166,16 @@ mozilla::ThreadSafeAutoRefCnt
 mozilla::UniquePtr
 mozilla::widget::WlCrashHandler
 mozilla::wr::RenderThread::AddRef
+moz_xmalloc
+moz_xrealloc
 nsCOMPtr<T>::~nsCOMPtr
 nsCOMPtr_base::~nsCOMPtr_base
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 ns.*Hashtable
 nsTArrayElementTraits
+nsTArrayInfallibleAllocator
+nsTArray_base<
 nsThread::GetEvent
 nsThread::ProcessNextEvent
 NS_ProcessNextEvent
