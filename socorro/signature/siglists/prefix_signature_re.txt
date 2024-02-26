@@ -65,6 +65,7 @@ hashbrown::raw::Fallibility::alloc_err
 hashbrown::raw::RawTable<T>::new_uninitialized<T>
 HeapFree
 huge_dalloc
+InfallibleAllocPolicy
 InvalidArrayIndex_CRASH
 invalid_parameter_noinfo
 _invalid_parameter_noinfo
@@ -92,8 +93,6 @@ memmove
 memset
 MessageLoop::PostTask_Helper
 MessageLoop::PostTask
-mozalloc_abort
-mozalloc_handle_oom
 moz_malloc_size_of
 mozilla::CheckCheckedUnsafePtrs<T>::Check
 mozilla::CheckedInt
@@ -128,8 +127,6 @@ mozilla::SpinEventLoopUntil
 mozilla::Vector<T>
 mozilla::WrapNotNull<
 mozilla.*FatalError
-moz_xmalloc
-moz_xrealloc
 MOZ_CrashPrintf
 msvcr120\.dll@0x
 \<name omitted\>
@@ -140,7 +137,6 @@ NS_CycleCollectorSuspect3
 -\[NSApplication _crashOnException:\]
 nsCRT::strcmp
 -\[NSObject doesNotRecognizeSelector:\]
-nsTArrayInfallibleAllocator
 NS_strcmp
 NS_strlen
 nsCOMPtr
@@ -158,7 +154,6 @@ NSS
 nss
 nsStringBuffer::
 nsTArray<
-nsTArray_base<
 nsTArray_Impl<
 nsThread::Shutdown
 NtUser
