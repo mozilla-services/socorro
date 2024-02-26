@@ -59,16 +59,6 @@ whitenoise==6.6.0
 sphinx==5.3.0
 sphinx_rtd_theme==2.0.0
 
-# NOTE(willkg): We need this until we update to Python 3.10.
-exceptiongroup==1.2.0
-importlib-metadata==7.0.1
-typing-extensions==4.9.0
-zipp==3.17.0
-
-# NOTE(willkg): We need this because the signature generation code is exported
-# to a separate project which needs to support Python 3.8+.
-importlib_resources==6.1.1
-
 # NOTE(willkg): Don't need to update this. We don't really use it and we should
 # remove it.
 django-waffle==2.3.0
