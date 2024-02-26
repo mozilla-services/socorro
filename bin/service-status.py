@@ -8,15 +8,15 @@
 This script looks at the ``/__version__`` endpoint information and tells you
 how far behind different server environments are from main tip.
 
-This requires Python 3 to run. See help text for more.
+This requires Python 3.8+ to run. See help text for more.
 
 See https://github.com/willkg/socorro-release/#readme for details.
 
-If you want to use ``pyproject.toml`` and you're using Python <3.11, this also
-requires the tomli library.
+Note: If you want to use ``pyproject.toml`` and you're using Python <3.11, this
+also requires the tomli library.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
+sha: d19f45bc9eedae34de2905cdd4adf7b9fd03f870
 
 """
 
@@ -24,9 +24,8 @@ import argparse
 import json
 import os
 import sys
-from urllib.parse import urlsplit
-
-import requests
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 
 DESCRIPTION = """
@@ -83,20 +82,17 @@ def get_config():
 
 
 def fetch(url, is_json=True):
-    resp = requests.get(url)
-    if resp.status_code != 200:
-        print(url)
-        print(f"{resp.status_code}, {resp.content}")
-        raise Exception("Bad return code")
+    """Fetch data from a url
+
+    This raises URLError on HTTP request errors. It also raises JSONDecode
+    errors if it's not valid JSON.
+
+    """
+    fp = urlopen(url, timeout=5)
+    data = fp.read()
     if is_json:
-        try:
-            data = resp.content.strip()
-            data = data.replace(b"\n", b"")
-            return json.loads(data)
-        except json.decoder.JSONDecodeError:
-            print(data)
-            raise
-    return resp.content
+        return json.loads(data)
+    return data
 
 
 def fetch_history_from_github(main_branch, user, repo, from_sha):
@@ -212,7 +208,7 @@ def main():
         commit = resp["commit"]
         tag = resp.get("version") or "(none)"
 
-        parsed = urlsplit(resp["source"])
+        parsed = urlparse(resp["source"])
         _, user, repo = parsed.path.split("/")
         service_name = repo
         out.row(service_name, "version", commit, tag)
