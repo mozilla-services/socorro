@@ -198,7 +198,7 @@ TRANSFORM_GET_ERROR = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "abs_path": "/usr/local/lib/python3.11/unittest/mock.py",
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "__call__",
@@ -208,7 +208,7 @@ TRANSFORM_GET_ERROR = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "abs_path": "/usr/local/lib/python3.11/unittest/mock.py",
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "_mock_call",
@@ -218,7 +218,7 @@ TRANSFORM_GET_ERROR = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/usr/local/lib/python3.9/unittest/mock.py",
+                            "abs_path": "/usr/local/lib/python3.11/unittest/mock.py",
                             "context_line": ANY,
                             "filename": "unittest/mock.py",
                             "function": "_execute_mock_call",

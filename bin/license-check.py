@@ -7,12 +7,12 @@
 """
 This script checks files for license headers.
 
-This requires Python 3 to run.
+This requires Python 3.8+ to run.
 
 See https://github.com/willkg/socorro-release/#readme for details.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
+sha: d19f45bc9eedae34de2905cdd4adf7b9fd03f870
 
 """
 

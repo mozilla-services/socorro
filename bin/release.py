@@ -10,15 +10,15 @@ This script handles releases for this project.
 This has two subcommands: ``make-bug`` and ``make-tag``. See the help text for
 both.
 
-This requires Python 3 to run.
+This requires Python 3.8+ to run.
 
-If you want to use ``pyproject.toml`` and you're using Python <3.11, this also
-requires the tomli library.
+Note: If you want to use ``pyproject.toml`` and you're using Python <3.11, this
+also requires the tomli library.
 
 See https://github.com/willkg/socorro-release/#readme for details.
 
 repo: https://github.com/willkg/socorro-release/
-sha: 8c609f3a0934b5f5fc4a954bed4e0c5cce16c429
+sha: d19f45bc9eedae34de2905cdd4adf7b9fd03f870
 
 """
 
@@ -31,8 +31,8 @@ import re
 import shlex
 import subprocess
 import sys
-from urllib.request import urlopen
 from urllib.parse import urlencode
+from urllib.request import urlopen
 
 
 DESCRIPTION = """
@@ -60,6 +60,12 @@ DEFAULT_CONFIG = {
 }
 
 LINE = "=" * 80
+
+# Recognize "bug-NNNNNNN", "bug NNNNNNN", and multi-bug variants
+BUG_RE = re.compile(r"\bbug(?:s?:?\s*|-)([\d\s,\+&#and]+)\b", re.IGNORECASE)
+
+# Recognize "bug-NNNNNNN"
+BUG_HYPHEN_PREFIX_RE = re.compile(r"bug-([\d]+)", re.IGNORECASE)
 
 
 def get_config():
@@ -112,6 +118,28 @@ def get_config():
             return my_config
 
     return my_config
+
+
+def find_bugs(line):
+    """Returns all the bug numbers from the line.
+
+    >>> get_bug_numbers("some line")
+    []
+    >>> get_bug_numbers("bug-1111111: some line")
+    ["1111111"]
+    >>> get_bug_numbers("bug 1111111, 2222222: some line")
+    ["1111111", "2222222"]
+
+    """
+    matches = BUG_RE.findall(line)
+    if not matches:
+        return []
+    bugs = []
+    for match in matches:
+        for part in re.findall(r"\d+", match):
+            if part:
+                bugs.append(part)
+    return bugs
 
 
 def fetch(url, is_json=True):
@@ -169,7 +197,14 @@ def get_remote_name(github_user):
     raise Exception(f"Can't figure out remote name for {github_user}.")
 
 
-def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
+def make_tag(
+    bug_number,
+    github_project,
+    github_user,
+    remote_name,
+    tag_name,
+    commits_since_tag,
+):
     """Tags a release."""
     if bug_number:
         resp = fetch(BZ_BUG_JSON_URL + bug_number, is_json=True)
@@ -186,6 +221,7 @@ def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
         message = f"Tag {tag_name}\n\n" + "\n".join(commits_since_tag)
 
     # Print out new tag information
+    print("")
     print(">>> New tag: %s" % tag_name)
     print(">>> Tag message:")
     print(LINE)
@@ -194,31 +230,35 @@ def make_tag(bug_number, remote_name, tag_name, commits_since_tag):
 
     # Create tag
     input(f">>> Ready to tag {tag_name}? Ctrl-c to cancel")
+    print("")
     print(">>> Creating tag...")
     subprocess.check_call(["git", "tag", "-s", tag_name, "-m", message])
 
     # Push tag
     input(f">>> Ready to push to remote {remote_name}? Ctrl-c to cancel")
+    print("")
     print(">>> Pushing...")
     subprocess.check_call(["git", "push", "--tags", remote_name, tag_name])
 
     if bug_number:
-        # Show tag for adding to bug comment
-        print(f">>> Show tag... Copy and paste this into bug #{bug_number}.")
-        print(">>> %<-----------------------------------------------")
-        output = check_output(f"git show {tag_name}")
-        # Truncate the output at "diff --git"
-        output = output[: output.find("diff --git")].strip()
-        print(f"Tagged {tag_name}:")
+        # Show url to tag information on GitHub for bug comment
+        tag_url = (
+            f"https://github.com/{github_user}/{github_project}/releases/tag/{tag_name}"
+        )
         print("")
-        print("```")
-        print(output)
-        print("```")
+        print(f">>> Copy and paste this tag url into bug #{bug_number}.")
+        print(">>> %<-----------------------------------------------")
+        print(f"{tag_url}")
         print(">>> %<-----------------------------------------------")
 
 
 def make_bug(
-    github_project, tag_name, commits_since_tag, bugzilla_product, bugzilla_component
+    github_project,
+    tag_name,
+    commits_since_tag,
+    bugs_referenced,
+    bugzilla_product,
+    bugzilla_component,
 ):
     """Creates a bug."""
     summary = f"{github_project} deploy: {tag_name}"
@@ -230,10 +270,16 @@ def make_bug(
     description = [
         f"We want to do a deploy for `{github_project}` tagged `{tag_name}`.",
         "",
-        "It consists of the following:",
+        "It consists of the following commits:",
         "",
     ]
     description.extend(commits_since_tag)
+    if bugs_referenced:
+        description.append("")
+        description.append("Bugs referenced:")
+        description.append("")
+        for bug in sorted(bugs_referenced):
+            description.append(f"* bug #{bug}")
     description = "\n".join(description)
 
     print(">>> Description")
@@ -350,8 +396,8 @@ def run():
         first_commit = check_output("git rev-list --max-parents=0 HEAD")
         resp = fetch_history_from_github(github_user, github_project, first_commit)
 
+    bugs_referenced = set()
     commits_since_tag = []
-    bug_name_prefix_regexp = re.compile(r"bug-([\d]+)", re.IGNORECASE)
     for commit in resp["commits"]:
         # Skip merge commits
         if len(commit["parents"]) > 1:
@@ -365,10 +411,16 @@ def run():
         summary = commit["commit"]["message"]
         summary = summary.splitlines()[0]
         summary = summary[:80]
-        # Bug 1868455: While GitHub autolinking doesn't suport spaces, Bugzilla autolinking
-        # doesn't support hyphens.
+
+        # Bug 1868455: While GitHub autolinking doesn't suport spaces, Bugzilla
+        # autolinking doesn't support hyphens. When creating a bug, we want to
+        # use "bug NNNNNNN" form so Bugzilla autolinking works.
         if args.cmd == "make-bug":
-            summary = bug_name_prefix_regexp.sub(r"bug \1", summary)
+            summary = BUG_HYPHEN_PREFIX_RE.sub(r"bug \1", summary)
+
+        bugs = find_bugs(summary)
+        if bugs:
+            bugs_referenced |= set(bugs)
 
         # Figure out who did the commit prefering GitHub usernames
         who = commit["author"]
@@ -401,6 +453,7 @@ def run():
             github_project,
             tag_name,
             commits_since_tag,
+            bugs_referenced,
             args.bugzilla_product,
             args.bugzilla_component,
         )
@@ -412,7 +465,14 @@ def run():
                 + "specify a bug number with --with-bug."
             )
             return 1
-        make_tag(args.bug, remote_name, tag_name, commits_since_tag)
+        make_tag(
+            args.bug,
+            github_project,
+            github_user,
+            remote_name,
+            tag_name,
+            commits_since_tag,
+        )
 
     else:
         parser.print_help()
