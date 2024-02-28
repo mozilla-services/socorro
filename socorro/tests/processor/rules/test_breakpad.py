@@ -14,6 +14,7 @@ from socorro.processor.pipeline import Status
 from socorro.processor.rules.breakpad import (
     execute_process,
     CrashingThreadInfoRule,
+    HasGuardPageAccessRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
     PossibleBitFlipsRule,
@@ -367,6 +368,70 @@ class TestCrashingThreadInfoRule:
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
         assert processed_crash == expected
+
+
+class TestHasGuardPageAccessRule:
+    def test_no_data(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule = HasGuardPageAccessRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "has_guard_page_access" not in processed_crash
+
+    def test_no_memory_accesses(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {"json_dump": {"crash_info": {"memory_accesses": []}}}
+        status = Status()
+
+        rule = HasGuardPageAccessRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "has_guard_page_access" not in processed_crash
+
+    def test_false(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {"memory_accesses": [{"is_likely_guard_page": False}, {}]}
+            }
+        }
+        status = Status()
+
+        rule = HasGuardPageAccessRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "has_guard_page_access" not in processed_crash
+
+    def test_first_true(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "crash_info": {
+                    "memory_accesses": [
+                        {"is_likely_guard_page": False},
+                        {},
+                        {"is_likely_guard_page": True},
+                    ]
+                }
+            }
+        }
+        status = Status()
+
+        rule = HasGuardPageAccessRule()
+
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["has_guard_page_access"] is True
 
 
 class TestPossibleBitFlipsRule:

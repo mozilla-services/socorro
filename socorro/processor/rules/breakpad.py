@@ -124,6 +124,34 @@ class PossibleBitFlipsRule(Rule):
         )
 
 
+class HasGuardPageAccessRule(Rule):
+    """Compute has_guard_page_access value
+
+    Fills in:
+
+    * has_guard_page_access (bool): whether there are "is_likely_guard_page=True"
+      in json_dump.crash_info.memory_accesses structures
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        accesses = glom.glom(
+            processed_crash, "json_dump.crash_info.memory_accesses", default=None
+        )
+        if accesses is None:
+            return
+
+        # is_likely_guard_page is True iff at least one of the memory_accesses values is
+        # true
+        has_guard_page_access = any(
+            data.get("is_likely_guard_page", False) for data in accesses
+        )
+
+        # Only set the property if it's True
+        if has_guard_page_access:
+            processed_crash["has_guard_page_access"] = True
+
+
 class TruncateStacksRule(Rule):
     """Truncate stacks that are too large
 
