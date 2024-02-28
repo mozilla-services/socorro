@@ -329,6 +329,15 @@
                   </tr>
                 {% endif %}
 
+                {% if report.has_guard_page_access %}
+                  <tr title="{{ fields_desc['processed_crash.has_guard_page_access'] }}">
+                    <th scope="row">Has guard page access</th>
+                    <td>
+                      <pre>{{ report.has_guard_page_access }}</pre>
+                    </td>
+                  </tr>
+                {% endif %}
+
                 {% if report.possible_bit_flips_max_confidence %}
                   <tr title="{{ fields_desc['processed_crash.possible_bit_flips_max_confidence'] }}">
                     <th scope="row">Possible bit flips max confidence</th>

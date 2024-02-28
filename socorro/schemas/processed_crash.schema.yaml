@@ -199,6 +199,13 @@ definitions:
                     Size of memory access.
                   type: ["integer", "null"]
                   permissions: ["public"]
+                is_likely_guard_page:
+                  description: >
+                    Whether the address falls in a likely guard page (typically
+                    indicating buffer overflow). This field may only be present
+                    when the value is `true`.
+                  type: ["boolean", "null"]
+                  permissions: ["protected"]
               type: ["object"]
               permissions: ["public"]
             permissions: ["public"]
@@ -2631,6 +2638,13 @@ properties:
     type: boolean
     permissions: ["public"]
     source_annotation: IsGarbageCollecting
+  has_guard_page_access:
+    description: >
+      Set to `true` if and only if at least one of the memory accesses fell in
+      a likely guard page per the stackwalker output. Otherwise, this is
+      omitted.
+    type: ["boolean", "null"]
+    permissions: ["protected"]
   java_exception:
     $ref: "#/definitions/java_exception"
     description: >

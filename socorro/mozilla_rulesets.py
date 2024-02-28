@@ -10,6 +10,7 @@ from socorro.processor.rules.android import (
 )
 from socorro.processor.rules.breakpad import (
     CrashingThreadInfoRule,
+    HasGuardPageAccessRule,
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
     PossibleBitFlipsRule,
@@ -87,6 +88,7 @@ DEFAULT_RULESET = [
     CrashingThreadInfoRule(),
     TruncateStacksRule(),
     PossibleBitFlipsRule(),
+    HasGuardPageAccessRule(),
     MajorVersionRule(),
     PluginRule(),
     AccessibilityRule(),

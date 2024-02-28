@@ -1206,6 +1206,7 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
+    "has_guard_page_access": boolean_field(name="has_guard_page_access"),
     "has_mac_boot_args": boolean_field(name="has_mac_boot_args"),
     "install_age": {
         "data_validation_type": "int",
