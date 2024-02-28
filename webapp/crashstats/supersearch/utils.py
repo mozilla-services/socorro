@@ -31,7 +31,7 @@ def get_date_boundaries(params):
     else:
         for param in params["date"]:
             d = isodate.parse_datetime(split_on_operator(param)[1]).replace(
-                tzinfo=timezone.utc
+                tzinfo=datetime.timezone.utc
             )
 
             if param.startswith("<") and (not end_date or end_date < d):

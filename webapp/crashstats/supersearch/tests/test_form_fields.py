@@ -6,7 +6,6 @@ import datetime
 
 import pytest
 
-from django.utils.timezone import utc
 from django.forms import ValidationError
 
 from crashstats.supersearch import form_fields
@@ -127,7 +126,7 @@ class TestDateTimeField:
         field = form_fields.DateTimeField()
         cleaned_value = field.clean([">12/31/2012 10:20:30"])
         dt = datetime.datetime(2012, 12, 31, 10, 20, 30)
-        dt = dt.replace(tzinfo=utc)
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
         assert cleaned_value == [dt]
         assert field.prefixed_value == [">2012-12-31T10:20:30+00:00"]
 
@@ -135,7 +134,7 @@ class TestDateTimeField:
         field = form_fields.DateTimeField()
         cleaned_value = field.clean([">=2012-12-31"])
         dt = datetime.datetime(2012, 12, 31)
-        dt = dt.replace(tzinfo=utc)
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
         assert cleaned_value == [dt]
         assert field.prefixed_value == [">=2012-12-31T00:00:00+00:00"]
 
@@ -143,7 +142,7 @@ class TestDateTimeField:
         field = form_fields.DateTimeField()
         cleaned_value = field.clean([">=2012-12-31T01:02:03+00:00"])
         dt = datetime.datetime(2012, 12, 31, 1, 2, 3)
-        dt = dt.replace(tzinfo=utc)
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
         assert cleaned_value == [dt]
         assert field.prefixed_value == [">=2012-12-31T01:02:03+00:00"]
 
@@ -151,7 +150,7 @@ class TestDateTimeField:
         field = form_fields.DateTimeField()
         cleaned_value = field.clean(["<2016-08-10", "<2016-08-10"])
         dt = datetime.datetime(2016, 8, 10)
-        dt = dt.replace(tzinfo=utc)
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
         assert cleaned_value == [dt, dt]
 
     def test_invalid_combinations(self):

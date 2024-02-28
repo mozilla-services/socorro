@@ -4,7 +4,6 @@
 
 import datetime
 
-from django.utils.timezone import utc
 
 from crashstats.topcrashers.views import get_date_boundaries
 
@@ -15,8 +14,12 @@ class TestDateBoundaries:
         start, end = get_date_boundaries(
             {"date": [">2010-03-01T12:12:12", "<=2010-03-10T00:00:00"]}
         )
-        assert start == datetime.datetime(2010, 3, 1, 12, 12, 12).replace(tzinfo=utc)
-        assert end == datetime.datetime(2010, 3, 10).replace(tzinfo=utc)
+        assert start == datetime.datetime(2010, 3, 1, 12, 12, 12).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        assert end == datetime.datetime(2010, 3, 10).replace(
+            tzinfo=datetime.timezone.utc
+        )
 
         # Test with messy dates.
         start, end = get_date_boundaries(
@@ -29,5 +32,9 @@ class TestDateBoundaries:
                 ]
             }
         )
-        assert start == datetime.datetime(2009, 1, 1, 12, 12, 12).replace(tzinfo=utc)
-        assert end == datetime.datetime(2010, 3, 11).replace(tzinfo=utc)
+        assert start == datetime.datetime(2009, 1, 1, 12, 12, 12).replace(
+            tzinfo=datetime.timezone.utc
+        )
+        assert end == datetime.datetime(2010, 3, 11).replace(
+            tzinfo=datetime.timezone.utc
+        )

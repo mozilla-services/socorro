@@ -38,12 +38,12 @@ class UserAdminBetter(UserAdmin):
         "get_policyexception",
     ]
 
+    @admin.display(description="Hacker (PII)")
     def is_hacker(self, obj):
         """Return whether user is in the Hackers group and has access to PII."""
         return obj.groups.filter(name="Hackers").exists()
 
-    is_hacker.short_description = "Hacker (PII)"
-
+    @admin.display(description="PolicyException")
     def get_policyexception(self, obj):
         """Return whether user has a PolicyException with links to change/delete or add one."""
         if hasattr(obj, "policyexception"):
@@ -56,8 +56,6 @@ class UserAdminBetter(UserAdmin):
             "?user=%d" % obj.id
         )
         return format_html('<a href="{}">Create</a>', url)
-
-    get_policyexception.short_description = "PolicyException"
 
 
 @admin.register(PolicyException)
