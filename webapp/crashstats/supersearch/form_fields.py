@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import operator
 
 import isodate
 
 from django import forms
-from django.utils.timezone import utc
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats.utils import parse_isodate
@@ -206,7 +206,7 @@ class IsoDateTimeField(forms.DateTimeField):
     def to_python(self, value):
         if value:
             try:
-                return parse_isodate(value).replace(tzinfo=utc)
+                return parse_isodate(value).replace(tzinfo=datetime.timezone.utc)
             except (ValueError, isodate.isoerror.ISO8601Error):
                 # let the super method deal with that
                 pass

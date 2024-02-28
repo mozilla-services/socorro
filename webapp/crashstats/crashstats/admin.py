@@ -30,14 +30,14 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     list_display = [
         "action_time",
-        "admin",
+        "admin_email",
         "object_link",
         "action",
         "get_change_message",
     ]
     list_display_links = ["action_time", "get_change_message"]
 
-    def admin(self, obj):
+    def admin_email(self, obj):
         return obj.user.email
 
     def action(self, obj):
@@ -51,6 +51,10 @@ class LogEntryAdmin(admin.ModelAdmin):
             return edited_obj.email
         return edited_obj
 
+    @admin.display(
+        description="object",
+        ordering="object_repr",
+    )
     def object_link(self, obj):
         object_link = self.obj_repr(obj)  # Default to just name
         content_type = obj.content_type
@@ -69,13 +73,9 @@ class LogEntryAdmin(admin.ModelAdmin):
                 pass
         return object_link
 
-    object_link.admin_order_field = "object_repr"
-    object_link.short_description = "object"
-
+    @admin.display(description="change message")
     def get_change_message(self, obj):
         return obj.get_change_message()
-
-    get_change_message.short_description = "change message"
 
     def has_add_permission(self, request):
         return False
@@ -127,6 +127,7 @@ class SignatureAdmin(admin.ModelAdmin):
     search_fields = ["signature"]
 
 
+@admin.action(description="Process crashes")
 def process_crashes(modeladmin, request, queryset):
     """Process selected missing processed crashes from admin page."""
     priority_api = PriorityJob()
@@ -135,9 +136,6 @@ def process_crashes(modeladmin, request, queryset):
     messages.add_message(
         request, messages.INFO, "Sent %s crashes for processing." % len(crash_ids)
     )
-
-
-process_crashes.short_description = "Process crashes"
 
 
 @admin.register(MissingProcessedCrash)

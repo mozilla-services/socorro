@@ -9,7 +9,6 @@ import pyquery
 
 from django.urls import reverse
 from django.utils.encoding import smart_str
-from django.utils.timezone import utc
 
 from crashstats.crashstats.models import Signature, BugAssociation
 from socorro.lib.libdatetime import utc_now
@@ -63,7 +62,9 @@ class TestTopCrasherViews:
 
         Signature.objects.create(
             signature=signature,
-            first_date=datetime.datetime(2021, 1, 1, 12, 23, 34, tzinfo=utc),
+            first_date=datetime.datetime(
+                2021, 1, 1, 12, 23, 34, tzinfo=datetime.timezone.utc
+            ),
             first_build="20000101122334",
         )
 

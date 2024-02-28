@@ -320,11 +320,6 @@ VCS_MAPPINGS = {
 }
 
 
-# No need to load it because we don't do i18n in this project
-USE_I18N = False
-
-USE_L10N = False
-
 # True if old legacy URLs we handle should be permanent 301 redirects.
 # Transitionally it might be safer to set this to False as we roll out the new
 # django re-write of Socorro.
@@ -470,6 +465,12 @@ DATABASE_URL = _config("DATABASE_URL", default="sqlite://sqlite.crashstats.db")
 DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "pipeline.storage.PipelineManifestStorage",
+    },
+}
+
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
@@ -478,8 +479,6 @@ STATICFILES_FINDERS = [
     # Make sure this comes last!
     "crashstats.crashstats.finders.LeftoverPipelineFinder",
 ]
-
-STATICFILES_STORAGE = "pipeline.storage.PipelineManifestStorage"
 
 PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,

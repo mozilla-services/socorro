@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
+from io import StringIO
 import json
 import re
 from unittest import mock
@@ -201,7 +202,7 @@ class Test500:
         handler500 = getattr(views, end)
 
         # to make a mock call to the django view functions you need a request
-        fake_request = RequestFactory().request(**{"wsgi.input": None})
+        fake_request = RequestFactory().request(**{"wsgi.input": StringIO("")})
 
         # the reason for first causing an exception to be raised is because
         # the handler500 function is only called by django when an exception
@@ -223,7 +224,7 @@ class Test500:
         views = __import__(par, globals(), locals(), [end], 0)
         handler500 = getattr(views, end)
 
-        fake_request = RequestFactory().request(**{"wsgi.input": None})
+        fake_request = RequestFactory().request(**{"wsgi.input": StringIO("")})
         # This is what the utils.json_view decorator sets on views
         # that should eventually return JSON.
         fake_request._json_view = True

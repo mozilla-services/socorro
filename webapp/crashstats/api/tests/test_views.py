@@ -110,7 +110,7 @@ class TestViews(BaseTestViews):
     def test_option_CORS(self):
         """OPTIONS request for model_wrapper returns CORS headers"""
         url = reverse("api:model_wrapper", args=("NoOp",))
-        response = self.client.options(url, HTTP_ORIGIN="http://example.com")
+        response = self.client.options(url, headers={"origin": "http://example.com"})
         assert response.status_code == 200
         assert response["Access-Control-Allow-Origin"] == "*"
 
@@ -158,14 +158,14 @@ class TestViews(BaseTestViews):
             # https://bugzilla.mozilla.org/show_bug.cgi?id=1148470
             for _ in range(current_limit * 2):
                 response = self.client.get(
-                    url, {"product": "good"}, HTTP_X_REAL_IP="12.12.12.12"
+                    url, {"product": "good"}, headers={"x-real-ip": "12.12.12.12"}
                 )
             assert response.status_code == 429
 
             # But it'll work if you use a different X-Real-IP
             # because the rate limit is based on your IP address
             response = self.client.get(
-                url, {"product": "good"}, HTTP_X_REAL_IP="11.11.11.11"
+                url, {"product": "good"}, headers={"x-real-ip": "11.11.11.11"}
             )
             assert response.status_code == 200
 
@@ -175,7 +175,7 @@ class TestViews(BaseTestViews):
             )
 
             response = self.client.get(
-                url, {"product": "good"}, HTTP_AUTH_TOKEN=token.key
+                url, {"product": "good"}, headers={"auth-token": token.key}
             )
             assert response.status_code == 200
 
@@ -255,7 +255,9 @@ class TestProcessedCrashAPI(BaseTestViews):
         token = Token.objects.create(user=user, notes="test token")
         token.permissions.add(view_pii_perm)
 
-        response = self.client.get(url, {"crash_id": "123"}, HTTP_AUTH_TOKEN=token.key)
+        response = self.client.get(
+            url, {"crash_id": "123"}, headers={"auth-token": token.key}
+        )
         assert response.status_code == 200
         dump = json.loads(response.content)
         for key in public_data.keys():
@@ -326,7 +328,7 @@ class TestRawCrashAPI(BaseTestViews):
         token.permissions.add(view_pii_perm)
 
         response = self.client.get(
-            url, {"crash_id": "abc123"}, HTTP_AUTH_TOKEN=token.key
+            url, {"crash_id": "abc123"}, headers={"auth-token": token.key}
         )
         assert response.status_code == 200
         dump = json.loads(response.content)
@@ -548,7 +550,7 @@ class TestReprocessing(BaseTestViews):
         assert response.status_code == 403
 
         params = {"crash_ids": crash_id}
-        response = self.client.get(url, params, HTTP_AUTH_TOKEN="somecrap")
+        response = self.client.get(url, params, headers={"auth-token": "somecrap"})
         assert response.status_code == 403
 
         user = User.objects.create(username="test")
@@ -560,10 +562,10 @@ class TestReprocessing(BaseTestViews):
         token = Token.objects.create(user=user, notes="Only reprocessing")
         token.permissions.add(perm)
 
-        response = self.client.get(url, params, HTTP_AUTH_TOKEN=token.key)
+        response = self.client.get(url, params, headers={"auth-token": token.key})
         assert response.status_code == 405
 
-        response = self.client.post(url, params, HTTP_AUTH_TOKEN=token.key)
+        response = self.client.post(url, params, headers={"auth-token": token.key})
         assert response.status_code == 200
         assert json.loads(response.content) is True
 
