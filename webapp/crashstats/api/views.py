@@ -16,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.views import APIView
-from session_csrf import anonymous_csrf_exempt
 
 from django import http
 from django import forms
@@ -134,33 +133,6 @@ def clear_empty_session(fun):
     return _clear_empty_session
 
 
-def no_csrf_i_mean_it(fun):
-    """Removes any csrf bits from request
-
-    This removes any csrf bookkeeping by middleware from the request so that it doesn't
-    get persisted in cookies and elsewhere.
-
-    Note: If we ever change ANON_ALWAYS setting for django-session-csrf, then we can nix
-    this. Otherwise django-session-csrf *always* creates an anoncsrf cookie regardless
-    of the existence of the anonymous_csrf_exempt decorator.
-
-    """
-
-    @wraps(fun)
-    def _no_csrf(request, *args, **kwargs):
-        ret = fun(request, *args, **kwargs)
-
-        # Remove any csrf bits from Django or django-session-csrf so they don't persist
-        if hasattr(request, "_anon_csrf_key"):
-            del request._anon_csrf_key
-
-        if "csrf_token" in request.session:
-            del request.session["csrf_token"]
-        return ret
-
-    return _no_csrf
-
-
 def reject_unknown_models(view):
     @wraps(view)
     def inner(request, model_name, **kwargs):
@@ -192,10 +164,8 @@ def reject_unknown_models(view):
 # getting metrics on fuzzing attempts on the API.
 @reject_unknown_models
 @track_view
-@anonymous_csrf_exempt
 @csrf_exempt
 @clear_empty_session
-@no_csrf_i_mean_it
 @ratelimit(
     key="ip", method=["GET", "POST", "PUT"], rate=utils.ratelimit_rate, block=True
 )
@@ -490,7 +460,6 @@ def handle_ratelimit(fun):
     return _handle_ratelimit
 
 
-@anonymous_csrf_exempt
 @csrf_exempt
 @handle_ratelimit
 @ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
@@ -619,7 +588,6 @@ class MissingProcessedCrashAPI(SocorroAPIView):
 
     """
 
-    @method_decorator(anonymous_csrf_exempt)
     @method_decorator(csrf_exempt)
     @method_decorator(
         ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
@@ -679,7 +647,6 @@ class CrashVerifyAPI(SocorroAPIView):
 
     API_NAME = "CrashVerify"
 
-    @method_decorator(anonymous_csrf_exempt)
     @method_decorator(csrf_exempt)
     @method_decorator(
         ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
@@ -767,7 +734,6 @@ class CrashSignatureAPI(SocorroAPIView):
     where RESULT has "signature", "notes", and "extra" keys.
     """
 
-    @method_decorator(anonymous_csrf_exempt)
     @method_decorator(csrf_exempt)
     @method_decorator(handle_ratelimit)
     @method_decorator(

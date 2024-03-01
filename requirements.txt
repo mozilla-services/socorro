@@ -295,10 +295,6 @@ django-ratelimit==4.1.0 \
     --hash=sha256:555943b283045b917ad59f196829530d63be2a39adb72788d985b90c81ba808b \
     --hash=sha256:d047a31cf94d83ef1465d7543ca66c6fc16695559b5f8d814d1b51df15110b92
     # via -r requirements.in
-django-session-csrf==0.7.1 \
-    --hash=sha256:e17177e6e2e6518ec7ce6693ad10a5c747f8571d09f4cfa9082599334421605d \
-    --hash=sha256:ff8c10e30d312c77fc6a6db7710e22b9383e28c03b7fe958876ca96f39aa6cf2
-    # via -r requirements.in
 django-waffle==2.3.0 \
     --hash=sha256:8f457523859f39f77b785dfeb18d57d8c80d97ba05698aed7fa587bb86539476 \
     --hash=sha256:e4c29570d61c5759b07d9c88154c14b0b189dbf772ac8744c44e226cc7bd75bf
