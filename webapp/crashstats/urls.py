@@ -7,10 +7,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
 
 from crashstats.manage import admin_site
-from crashstats.crashstats.monkeypatches import patch
 
-
-patch()
 
 handler404 = "crashstats.crashstats.views.handler404"
 handler500 = "crashstats.crashstats.views.handler500"

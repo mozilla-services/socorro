@@ -99,7 +99,6 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
-    "session_csrf",
     "django.contrib.admin.apps.SimpleAdminConfig",
     "mozilla_django_oidc",
     "rest_framework",
@@ -131,7 +130,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "crashstats.tokens.middleware.APIAuthenticationMiddleware",
-    "session_csrf.CsrfMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "mozilla_django_oidc.middleware.SessionRefresh",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -165,7 +164,6 @@ _CONTEXT_PROCESSORS = [
     "django.template.context_processors.debug",
     "django.template.context_processors.media",
     "django.template.context_processors.request",
-    "session_csrf.context_processor",
     "django.contrib.messages.context_processors.messages",
     "django.template.context_processors.request",
     "crashstats.crashstats.context_processors.settings",
@@ -205,9 +203,6 @@ TEMPLATES = [
         "OPTIONS": {"debug": DEBUG, "context_processors": _CONTEXT_PROCESSORS},
     },
 ]
-
-# Always generate a CSRF token for anonymous users.
-ANON_ALWAYS = True
 
 LOGGING_LEVEL = _config(
     "LOGGING_LEVEL", default="INFO", doc="Logging level for Crash Stats code"

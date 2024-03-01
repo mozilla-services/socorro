@@ -11,8 +11,6 @@ from django.conf import settings
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from session_csrf import anonymous_csrf
-
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.crashstats.decorators import (
@@ -106,7 +104,6 @@ def get_topcrashers_stats(**kwargs):
 
 @track_view
 @pass_default_context
-@anonymous_csrf
 @check_days_parameter([1, 3, 7, 14, 28], default=7)
 def topcrashers(request, days=None, possible_days=None, default_context=None):
     context = default_context or {}
