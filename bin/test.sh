@@ -29,6 +29,7 @@ echo ">>> wait for services to be ready"
 
 urlwait "${DATABASE_URL}"
 urlwait "${ELASTICSEARCH_URL}"
+urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
 python ./bin/waitfor.py --verbose "${LOCAL_DEV_AWS_ENDPOINT_URL}health"
 

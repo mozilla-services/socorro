@@ -25,6 +25,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - pubsub
       - postgresql
       - elasticsearch
     volumes:
@@ -40,6 +41,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - pubsub
       - postgresql
       - elasticsearch
 
@@ -73,6 +75,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - pubsub
       - elasticsearch
       - symbolsserver
     command: ["processor"]
@@ -102,6 +105,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - pubsub
       - postgresql
       - elasticsearch
       - memcached
@@ -148,6 +152,7 @@ services:
       - my.env
     depends_on:
       - localstack
+      - pubsub
       - statsd
     expose:
       - 8000
@@ -207,6 +212,21 @@ services:
       - HOSTNAME_EXTERNAL=localstack
     ports:
       - "4566:4566"
+
+  # https://cloud.google.com/sdk/docs/downloads-docker
+  # official pubsub emulator
+  pubsub:
+    # also available as google/cloud-sdk:<version>-emulators
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:463.0.0-emulators
+    command:
+      - gcloud
+      - beta
+      - emulators
+      - pubsub
+      - start
+      - --host-port=0.0.0.0:${PUBSUB_PORT:-5010}
+    ports:
+      - 5010:5010
 
   # https://hub.docker.com/_/memcached/
   memcached:
