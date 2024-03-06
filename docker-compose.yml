@@ -43,6 +43,27 @@ services:
       - postgresql
       - elasticsearch
 
+  devcontainer:
+    build:
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        userid: ${USE_UID:-10001}
+        groupid: ${USE_GID:-10001}
+    image: local/socorro-devcontainer
+    entrypoint: ["sleep", "inf"]
+    env_file:
+      - docker/config/local_dev.env
+      - docker/config/test.env
+      - my.env
+    depends_on:
+      - fakesentry
+      - statsd
+      - localstack
+      - postgresql
+      - elasticsearch
+    volumes:
+      - .:/app
+
   processor:
     image: local/socorro_app
     env_file:
