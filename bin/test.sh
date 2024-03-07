@@ -55,4 +55,6 @@ echo ">>> run tests"
 pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
+# default cloud provider is aws, now configure gcp and run only impacted tests
+CLOUD_PROVIDER=GCP "${PYTEST}" -m gcp
 popd
