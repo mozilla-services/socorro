@@ -17,9 +17,32 @@ RUN groupadd --gid $groupid --non-unique app && \
 RUN apt-get update && \
     apt-get install -y ripgrep tig
 
+# Install OS-level things
+COPY docker/set_up_ubuntu.sh /tmp/set_up_ubuntu.sh
+RUN DEBIAN_FRONTEND=noninteractive /tmp/set_up_ubuntu.sh && \
+    rm /tmp/set_up_ubuntu.sh
+
+# Install stackwalker
+COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
+RUN /tmp/set_up_stackwalker.sh && \
+    rm /tmp/set_up_stackwalker.sh
+
+# Install frontend JS deps
+COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
+RUN cd /webapp-frontend-deps/ && npm install
+
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install -U 'pip>=20' && \
     pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip install --no-cache-dir ipython && \
     pip check --disable-pip-version-check
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    LESS_BINARY=/webapp-frontend-deps/node_modules/.bin/lessc \
+    UGLIFYJS_BINARY=/webapp-frontend-deps/node_modules/.bin/uglifyjs \
+    CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
+    NPM_ROOT_PATH=/webapp-frontend-deps/ \
+    NODE_PATH=/webapp-frontend-deps/node_modules/
