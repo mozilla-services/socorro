@@ -22,6 +22,7 @@ symbols/
 
 # docker things
 .docker-build*
+.devcontainer-build
 .cache/
 docker-compose.override.yml
 my.env

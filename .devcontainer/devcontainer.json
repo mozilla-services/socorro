@@ -1,0 +1,28 @@
+{
+  "name": "Socorro",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "devcontainer",
+  "runServices": [
+    "devcontainer"
+  ],
+  "shutdownAction": "none",
+  "workspaceFolder": "/app",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        }
+      },
+      "extensions": [
+        "charliermarsh.ruff"
+      ]
+    }
+  },
+  "remoteUser": "app",
+  "updateRemoteUserUID": false
+}

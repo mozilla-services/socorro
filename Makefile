@@ -44,12 +44,24 @@ my.env:
 .docker-build:
 	make build
 
+.devcontainer-build:
+	make devcontainerbuild
+
 .PHONY: build
 build: my.env  ## | Build docker images.
 	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} --progress plain app
 	${DC} build --progress plain oidcprovider fakesentry
 	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch symbolsserver
 	touch .docker-build
+
+.PHONY: devcontainerbuild
+devcontainerbuild: my.env  ## | Build VS Code development container.
+	${DC} build devcontainer
+	touch .devcontainer-build
+
+.PHONY: devcontainer
+devcontainer: my.env .devcontainer-build  ## | Run VS Code development container.
+	${DC} up --detach devcontainer
 
 .PHONY: setup
 setup: my.env .docker-build  ## | Set up Postgres, Elasticsearch, local SQS, and local S3 services.
