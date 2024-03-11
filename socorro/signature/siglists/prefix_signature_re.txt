@@ -143,6 +143,7 @@ nsCOMPtr
 NS_ABORT_OOM
 NS_DebugBreak
 nsDebugImpl::Abort
+nsDocShell::GetBrowsingContext
 nsINode::GetParentNode
 nsThread::GetEvent
 [-+]\[NSException raise(:format:(arguments:)?)?\]
