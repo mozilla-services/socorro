@@ -2623,9 +2623,6 @@ properties:
     permissions: ["public"]
     source_annotation: IPCShutdownState
   ipc_system_error:
-    # NOTE(willkg): CrashAnnotations.yaml lists this as a string, but the
-    # values are all integers and we've been indexing it as an integer for
-    # years so we'll keep doing that.
     description: >
       Description of the last system error that occurred during IPC operation.
     type: integer
