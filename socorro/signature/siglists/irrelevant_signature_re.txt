@@ -168,8 +168,9 @@ mozilla::widget::WlCrashHandler
 mozilla::wr::RenderThread::AddRef
 moz_xmalloc
 moz_xrealloc
-nsCOMPtr<T>::~nsCOMPtr
+nsCOMPtr<T>::
 nsCOMPtr_base::~nsCOMPtr_base
+nsMaybeWeakPtr<T>::
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 ns.*Hashtable
