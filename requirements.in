@@ -6,7 +6,7 @@ click==8.1.7
 contextlib2==21.6.0
 datadog==0.48.0
 django-cors-headers==4.3.1
-django_csp==3.7
+django_csp==3.8
 django-jinja==2.11.0
 django-npm==1.0.0
 django-pipeline==3.0.0
