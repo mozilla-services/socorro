@@ -136,7 +136,7 @@ class TestViews:
             ),
         ]
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         url = reverse("supersearch:search_results")
@@ -259,7 +259,6 @@ class TestViews:
         """Test that users with protected data access can see all fields."""
         crash_id = create_new_ooid()
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": crash_id,
                 "date_processed": utc_now(),
@@ -398,7 +397,7 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
         es_helper.refresh()

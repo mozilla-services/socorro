@@ -73,8 +73,6 @@ SAMPLE_PROCESSED_CRASH = {
     },
 }
 
-SAMPLE_RAW_CRASH = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
-
 REMOVED_VALUE = object()
 
 
@@ -103,13 +101,12 @@ class TestESCrashStorage:
 
     def test_index_crash(self, es_helper):
         """Test indexing a crash document."""
-        raw_crash = deepcopy(SAMPLE_RAW_CRASH)
         processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
         processed_crash["date_processed"] = date_to_string(utc_now())
 
         crashstorage = self.build_crashstorage()
         crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
+            raw_crash={},
             processed_crash=processed_crash,
         )
 
@@ -121,9 +118,6 @@ class TestESCrashStorage:
 
     def test_index_crash_indexable_keys(self, es_helper):
         """Test indexing ONLY indexes valid, known keys."""
-        raw_crash = {
-            "InvalidKey": "alpha",
-        }
         processed_crash = {
             "another_invalid_key": "alpha",
             "date_processed": date_to_string(utc_now()),
@@ -133,7 +127,7 @@ class TestESCrashStorage:
 
         crashstorage = self.build_crashstorage()
         crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
+            raw_crash={},
             processed_crash=processed_crash,
         )
 
@@ -143,11 +137,8 @@ class TestESCrashStorage:
                 id=processed_crash["uuid"],
             )
 
-        # Verify keys that aren't in super_search_fields aren't in the raw or processed
-        # crash parts
-        raw_crash = doc["_source"]["raw_crash"]
-        assert list(sorted(raw_crash.keys())) == []
-
+        # Verify keys that aren't in super_search_fields aren't in the the final
+        # document
         processed_crash = doc["_source"]["processed_crash"]
         assert list(sorted(processed_crash.keys())) == [
             "date_processed",
@@ -188,9 +179,6 @@ class TestESCrashStorage:
 
         # Create a crash for this week and save it
         now_uuid = create_new_ooid(timestamp=now)
-        raw_crash = {
-            "BuildID": "20200506000000",
-        }
         processed_crash = {
             field: "this week",
             "date_processed": date_to_string(now),
@@ -198,15 +186,12 @@ class TestESCrashStorage:
         }
 
         crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
+            raw_crash={},
             processed_crash=processed_crash,
         )
 
         # Create a crash for four weeks ago with the bum mapping and save it
         old_uuid = create_new_ooid(timestamp=four_weeks_ago)
-        raw_crash = {
-            "BuildID": "20200506000000",
-        }
         processed_crash = {
             field: "this week",
             "date_processed": date_to_string(now - timedelta(days=28)),
@@ -214,7 +199,7 @@ class TestESCrashStorage:
         }
 
         crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
+            raw_crash={},
             processed_crash=processed_crash,
         )
 
@@ -239,9 +224,8 @@ class TestESCrashStorage:
             assert field not in doc["_source"]["processed_crash"]
 
     def test_crash_size_capture(self):
-        """Verify we capture raw/processed crash sizes in ES crashstorage"""
+        """Verify saving a processed crash emits a metric for crash document size"""
         crash_id = create_new_ooid()
-        raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
         processed_crash = {
             "date_processed": "2012-04-08 10:56:41.558922",
             "uuid": crash_id,
@@ -250,13 +234,11 @@ class TestESCrashStorage:
         crashstorage = self.build_crashstorage()
         with MetricsMock() as mm:
             crashstorage.save_processed_crash(
-                raw_crash=raw_crash,
+                raw_crash={},
                 processed_crash=processed_crash,
             )
 
-            mm.assert_histogram("processor.es.raw_crash_size", value=2)
-            mm.assert_histogram("processor.es.processed_crash_size", value=96)
-            mm.assert_histogram("processor.es.crash_document_size", value=186)
+            mm.assert_histogram("processor.es.crash_document_size", value=169)
 
     def test_index_data_capture(self, es_helper):
         """Verify we capture index data in ES crashstorage"""
@@ -352,7 +334,6 @@ class TestESCrashStorage:
     )
     def test_indexing_bad_data(self, key, value, expected_value, es_helper):
         crash_id = create_new_ooid()
-        raw_crash = {"ProductName": "Firefox", "ReleaseChannel": "nightly"}
         processed_crash = {
             "date_processed": date_from_ooid(crash_id),
             "uuid": crash_id,
@@ -368,7 +349,7 @@ class TestESCrashStorage:
         # Save the crash data and then fetch it and verify the value is as expected
         crashstorage = self.build_crashstorage()
         crashstorage.save_processed_crash(
-            raw_crash=raw_crash,
+            raw_crash={},
             processed_crash=processed_crash,
         )
         es_helper.refresh()

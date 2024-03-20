@@ -74,7 +74,6 @@ class TestIntegrationSuperSearch:
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
         es_helper.index_crash(
-            raw_crash={"ProductName": "Firefox"},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -131,7 +130,6 @@ class TestIntegrationSuperSearch:
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
         es_helper.index_crash(
-            raw_crash={"ProductName": "WaterWolf"},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -140,7 +138,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={"ProductName": "NightTrain"},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -149,7 +146,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={"ProductName": "NightTrain"},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -191,7 +187,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -199,7 +194,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "mozilla::js::function",
@@ -207,7 +201,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "json_Is_Kewl",
@@ -215,7 +208,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "OhILoveMyBrowser",
@@ -223,7 +215,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -352,7 +343,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 2000,
@@ -360,7 +350,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 2001,
@@ -368,7 +357,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 1999,
@@ -427,7 +415,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={"Accessibility": True},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
@@ -435,7 +422,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={"Accessibility": False},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
@@ -443,7 +429,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={"Accessibility": True},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
@@ -452,7 +437,6 @@ class TestIntegrationSuperSearch:
         )
         es_helper.index_crash(
             # Missing value means it's neither true nor false
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
@@ -487,7 +471,6 @@ class TestIntegrationSuperSearch:
         )
 
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[0],
@@ -497,7 +480,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[1],
@@ -507,7 +489,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[2],
@@ -517,7 +498,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": sigs[3],
@@ -555,9 +535,7 @@ class TestIntegrationSuperSearch:
         api = SuperSearchWithFields(crashstorage=crashstorage)
         number_of_crashes = 21
         processed_crash = {"signature": "something"}
-        es_helper.index_many_crashes(
-            number_of_crashes, raw_crash={}, processed_crash=processed_crash
-        )
+        es_helper.index_many_crashes(number_of_crashes, processed_crash=processed_crash)
 
         kwargs = {"_results_number": "10"}
         res = api.get(**kwargs)
@@ -585,7 +563,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -594,7 +571,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -603,7 +579,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -655,7 +630,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -665,7 +639,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -675,7 +648,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -685,7 +657,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -700,7 +671,6 @@ class TestIntegrationSuperSearch:
         processed_crash = {"version": "10.%s"}
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -787,7 +757,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -797,7 +766,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -807,7 +775,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -817,7 +784,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -832,7 +798,6 @@ class TestIntegrationSuperSearch:
         processed_crash = {"version": "10.%s"}
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -855,7 +820,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -865,7 +829,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -875,7 +838,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -885,7 +847,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -900,7 +861,6 @@ class TestIntegrationSuperSearch:
         processed_crash = {"version": "10.%s"}
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -939,7 +899,6 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -950,7 +909,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -961,7 +919,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -972,7 +929,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -991,7 +947,6 @@ class TestIntegrationSuperSearch:
         }
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -1173,7 +1128,6 @@ class TestIntegrationSuperSearch:
         the_day_before = now - datetime.timedelta(days=2)
 
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1183,7 +1137,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1193,7 +1146,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1203,7 +1155,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -1221,7 +1172,6 @@ class TestIntegrationSuperSearch:
         }
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -1393,7 +1343,6 @@ class TestIntegrationSuperSearch:
         day_before_int = int(the_day_before.strftime(time_str))
 
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1404,7 +1353,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=yesterday),
                 "signature": "js::break_your_browser",
@@ -1415,7 +1363,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=the_day_before),
                 "signature": "js::break_your_browser",
@@ -1426,7 +1373,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -1446,7 +1392,6 @@ class TestIntegrationSuperSearch:
         }
         es_helper.index_many_crashes(
             number_of_crashes,
-            raw_crash={},
             processed_crash=processed_crash,
             loop_field="version",
         )
@@ -1581,7 +1526,6 @@ class TestIntegrationSuperSearch:
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1613,7 +1557,6 @@ class TestIntegrationSuperSearch:
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1623,7 +1566,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1633,7 +1575,6 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",

@@ -34,7 +34,6 @@ class TestIntegrationAnalyzers:
 
         value1 = "/path/to/dll;;foo;C:\\bar\\boo"
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": crash_id_1,
                 "app_init_dlls": value1,
@@ -43,7 +42,6 @@ class TestIntegrationAnalyzers:
         )
         value2 = "/path/to/dll;D:\\bar\\boo"
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": crash_id_2,
                 "app_init_dlls": value2,
