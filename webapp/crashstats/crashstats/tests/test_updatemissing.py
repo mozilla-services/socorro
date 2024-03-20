@@ -30,13 +30,12 @@ class TestUpdateMissing:
 
     def create_processed_crash_in_es(self, es_helper, crash_id):
         crash_date = date_from_ooid(crash_id)
-        raw_crash = {}
         processed_crash = {
             "uuid": crash_id,
             "signature": "OOM | Small",
             "date_processed": crash_date,
         }
-        es_helper.index_crash(raw_crash=raw_crash, processed_crash=processed_crash)
+        es_helper.index_crash(processed_crash=processed_crash)
 
     def test_past_missing_still_missing(self, capsys, db):
         # Create a MissingProcessedCrash row, but don't put the processed crash in the

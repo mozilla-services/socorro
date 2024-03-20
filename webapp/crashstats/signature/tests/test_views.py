@@ -69,9 +69,7 @@ class TestViews:
         crash4 = build_crash_data(crash4_id, build=None)
 
         for crash_data in [crash1, crash2, crash3, crash4]:
-            es_helper.index_crash(
-                raw_crash={}, processed_crash=crash_data, refresh=False
-            )
+            es_helper.index_crash(processed_crash=crash_data, refresh=False)
         es_helper.refresh()
 
         start_date, end_date = get_date_range(crash1_id)
@@ -207,7 +205,7 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
         es_helper.refresh()
@@ -282,7 +280,7 @@ class TestViews:
         crash_ids = []
         for i in range(len(products)):
             data = build_crash_data(i, products)
-            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
         es_helper.refresh()
@@ -336,7 +334,7 @@ class TestViews:
         crash_ids = []
         for i, item in enumerate(test_data):
             data = build_crash_data(i, days=item[0], product=item[1])
-            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
         es_helper.refresh()
@@ -424,9 +422,7 @@ class TestViews:
         )
 
         for crash_data in [crash1, crash2, crash3, crash4]:
-            es_helper.index_crash(
-                raw_crash={}, processed_crash=crash_data, refresh=False
-            )
+            es_helper.index_crash(processed_crash=crash_data, refresh=False)
         es_helper.refresh()
 
         url = reverse("signature:signature_comments")
@@ -466,7 +462,7 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            es_helper.index_crash(raw_crash={}, processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
         es_helper.refresh()
@@ -590,7 +586,7 @@ class TestViews:
             ),
         ]
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         start_date, end_date = get_date_range(date=utc_now())
