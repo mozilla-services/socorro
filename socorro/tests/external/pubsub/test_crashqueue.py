@@ -2,31 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# This is tested using test settings (docker/config/test.env) and localstack.
+# This is tested using test settings (docker/config/test.env) and Pub/Sub emulator.
 
-import os
 import time
+from unittest.mock import ANY
 
 import pytest
 
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid
-
-
-QUEUE_SETTINGS = {
-    "class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue",
-    "options": {
-        "project_id": os.environ["PUBSUB_PROJECT_ID"],
-        "standard_topic_name": os.environ["PUBSUB_STANDARD_TOPIC_NAME"],
-        "standard_subscription_name": os.environ["PUBSUB_STANDARD_SUBSCRIPTION_NAME"],
-        "priority_topic_name": os.environ["PUBSUB_PRIORITY_TOPIC_NAME"],
-        "priority_subscription_name": os.environ["PUBSUB_PRIORITY_SUBSCRIPTION_NAME"],
-        "reprocessing_topic_name": os.environ["PUBSUB_REPROCESSING_TOPIC_NAME"],
-        "reprocessing_subscription_name": os.environ[
-            "PUBSUB_REPROCESSING_SUBSCRIPTION_NAME"
-        ],
-    },
-}
+from socorro import settings
 
 
 class TestPubSubCrashQueue:
@@ -40,7 +25,7 @@ class TestPubSubCrashQueue:
         priority_crash = create_new_ooid()
         pubsub_helper.publish("priority", priority_crash)
 
-        crashqueue = build_instance_from_settings(QUEUE_SETTINGS)
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         new_crashes = list(crashqueue.new_crashes())
 
         # Assert the shape of items in new_crashes
@@ -51,8 +36,11 @@ class TestPubSubCrashQueue:
             assert list(item[1].keys()) == ["finished_func"]
 
         # Assert new_crashes order is the correct order
-        crash_ids = [item[0][0] for item in new_crashes]
-        assert crash_ids == [priority_crash, standard_crash, reprocessing_crash]
+        assert new_crashes == [
+            ((priority_crash,), {"finished_func": ANY}),
+            ((standard_crash,), {"finished_func": ANY}),
+            ((reprocessing_crash,), {"finished_func": ANY}),
+        ]
 
     def test_ack(self, pubsub_helper):
         original_crash_id = create_new_ooid()
@@ -65,12 +53,13 @@ class TestPubSubCrashQueue:
         pubsub_helper.publish("priority", "test")
         pubsub_helper.publish("reprocessing", "test")
 
-        crashqueue = build_instance_from_settings(QUEUE_SETTINGS)
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         new_crashes = list(crashqueue.new_crashes())
 
         # Assert original_crash_id is in new_crashes
-        crash_ids = [item[0][0] for item in new_crashes]
-        assert crash_ids == [original_crash_id]
+        assert new_crashes == [
+            ((original_crash_id,), {"finished_func": ANY}),
+        ]
 
         # put test messages in the queues, which will be ignored, so that pubsub has
         # something to return and tests run faster than when the queues are empty
@@ -103,7 +92,7 @@ class TestPubSubCrashQueue:
     def test_publish_one(self, pubsub_helper, queue):
         crash_id = create_new_ooid()
 
-        crashqueue = build_instance_from_settings(QUEUE_SETTINGS)
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         crashqueue.publish(queue, [crash_id])
 
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
@@ -115,7 +104,7 @@ class TestPubSubCrashQueue:
         crash_id_2 = create_new_ooid()
         crash_id_3 = create_new_ooid()
 
-        crashqueue = build_instance_from_settings(QUEUE_SETTINGS)
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         crashqueue.publish(queue, [crash_id_1, crash_id_2])
         crashqueue.publish(queue, [crash_id_3])
 

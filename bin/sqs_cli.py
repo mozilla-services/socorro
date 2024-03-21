@@ -23,8 +23,8 @@ VISIBILITY_TIMEOUT = 2
 
 
 def get_client():
-    cls = import_class(settings.QUEUE["class"])
-    return cls.build_client(**settings.QUEUE["options"])
+    cls = import_class(settings.QUEUE_SQS["class"])
+    return cls.build_client(**settings.QUEUE_SQS["options"])
 
 
 @click.group()
@@ -141,7 +141,7 @@ def create(ctx, queue):
 
     conn = get_client()
 
-    cls = import_class(settings.QUEUE["class"])
+    cls = import_class(settings.QUEUE_SQS["class"])
     cls.validate_queue_name(queue)
     try:
         conn.get_queue_url(QueueName=queue)
@@ -157,7 +157,7 @@ def create(ctx, queue):
 @click.pass_context
 def create_all(ctx):
     """Create SQS queues related to processing."""
-    options = settings.QUEUE["options"]
+    options = settings.QUEUE_SQS["options"]
     for queue in (
         options["standard_queue"],
         options["priority_queue"],
@@ -192,7 +192,7 @@ def delete(ctx, queue):
 @click.pass_context
 def delete_all(ctx):
     """Delete SQS queues related to processing."""
-    options = settings.QUEUE["options"]
+    options = settings.QUEUE_SQS["options"]
     for queue in (
         options["standard_queue"],
         options["priority_queue"],

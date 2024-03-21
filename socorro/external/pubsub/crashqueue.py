@@ -45,8 +45,8 @@ class PubSubCrashQueue(CrashQueueBase):
 
     * ``roles/pubsub.publisher``
 
-      Socorro sends messages to topics--this is how the webapp publishes crash ids
-      to the priority and reprocessing queues. This requires permissions from the
+      Socorro webapp sends messages to topics--this is how the webapp publishes crash
+      ids to the priority and reprocessing queues. This requires permissions from the
       ``roles/pubsub.publisher`` role.
 
     * ``roles/pubsub.subscriber``
@@ -174,7 +174,7 @@ class PubSubCrashQueue(CrashQueueBase):
         logger.debug("ack %s from %s", ack_id, subscription_path)
 
     def __iter__(self):
-        """Return iterator over crash ids from AWS SQS.
+        """Return iterator over crash ids from Pub/Sub.
 
         Each returned crash is a ``(crash_id, {kwargs})`` tuple with
         ``finished_func`` as the only key in ``kwargs``. The caller should call
@@ -187,6 +187,7 @@ class PubSubCrashQueue(CrashQueueBase):
                 resp = self.subscriber.pull(
                     subscription=subscription_path,
                     max_messages=self.pull_max_messages,
+                    return_immediately=True,
                 )
                 msgs = resp.received_messages
 
@@ -243,6 +244,7 @@ class PubSubCrashQueue(CrashQueueBase):
                 try:
                     future.result()
                 except Exception:
+                    logger.exception(f"Crashid failed to publish: {batch[i]}")
                     failed.append(batch[i])
 
         if failed:

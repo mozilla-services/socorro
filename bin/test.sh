@@ -38,6 +38,9 @@ echo ">>> build sqs things and db things"
 # Clear SQS for tests
 ./socorro-cmd sqs delete-all
 
+# Clear Pub/Sub for tests
+./socorro-cmd pubsub delete-all
+
 # Set up socorro_test db
 ./socorro-cmd db drop || true
 ./socorro-cmd db create

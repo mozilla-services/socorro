@@ -139,9 +139,80 @@ LOCAL_DEV_AWS_ENDPOINT_URL = _config(
     ),
 )
 
+# Crash report processing queue configuration if CLOUD_PROVIDER == AWS
+QUEUE_SQS = {
+    "class": "socorro.external.sqs.crashqueue.SQSCrashQueue",
+    "options": {
+        "standard_queue": _config(
+            "SQS_STANDARD_QUEUE",
+            default="standard-queue",
+            doc="Name for the standard processing queue.",
+        ),
+        "priority_queue": _config(
+            "SQS_PRIORITY_QUEUE",
+            default="priority-queue",
+            doc="Name for the priority processing queue.",
+        ),
+        "reprocessing_queue": _config(
+            "SQS_REPROCESSING_QUEUE",
+            default="reprocessing-queue",
+            doc="Name for the reprocessing queue.",
+        ),
+        "access_key": _config("SQS_ACCESS_KEY", default="", doc="SQS access key."),
+        "secret_access_key": _config(
+            "SQS_SECRET_ACCESS_KEY",
+            default="",
+            doc="SQS secret access key.",
+        ),
+        "region": _config("SQS_REGION", default="", doc="SQS region."),
+        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
+    },
+}
+# Crash report processing queue configuration if CLOUD_PROVIDER == GCP
+QUEUE_PUBSUB = {
+    "class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue",
+    "options": {
+        "project_id": _config(
+            "PUBSUB_PROJECT_ID",
+            default="test",
+            doc="Google Compute Platform project_id.",
+        ),
+        "standard_topic_name": _config(
+            "PUBSUB_STANDARD_TOPIC_NAME",
+            default="standard-queue",
+            doc="Topic name for the standard processing queue.",
+        ),
+        "standard_subscription_name": _config(
+            "PUBSUB_STANDARD_SUBSCRIPTION_NAME",
+            default="standard-queue",
+            doc="Subscription name for the standard processing queue.",
+        ),
+        "priority_topic_name": _config(
+            "PUBSUB_PRIORITY_TOPIC_NAME",
+            default="priority-queue",
+            doc="Topic name for the priority processing queue.",
+        ),
+        "priority_subscription_name": _config(
+            "PUBSUB_PRIORITY_SUBSCRIPTION_NAME",
+            default="priority-queue",
+            doc="Subscription name for the priority processing queue.",
+        ),
+        "reprocessing_topic_name": _config(
+            "PUBSUB_REPROCESSING_TOPIC_NAME",
+            default="reprocessing-queue",
+            doc="Topic name for the reprocessing queue.",
+        ),
+        "reprocessing_subscription_name": _config(
+            "PUBSUB_REPROCESSING_SUBSCRIPTION_NAME",
+            default="reprocessing-queue",
+            doc="Subscription name for the reprocessing queue.",
+        ),
+    },
+}
+
 
 def cloud_provider_parser(val):
-    """If the value is an empty string, then return None"""
+    """Return 'AWS' or 'GCP'."""
     normalized = val.strip().upper()
     if normalized in ("AWS", "GCP"):
         return normalized
@@ -156,70 +227,9 @@ CLOUD_PROVIDER = _config(
     doc="The cloud provider to use for queueing and blob storage. Must be AWS or GCP.",
 )
 if CLOUD_PROVIDER == "AWS":
-    # Crash report processing queue configuration
-    QUEUE = {
-        "class": "socorro.external.sqs.crashqueue.SQSCrashQueue",
-        "options": {
-            "standard_queue": _config(
-                "SQS_STANDARD_QUEUE",
-                default="standard-queue",
-                doc="Name for the standard processing queue.",
-            ),
-            "priority_queue": _config(
-                "SQS_PRIORITY_QUEUE",
-                default="priority-queue",
-                doc="Name for the priority processing queue.",
-            ),
-            "reprocessing_queue": _config(
-                "SQS_REPROCESSING_QUEUE",
-                default="reprocessing-queue",
-                doc="Name for the reprocessing queue.",
-            ),
-            "access_key": _config("SQS_ACCESS_KEY", default="", doc="SQS access key."),
-            "secret_access_key": _config(
-                "SQS_SECRET_ACCESS_KEY",
-                default="",
-                doc="SQS secret access key.",
-            ),
-            "region": _config("SQS_REGION", default="", doc="SQS region."),
-            "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
-        },
-    }
+    QUEUE = QUEUE_SQS
 elif CLOUD_PROVIDER == "GCP":
-    # Crash report processing queue configuration
-    QUEUE = {
-        "class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue",
-        "options": {
-            "project_id": _config(
-                "PUBSUB_PROJECT_ID",
-                doc="Google Compute Platform project_id.",
-            ),
-            "standard_topic_name": _config(
-                "PUBSUB_STANDARD_TOPIC_NAME",
-                doc="Topic name for the standard processing queue.",
-            ),
-            "standard_subscription_name": _config(
-                "PUBSUB_STANDARD_SUBSCRIPTION_NAME",
-                doc="Subscription name for the standard processing queue.",
-            ),
-            "priority_topic_name": _config(
-                "PUBSUB_PRIORITY_TOPIC_NAME",
-                doc="Topic name for the priority processing queue.",
-            ),
-            "priority_subscription_name": _config(
-                "PUBSUB_PRIORITY_SUBSCRIPTION_NAME",
-                doc="Subscription name for the priority processing queue.",
-            ),
-            "reprocessing_topic_name": _config(
-                "PUBSUB_REPROCESSING_TOPIC_NAME",
-                doc="Topic name for the reprocessing queue.",
-            ),
-            "reprocessing_subscription_name": _config(
-                "PUBSUB_REPROCESSING_SUBSCRIPTION_NAME",
-                doc="Subscription name for the reprocessing queue.",
-            ),
-        },
-    }
+    QUEUE = QUEUE_PUBSUB
 
 S3_STORAGE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
