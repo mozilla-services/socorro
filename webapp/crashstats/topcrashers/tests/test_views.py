@@ -43,7 +43,7 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         # Test Bugzilla data is rendered
@@ -89,7 +89,7 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         # Check the first appearance date is there
@@ -174,7 +174,7 @@ class TestTopCrasherViews:
             )
 
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         startup_crash_msg = 'title="Startup Crash"'
@@ -225,7 +225,7 @@ class TestTopCrasherViews:
             )
 
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         # Redirects to the most recent featured version
@@ -265,7 +265,7 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
 
         for _ in range(5):
             crash_data.append(
@@ -285,7 +285,7 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(raw_crash={}, processed_crash=item, refresh=False)
+            es_helper.index_crash(processed_crash=item, refresh=False)
         es_helper.refresh()
 
         url = reverse("topcrashers:topcrashers")

@@ -31,7 +31,6 @@ class TestIntegrationQuery:
 
         datestamp = date_to_string(utc_now())
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(),
                 "date_processed": datestamp,
@@ -39,7 +38,6 @@ class TestIntegrationQuery:
             },
         )
         es_helper.index_crash(
-            raw_crash={},
             processed_crash={
                 "uuid": create_new_ooid(),
                 "date_processed": datestamp,

@@ -297,8 +297,8 @@ def boolean_field(
     show up in aggregations.
 
     :param name: the name used to query the field in super search
-    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
-        to a model where we pull everything from the processed_crash, so prefer that
+    :param namespace: either "processed_crash" or some dotted path to a key deep in
+        the processed crash
     :param in_database_name: the field in the processed crash to pull this data from
 
     :returns: super search field specification as a dict
@@ -332,8 +332,8 @@ def keyword_field(
     names, fields that have a limited set of choices, etc.
 
     :param name: the name used to query the field in super search
-    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
-        to a model where we pull everything from the processed_crash, so prefer that
+    :param namespace: either "processed_crash" or some dotted path to a key deep in
+        the processed crash
     :param in_database_name: the field in the processed crash to pull this data from
     :param choices: a list of valid values for the dropdown
 
@@ -367,8 +367,8 @@ def integer_field(
     """Generates a whole number field.
 
     :param name: the name used to query the field in super search
-    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
-        to a model where we pull everything from the processed_crash, so prefer that
+    :param namespace: either "processed_crash" or some dotted path to a key deep in
+        the processed crash
     :param in_database_name: the field in the processed crash to pull this data from
     :param storage_mapping_type: the storage mapping type to use for Elasticsearch;
         "short", "integer", "long"
@@ -403,8 +403,8 @@ def float_field(
     """Generates a floating point field.
 
     :param name: the name used to query the field in super search
-    :param namespace: either "raw_crash" or "processed_crash"; note that we're moving
-        to a model where we pull everything from the processed_crash, so prefer that
+    :param namespace: either "processed_crash" or some dotted path to a key deep in
+        the processed crash
     :param in_database_name: the field in the processed crash to pull this data from
 
     :returns: super search field specification as a dict

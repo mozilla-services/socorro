@@ -243,19 +243,19 @@ class ElasticsearchHelper:
     def refresh(self):
         self.conn.refresh()
 
-    def index_crash(self, raw_crash, processed_crash, refresh=True):
+    def index_crash(self, processed_crash, refresh=True):
         """Index a single crash and refresh"""
-        self._crashstorage.save_processed_crash(raw_crash, processed_crash)
+        self._crashstorage.save_processed_crash(
+            raw_crash={},
+            processed_crash=processed_crash,
+        )
 
         if refresh:
             self.refresh()
 
-    def index_many_crashes(
-        self, number, raw_crash=None, processed_crash=None, loop_field=None
-    ):
+    def index_many_crashes(self, number, processed_crash=None, loop_field=None):
         """Index multiple crashes and refresh at the end"""
         processed_crash = processed_crash or {}
-        raw_crash = raw_crash or {}
 
         crash_ids = []
         for i in range(number):
@@ -265,9 +265,7 @@ class ElasticsearchHelper:
             if loop_field is not None:
                 processed_copy[loop_field] = processed_crash[loop_field] % i
 
-            self.index_crash(
-                raw_crash=raw_crash, processed_crash=processed_copy, refresh=False
-            )
+            self.index_crash(processed_crash=processed_copy, refresh=False)
 
         self.refresh()
         return crash_ids

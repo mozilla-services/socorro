@@ -216,7 +216,7 @@ def fix_datetime(value):
 def build_document(src, crash_document, fields, all_keys):
     """Given a source document and fields and valid keys, builds a document to index.
 
-    :param dict src: the source document with raw_crash and processed_crash keys
+    :param dict src: the source document with "processed_crash" key
     :param dict crash_document: the document to fill
     :param list fields: the list of fields in super search fields
     :param set all_keys: the list of valid keys
@@ -270,7 +270,7 @@ def build_document(src, crash_document, fields, all_keys):
 
 
 class ESCrashStorage(CrashStorageBase):
-    """This sends raw and processed crash reports to Elasticsearch."""
+    """Indexes documents based on the processed crash to Elasticsearch."""
 
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
@@ -498,14 +498,10 @@ class ESCrashStorage(CrashStorageBase):
         es_doctype = self.get_doctype()
         all_valid_keys = self.get_keys(index_name, es_doctype)
 
-        src = {
-            "raw_crash": copy.deepcopy(raw_crash),
-            "processed_crash": copy.deepcopy(processed_crash),
-        }
+        src = {"processed_crash": copy.deepcopy(processed_crash)}
 
         crash_document = {
             "crash_id": crash_id,
-            "raw_crash": {},
             "processed_crash": {},
         }
         build_document(src, crash_document, fields=FIELDS, all_keys=all_valid_keys)
@@ -533,8 +529,6 @@ class ESCrashStorage(CrashStorageBase):
                 # we can fix it later.
                 self.logger.exception(f"something went wrong when capturing {key}")
 
-        _capture("raw_crash_size", crash_document["raw_crash"])
-        _capture("processed_crash_size", crash_document["processed_crash"])
         _capture("crash_document_size", crash_document)
 
     def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):

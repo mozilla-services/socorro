@@ -97,7 +97,6 @@ class Test_build_mapping:
         properties = mapping[doctype]["properties"]
 
         print(json.dumps(properties, indent=4, sort_keys=True))
-        assert "raw_crash" not in properties
         assert "processed_crash" in properties
 
         processed_crash = properties["processed_crash"]["properties"]
@@ -218,8 +217,7 @@ def test_validate_super_search_fields(name, properties):
         if properties.get("destination_keys"):
             for key in properties["destination_keys"]:
                 possible_keys = [
-                    # Old keys we're probably migrating from
-                    f"raw_crash.{properties['in_database_name']}",
+                    # Old key we're possibly migrating from
                     f"processed_crash.{properties['in_database_name']}",
                     # New key we're probably migrating to
                     f"processed_crash.{properties['name']}",
