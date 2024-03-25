@@ -17,6 +17,9 @@ import sys
 import boto3
 from botocore.client import ClientError, Config
 from elasticsearch_dsl import Search
+from google.api_core.exceptions import AlreadyExists, NotFound
+from google.cloud.pubsub_v1 import PublisherClient, SubscriberClient
+from google.cloud.pubsub_v1.types import BatchSettings, PublisherOptions
 from markus.testing import MetricsMock
 import pytest
 import requests_mock
@@ -392,3 +395,156 @@ class SQSHelper:
 def sqs_helper():
     with SQSHelper() as sqs:
         yield sqs
+
+
+class PubSubHelper:
+    """Helper class for setting up, tearing down, and publishing to Pub/Sub."""
+
+    def __init__(self):
+        self.publisher = PublisherClient(
+            # publish messages immediately without queuing
+            batch_settings=BatchSettings(max_messages=1),
+            # disable retry and set short rpc timeout
+            publisher_options=PublisherOptions(retry=None, timeout=1),
+        )
+        self.subscriber = SubscriberClient()
+
+        self.project_id = os.environ["PUBSUB_PROJECT_ID"]
+
+        self.queue_to_topic_name = {
+            "standard": os.environ["PUBSUB_STANDARD_TOPIC_NAME"],
+            "priority": os.environ["PUBSUB_PRIORITY_TOPIC_NAME"],
+            "reprocessing": os.environ["PUBSUB_REPROCESSING_TOPIC_NAME"],
+        }
+
+        self.queue_to_subscription_name = {
+            "standard": os.environ["PUBSUB_STANDARD_SUBSCRIPTION_NAME"],
+            "priority": os.environ["PUBSUB_PRIORITY_SUBSCRIPTION_NAME"],
+            "reprocessing": os.environ["PUBSUB_REPROCESSING_SUBSCRIPTION_NAME"],
+        }
+
+        # Ack deadline for the Pub/Sub subscription in seconds
+        if os.environ.get("PUBSUB_EMULATOR_HOST"):
+            # emulator allows smaller deadline than actual Pub/Sub
+            self.ack_deadline_seconds = 1
+        else:
+            # Pub/Sub's minimum value for this is 10 seconds
+            # https://cloud.google.com/pubsub/docs/subscription-properties#ack_deadline
+            self.ack_deadline_seconds = 10
+
+    def setup_queues(self):
+        for queue in self.queue_to_topic_name.keys():
+            self.create_queue(queue)
+
+    def teardown_queues(self):
+        for subscription_name in self.queue_to_subscription_name.values():
+            subscription_path = self.subscriber.subscription_path(
+                self.project_id, subscription_name
+            )
+            try:
+                self.subscriber.delete_subscription(subscription=subscription_path)
+            except NotFound:
+                print(
+                    f"skipping teardown subscription {subscription_name!r}: does not exist"
+                )
+        for topic_name in self.queue_to_topic_name.values():
+            topic_path = self.publisher.topic_path(self.project_id, topic_name)
+            try:
+                self.publisher.delete_topic(topic=topic_path)
+            except NotFound:
+                print(f"skipping teardown topic {topic_name!r}: does not exist")
+
+    def __enter__(self):
+        self.setup_queues()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.teardown_queues()
+
+    def create_queue(self, queue):
+        topic_name = self.queue_to_topic_name[queue]
+        topic_path = self.publisher.topic_path(self.project_id, topic_name)
+        try:
+            self.publisher.create_topic(name=topic_path)
+        except AlreadyExists:
+            pass  # that's fine
+        subscription_name = self.queue_to_subscription_name[queue]
+        subscription_path = self.subscriber.subscription_path(
+            self.project_id, subscription_name
+        )
+        try:
+            self.subscriber.get_subscription(subscription=subscription_path)
+        except NotFound:
+            pass  # good
+        else:
+            # recreate it to drop any prior messages
+            self.subscriber.delete_subscription(subscription=subscription_path)
+        self.subscriber.create_subscription(
+            name=subscription_path,
+            topic=topic_path,
+            ack_deadline_seconds=self.ack_deadline_seconds,
+        )
+
+    def get_published_crashids(self, queue, max_messages=5):
+        subscription_name = self.queue_to_subscription_name[queue]
+        subscription_path = self.subscriber.subscription_path(
+            self.project_id, subscription_name
+        )
+        all_crashids = []
+        while True:
+            resp = self.subscriber.pull(
+                subscription=subscription_path,
+                max_messages=max_messages,
+            )
+            msgs = resp.received_messages
+            all_crashids.extend([msg.message.data.decode("utf-8") for msg in msgs])
+            if len(msgs) < max_messages:
+                break
+
+        return all_crashids
+
+    def publish(self, queue, crash_id):
+        topic_name = self.queue_to_topic_name[queue]
+        topic_path = self.publisher.topic_path(self.project_id, topic_name)
+        self.publisher.publish(topic=topic_path, data=crash_id.encode("utf-8"))
+
+
+@pytest.fixture
+def pubsub_helper():
+    with PubSubHelper() as pubsub:
+        yield pubsub
+
+
+@pytest.fixture(
+    # define these params once and reference this fixture to prevent undesirable
+    # combinations, i.e. tests marked with aws *and* gcp for pubsub+s3 or sqs+gcs
+    params=[
+        # tests that require a specific cloud provider backend must be marked with that
+        # provider, and non-default backends must be excluded by default, for example
+        # via pytest.ini's addopts, i.e. addopts = -m 'not gcp'
+        pytest.param("aws", marks=pytest.mark.aws),
+        pytest.param("gcp", marks=pytest.mark.gcp),
+    ]
+)
+def cloud_provider(request):
+    return request.param
+
+
+@pytest.fixture
+def queue_helper(cloud_provider):
+    """Generate and return a queue helper using env config."""
+    actual_backend = "sqs"
+    if os.environ.get("CLOUD_PROVIDER", "").strip().upper() == "GCP":
+        actual_backend = "pubsub"
+
+    expect_backend = "pubsub" if cloud_provider == "gcp" else "sqs"
+    if actual_backend != expect_backend:
+        pytest.fail(f"test requires {expect_backend} but found {actual_backend}")
+
+    if actual_backend == "pubsub":
+        helper = PubSubHelper()
+    else:
+        helper = SQSHelper()
+
+    with helper as _helper:
+        yield _helper

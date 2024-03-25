@@ -28,5 +28,9 @@ set -euo pipefail
 /app/socorro-cmd sqs delete-all
 /app/socorro-cmd sqs create-all
 
+# Delete and create Pub/Sub queues
+/app/socorro-cmd pubsub delete-all
+/app/socorro-cmd pubsub create-all
+
 # Initialize the cronrun bookkeeping for all configured jobs to success
 /app/webapp/manage.py cronmarksuccess all

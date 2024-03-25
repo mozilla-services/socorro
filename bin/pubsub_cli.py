@@ -14,6 +14,8 @@ import click
 from google.cloud import pubsub_v1
 from google.api_core.exceptions import AlreadyExists, NotFound
 
+from socorro import settings
+
 
 @click.group()
 def pubsub_group():
@@ -68,6 +70,7 @@ def create_topic(ctx, project_id, topic_name):
 @click.argument("subscription_name")
 @click.pass_context
 def create_subscription(ctx, project_id, topic_name, subscription_name):
+    """Create subscription."""
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(project_id, topic_name)
 
@@ -85,7 +88,7 @@ def create_subscription(ctx, project_id, topic_name, subscription_name):
 @click.argument("topic_name")
 @click.pass_context
 def delete_topic(ctx, project_id, topic_name):
-    """Delete a topic."""
+    """Delete a topic and all subscriptions."""
     publisher = pubsub_v1.PublisherClient()
     subscriber = pubsub_v1.SubscriberClient()
     topic_path = publisher.topic_path(project_id, topic_name)
@@ -131,7 +134,9 @@ def pull(ctx, project_id, subscription_name, ack, max_messages):
     subscription_path = subscriber.subscription_path(project_id, subscription_name)
 
     response = subscriber.pull(
-        subscription=subscription_path, max_messages=max_messages
+        subscription=subscription_path,
+        max_messages=max_messages,
+        return_immediately=True,
     )
     if not response.received_messages:
         return
@@ -144,6 +149,46 @@ def pull(ctx, project_id, subscription_name, ack, max_messages):
     if ack:
         # Acknowledges the received messages so they will not be sent again.
         subscriber.acknowledge(subscription=subscription_path, ack_ids=ack_ids)
+
+
+@pubsub_group.command("create-all")
+@click.pass_context
+def create_all(ctx):
+    """Create SQS queues related to processing."""
+    options = settings.QUEUE_PUBSUB["options"]
+    project_id = options["project_id"]
+    queues = {
+        options["standard_topic_name"]: options["standard_subscription_name"],
+        options["priority_topic_name"]: options["priority_subscription_name"],
+        options["reprocessing_topic_name"]: options["reprocessing_subscription_name"],
+    }
+    for topic_name, subscription_name in queues.items():
+        ctx.invoke(create_topic, project_id=project_id, topic_name=topic_name)
+        ctx.invoke(
+            create_subscription,
+            project_id=project_id,
+            topic_name=topic_name,
+            subscription_name=subscription_name,
+        )
+
+
+@pubsub_group.command("delete-all")
+@click.pass_context
+def delete_all(ctx):
+    """Delete SQS queues related to processing."""
+    options = settings.QUEUE_PUBSUB["options"]
+    project_id = options["project_id"]
+    for topic_name in (
+        options["standard_topic_name"],
+        options["priority_topic_name"],
+        options["reprocessing_topic_name"],
+    ):
+        ctx.invoke(delete_topic, project_id=project_id, topic_name=topic_name)
+
+
+def main(argv=None):
+    argv = argv or []
+    pubsub_group(argv)
 
 
 if __name__ == "__main__":

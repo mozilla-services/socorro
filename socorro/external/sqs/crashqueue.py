@@ -94,7 +94,7 @@ class SQSCrashQueue(CrashQueueBase):
     * ``sqs:ReceiveMessage``
 
       The Socorro processor has to receive messages from the queue in order to
-      process the related crash reports. This requires teh ``sqs:ReceiveMessage``
+      process the related crash reports. This requires the ``sqs:ReceiveMessage``
       permission.
 
     If something isn't configured correctly, then the Socorro processor will be unable

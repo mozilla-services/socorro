@@ -484,15 +484,14 @@ class TestRawCrash:
 
 
 class TestReprocessing:
-    def test_Reprocessing(self, sqs_helper):
+    def test_Reprocessing(self, queue_helper):
         api = models.Reprocessing()
 
-        with sqs_helper as helper:
-            crash_id = create_new_ooid()
-            api.post(crash_ids=crash_id)
+        crash_id = create_new_ooid()
+        api.post(crash_ids=crash_id)
 
-            crash_ids = helper.get_published_crashids("reprocessing")
-            assert crash_ids == [crash_id]
+        crash_ids = queue_helper.get_published_crashids("reprocessing")
+        assert crash_ids == [crash_id]
 
         # Now try an invalid crash id
         with pytest.raises(BadArgumentError):
@@ -500,11 +499,10 @@ class TestReprocessing:
 
 
 class TestPriorityJob:
-    def test_api(self, sqs_helper):
+    def test_api(self, queue_helper):
         api = models.PriorityJob()
 
-        with sqs_helper as helper:
-            api.post(crash_ids="some-crash-id")
+        api.post(crash_ids="some-crash-id")
 
-            crash_ids = helper.get_published_crashids("priority")
-            assert crash_ids == ["some-crash-id"]
+        crash_ids = queue_helper.get_published_crashids("priority")
+        assert crash_ids == ["some-crash-id"]
