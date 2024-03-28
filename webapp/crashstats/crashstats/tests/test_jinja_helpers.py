@@ -4,7 +4,7 @@
 
 import datetime
 import time
-from urllib.parse import quote_plus, parse_qs, urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -143,7 +143,7 @@ class Test_generate_create_bug_url:
         self,
         frame=1,
         module="fake_module",
-        signature="foo::bar(char *x, int y)",
+        signature="foo::bar(char* x, int y)",
         file="fake.cpp",
         line=1,
         inlines=None,
@@ -186,10 +186,7 @@ class Test_generate_create_bug_url:
         assert qs["short_desc"] == ["Crash in [@ $&#;deadbeef]"]
         assert qs["op_sys"] == ["Windows"]
         assert qs["bug_type"] == ["defect"]
-        comment_lines = [
-            f"Crash report: http://localhost:8000/report/index/{self.CRASH_ID}"
-        ]
-        comment = "\n".join(comment_lines)
+        comment = f"Crash report: http://localhost:8000/report/index/{self.CRASH_ID}"
         assert qs["comment"] == [comment]
 
     def test_truncate_short_desc(self):
@@ -337,17 +334,18 @@ class Test_generate_create_bug_url:
             report,
         )
 
-        # Assert that the crash id is in the comment
-        assert quote_plus(report["uuid"]) in url
-
-        # Assert that the top 3 frames are in the comment
-        assert quote_plus("Top 3 frames of crashing thread:") in url
-
-        frame1 = report["json_dump"]["threads"][1]["frames"][1]
-        assert (
-            quote_plus("1  {module}  {signature}  {file}:{line}".format(**frame1))
-            in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 3 frames of crashing thread:\n"
+            "```\n"
+            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "```"
         )
+        assert qs["comment"][0] == comment
 
     def test_comment_no_threads(self):
         """If json_dump has no threads available, do not output any frames."""
@@ -357,7 +355,10 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("frames of crashing thread:") not in url
+
+        qs = self._extract_query_string(url)
+        comment = "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328"
+        assert qs["comment"][0] == comment
 
     def test_comment_more_than_ten_frames(self):
         """If the crashing thread has more than ten frames, only display top ten."""
@@ -377,7 +378,26 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("do_not_include") not in url
+
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 10 frames of crashing thread:\n"
+            "```\n"
+            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "3  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "4  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "5  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "6  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "7  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "8  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "9  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_frame_long_signature(self):
         """If a frame signature is too long, it gets truncated."""
@@ -405,13 +425,17 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        line = quote_plus(
-            "0  "
-            + "test_module  "
-            + "foo::bar(char* x, char* x, char* x, char* x, char* x, char* x, char* x, char*...  "
-            + "foo.cpp:7"
+
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 1 frames of crashing thread:\n"
+            "```\n"
+            "0  test_module  foo::bar(char* x, char* x, char* x, char* x, char* x, char* x, char* x, char*...  foo.cpp:7\n"
+            "```"
         )
-        assert line in url
+        assert qs["comment"][0] == comment
 
     def test_comment_function_inlines(self):
         """Include inlines functions."""
@@ -452,13 +476,16 @@ class Test_generate_create_bug_url:
         )
         qs = self._extract_query_string(url)
         comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 3 frames of crashing thread:\n"
             "```\n"
-            + "0  test_module  _foo_inline  foo_inline.cpp:100\n"
-            + "0  test_module  _foo_inline_amd64  foo_inline.cpp:4\n"
-            + "0  test_module  foo::bar(char* x, int y)  foo.cpp:7\n"
-            + "```"
+            "0  test_module  _foo_inline  foo_inline.cpp:100\n"
+            "0  test_module  _foo_inline_amd64  foo_inline.cpp:4\n"
+            "0  test_module  foo::bar(char* x, int y)  foo.cpp:7\n"
+            "```"
         )
-        assert comment in qs["comment"][0]
+        assert qs["comment"][0] == comment
 
     def test_comment_function_unloaded_modules(self):
         """Include unloaded modules."""
@@ -486,8 +513,15 @@ class Test_generate_create_bug_url:
             report,
         )
         qs = self._extract_query_string(url)
-        comment = "```\n" + "0  ?  (unloaded unmod@0xe4df)\n" + "```"
-        assert comment in qs["comment"][0]
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 1 frames of crashing thread:\n"
+            "```\n"
+            "0  ?  (unloaded unmod@0xe4df)\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_missing_line(self):
         """If a frame is missing a line number, do not include it."""
@@ -514,7 +548,16 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("0  test_module  foo::bar(char* x, int y)  foo.cpp\n") in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 1 frames of crashing thread:\n"
+            "```\n"
+            "0  test_module  foo::bar(char* x, int y)  foo.cpp\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_missing_file(self):
         """If a frame is missing file info, do not include it."""
@@ -541,7 +584,16 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("0  test_module  foo::bar(char* x, int y)\n") in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Top 1 frames of crashing thread:\n"
+            "```\n"
+            "0  test_module  foo::bar(char* x, int y)\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_missing_everything(self):
         """If a frame is missing everything, do not throw an error."""
@@ -555,39 +607,6 @@ class Test_generate_create_bug_url:
             report,
         )
 
-    def test_comment_no_html_escaping(self):
-        """If a frame contains <, >, &, or ", they should not be HTML
-        escaped in the comment body.
-
-        """
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="&test_module",
-                                signature="foo<char>::bar(char* x, int y)",
-                                file='"foo".cpp',
-                                line=7,
-                            )
-                        ]
-                    )
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        assert (
-            quote_plus('0  &test_module  foo<char>::bar(char* x, int y)  "foo".cpp:7')
-            in url
-        )
-
     def test_comment_java_stack_trace(self):
         """If there's a java stack trace, use that instead."""
         report = self._create_report(crashing_thread=0)
@@ -597,11 +616,16 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("Java stack trace:") in url
-        assert quote_plus("java.lang.NullPointerException: list == null") in url
-
-        # Make sure it didn't also add the crashing frames
-        assert quote_plus("frames of crashing thread:") not in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Java stack trace:\n"
+            "```\n"
+            "java.lang.NullPointerException: list == null\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_reason(self):
         """Verify Reason makes it into the comment."""
@@ -625,7 +649,20 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("Reason: ```SIGSEGV /0x00000080```") in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "Reason: ```SIGSEGV /0x00000080```\n"
+            "\n"
+            "Top 3 frames of crashing thread:\n"
+            "```\n"
+            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_moz_crash_reason(self):
         """Verify Reason makes it into the comment."""
@@ -650,8 +687,20 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("MOZ_CRASH Reason: ```good_data```") in url
-        assert quote_plus("bad_data") not in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "MOZ_CRASH Reason: ```good_data```\n"
+            "\n"
+            "Top 3 frames of crashing thread:\n"
+            "```\n"
+            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     def test_comment_crashing_thread_none(self):
         """Verify Reason makes it into the comment."""
@@ -679,8 +728,18 @@ class Test_generate_create_bug_url:
             self.TEMPLATE,
             report,
         )
-        assert quote_plus("No crashing thread identified; using thread 0.") in url
-        assert quote_plus("0  test_module  foo::bar") in url
+        qs = self._extract_query_string(url)
+        comment = (
+            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
+            "\n"
+            "No crashing thread identified; using thread 0.\n"
+            "\n"
+            "Top 1 frames of crashing thread:\n"
+            "```\n"
+            "0  test_module  foo::bar  foo.cpp:7\n"
+            "```"
+        )
+        assert qs["comment"][0] == comment
 
     @pytest.mark.parametrize("fn", libproduct.get_product_files())
     def test_product_bug_links(self, fn):
