@@ -77,7 +77,7 @@ run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required
 		--attach processor \
 		--attach webapp \
 		--attach fakesentry \
-		--attach symbolserver \
+		--attach symbolsserver \
 		processor webapp fakesentry symbolsserver
 
 .PHONY: runservices
