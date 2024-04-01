@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-from itertools import islice
 import json
 import re
 from urllib.parse import urlencode, parse_qs, quote_plus
@@ -17,27 +16,18 @@ import markupsafe
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.cache import cache
 from django.template import engines
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats.utils import parse_isodate, urlencode_obj
+from crashstats.libbugzilla import crash_report_to_description
 
 
 @library.global_function
 def minimum(item1, item2):
     """Returns the minimum of two items"""
     return min(item1, item2)
-
-
-@library.global_function
-def truncatechars(str_, max_length):
-    """Truncates a string to max_length and adds ... to the end"""
-    if len(str_) < max_length:
-        return str_
-    else:
-        return "%s..." % str_[: max_length - len("...")]
 
 
 @library.filter
@@ -157,21 +147,17 @@ def show_bug_link(bug_id):
     return markupsafe.Markup(tmpl) % data
 
 
-EXTRA_NEWLINES_RE = re.compile(r"\n\n\n+")
-
 MAX_TITLE_LENGTH = 255
 
 
 @library.global_function
-def generate_create_bug_url(
-    request, template, raw_crash, report, parsed_dump, crashing_thread
-):
-    parsed_dump = parsed_dump or {}
-
+def generate_create_bug_url(crash_report_url, template, processed_crash):
     # Some crashes has the `os_name` but it's null so we
     # fall back on an empty string on it instead. That way the various
     # `.startswith(...)` things we do don't raise an AttributeError.
-    op_sys = report.get("os_pretty_version") or report["os_name"] or ""
+    op_sys = (
+        processed_crash.get("os_pretty_version") or processed_crash.get("os_name") or ""
+    )
 
     # At the time of writing, these pretty versions of the OS name don't perfectly fit
     # with the drop-down choices that Bugzilla has in its OS drop-down. So we have to
@@ -183,39 +169,14 @@ def generate_create_bug_url(
     elif op_sys in ("Windows Unknown", "Windows 2000"):
         op_sys = "Windows"
 
-    frames = None
-    threads = parsed_dump.get("threads")
-    if threads:
-        thread_index = crashing_thread or 0
-        frames = bugzilla_thread_frames(parsed_dump["threads"][thread_index])
-
-    comment = render_to_string(
-        "crashstats/bug_comment.txt",
-        {
-            "request": request,
-            "uuid": report["uuid"],
-            # NOTE(willkg): this is the redacted stack trace--not the raw one that can
-            # have PII in it
-            "java_stack_trace": report.get("java_stack_trace", None),
-            # NOTE(willkg): this is the redacted mozcrashreason--not the raw one that
-            # can have PII in it
-            "moz_crash_reason": report.get("moz_crash_reason", None),
-            "reason": report.get("reason", None),
-            "frames": frames,
-            "crashing_thread": crashing_thread,
-        },
-    )
-
-    # Whitespace is a nightmare when using Jinja2 templates to render text that's not
-    # destined for HTML. So we do a pass on removing extra line endings.
-    comment = EXTRA_NEWLINES_RE.sub("\n\n", comment)
+    comment = crash_report_to_description(crash_report_url, processed_crash)
 
     kwargs = {
         "bug_type": "defect",
         "op_sys": op_sys,
-        "rep_platform": report["cpu_arch"],
-        "signature": "[@ {}]".format(smart_str(report["signature"])),
-        "title": "Crash in [@ {}]".format(smart_str(report["signature"])),
+        "rep_platform": processed_crash["cpu_arch"],
+        "signature": "[@ {}]".format(smart_str(processed_crash["signature"])),
+        "title": "Crash in [@ {}]".format(smart_str(processed_crash["signature"])),
         "description": comment,
     }
 
@@ -226,60 +187,6 @@ def generate_create_bug_url(
     # urlencode the values so they work in the url template correctly
     kwargs = {key: quote_plus(value) for key, value in kwargs.items()}
     return template % kwargs
-
-
-def bugzilla_thread_frames(thread):
-    """Build frame information for bug creation link
-
-    Extract frame info for the top frames of a crashing thread to be included in the
-    Bugzilla summary when reporting the crash.
-
-    :arg thread: dict of thread information including "frames" list
-
-    :returns: list of frame information dicts
-
-    """
-
-    def frame_generator(thread):
-        """Yield frames in a thread factoring in inlines"""
-        for frame in thread["frames"]:
-            for inline in frame.get("inlines") or []:
-                yield {
-                    "frame": frame.get("frame", "?"),
-                    "module": frame.get("module", ""),
-                    "signature": inline["function"],
-                    "file": inline["file"],
-                    "line": inline["line"],
-                }
-
-            yield frame
-
-    # We only want to include 10 frames in the link
-    MAX_FRAMES = 10
-
-    frames = []
-    for frame in islice(frame_generator(thread), MAX_FRAMES):
-        # Source is an empty string if data isn't available
-        source = frame.get("file") or ""
-        if frame.get("line"):
-            source += ":{}".format(frame["line"])
-
-        signature = frame.get("signature") or ""
-
-        # Remove function arguments
-        if not signature.startswith("(unloaded"):
-            signature = re.sub(r"\(.*\)", "", signature)
-
-        frames.append(
-            {
-                "frame": frame.get("frame", "?"),
-                "module": frame.get("module") or "?",
-                "signature": signature,
-                "source": source,
-            }
-        )
-
-    return frames
 
 
 BUG_RE = re.compile(r"(bug #?(\d+))")
