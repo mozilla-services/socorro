@@ -109,16 +109,24 @@ def delete_topic(ctx, project_id, topic_name):
 @pubsub_group.command("publish")
 @click.argument("project_id")
 @click.argument("topic_name")
-@click.argument("crash_id")
+@click.argument("crashids", nargs=-1)
 @click.pass_context
-def publish(ctx, project_id, topic_name, crash_id):
+def publish(ctx, project_id, topic_name, crashids):
     """Publish crash_id to a given topic."""
-    click.echo(f"Publishing crash_id to topic {topic_name!r}:")
-    publisher = pubsub_v1.PublisherClient()
+    click.echo(f"Publishing crash ids to topic: {topic_name!r}:")
+    # configure publisher to group all crashids into a single batch
+    publisher = pubsub_v1.PublisherClient(
+        batch_settings=pubsub_v1.types.BatchSettings(max_messages=len(crashids))
+    )
     topic_path = publisher.topic_path(project_id, topic_name)
 
-    future = publisher.publish(topic_path, crash_id.encode("utf-8"), timeout=5)
-    click.echo(future.result())
+    # publish all crashes before checking futures to allow for batching
+    futures = [
+        publisher.publish(topic_path, crashid.encode("utf-8"), timeout=5)
+        for crashid in crashids
+    ]
+    for future in futures:
+        click.echo(future.result())
 
 
 @pubsub_group.command("pull")

@@ -82,7 +82,14 @@ run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required
 
 .PHONY: runservices
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
-	${DC} up -d statsd postgresql memcached localstack elasticsearch symbolsserver
+	${DC} up -d \
+		elasticsearch \
+		localstack \
+		memcached \
+		postgresql \
+		pubsub \
+		statsd \
+		symbolsserver
 
 .PHONY: stop
 stop: my.env  ## | Stop all service containers.

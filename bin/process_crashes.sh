@@ -51,7 +51,11 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./bin/socorro_aws_s3.sh ls --recursive "s3://${CRASHSTORAGE_S3_BUCKET}/"
 
 # Add crash ids to queue
-./socorro-cmd sqs publish "${SQS_STANDARD_QUEUE}" $@
+if [[ "${CLOUD_PROVIDER}" == "GCP" ]]; then
+    ./socorro-cmd pubsub publish "${PUBSUB_PROJECT_ID}" "${PUBSUB_STANDARD_TOPIC_NAME}" $@
+else
+    ./socorro-cmd sqs publish "${SQS_STANDARD_QUEUE}" $@
+fi
 
 # Print urls to make it easier to look at them
 for crashid in "$@"

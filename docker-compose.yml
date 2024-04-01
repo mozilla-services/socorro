@@ -10,6 +10,13 @@ services:
     env_file:
       - docker/config/local_dev.env
       - my.env
+    depends_on:
+      - fakesentry
+      - statsd
+      - localstack
+      - pubsub
+      - postgresql
+      - elasticsearch
     volumes:
       - .:/app
 
