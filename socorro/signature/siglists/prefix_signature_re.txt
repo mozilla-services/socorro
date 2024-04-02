@@ -33,6 +33,8 @@ core::option::expect_none_failed
 core::ptr::drop_in_place
 core::ptr::real_drop_in_place
 core::result::unwrap_failed
+<core::ops::range::Range<usize> as core::slice::index::SliceIndex<\[T\]>>::index
+core::slice::index::<impl core::ops::index::Index<I> for \[T\]>::index
 core::str::slice_error_fail
 CreateFileMappingA
 __cxxabiv1::failed_throw
