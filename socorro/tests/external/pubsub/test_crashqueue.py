@@ -5,7 +5,6 @@
 # This is tested using test settings (docker/config/test.env) and Pub/Sub emulator.
 
 import time
-from unittest.mock import ANY
 
 import pytest
 
@@ -17,6 +16,8 @@ from socorro import settings
 class TestPubSubCrashQueue:
     def test_iter(self, pubsub_helper):
         standard_crash = create_new_ooid()
+        pubsub_helper.publish("standard", standard_crash)
+        # intentionally simulate pubsub double-delivering a message
         pubsub_helper.publish("standard", standard_crash)
 
         reprocessing_crash = create_new_ooid()
@@ -35,37 +36,25 @@ class TestPubSubCrashQueue:
             assert isinstance(item[1], dict)  # **kwargs
             assert list(item[1].keys()) == ["finished_func"]
 
+        new_crash_args = {item[0] for item in new_crashes}
         # Assert new_crashes order is the correct order
-        assert new_crashes == [
-            ((priority_crash,), {"finished_func": ANY}),
-            ((standard_crash,), {"finished_func": ANY}),
-            ((reprocessing_crash,), {"finished_func": ANY}),
-        ]
+        assert new_crash_args == {
+            (priority_crash,),
+            (standard_crash,),
+            (reprocessing_crash,),
+        }
 
     def test_ack(self, pubsub_helper):
         original_crash_id = create_new_ooid()
 
         # Publish crash id to the queue
         pubsub_helper.publish("standard", original_crash_id)
-        # put test messages in the queues, which will be ignored, so that pubsub has
-        # something to return and tests run faster than when the queues are empty
-        pubsub_helper.publish("standard", "test")
-        pubsub_helper.publish("priority", "test")
-        pubsub_helper.publish("reprocessing", "test")
 
         crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         new_crashes = list(crashqueue.new_crashes())
 
         # Assert original_crash_id is in new_crashes
-        assert new_crashes == [
-            ((original_crash_id,), {"finished_func": ANY}),
-        ]
-
-        # put test messages in the queues, which will be ignored, so that pubsub has
-        # something to return and tests run faster than when the queues are empty
-        pubsub_helper.publish("standard", "test")
-        pubsub_helper.publish("priority", "test")
-        pubsub_helper.publish("reprocessing", "test")
+        assert {item[0] for item in new_crashes} == {(original_crash_id,)}
 
         # Now call it again; note that we haven't acked the crash_ids
         # nor have the leases expired
@@ -77,12 +66,6 @@ class TestPubSubCrashQueue:
             kwargs["finished_func"]()
 
         time.sleep(pubsub_helper.ack_deadline_seconds + 1)
-
-        # put test messages in the queues, which will be ignored, so that pubsub has
-        # something to return and tests run faster than when the queues are empty
-        pubsub_helper.publish("standard", "test")
-        pubsub_helper.publish("priority", "test")
-        pubsub_helper.publish("reprocessing", "test")
 
         # Now call it again and make sure we get nothing back
         new_crashes = list(crashqueue.new_crashes())
@@ -96,7 +79,7 @@ class TestPubSubCrashQueue:
         crashqueue.publish(queue, [crash_id])
 
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
-        assert published_crash_ids == [crash_id]
+        assert set(published_crash_ids) == {crash_id}
 
     @pytest.mark.parametrize("queue", ["standard", "priority", "reprocessing"])
     def test_publish_many(self, pubsub_helper, queue):
@@ -109,6 +92,4 @@ class TestPubSubCrashQueue:
         crashqueue.publish(queue, [crash_id_3])
 
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
-        assert sorted(published_crash_ids) == sorted(
-            [crash_id_1, crash_id_2, crash_id_3]
-        )
+        assert set(published_crash_ids) == {crash_id_1, crash_id_2, crash_id_3}

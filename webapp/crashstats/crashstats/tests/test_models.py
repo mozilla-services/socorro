@@ -491,7 +491,7 @@ class TestReprocessing:
         api.post(crash_ids=crash_id)
 
         crash_ids = queue_helper.get_published_crashids("reprocessing")
-        assert crash_ids == [crash_id]
+        assert set(crash_ids) == {crash_id}
 
         # Now try an invalid crash id
         with pytest.raises(BadArgumentError):
@@ -505,4 +505,4 @@ class TestPriorityJob:
         api.post(crash_ids="some-crash-id")
 
         crash_ids = queue_helper.get_published_crashids("priority")
-        assert crash_ids == ["some-crash-id"]
+        assert set(crash_ids) == {"some-crash-id"}
