@@ -68,6 +68,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - pubsub
       - postgresql
       - elasticsearch
     volumes:

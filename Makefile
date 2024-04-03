@@ -82,7 +82,7 @@ run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required
 
 .PHONY: runservices
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
-	${DC} up -d \
+	${DC} up -d --remove-orphans \
 		elasticsearch \
 		localstack \
 		memcached \
