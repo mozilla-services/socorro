@@ -9,6 +9,7 @@ import pytest
 from crashstats.libbugzilla import (
     crash_report_to_description,
     minidump_thread_to_frames,
+    mini_glom,
     truncate,
 )
 
@@ -23,6 +24,34 @@ from crashstats.libbugzilla import (
 )
 def test_truncate(text, length, expected):
     assert truncate(text, length) == expected
+
+
+@pytest.mark.parametrize(
+    "structure, path, default, expected",
+    [
+        # If the key isn't in the structure, return default
+        ({}, "key1", None, None),
+        ({"key": "val1"}, "key1", None, None),
+        ({"key": {"sub_key": "val1"}}, "key1", None, None),
+        ({"key": {"sub_key": "val1"}}, "key.key1", "fred", "fred"),
+        # Return value at path if there
+        ({"key": {"sub_key": "val1"}}, "key.sub_key", None, "val1"),
+        # If the index isn't in the structure, return default
+        ([], "4", None, None),
+        ([1, 2, 3], "4", "fred", "fred"),
+        # Return value at index if there
+        ([1, 2, 3], "2", None, 3),
+        # Return value at complex path
+        (
+            {"key": {"sub_key": [{"sub_sub_key": "val1"}]}},
+            "key.sub_key.0.sub_sub_key",
+            None,
+            "val1",
+        ),
+    ],
+)
+def test_mini_glom(structure, path, default, expected):
+    assert mini_glom(structure, path, default=default) == expected
 
 
 @pytest.mark.parametrize(
