@@ -14,6 +14,42 @@ from itertools import islice
 MAX_FRAMES = 10
 
 
+def mini_glom(structure, path, default):
+    """Returns the value at path in structure or default.
+
+    .. Note::
+
+       We use this instead of glom so we don't have to pull in another dependency in
+       this module which might be used externally.
+
+    :arg structure: the Python structure made up of maps, lists, and tuples
+    :arg path: a dotted path leading to the item
+    :arg default: a default if there is no item at path
+
+    :returns: value
+
+    :raises KeyError: if no default and the path part is a key in a map
+    :raises IndexError: if no default and the path part is an index in a list/tuple
+
+    """
+    node = structure
+    for part in path.split("."):
+        if isinstance(node, (tuple, list)):
+            part_index = int(part)
+            if len(node) >= part_index:
+                node = node[part_index]
+            else:
+                return default
+
+        else:
+            if part in node:
+                node = node[part]
+            else:
+                return default
+
+    return node
+
+
 def truncate(text, max_length):
     if len(text) > max_length:
         return text[: max_length - 3] + "..."
@@ -80,7 +116,7 @@ def java_exception_to_frames(stack):
     frames = []
     for i, frame in enumerate(islice(stack, MAX_FRAMES)):
         source = frame.get("filename") or "<nofile>"
-        if frame.get("lineno"):
+        if source and frame.get("lineno") is not None:
             source = f"{source}:{frame['lineno']}"
 
         frames.append(
@@ -107,25 +143,24 @@ def crash_report_to_description(crash_report_url, processed_crash):
         lines.append(f"Reason: ```{processed_crash['reason']}```")
 
     frames = None
-    if "json_dump" in processed_crash:
+    if threads := mini_glom(processed_crash, "json_dump.threads", default=None):
         # Generate frames from the stackwalker output from parsing a minidump
-        threads = processed_crash.get("json_dump", {}).get("threads")
-        if threads:
-            if processed_crash.get("crashing_thread") is None:
-                lines.append("")
-                lines.append("No crashing thread identified; using thread 0.")
+        thread_index = processed_crash.get("crashing_thread")
+        if thread_index is None:
+            lines.append("")
+            lines.append("No crashing thread identified; using thread 0.")
+        thread_index = thread_index or 0
+        frames = minidump_thread_to_frames(threads[thread_index])
 
-            thread_index = processed_crash.get("crashing_thread") or 0
-            frames = minidump_thread_to_frames(threads[thread_index])
-
-    if not frames and "java_exception" in processed_crash:
-        stacktraces = (
-            processed_crash["java_exception"].get("exception", {}).get("values", [])
+    if not frames:
+        frames = mini_glom(
+            processed_crash,
+            "java_exception.exception.values.0.stacktrace.frames",
+            default=None,
         )
-        if stacktraces:
-            frames = java_exception_to_frames(
-                stacktraces[0]["stacktrace"].get("frames", [])
-            )
+        # Generate frames from java_exception structure
+        if frames:
+            frames = java_exception_to_frames(frames)
 
     if frames:
         lines.append("")
