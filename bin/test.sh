@@ -38,6 +38,9 @@ echo ">>> build sqs things and db things"
 # Clear SQS for tests
 ./socorro-cmd sqs delete-all
 
+# Clear Pub/Sub for tests
+./socorro-cmd pubsub delete-all
+
 # Set up socorro_test db
 ./socorro-cmd db drop || true
 ./socorro-cmd db create
@@ -55,4 +58,6 @@ echo ">>> run tests"
 pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
+# default cloud provider is aws, now configure gcp and run only impacted tests
+CLOUD_PROVIDER=GCP "${PYTEST}" -m gcp
 popd

@@ -1209,7 +1209,7 @@ class Test_report_index:
         assert response.status_code == 404
         assert "Crash Report Not Found" in smart_str(response.content)
 
-    def test_processed_crash_not_found(self, client, db, s3_helper, sqs_helper):
+    def test_processed_crash_not_found(self, client, db, s3_helper, queue_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
 
         bucket = s3_helper.get_crashstorage_bucket()

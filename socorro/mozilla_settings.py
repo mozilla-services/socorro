@@ -139,8 +139,8 @@ LOCAL_DEV_AWS_ENDPOINT_URL = _config(
     ),
 )
 
-# Crash report processing queue configuration
-QUEUE = {
+# Crash report processing queue configuration if CLOUD_PROVIDER == AWS
+QUEUE_SQS = {
     "class": "socorro.external.sqs.crashqueue.SQSCrashQueue",
     "options": {
         "standard_queue": _config(
@@ -168,6 +168,68 @@ QUEUE = {
         "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
+# Crash report processing queue configuration if CLOUD_PROVIDER == GCP
+QUEUE_PUBSUB = {
+    "class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue",
+    "options": {
+        "project_id": _config(
+            "PUBSUB_PROJECT_ID",
+            default="test",
+            doc="Google Compute Platform project_id.",
+        ),
+        "standard_topic_name": _config(
+            "PUBSUB_STANDARD_TOPIC_NAME",
+            default="standard-queue",
+            doc="Topic name for the standard processing queue.",
+        ),
+        "standard_subscription_name": _config(
+            "PUBSUB_STANDARD_SUBSCRIPTION_NAME",
+            default="standard-queue",
+            doc="Subscription name for the standard processing queue.",
+        ),
+        "priority_topic_name": _config(
+            "PUBSUB_PRIORITY_TOPIC_NAME",
+            default="priority-queue",
+            doc="Topic name for the priority processing queue.",
+        ),
+        "priority_subscription_name": _config(
+            "PUBSUB_PRIORITY_SUBSCRIPTION_NAME",
+            default="priority-queue",
+            doc="Subscription name for the priority processing queue.",
+        ),
+        "reprocessing_topic_name": _config(
+            "PUBSUB_REPROCESSING_TOPIC_NAME",
+            default="reprocessing-queue",
+            doc="Topic name for the reprocessing queue.",
+        ),
+        "reprocessing_subscription_name": _config(
+            "PUBSUB_REPROCESSING_SUBSCRIPTION_NAME",
+            default="reprocessing-queue",
+            doc="Subscription name for the reprocessing queue.",
+        ),
+    },
+}
+
+
+def cloud_provider_parser(val):
+    """Return 'AWS' or 'GCP'."""
+    normalized = val.strip().upper()
+    if normalized in ("AWS", "GCP"):
+        return normalized
+    raise ValueError(f"cloud provider not supported, must be AWS or GCP: {val}")
+
+
+# Cloud provider specific configuration
+CLOUD_PROVIDER = _config(
+    "CLOUD_PROVIDER",
+    default="AWS",
+    parser=cloud_provider_parser,
+    doc="The cloud provider to use for queueing and blob storage. Must be AWS or GCP.",
+)
+if CLOUD_PROVIDER == "AWS":
+    QUEUE = QUEUE_SQS
+elif CLOUD_PROVIDER == "GCP":
+    QUEUE = QUEUE_PUBSUB
 
 S3_STORAGE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
