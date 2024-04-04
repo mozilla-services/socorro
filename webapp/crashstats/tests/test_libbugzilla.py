@@ -8,6 +8,7 @@ import pytest
 
 from crashstats.libbugzilla import (
     crash_report_to_description,
+    java_exception_to_frames,
     minidump_thread_to_frames,
     mini_glom,
     truncate,
@@ -370,6 +371,200 @@ def test_mini_glom(structure, path, default, expected):
 )
 def test_minidump_thread_to_frames(thread, expected):
     assert minidump_thread_to_frames(thread) == expected
+
+
+@pytest.mark.parametrize(
+    "frames, expected",
+    [
+        pytest.param(
+            [
+                {
+                    "module": "android.os.Parcel",
+                    "function": "createException",
+                    "in_app": True,
+                    "lineno": 1966,
+                    "filename": "Parcel.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "android.os.Parcel",
+                    "signature": "createException",
+                    "source": "Parcel.java:1966",
+                }
+            ],
+            id="everything_there",
+        ),
+        pytest.param(
+            [
+                {"function": "fun0"},
+                {"function": "fun1"},
+                {"function": "fun2"},
+                {"function": "fun3"},
+                {"function": "fun4"},
+                {"function": "fun5"},
+                {"function": "fun6"},
+                {"function": "fun7"},
+                {"function": "fun8"},
+                {"function": "fun9"},
+                {"function": "fun10"},
+                {"function": "fun11"},
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "?",
+                    "signature": "fun0",
+                    "source": "",
+                },
+                {
+                    "frame": 1,
+                    "module": "?",
+                    "signature": "fun1",
+                    "source": "",
+                },
+                {
+                    "frame": 2,
+                    "module": "?",
+                    "signature": "fun2",
+                    "source": "",
+                },
+                {
+                    "frame": 3,
+                    "module": "?",
+                    "signature": "fun3",
+                    "source": "",
+                },
+                {
+                    "frame": 4,
+                    "module": "?",
+                    "signature": "fun4",
+                    "source": "",
+                },
+                {
+                    "frame": 5,
+                    "module": "?",
+                    "signature": "fun5",
+                    "source": "",
+                },
+                {
+                    "frame": 6,
+                    "module": "?",
+                    "signature": "fun6",
+                    "source": "",
+                },
+                {
+                    "frame": 7,
+                    "module": "?",
+                    "signature": "fun7",
+                    "source": "",
+                },
+                {
+                    "frame": 8,
+                    "module": "?",
+                    "signature": "fun8",
+                    "source": "",
+                },
+                {
+                    "frame": 9,
+                    "module": "?",
+                    "signature": "fun9",
+                    "source": "",
+                },
+            ],
+            id="more_than_ten_frames",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": (
+                        "mozilla.components.browser.engine.gecko.GeckoTrackingProtectionExceptionStorage"
+                        + "$$ExternalSyntheticLambda0"
+                    ),
+                    "function": "accept",
+                    "in_app": True,
+                    "lineno": 85,
+                    "filename": "R8$$SyntheticClass",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "mozilla.components.browser.engine.gecko.GeckoTrackingProtectionExceptionStora...",
+                    "signature": "accept",
+                    "source": "R8$$SyntheticClass:85",
+                }
+            ],
+            id="long_module",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "test.module",
+                    "function": "test" + ("a" * 80),
+                    "in_app": True,
+                    "lineno": 42,
+                    "filename": "SomeClass.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "test.module",
+                    "signature": "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...",
+                    "source": "SomeClass.java:42",
+                }
+            ],
+            id="long_function",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "kotlinx.coroutines.BuildersKt",
+                    "function": "launch$default",
+                    "in_app": True,
+                    "lineno": 13,
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "kotlinx.coroutines.BuildersKt",
+                    "signature": "launch$default",
+                    "source": "",
+                }
+            ],
+            id="missing_filename",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "test.module",
+                    "function": "test",
+                    "in_app": True,
+                    "filename": "SomeClass.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "test.module",
+                    "signature": "test",
+                    "source": "SomeClass.java",
+                }
+            ],
+            id="missing_lineno",
+        ),
+        pytest.param(
+            [{}],
+            [{"frame": 0, "module": "?", "signature": "?", "source": ""}],
+            id="missing_everything",
+        ),
+    ],
+)
+def test_java_exception_to_frames(frames, expected):
+    assert java_exception_to_frames(frames) == expected
 
 
 class Testcrash_report_to_description:

@@ -28,9 +28,6 @@ def mini_glom(structure, path, default):
 
     :returns: value
 
-    :raises KeyError: if no default and the path part is a key in a map
-    :raises IndexError: if no default and the path part is an index in a list/tuple
-
     """
     node = structure
     for part in path.split("."):
@@ -91,7 +88,6 @@ def minidump_thread_to_frames(thread):
             source = f"{source}:{frame['line']}"
 
         signature = truncate(frame.get("signature") or "", 80)
-
         frames.append(
             {
                 "frame": frame.get("frame", "?"),
@@ -104,31 +100,33 @@ def minidump_thread_to_frames(thread):
     return frames
 
 
-def java_exception_to_frames(stack):
+def java_exception_to_frames(frames):
     """Build frame information from java_exception stack
 
-    :arg stack: a java_exception values item
+    :arg frames: the frames for a stacktrace in a java_exception structure
 
     :returns: list of frame information dicts with keys "frame", "module", "signature",
         "source"
 
     """
-    frames = []
-    for i, frame in enumerate(islice(stack, MAX_FRAMES)):
-        source = frame.get("filename") or "<nofile>"
+    new_frames = []
+    for i, frame in enumerate(islice(frames, MAX_FRAMES)):
+        source = frame.get("filename") or ""
         if source and frame.get("lineno") is not None:
             source = f"{source}:{frame['lineno']}"
 
-        frames.append(
+        module = truncate(frame.get("module") or "?", 80)
+        signature = truncate(frame.get("function") or "?", 80)
+        new_frames.append(
             {
                 "frame": i,
-                "module": frame.get("module") or "?",
-                "signature": truncate(frame.get("function") or "?", 80),
+                "module": module,
+                "signature": signature,
                 "source": source,
             }
         )
 
-    return frames
+    return new_frames
 
 
 def crash_report_to_description(crash_report_url, processed_crash):
@@ -153,13 +151,12 @@ def crash_report_to_description(crash_report_url, processed_crash):
         frames = minidump_thread_to_frames(threads[thread_index])
 
     if not frames:
-        frames = mini_glom(
+        # Generate frames from java_exception structure
+        if frames := mini_glom(
             processed_crash,
             "java_exception.exception.values.0.stacktrace.frames",
             default=None,
-        )
-        # Generate frames from java_exception structure
-        if frames:
+        ):
             frames = java_exception_to_frames(frames)
 
     if frames:
