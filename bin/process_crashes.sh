@@ -62,5 +62,8 @@ fi
 # Print urls to make it easier to look at them
 for crashid in "$@"
 do
-    echo "Check webapp: http://localhost:8000/report/index/${crashid}"
+    echo "The crash is queued for processing."
+    echo "To process it, start up the processor."
+    echo "To view the processed crash, start up the webapp,"
+    echo "and then check the webapp: http://localhost:8000/report/index/${crashid}"
 done

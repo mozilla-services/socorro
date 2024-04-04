@@ -720,8 +720,9 @@ You can also use it with ``fetch_crashids``:
 
    app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | bin/process_crashes.sh
 
-After running ``bin/process_crashes.sh``, you will need to run the
-processor which will do the actual processing.
+After running ``bin/process_crashes.sh``, you will need to :ref:`run the processor <run-the-processor-locally>` which will do the actual processing.
+
+If you want to view the processed crash, you will need to :ref:`run the webapp <run-the-webapp-locally>`.
 
 If you find this doesn't meet your needs, you can write a shell script using
 the commands and scripts that ``process_crashes.sh`` uses. They are described
