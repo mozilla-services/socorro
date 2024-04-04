@@ -38,7 +38,6 @@ downloading SYM files in ``SYMBOL_TMP_PATH`` and cache SYM files that have been
 completely downloaded for a while in ``SYMBOL_CACHE_PATH``. SYM files are big,
 so you want to volume mount those paths into the Docker container.
 
-.. _run-the-processor-locally:
 
 Running in a local dev environment
 ==================================
