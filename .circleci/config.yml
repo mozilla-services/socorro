@@ -8,7 +8,7 @@ version: 2.1
 jobs:
   main:
     docker:
-      - image: cimg/python:3.10.9
+      - image: cimg/python:3.10.13
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
