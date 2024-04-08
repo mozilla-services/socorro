@@ -12,6 +12,9 @@ from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid
 from socorro import settings
 
+# Amount of time to sleep between publish and pull so messages are available
+PUBSUB_DELAY_PULL = 0.5
+
 
 class TestPubSubCrashQueue:
     def test_iter(self, pubsub_helper):
@@ -25,6 +28,9 @@ class TestPubSubCrashQueue:
 
         priority_crash = create_new_ooid()
         pubsub_helper.publish("priority", priority_crash)
+
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
 
         crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         new_crashes = list(crashqueue.new_crashes())
@@ -49,6 +55,9 @@ class TestPubSubCrashQueue:
 
         # Publish crash id to the queue
         pubsub_helper.publish("standard", original_crash_id)
+
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
 
         crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         new_crashes = list(crashqueue.new_crashes())
@@ -78,6 +87,9 @@ class TestPubSubCrashQueue:
         crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         crashqueue.publish(queue, [crash_id])
 
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
+
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
         assert set(published_crash_ids) == {crash_id}
 
@@ -90,6 +102,9 @@ class TestPubSubCrashQueue:
         crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
         crashqueue.publish(queue, [crash_id_1, crash_id_2])
         crashqueue.publish(queue, [crash_id_3])
+
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
 
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
         assert set(published_crash_ids) == {crash_id_1, crash_id_2, crash_id_3}
