@@ -8,7 +8,7 @@ version: 2.1
 jobs:
   main:
     docker:
-      - image: cimg/python:3.10.9
+      - image: cimg/python:3.10.13
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PASS
@@ -71,7 +71,6 @@ jobs:
           # yamllint disable rule:line-length
           command: |
             make my.env
-            docker compose up -d localstack elasticsearch postgresql statsd fakesentry
             docker compose run --rm test-ci shell ./bin/test.sh
           # yamllint enable rule:line-length
 

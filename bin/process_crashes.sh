@@ -64,3 +64,6 @@ for crashid in "$@"
 do
     echo "Check webapp: http://localhost:8000/report/index/${crashid}"
 done
+
+echo "The crash(es) has/have been queued."
+echo "To process and view them, start up the processor and webapp."

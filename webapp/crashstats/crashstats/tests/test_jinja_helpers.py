@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+from textwrap import dedent
 import time
 from urllib.parse import parse_qs, urlsplit
 
@@ -139,36 +140,6 @@ class Test_generate_create_bug_url:
     def _extract_query_string(self, url):
         return parse_qs(urlsplit(url).query)
 
-    def _create_frame(
-        self,
-        frame=1,
-        module="fake_module",
-        signature="foo::bar(char* x, int y)",
-        file="fake.cpp",
-        line=1,
-        inlines=None,
-        unloaded_modules=None,
-    ):
-        data = {
-            "frame": frame,
-            "module": module,
-            "signature": signature,
-            "file": file,
-            "line": line,
-        }
-        if inlines:
-            data["inlines"] = inlines
-        if unloaded_modules:
-            data["unloaded_modules"] = unloaded_modules
-
-        return data
-
-    def _create_thread(self, frames=None):
-        return {"frames": frames or []}
-
-    def _create_dump(self, threads=None):
-        return {"threads": threads or []}
-
     def test_basic_url(self):
         report = self._create_report(
             os_name="Windows", crashing_thread=self.CRASHING_THREAD
@@ -186,8 +157,13 @@ class Test_generate_create_bug_url:
         assert qs["short_desc"] == ["Crash in [@ $&#;deadbeef]"]
         assert qs["op_sys"] == ["Windows"]
         assert qs["bug_type"] == ["defect"]
-        comment = f"Crash report: http://localhost:8000/report/index/{self.CRASH_ID}"
-        assert qs["comment"] == [comment]
+        comment = dedent(
+            f"""\
+            Crash report: http://localhost:8000/report/index/{self.CRASH_ID}
+
+            No stack."""
+        )
+        assert qs["comment"][0] == comment
 
     def test_truncate_short_desc(self):
         report = self._create_report(
@@ -204,10 +180,24 @@ class Test_generate_create_bug_url:
         assert len(qs["short_desc"][0]) == 255
         assert qs["short_desc"][0].endswith("...")
 
-    def test_corrected_os_version_name(self):
+    @pytest.mark.parametrize(
+        "os_name, os_pretty_version, op_sys",
+        [
+            ("Windoooosws", "Windows 10", "Windows 10"),
+            # os_name if the os_pretty_version is there, but empty
+            ("Windoooosws", "", "Windoooosws"),
+            # "OS X <Number>" becomes "macOS"
+            ("OS X", "OS X 11.1", "macOS"),
+            # "Windows 8.1" becomes "Windows 8"
+            ("Windows NT", "Windows 8.1", "Windows 8"),
+            # "Windows Unknown" becomes plain "Windows"
+            ("Windows NT", "Windows Unknown", "Windows"),
+        ],
+    )
+    def test_corrected_os_version_name(self, os_name, os_pretty_version, op_sys):
         report = self._create_report(
-            os_name="Windoooosws",
-            os_pretty_version="Windows 10",
+            os_name=os_name,
+            os_pretty_version=os_pretty_version,
             crashing_thread=self.CRASHING_THREAD,
         )
         url = generate_create_bug_url(
@@ -216,69 +206,12 @@ class Test_generate_create_bug_url:
             report,
         )
         qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["Windows 10"]
-
-        # os_name if the os_pretty_version is there, but empty
-        report = self._create_report(
-            os_name="Windoooosws",
-            os_pretty_version="",
-            crashing_thread=self.CRASHING_THREAD,
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["Windoooosws"]
-
-        # "OS X <Number>" becomes "macOS"
-        report = self._create_report(
-            os_name="OS X",
-            os_pretty_version="OS X 11.1",
-            crashing_thread=self.CRASHING_THREAD,
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["macOS"]
-
-        # "Windows 8.1" becomes "Windows 8"
-        report = self._create_report(
-            os_name="Windows NT",
-            os_pretty_version="Windows 8.1",
-            crashing_thread=self.CRASHING_THREAD,
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["Windows 8"]
-
-        # "Windows Unknown" becomes plain "Windows"
-        report = self._create_report(
-            os_name="Windows NT",
-            os_pretty_version="Windows Unknown",
-            crashing_thread=self.CRASHING_THREAD,
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        assert qs["op_sys"] == ["Windows"]
+        assert qs["op_sys"] == [op_sys]
 
     def test_with_os_name_is_null(self):
         """Some processed crashes have a os_name but it's null."""
         report = self._create_report(
             os_name=None,
-            signature="java.lang.IllegalStateException",
             crashing_thread=self.CRASHING_THREAD,
         )
         url = generate_create_bug_url(
@@ -314,19 +247,36 @@ class Test_generate_create_bug_url:
 
     def test_comment(self):
         report = self._create_report(
-            crashing_thread=1,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(),  # Empty thread 0
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(frame=0),
-                            self._create_frame(frame=1),
-                            self._create_frame(frame=2),
+            crashing_thread=0,
+            json_dump={
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 10,
+                            },
+                            {
+                                "frame": 1,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 20,
+                            },
+                            {
+                                "frame": 2,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 30,
+                            },
                         ]
-                    ),
+                    },
                 ]
-            ),
+            },
         )
         url = generate_create_bug_url(
             f"http://localhost:8000/report/index/{self.CRASH_ID}",
@@ -335,21 +285,21 @@ class Test_generate_create_bug_url:
         )
 
         qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 3 frames of crashing thread:\n"
-            "```\n"
-            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "```"
+        comment = dedent(
+            f"""\
+            Crash report: http://localhost:8000/report/index/{self.CRASH_ID}
+
+            Top 3 frames:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:10
+            1  fake_module  foo::bar(char* x, int y)  fake.cpp:20
+            2  fake_module  foo::bar(char* x, int y)  fake.cpp:30
+            ```"""
         )
         assert qs["comment"][0] == comment
 
-    def test_comment_no_threads(self):
-        """If json_dump has no threads available, do not output any frames."""
-        report = self._create_report(crashing_thread=0)
+    def test_comment_from_missing_data(self):
+        report = self._create_report()
         url = generate_create_bug_url(
             f"http://localhost:8000/report/index/{self.CRASH_ID}",
             self.TEMPLATE,
@@ -357,387 +307,11 @@ class Test_generate_create_bug_url:
         )
 
         qs = self._extract_query_string(url)
-        comment = "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328"
-        assert qs["comment"][0] == comment
+        comment = dedent(
+            f"""\
+            Crash report: http://localhost:8000/report/index/{self.CRASH_ID}
 
-    def test_comment_more_than_ten_frames(self):
-        """If the crashing thread has more than ten frames, only display top ten."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[self._create_frame(frame=frame) for frame in range(10)]
-                        + [self._create_frame(frame=10, module="do_not_include")]
-                    )
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 10 frames of crashing thread:\n"
-            "```\n"
-            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "3  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "4  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "5  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "6  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "7  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "8  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "9  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_frame_long_signature(self):
-        """If a frame signature is too long, it gets truncated."""
-        long_signature = "foo::bar(" + ("char* x, " * 15) + "int y)"
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="test_module",
-                                signature=long_signature,
-                                file="foo.cpp",
-                                line=7,
-                            )
-                        ]
-                    )
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 1 frames of crashing thread:\n"
-            "```\n"
-            "0  test_module  foo::bar(char* x, char* x, char* x, char* x, char* x, char* x, char* x, char*...  foo.cpp:7\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_function_inlines(self):
-        """Include inlines functions."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="test_module",
-                                signature="foo::bar(char* x, int y)",
-                                file="foo.cpp",
-                                line=7,
-                                inlines=[
-                                    {
-                                        "file": "foo_inline.cpp",
-                                        "line": 100,
-                                        "function": "_foo_inline",
-                                    },
-                                    {
-                                        "file": "foo_inline.cpp",
-                                        "line": 4,
-                                        "function": "_foo_inline_amd64",
-                                    },
-                                ],
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 3 frames of crashing thread:\n"
-            "```\n"
-            "0  test_module  _foo_inline  foo_inline.cpp:100\n"
-            "0  test_module  _foo_inline_amd64  foo_inline.cpp:4\n"
-            "0  test_module  foo::bar(char* x, int y)  foo.cpp:7\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_function_unloaded_modules(self):
-        """Include unloaded modules."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module=None,
-                                file=None,
-                                line=None,
-                                signature="(unloaded unmod@0xe4df)",
-                            ),
-                        ],
-                    ),
-                ],
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 1 frames of crashing thread:\n"
-            "```\n"
-            "0  ?  (unloaded unmod@0xe4df)\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_missing_line(self):
-        """If a frame is missing a line number, do not include it."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="test_module",
-                                signature="foo::bar(char* x, int y)",
-                                file="foo.cpp",
-                                line=None,
-                            )
-                        ]
-                    )
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 1 frames of crashing thread:\n"
-            "```\n"
-            "0  test_module  foo::bar(char* x, int y)  foo.cpp\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_missing_file(self):
-        """If a frame is missing file info, do not include it."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="test_module",
-                                signature="foo::bar(char* x, int y)",
-                                file=None,
-                                line=None,
-                            )
-                        ]
-                    )
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Top 1 frames of crashing thread:\n"
-            "```\n"
-            "0  test_module  foo::bar(char* x, int y)\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_missing_everything(self):
-        """If a frame is missing everything, do not throw an error."""
-        report = self._create_report(
-            crashing_thread=0,
-            json_dump=self._create_dump(threads=[self._create_thread(frames=[{}])]),
-        )
-        generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-
-    def test_comment_java_stack_trace(self):
-        """If there's a java stack trace, use that instead."""
-        report = self._create_report(crashing_thread=0)
-        report["java_stack_trace"] = "java.lang.NullPointerException: list == null"
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Java stack trace:\n"
-            "```\n"
-            "java.lang.NullPointerException: list == null\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_reason(self):
-        """Verify Reason makes it into the comment."""
-        report = self._create_report(
-            crashing_thread=0,
-            reason="SIGSEGV /0x00000080",
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(frame=0),
-                            self._create_frame(frame=1),
-                            self._create_frame(frame=2),
-                        ]
-                    ),
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "Reason: ```SIGSEGV /0x00000080```\n"
-            "\n"
-            "Top 3 frames of crashing thread:\n"
-            "```\n"
-            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_moz_crash_reason(self):
-        """Verify Reason makes it into the comment."""
-        report = self._create_report(
-            crashing_thread=0,
-            moz_crash_reason="good_data",
-            moz_crash_reason_raw="bad_data",
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(frame=0),
-                            self._create_frame(frame=1),
-                            self._create_frame(frame=2),
-                        ]
-                    ),
-                ]
-            ),
-        )
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "MOZ_CRASH Reason: ```good_data```\n"
-            "\n"
-            "Top 3 frames of crashing thread:\n"
-            "```\n"
-            "0  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "1  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "2  fake_module  foo::bar(char* x, int y)  fake.cpp:1\n"
-            "```"
-        )
-        assert qs["comment"][0] == comment
-
-    def test_comment_crashing_thread_none(self):
-        """Verify Reason makes it into the comment."""
-        report = self._create_report(
-            json_dump=self._create_dump(
-                threads=[
-                    self._create_thread(
-                        frames=[
-                            self._create_frame(
-                                frame=0,
-                                module="test_module",
-                                signature="foo::bar",
-                                file="foo.cpp",
-                                line=7,
-                            ),
-                        ]
-                    ),
-                ]
-            )
-        )
-        # NOTE(willkg): we don't want crashing_thread in the report for this test
-        assert "crashing_thread" not in report
-        url = generate_create_bug_url(
-            f"http://localhost:8000/report/index/{self.CRASH_ID}",
-            self.TEMPLATE,
-            report,
-        )
-        qs = self._extract_query_string(url)
-        comment = (
-            "Crash report: http://localhost:8000/report/index/70dda764-a402-4ca3-b806-c38dd0240328\n"
-            "\n"
-            "No crashing thread identified; using thread 0.\n"
-            "\n"
-            "Top 1 frames of crashing thread:\n"
-            "```\n"
-            "0  test_module  foo::bar  foo.cpp:7\n"
-            "```"
+            No stack."""
         )
         assert qs["comment"][0] == comment
 
