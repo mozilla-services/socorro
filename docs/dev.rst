@@ -71,7 +71,7 @@ Setup quickstart
 
    That will build the app Docker image required for development.
 
-5. Initialize Postgres, Elasticsearch, S3, and SQS.
+5. Initialize Postgres, Elasticsearch, Pub/Sub, S3, and SQS.
 
    Then you need to set up services. To do that, run:
 
@@ -93,6 +93,8 @@ Setup quickstart
    processed crash data.
 
    For S3, this creates the required buckets.
+
+   For Pub/Sub, this creates the required topics and subscriptions.
 
    For SQS, this creates queues.
 
@@ -652,7 +654,7 @@ you give it something to process.
 
 In order to process something, you first need to acquire raw crash data, put the
 data in the S3 container in the appropriate place, then you need to add the
-crash id to the AWS SQS standard queue.
+crash id to the standard queue.
 
 We have helper scripts for these steps.
 
@@ -702,7 +704,7 @@ bin/process_crashes.sh
 ----------------------
 
 You can use the ``bin/process_crashes.sh`` script which will fetch crash
-data, sync it with the S3 bucket, and publish the crash ids to AWS SQS queue
+data, sync it with the S3 bucket, and publish the crash ids to the queue
 for processing. If you have access to memory dumps and use a valid
 `API token`_, then memory dumps will be fetched for processing as well.
 
@@ -884,8 +886,13 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   # Copy that data from the host into the localstack s3 container
   app@socorro:/app$ bin/socorro_aws_s3.sh sync ./crashdata s3://dev-bucket/
 
-  # Add all the crash ids to the queue
+  # if using CLOUD_PROVIDER=AWS (default)
+  # Add all the crash ids to the sqs queue
   app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local-dev-standard
+
+  # or if using CLOUD_PROVIDER=GCP
+  # Add all the crash ids to the pubsub topic
+  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish local-standard-topic
 
   # Then exit the container
   app@socorro:/app$ exit
@@ -912,7 +919,7 @@ To run Antenna in the Socorro local dev environment, do::
 It will listen on ``http://localhost:8888/`` for incoming crashes from a
 breakpad crash reporter. It will save crash data to the ``dev-bucket`` in the
 local S3 which is where the processor looks for it. It will publish the crash
-ids to the AWS SQS standard queue.
+ids to the standard queue.
 
 
 Connect to PostgreSQL database
