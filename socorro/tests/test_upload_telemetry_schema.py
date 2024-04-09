@@ -3,14 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
-import os
 
 from click.testing import CliRunner
 
 from upload_telemetry_schema import upload
-
-
-TELEMETRY_BUCKET = os.environ["TELEMETRY_S3_BUCKET"]
 
 
 def test_it_runs():
@@ -20,9 +16,10 @@ def test_it_runs():
     assert result.exit_code == 0
 
 
-def test_upload(s3_helper):
+def test_upload(storage_helper):
     """Tests whether the file is uploaded and has the right properites"""
-    s3_helper.create_bucket(TELEMETRY_BUCKET)
+    telemetry_bucket = storage_helper.get_telemetry_bucket()
+    storage_helper.create_bucket(telemetry_bucket)
 
     runner = CliRunner()
     result = runner.invoke(upload)
@@ -30,8 +27,8 @@ def test_upload(s3_helper):
     assert result.exit_code == 0
 
     # Get the crash data we just saved from the bucket and verify it's contents
-    crash_data = s3_helper.download_fileobj(
-        bucket_name=TELEMETRY_BUCKET,
+    crash_data = storage_helper.download(
+        bucket_name=telemetry_bucket,
         key="telemetry_socorro_crash.json",
     )
     schema = json.loads(crash_data)

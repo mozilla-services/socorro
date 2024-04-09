@@ -169,7 +169,7 @@ class SQSCrashQueue(CrashQueueBase):
             # which is unhelpful for granularity purposes.
             ClientError,
             # This raises a ValueError "invalid endpoint" if it has problems
-            # getting the s3 credentials and then tries "s3..amazonaws.com"--we
+            # getting the sqs credentials and then tries "sqs..amazonaws.com"--we
             # want to retry that, too.
             ValueError,
         ],

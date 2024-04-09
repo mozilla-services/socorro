@@ -82,7 +82,7 @@ Checklist
 
     * Log into Sentry and check for errors.
 
-    * Submit a crash to the collector. Verify raw crash made it to S3.
+    * Submit a crash to the collector. Verify raw crash made it to cloud storage.
 
 
     Processor
@@ -103,11 +103,11 @@ Checklist
       * stage: check Grafana stage dashboard
       * prod: check Grafana prod dashboard
 
-    Is the processor saving crash data to Elasticsearch? To S3?
+    Is the processor saving crash data to Elasticsearch? To cloud storage?
 
     * Check Grafana "processor.es.save_processed_crash"
 
-    * Check Grafana "processor.s3.save_processed_crash"
+    * Check Grafana "processor.storage.save_processed_crash"
 
     * Check Grafana "processor.telemetry.save_processed_crash"
 

@@ -35,12 +35,12 @@ class TestS3ConnectionContext:
 
         objects = s3_helper.list(bucket)
         assert objects == ["/test/testfile.txt"]
-        assert s3_helper.download_fileobj(bucket, path) == file_data
+        assert s3_helper.download(bucket, path) == file_data
 
         # Stomp on that file with a new one
         file_data2 = b"test file contents 2"
         conn.save_file(bucket=bucket, path=path, data=file_data2)
-        assert s3_helper.download_fileobj(bucket, path) == file_data2
+        assert s3_helper.download(bucket, path) == file_data2
 
     def test_load_file_doesnt_exist(self, s3_helper):
         """Test loading a file that isn't there."""
@@ -62,6 +62,6 @@ class TestS3ConnectionContext:
         file_data = b"test file contents"
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(bucket, path, file_data)
+        s3_helper.upload(bucket, path, file_data)
         data = conn.load_file(bucket=bucket, path=path)
         assert data == file_data

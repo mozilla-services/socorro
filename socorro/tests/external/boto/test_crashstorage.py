@@ -96,7 +96,7 @@ class TestBotoS3CrashStorage:
 
         # Verify the raw_crash made it to the right place and has the right
         # contents
-        raw_crash = s3_helper.download_fileobj(
+        raw_crash = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
         )
@@ -104,7 +104,7 @@ class TestBotoS3CrashStorage:
         assert json.loads(raw_crash) == original_raw_crash
 
         # Verify dump_names made it to the right place and has the right contents
-        dump_names = s3_helper.download_fileobj(
+        dump_names = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/dump_names/{crash_id}",
         )
@@ -128,7 +128,7 @@ class TestBotoS3CrashStorage:
         )
 
         # Verify the raw_crash made it to the right place and has the right contents
-        raw_crash = s3_helper.download_fileobj(
+        raw_crash = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
         )
@@ -137,20 +137,20 @@ class TestBotoS3CrashStorage:
 
         # Verify dump_names made it to the right place and has the right
         # contents
-        dump_names = s3_helper.download_fileobj(
+        dump_names = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/dump_names/{crash_id}",
         )
         assert sorted(json.loads(dump_names)) == ["content_dump", "dump"]
 
         # Verify dumps
-        dump = s3_helper.download_fileobj(
+        dump = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
         )
         assert dump == b"fake dump"
 
-        content_dump = s3_helper.download_fileobj(
+        content_dump = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/content_dump/{crash_id}",
         )
@@ -175,7 +175,7 @@ class TestBotoS3CrashStorage:
         )
 
         # Verify processed crash is saved
-        processed_crash = s3_helper.download_fileobj(
+        processed_crash = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/processed_crash/{crash_id}",
         )
@@ -191,7 +191,7 @@ class TestBotoS3CrashStorage:
         original_raw_crash = {"submitted_timestamp": date_to_string(now)}
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
             data=dict_to_str(original_raw_crash).encode("utf-8"),
@@ -219,7 +219,7 @@ class TestBotoS3CrashStorage:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
@@ -244,7 +244,7 @@ class TestBotoS3CrashStorage:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
@@ -260,7 +260,7 @@ class TestBotoS3CrashStorage:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b"this is a raw dump",
@@ -275,22 +275,22 @@ class TestBotoS3CrashStorage:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump_names/{crash_id}",
             data=b'["dump", "content_dump", "city_dump"]',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b'this is "dump", the first one',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/content_dump/{crash_id}",
             data=b'this is "content_dump", the second one',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/city_dump/{crash_id}",
             data=b'this is "city_dump", the last one',
@@ -318,22 +318,22 @@ class TestBotoS3CrashStorage:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump_names/{crash_id}",
             data=b'["dump", "content_dump", "city_dump"]',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b'this is "dump", the first one',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/content_dump/{crash_id}",
             data=b'this is "content_dump", the second one',
         )
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/city_dump/{crash_id}",
             data=b'this is "city_dump", the last one',
@@ -376,7 +376,7 @@ class TestBotoS3CrashStorage:
             "json_dump": {"sensitive": 22},
         }
 
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/processed_crash/{crash_id}",
             data=dict_to_str(processed_crash).encode("utf-8"),
@@ -433,7 +433,7 @@ class TestTelemetryBotoS3CrashStorage:
         )
 
         # Get the crash data we just saved from the bucket and verify it's contents
-        crash_data = s3_helper.download_fileobj(
+        crash_data = s3_helper.download(
             bucket_name=bucket,
             key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
         )
@@ -470,7 +470,7 @@ class TestTelemetryBotoS3CrashStorage:
         }
 
         # Save the data to S3 so we have something to get
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
             data=json.dumps(crash_data).encode("utf-8"),

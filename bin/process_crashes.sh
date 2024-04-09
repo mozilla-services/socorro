@@ -4,8 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Pulls down crash data for specified crash ids, syncs to the S3 bucket, and
-# sends the crash ids to the Pub/Sub queue.
+# Pulls down crash data for specified crash ids, syncs to the cloud storage
+# bucket, and sends the crash ids to the queue.
 #
 # Usage: ./bin/process_crashes.sh
 #

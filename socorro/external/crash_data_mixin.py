@@ -2,28 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import logging
-
 from socorro.lib import external_common, MissingArgumentError, BadArgumentError, libooid
-from socorro.external.boto.crashstorage import (
-    BotoS3CrashStorage,
-    CrashIDNotFound,
-    TelemetryBotoS3CrashStorage,
-)
+from socorro.external.crashstorage_base import CrashIDNotFound
 
 
-class SimplifiedCrashData(BotoS3CrashStorage):
-    """Fetches data from BotoS3CrashStorage
+class SimplifiedCrashDataMixin:
+    """Fetch data from crash storage
 
     The difference between this and the base CrashData class is that this one
     only makes the get() and if it fails it does NOT try to put the crash ID
     back into the priority jobs queue.
 
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""
@@ -68,8 +58,8 @@ class SimplifiedCrashData(BotoS3CrashStorage):
             raise CrashIDNotFound(params["uuid"]) from cidnf
 
 
-class TelemetryCrashData(TelemetryBotoS3CrashStorage):
-    """Fetches data from TelemetryBotoS3CrashStorage"""
+class TelemetryCrashDataMixin:
+    """Fetch data from telemetry crash storage."""
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""

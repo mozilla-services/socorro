@@ -25,25 +25,24 @@ METRICS = markus.get_metrics("processor")
 @click.option(
     "--destination_key",
     default="telemetry_socorro_crash.json",
-    help="the key in the S3 bucket to save the schema to",
+    help="the key in the bucket to save the schema to",
 )
 @click.pass_context
 def upload(ctx, destination_key):
-    """Uploads schema to S3 bucket for Telemetry
+    """Uploads schema to bucket for Telemetry
 
-    We always send a copy of the crash (mainly processed crash) to a S3 bucket
+    We always send a copy of the crash (mainly processed crash) to a bucket
     meant for Telemetry to ingest. When they ingest, they need a copy of our
     telemetry_socorro_crash.json JSON Schema file.
 
     They use that not to understand the JSON we store but the underlying
-    structure (types, nesting etc.) necessary for storing it in .parquet files
-    in S3.
+    structure (types, nesting etc.) necessary for storing it in .parquet files.
 
     To get a copy of the telemetry_socorro_crash.json they can take it from the git
     repository but that's fragile since it depends on github.com always being available.
 
-    By uploading it to S3 not only do we bet on S3 being more read-reliable
-    that github.com's server but by being in S3 AND unavailable that means the
+    By uploading it not only do we bet on the bucket being more read-reliable
+    than github.com's server but by being in the bucket AND unavailable that means the
     whole ingestion process has to halt/pause anyway.
 
     """

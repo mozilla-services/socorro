@@ -25,13 +25,14 @@ Important services in the diagram:
   rejected. It generates a :term:`crash id` for the :term:`crash report`. It
   parses the HTTP POST payload into a raw crash with
   :term:`crash annotations <crash annotation>` and :term:`minidump` files. It
-  saves this crash data to AWS S3 and publishes :term:`crash ids <crash id>` to
-  AWS SQS for processing.
+  saves this crash data to cloud storage and publishes
+  :term:`crash ids <crash id>` to a queue for processing.
 
 * **Processor:** Processes :term:`crash reports <crash report>`, normalizes and
   validates data, extracts data from :term:`minidumps <minidump>`, generates
   :term:`crash signatures <crash signature>`, performs other analysis, and
-  saves everything as a :term:`processed crash` to AWS S3 and Elasticsearch.
+  saves everything as a :term:`processed crash` to cloud storage and
+  Elasticsearch.
 
 * **Webapp (aka Crash Stats):** Web user interface for looking at, searching,
   and analyzing :term:`processed crash` data.
@@ -113,8 +114,9 @@ crash id to the crash reporter in the HTTP response. The crash reporter records
 the crash id on the user's machine. The user can see crash reports in
 ``about:crashes``.
 
-The collector saves the crash report data to AWS S3 as a :term:`raw crash` and
-:term:`minidumps <minidump>` in a directory structure like this:
+The collector saves the crash report data to cloud storage as a
+:term:`raw crash` and :term:`minidumps <minidump>` in a directory structure
+like this:
 
 .. code-block:: text
 
@@ -156,8 +158,8 @@ always set to ``0``.
 Processed by Processor
 ----------------------
 
-The processor pulls :term:`crash ids <crash id>` from the AWS SQS queues. It
-fetches the :term:`raw crash` and :term:`minidumps <minidump>` from AWS S3.
+The processor pulls :term:`crash ids <crash id>` from the queues. It fetches
+the :term:`raw crash` and :term:`minidumps <minidump>` from cloud storage.
 
 It passes the crash data through the processing pipeline which generates a
 :term:`processed crash`.
@@ -175,9 +177,9 @@ There are other rules, too.
 After the crash gets through the processing pipeline, the processed crash is
 saved to several places:
 
-1. AWS S3
+1. cloud storage (e.g. AWS S3 or GCS)
 2. Elasticsearch
-3. AWS S3 (different bucket) to be ingested into Telemetry BigQuery
+3. cloud storage (different bucket) to be ingested into Telemetry BigQuery
 
 .. seealso::
 

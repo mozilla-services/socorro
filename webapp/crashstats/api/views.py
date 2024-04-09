@@ -476,14 +476,14 @@ def crash_verify(request):
 
     data = {"uuid": crash_id}
 
-    # Check S3 crash bucket for raw and processed crash data
+    # Check crash bucket for raw and processed crash data
     raw_api = models.RawCrash()
     try:
         raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
         has_raw_crash = True
     except CrashIDNotFound:
         has_raw_crash = False
-    data["s3_raw_crash"] = has_raw_crash
+    data["raw_crash"] = has_raw_crash
 
     processed_api = models.ProcessedCrash()
     try:
@@ -491,7 +491,7 @@ def crash_verify(request):
         has_processed_crash = True
     except CrashIDNotFound:
         has_processed_crash = False
-    data["s3_processed_crash"] = has_processed_crash
+    data["processed_crash"] = has_processed_crash
 
     # Check Elasticsearch for crash data
     supersearch_api = supersearch_models.SuperSearch()
@@ -507,14 +507,14 @@ def crash_verify(request):
         results["total"] == 1 and results["hits"][0]["uuid"] == crash_id
     )
 
-    # Check S3 telemetry bucket for crash data
+    # Check telemetry bucket for crash data
     telemetry_api = models.TelemetryCrash()
     try:
         telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
         has_telemetry_crash = True
     except CrashIDNotFound:
         has_telemetry_crash = False
-    data["s3_telemetry_crash"] = has_telemetry_crash
+    data["telemetry_crash"] = has_telemetry_crash
 
     return http.JsonResponse(data, status=200)
 
@@ -661,14 +661,14 @@ class CrashVerifyAPI(SocorroAPIView):
 
         data = {"uuid": crash_id}
 
-        # Check S3 crash bucket for raw and processed crash data
+        # Check crash bucket for raw and processed crash data
         raw_api = models.RawCrash()
         try:
             raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
             has_raw_crash = True
         except CrashIDNotFound:
             has_raw_crash = False
-        data["s3_raw_crash"] = has_raw_crash
+        data["raw_crash"] = has_raw_crash
 
         processed_api = models.ProcessedCrash()
         try:
@@ -676,7 +676,7 @@ class CrashVerifyAPI(SocorroAPIView):
             has_processed_crash = True
         except CrashIDNotFound:
             has_processed_crash = False
-        data["s3_processed_crash"] = has_processed_crash
+        data["processed_crash"] = has_processed_crash
 
         # Check Elasticsearch for crash data
         supersearch_api = supersearch_models.SuperSearch()
@@ -692,14 +692,14 @@ class CrashVerifyAPI(SocorroAPIView):
             results["total"] == 1 and results["hits"][0]["uuid"] == crash_id
         )
 
-        # Check S3 telemetry bucket for crash data
+        # Check telemetry bucket for crash data
         telemetry_api = models.TelemetryCrash()
         try:
             telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
             has_telemetry_crash = True
         except CrashIDNotFound:
             has_telemetry_crash = False
-        data["s3_telemetry_crash"] = has_telemetry_crash
+        data["telemetry_crash"] = has_telemetry_crash
 
         return Response(data)
 

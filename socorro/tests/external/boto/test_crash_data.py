@@ -14,7 +14,7 @@ from socorro.lib.libooid import create_new_ooid
 
 
 CRASHDATA_SETTINGS = {
-    "class": "socorro.external.boto.crash_data.SimplifiedCrashData",
+    "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     "options": {
         "bucket": os.environ["CRASHSTORAGE_S3_BUCKET"],
         "region": os.environ["CRASHSTORAGE_S3_REGION"],
@@ -25,7 +25,7 @@ CRASHDATA_SETTINGS = {
 }
 
 TELEMETRY_SETTINGS = {
-    "class": "socorro.external.boto.crash_data.TelemetryCrashData",
+    "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
     "options": {
         "bucket": os.environ["TELEMETRY_S3_BUCKET"],
         "region": os.environ["TELEMETRY_S3_REGION"],
@@ -44,7 +44,7 @@ class TestSimplifiedCrashData:
         crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/processed_crash/{crash_id}",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),
@@ -70,7 +70,7 @@ class TestSimplifiedCrashData:
         crash_id = create_new_ooid()
         s3_helper.create_bucket(bucket)
 
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/dump/{crash_id}",
             data=b"\xa0",
@@ -122,7 +122,7 @@ class TestTelemetryCrashData:
         crash_id = create_new_ooid()
 
         s3_helper.create_bucket(bucket)
-        s3_helper.upload_fileobj(
+        s3_helper.upload(
             bucket_name=bucket,
             key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
             data=json.dumps({"foo": "bar"}).encode("utf-8"),

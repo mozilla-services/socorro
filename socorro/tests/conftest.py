@@ -152,12 +152,12 @@ class S3Helper:
         if self._buckets_seen is not None:
             self._buckets_seen.add(bucket_name)
 
-    def upload_fileobj(self, bucket_name, key, data):
+    def upload(self, bucket_name, key, data):
         """Puts an object into the specified bucket."""
         self.create_bucket(bucket_name)
         self.conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
 
-    def download_fileobj(self, bucket_name, key):
+    def download(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
         self.create_bucket(bucket_name)
         resp = self.conn.get_object(Bucket=bucket_name, Key=key)
@@ -179,8 +179,8 @@ def s3_helper():
     * ``get_client()``
     * ``get_crashstorage_bucket()``
     * ``create_bucket(bucket_name)``
-    * ``upload_fileobj(bucket_name, key, value)``
-    * ``download_fileobj(bucket_name, key)``
+    * ``upload(bucket_name, key, data)``
+    * ``download(bucket_name, key)``
     * ``list(bucket_name)``
 
     """
@@ -548,3 +548,9 @@ def queue_helper(cloud_provider):
 
     with helper as _helper:
         yield _helper
+
+
+@pytest.fixture
+def storage_helper(s3_helper):
+    """Generate and return a cloud storage helper using env config."""
+    yield s3_helper

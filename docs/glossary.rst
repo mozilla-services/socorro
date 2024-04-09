@@ -264,7 +264,7 @@ Glossary
        The Socorro collector parses the HTTP POST payload into a set of crash
        annotations and minidumps. It collects the crash annotations along with
        some metadata generated at collection in a raw crash structure. It
-       saves this to AWS S3.
+       saves this to cloud storage.
 
        The Socorro processor takes the raw crash and minidumps and passes them
        through the processing pipeline to generate a processed crash.

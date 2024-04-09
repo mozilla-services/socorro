@@ -231,7 +231,7 @@ if CLOUD_PROVIDER == "AWS":
 elif CLOUD_PROVIDER == "GCP":
     QUEUE = QUEUE_PUBSUB
 
-S3_STORAGE = {
+STORAGE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     "options": {
         "metrics_prefix": "processor.s3",
@@ -301,14 +301,14 @@ TELEMETRY_STORAGE = {
     },
 }
 
-# Crash report storage source pulls from S3
-CRASH_SOURCE = S3_STORAGE
+# Crash report storage source pulls from cloud storage
+CRASH_SOURCE = STORAGE
 
 # Each key in this list corresponds to a key in this dict containing a crash report data
 # destination configuration
-CRASH_DESTINATIONS_ORDER = ["s3", "es", "telemetry"]
+CRASH_DESTINATIONS_ORDER = ["storage", "es", "telemetry"]
 CRASH_DESTINATIONS = {
-    "s3": S3_STORAGE,
+    "storage": STORAGE,
     "es": ES_STORAGE,
     "telemetry": TELEMETRY_STORAGE,
 }

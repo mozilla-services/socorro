@@ -23,7 +23,6 @@ import markus
 from pymemcache.exceptions import MemcacheServerError
 
 from socorro import settings as socorro_settings
-from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import is_crash_id_valid
@@ -532,7 +531,7 @@ class SocorroMiddleware(SocorroCommon):
 
 
 class TelemetryCrash(SocorroMiddleware):
-    """Model for data we store in the S3 bucket to send to Telemetry"""
+    """Model for data we store in the bucket to send to Telemetry"""
 
     required_params = ("crash_id",)
     aliases = {"crash_id": "uuid"}
@@ -542,9 +541,7 @@ class TelemetryCrash(SocorroMiddleware):
     delete = None
 
     def get_implementation(self):
-        s3_settings = socorro_settings.TELEMETRY_STORAGE["options"]
-        # FIXME(willkg): change this to BotoS3CrashStorage
-        return TelemetryCrashData(**s3_settings)
+        return build_instance_from_settings(socorro_settings.TELEMETRY_STORAGE)
 
 
 class PermissionsReducerError(Exception):
@@ -627,9 +624,7 @@ class ProcessedCrash(SocorroMiddleware):
     API_ALLOWLIST = None
 
     def get_implementation(self):
-        # FIXME(willkg): change this to BotoS3CrashStorage
-        s3_settings = socorro_settings.S3_STORAGE["options"]
-        return SimplifiedCrashData(**s3_settings)
+        return build_instance_from_settings(socorro_settings.STORAGE)
 
     def get(self, crash_id, dont_cache=False, refresh_cache=False):
         data = self.fetch(
@@ -736,9 +731,7 @@ class RawCrash(SocorroMiddleware):
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
 
     def get_implementation(self):
-        s3_settings = socorro_settings.S3_STORAGE["options"]
-        # FIXME(willkg): change this to BotoS3CrashStorage
-        return SimplifiedCrashData(**s3_settings)
+        return build_instance_from_settings(socorro_settings.STORAGE)
 
     def public_keys(self):
         """Return list of public annotations."""

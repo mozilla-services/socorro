@@ -17,7 +17,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro import settings as socorro_settings
-from socorro.external.boto.crashstorage import dict_to_str, build_keys as s3_build_keys
+from socorro.external.boto.crashstorage import dict_to_str, build_keys
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
@@ -397,7 +397,7 @@ class TestMiddlewareModels(DjangoTestCase):
 
 
 class TestProcessedCrash:
-    def test_api(self, s3_helper):
+    def test_api(self, storage_helper):
         api = models.ProcessedCrash()
 
         crash_id = create_new_ooid()
@@ -417,10 +417,10 @@ class TestProcessedCrash:
             ],
         }
 
-        key = s3_build_keys("processed_crash", crash_id)[0]
-        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
+        key = build_keys("processed_crash", crash_id)[0]
+        crashstorage = build_instance_from_settings(socorro_settings.STORAGE)
         data = dict_to_str(processed_crash).encode("utf-8")
-        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
+        storage_helper.upload(bucket_name=crashstorage.bucket, key=key, data=data)
 
         ret = api.get(crash_id=crash_id)
         assert ret == {
@@ -442,7 +442,7 @@ class TestProcessedCrash:
 
 
 class TestRawCrash:
-    def test_api(self, s3_helper):
+    def test_api(self, storage_helper):
         api = models.RawCrash()
 
         crash_id = create_new_ooid()
@@ -454,10 +454,10 @@ class TestRawCrash:
             "version": 2,
         }
 
-        key = s3_build_keys("raw_crash", crash_id)[0]
-        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
+        key = build_keys("raw_crash", crash_id)[0]
+        crashstorage = build_instance_from_settings(socorro_settings.STORAGE)
         data = dict_to_str(raw_crash).encode("utf-8")
-        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=data)
+        storage_helper.upload(bucket_name=crashstorage.bucket, key=key, data=data)
 
         ret = api.get(crash_id=crash_id)
         assert ret == {
@@ -473,15 +473,15 @@ class TestRawCrash:
         with pytest.raises(BadArgumentError):
             api.get(crash_id="821fcd0c-d925-4900-85b6-687250180607docker/as_me.sh")
 
-    def test_raw_data(self, s3_helper):
+    def test_raw_data(self, storage_helper):
         api = models.RawCrash()
 
         crash_id = create_new_ooid()
         dump = b"abcde"
 
-        key = s3_build_keys("dump", crash_id)[0]
-        crashstorage = build_instance_from_settings(socorro_settings.S3_STORAGE)
-        s3_helper.upload_fileobj(bucket_name=crashstorage.bucket, key=key, data=dump)
+        key = build_keys("dump", crash_id)[0]
+        crashstorage = build_instance_from_settings(socorro_settings.STORAGE)
+        storage_helper.upload(bucket_name=crashstorage.bucket, key=key, data=dump)
 
         r = api.get(crash_id=crash_id, format="raw", name="upload_file_minidump")
         assert r == dump

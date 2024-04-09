@@ -204,7 +204,7 @@ class S3Connection:
                 f"(bucket={bucket!r} key={path}) not found, no value returned"
             ) from exc
 
-    def list_objects_paginator(self, bucket, prefix):
+    def list_objects_paginator(self, bucket, prefix, page_size=None):
         """Returns S3 client paginator of objects with key prefix in bucket
 
         :arg bucket: the name of the bucket
@@ -214,7 +214,11 @@ class S3Connection:
 
         """
         paginator = self.client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+        page_iterator = paginator.paginate(
+            Bucket=bucket,
+            Prefix=prefix,
+            PaginationConfig={} if page_size is None else {"PageSize": page_size},
+        )
         return page_iterator
 
     def head_object(self, bucket, key):
@@ -232,6 +236,32 @@ class S3Connection:
         """
         try:
             return self.client.head_object(Bucket=bucket, Key=key)
+        except self.client.exceptions.NoSuchKey as exc:
+            raise KeyNotFound(
+                f"(bucket={bucket!r} key={key}) not found, no value returned"
+            ) from exc
+        except self.client.exceptions.ClientError as exc:
+            if "404" in str(exc):
+                raise KeyNotFound(
+                    f"(bucket={bucket!r} key={key}) not found, no value returned"
+                ) from exc
+            raise
+
+    def delete_object(self, bucket, key):
+        """DELETE action on an object in a S3 bucket
+
+        :arg bucket: the name of the bucket
+        :arg key: the key for the object to DELETE
+
+        :returns: S3 DELETE response
+
+        :raises KeyNotFound: if the object doesn't exist
+        :raises botocore.exceptions.ClientError: connection issues, permissions
+            issues, bucket is missing, etc.
+
+        """
+        try:
+            return self.client.delete_object(Bucket=bucket, Key=key)
         except self.client.exceptions.NoSuchKey as exc:
             raise KeyNotFound(
                 f"(bucket={bucket!r} key={key}) not found, no value returned"

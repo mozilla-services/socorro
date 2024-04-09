@@ -8,7 +8,7 @@
 Given a set of crash reports ids via a file, removes all crash report data from
 all crash storage:
 
-* S3
+* Storage
 
   * raw crash
   * dump_names
@@ -57,18 +57,15 @@ def crashid_generator(fn):
             yield line
 
 
-def get_s3_crashstorage():
-    """Return an S3ConnectionContext."""
-    return build_instance_from_settings(settings.CRASH_DESTINATIONS["s3"])
+def get_storage_crashstorage():
+    """Return an Elasticsearch ConnectionContext."""
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["storage"])
 
 
-def s3_delete_object(client, bucket, key):
-    """Deletes a specific object from S3.
+def storage_delete_object(crashstorage, key):
+    """Deletes a specific object from storage.
 
-    Requires s3:DeleteObject.
-
-    :arg client: the s3 client
-    :arg bucket: the bucket name
+    :arg crashstorage: the crash storage instance
     :arg key: the key of the object to delete
 
     :return: True if the delete was fine or already not there; False if there was an
@@ -76,59 +73,54 @@ def s3_delete_object(client, bucket, key):
 
     """
     try:
-        client.delete_object(Bucket=bucket, Key=key)
-        click.echo(f"s3: deleted {key!r}")
+        crashstorage.delete_file(key)
+        click.echo(f"storage: deleted {key!r}")
+        return True
+    except crashstorage.KeyNotFound:
+        click.echo(f"storage: not found: {key!r}")
         return True
     except Exception:
-        logger.exception("ERROR: s3: when deleting %r", key)
+        logger.exception("ERROR: storage: when deleting %r", key)
         return False
 
 
-def s3_fetch_object(client, bucket, key):
-    """Fetch an object from S3 with appropriate handling for issues.
+def storage_fetch_object(crashstorage, key):
+    """Fetch an object from storage with appropriate handling for issues.
 
-    Requires s3:GetObject.
-
-    :arg client: the s3 client
-    :arg bucket: the bucket name
+    :arg crashstorage: the crash storage instance
     :arg key: the key of the object to delete
 
     :returns: Body or None
 
     """
     try:
-        resp = client.get_object(Bucket=bucket, Key=key)
-        return resp["Body"].read()
-    except client.exceptions.NoSuchKey:
-        click.echo(f"s3: not found: {key!r}")
+        return crashstorage.load_file(key)
+    except crashstorage.KeyNotFound:
+        click.echo(f"storage: not found: {key!r}")
     except Exception:
-        logger.exception("ERROR: s3: when fetching %r", key)
+        logger.exception("ERROR: storage: when fetching %r", key)
 
 
-def s3_delete(crashid):
-    """Delete crash report data from S3."""
-    s3_crashstorage = get_s3_crashstorage()
-    bucket = s3_crashstorage.bucket
-    s3_client = s3_crashstorage.connection.client
+def storage_delete(crashid):
+    """Delete crash report data from storage."""
+    crashstorage = get_storage_crashstorage()
 
     keys = build_keys("raw_crash", crashid)
     for key in keys:
-        obj = s3_fetch_object(s3_client, bucket, key)
-        if obj:
-            s3_delete_object(s3_client, bucket, key)
+        storage_delete_object(crashstorage, key)
 
     # Fetch dump_names which tells us which dumps exist
     keys = build_keys("dump_names", crashid)
     dump_names = []
     for key in keys:
-        data = s3_fetch_object(s3_client, bucket, key)
-        if data:
+        data = storage_fetch_object(crashstorage, key)
+        if data is not None:
             try:
                 # dump_names is a JSON encoded list of strings
                 dump_names.extend(json.loads(data))
             except Exception:
                 logger.exception(
-                    "ERROR: %s: s3: when parsing dump_names json" % crashid
+                    "ERROR: %s: storage: when parsing dump_names json" % crashid
                 )
 
     if dump_names:
@@ -144,23 +136,19 @@ def s3_delete(crashid):
             for key in keys:
                 # If the dump is not there, that's fine; but if deleting the dump kicks
                 # up an error, we want to make sure we don't delete dump_names.
-                obj = s3_fetch_object(s3_client, bucket, key)
-                if obj:
-                    if not s3_delete_object(s3_client, bucket, key):
-                        dump_errors += 1
+                if not storage_delete_object(crashstorage, key):
+                    dump_errors += 1
 
         # If there were no errors, then we try to delete dump_names
         if dump_errors == 0:
             keys = build_keys("dump_names", crashid)
             for key in keys:
-                s3_delete_object(s3_client, bucket, key)
+                storage_delete_object(crashstorage, key)
 
     # Delete processed crash
     keys = build_keys("processed_crash", crashid)
     for key in keys:
-        obj = s3_fetch_object(s3_client, bucket, key)
-        if obj:
-            s3_delete_object(s3_client, bucket, key)
+        storage_delete_object(crashstorage, key)
 
 
 def get_es_crashstorage():
@@ -231,7 +219,7 @@ def cmd_permadelete(ctx, crashidsfile):
 
     for crashid in crashids:
         click.echo(f"Working on {crashid!r}")
-        s3_delete(crashid)
+        storage_delete(crashid)
         es_delete(crashid)
 
     click.echo("Done!")

@@ -41,10 +41,10 @@ CHUNK_SIZE = 4
 metrics = markus.get_metrics("cron.verifyprocessed")
 
 
-def is_in_s3(s3_crash_dest, crash_id):
-    """Is the processed crash in S3."""
+def is_in_storage(crash_dest, crash_id):
+    """Is the processed crash in storage."""
     key = PROCESSED_CRASH_TEMPLATE % crash_id
-    return s3_crash_dest.exists_object(key)
+    return crash_dest.exists_object(key)
 
 
 def check_elasticsearch(supersearch, crash_ids):
@@ -76,8 +76,8 @@ def check_elasticsearch(supersearch, crash_ids):
 
 def check_crashids_for_date(firstchars_chunk, date):
     """Check crash ids for a given firstchars and date"""
-    s3_crash_source = build_instance_from_settings(socorro_settings.CRASH_SOURCE)
-    s3_crash_dest = build_instance_from_settings(socorro_settings.S3_STORAGE)
+    crash_source = build_instance_from_settings(socorro_settings.CRASH_SOURCE)
+    crash_dest = build_instance_from_settings(socorro_settings.STORAGE)
 
     supersearch = SuperSearchUnredacted()
 
@@ -87,24 +87,21 @@ def check_crashids_for_date(firstchars_chunk, date):
         # Grab all the crash ids at the given date directory
         raw_crash_key_prefix = RAW_CRASH_PREFIX_TEMPLATE % (date, firstchars)
 
-        page_iterator = s3_crash_source.connection.list_objects_paginator(
-            bucket=s3_crash_source.bucket,
-            prefix=raw_crash_key_prefix,
+        page_iterator = crash_source.list_objects_paginator(
+            raw_crash_key_prefix,
         )
 
         for page in page_iterator:
             # NOTE(willkg): Keys here look like /v2/raw_crash/ENTROPY/DATE/CRASHID or
             # /v1/raw_crash/DATE/CRASHID
-            crash_ids = [
-                item["Key"].split("/")[-1] for item in page.get("Contents", [])
-            ]
+            crash_ids = [item.split("/")[-1] for item in page]
 
             if not crash_ids:
                 continue
 
-            # Check S3 first
+            # Check storage first
             for crash_id in crash_ids:
-                if not is_in_s3(s3_crash_dest, crash_id):
+                if not is_in_storage(crash_dest, crash_id):
                     missing.append(crash_id)
 
             # Check Elasticsearch in batches

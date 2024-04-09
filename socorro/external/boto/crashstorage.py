@@ -4,7 +4,6 @@
 
 import datetime
 import json
-import logging
 
 import markus
 
@@ -13,7 +12,11 @@ from socorro.external.crashstorage_base import (
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.boto.connection_context import S3Connection
+from socorro.external.crash_data_mixin import (
+    SimplifiedCrashDataMixin,
+    TelemetryCrashDataMixin,
+)
+from socorro.external.boto.connection_context import KeyNotFound, S3Connection
 from socorro.lib.libjsonschema import JsonSchemaReducer
 from socorro.lib.libsocorrodataschema import (
     get_schema,
@@ -23,9 +26,6 @@ from socorro.lib.libsocorrodataschema import (
 )
 from socorro.lib.libooid import date_from_ooid
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 def wait_time_generator():
@@ -100,8 +100,11 @@ def str_to_list(a_string):
     return json.loads(a_string)
 
 
-class BotoS3CrashStorage(CrashStorageBase):
+class BotoS3CrashStorage(SimplifiedCrashDataMixin, CrashStorageBase):
     """Saves and loads crash data to S3"""
+
+    # Attach to class so it's easier to access without imports
+    KeyNotFound = KeyNotFound
 
     def __init__(
         self,
@@ -159,6 +162,9 @@ class BotoS3CrashStorage(CrashStorageBase):
     def save_file(self, path, data):
         return self.connection.save_file(self.bucket, path, data)
 
+    def delete_file(self, path):
+        return self.connection.delete_object(self.bucket, path)
+
     def save_raw_crash(self, raw_crash, dumps, crash_id):
         """Save raw crash data to S3 bucket.
 
@@ -195,15 +201,19 @@ class BotoS3CrashStorage(CrashStorageBase):
         path = build_keys("processed_crash", crash_id)[0]
         self.save_file(path, data)
 
-    def list_objects_paginator(self, prefix):
-        """Return generator of objects in the bucket that have a specified key prefix
+    def list_objects_paginator(self, prefix, page_size=None):
+        """Yield pages of object keys in the bucket that have a specified key prefix
 
         :arg prefix: the prefix to look at
+        :arg page_size: the number of results to return per page
 
-        :returns: generator of keys
+        :returns: generator of pages (lists) of object keys
 
         """
-        return self.connection.list(bucket=self.bucket, prefix=prefix)
+        for page in self.connection.list_objects_paginator(
+            bucket=self.bucket, prefix=prefix, page_size=page_size
+        ):
+            yield [item["Key"] for item in page.get("Contents", [])]
 
     def exists_object(self, key):
         """Returns whether the object exists in the bucket
@@ -216,7 +226,7 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             self.connection.head_object(bucket=self.bucket, key=key)
             return True
-        except self.connection.KeyNotFound:
+        except KeyNotFound:
             return False
 
     def get_raw_crash(self, crash_id):
@@ -232,7 +242,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 raw_crash_as_string = self.load_file(path)
                 data = json.loads(raw_crash_as_string)
                 return data
-            except self.connection.KeyNotFound:
+            except KeyNotFound:
                 continue
 
         raise CrashIDNotFound(f"{crash_id} not found")
@@ -251,7 +261,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             path = build_keys(name, crash_id)[0]
             a_dump = self.load_file(path)
             return a_dump
-        except self.connection.KeyNotFound as exc:
+        except KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps(self, crash_id):
@@ -274,7 +284,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 path = build_keys(dump_name, crash_id)[0]
                 dumps[dump_name] = self.load_file(path)
             return dumps
-        except self.connection.KeyNotFound as exc:
+        except KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps_as_files(self, crash_id, tmpdir):
@@ -305,11 +315,11 @@ class BotoS3CrashStorage(CrashStorageBase):
         try:
             processed_crash_as_string = self.load_file(path)
             return json.loads(processed_crash_as_string)
-        except self.connection.KeyNotFound as exc:
+        except KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
 
-class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
+class TelemetryBotoS3CrashStorage(TelemetryCrashDataMixin, BotoS3CrashStorage):
     """Sends a subset of the processed crash to an S3 bucket
 
     The subset of the processed crash is based on the JSON Schema which is
@@ -388,5 +398,5 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         try:
             crash_report_as_str = self.load_file(path)
             return json.loads(crash_report_as_str)
-        except self.connection.KeyNotFound as exc:
+        except KeyNotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc

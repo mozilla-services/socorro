@@ -29,15 +29,15 @@ class TestVerifyProcessed:
             "crash_id", flat=True
         )
 
-    def create_raw_crash_in_s3(self, s3_helper, bucket_name, crash_id):
-        s3_helper.upload_fileobj(
+    def create_raw_crash_in_storage(self, storage_helper, bucket_name, crash_id):
+        storage_helper.upload(
             bucket_name=bucket_name,
             key=f"v1/raw_crash/{TODAY}/{crash_id}",
             data=b"test",
         )
 
-    def create_processed_crash_in_s3(self, s3_helper, bucket_name, crash_id):
-        s3_helper.upload_fileobj(
+    def create_processed_crash_in_storage(self, storage_helper, bucket_name, crash_id):
+        storage_helper.upload(
             bucket_name=bucket_name,
             key=f"v1/processed_crash/{crash_id}",
             data=b"test",
@@ -62,23 +62,23 @@ class TestVerifyProcessed:
         assert threechars[0] == "000"
         assert threechars[-1] == "fff"
 
-    def test_no_crashes(self, s3_helper, monkeypatch):
+    def test_no_crashes(self, storage_helper, monkeypatch):
         """Verify no crashes in bucket result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
-        s3_helper.create_bucket(bucket)
+        bucket = storage_helper.get_crashstorage_bucket()
+        storage_helper.create_bucket(bucket)
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_no_missing_crashes(self, s3_helper, es_helper, monkeypatch):
+    def test_no_missing_crashes(self, storage_helper, es_helper, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
-        s3_helper.create_bucket(bucket)
+        bucket = storage_helper.get_crashstorage_bucket()
+        storage_helper.create_bucket(bucket)
 
         # Create a few raw and processed crashes
         crashids = [
@@ -87,11 +87,11 @@ class TestVerifyProcessed:
             "000" + create_new_ooid()[3:],
         ]
         for crash_id in crashids:
-            self.create_raw_crash_in_s3(
-                s3_helper, bucket_name=bucket, crash_id=crash_id
+            self.create_raw_crash_in_storage(
+                storage_helper, bucket_name=bucket, crash_id=crash_id
             )
-            self.create_processed_crash_in_s3(
-                s3_helper, bucket_name=bucket, crash_id=crash_id
+            self.create_processed_crash_in_storage(
+                storage_helper, bucket_name=bucket, crash_id=crash_id
             )
             self.create_processed_crash_in_es(es_helper, crash_id=crash_id)
 
@@ -101,49 +101,57 @@ class TestVerifyProcessed:
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_missing_crashes(self, s3_helper, es_helper, monkeypatch):
+    def test_missing_crashes(self, storage_helper, es_helper, monkeypatch):
         """Verify it finds a missing crash."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
-        s3_helper.create_bucket(bucket)
+        bucket = storage_helper.get_crashstorage_bucket()
+        storage_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_1)
-        self.create_processed_crash_in_s3(
-            s3_helper, bucket_name=bucket, crash_id=crash_id_1
+        self.create_raw_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_1
+        )
+        self.create_processed_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_1
         )
         self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_2)
+        self.create_raw_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_2
+        )
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == [crash_id_2]
 
-    def test_missing_crashes_es(self, s3_helper, es_helper, monkeypatch):
+    def test_missing_crashes_es(self, storage_helper, es_helper, monkeypatch):
         """Verify it finds a processed crash missing in ES."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
-        bucket = os.environ["CRASHSTORAGE_S3_BUCKET"]
-        s3_helper.create_bucket(bucket)
+        bucket = storage_helper.get_crashstorage_bucket()
+        storage_helper.create_bucket(bucket)
 
         # Create a raw and processed crash
         crash_id_1 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_1)
-        self.create_processed_crash_in_s3(
-            s3_helper, bucket_name=bucket, crash_id=crash_id_1
+        self.create_raw_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_1
+        )
+        self.create_processed_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_1
         )
         self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
-        self.create_raw_crash_in_s3(s3_helper, bucket_name=bucket, crash_id=crash_id_2)
-        self.create_processed_crash_in_s3(
-            s3_helper, bucket_name=bucket, crash_id=crash_id_2
+        self.create_raw_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_2
+        )
+        self.create_processed_crash_in_storage(
+            storage_helper, bucket_name=bucket, crash_id=crash_id_2
         )
 
         cmd = Command()
