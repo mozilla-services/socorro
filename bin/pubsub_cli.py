@@ -10,6 +10,8 @@
 #
 # Usage: ./bin/pubsub_cli.py [SUBCOMMAND]
 
+import sys
+
 import click
 from google.cloud import pubsub_v1
 from google.api_core.exceptions import AlreadyExists, NotFound
@@ -119,6 +121,15 @@ def publish(ctx, project_id, topic_name, crashids):
         batch_settings=pubsub_v1.types.BatchSettings(max_messages=len(crashids))
     )
     topic_path = publisher.topic_path(project_id, topic_name)
+
+    # Pull crash ids from stdin if there are any
+    if not crashids and not sys.stdin.isatty():
+        crashids = list(click.get_text_stream("stdin").readlines())
+
+    if not crashids:
+        raise click.BadParameter(
+            "No crashids provided.", ctx=ctx, param="crashids", param_hint="crashids"
+        )
 
     # publish all crashes before checking futures to allow for batching
     futures = [
