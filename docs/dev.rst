@@ -892,7 +892,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
   # or if using CLOUD_PROVIDER=GCP
   # Add all the crash ids to the pubsub topic
-  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish local-standard-topic
+  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish test local-standard-topic
 
   # Then exit the container
   app@socorro:/app$ exit
