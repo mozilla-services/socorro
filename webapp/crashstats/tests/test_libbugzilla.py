@@ -1,0 +1,901 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+from textwrap import dedent
+
+import pytest
+
+from crashstats.libbugzilla import (
+    crash_report_to_description,
+    java_exception_to_frames,
+    minidump_thread_to_frames,
+    mini_glom,
+    truncate,
+)
+
+
+@pytest.mark.parametrize(
+    "text, length, expected",
+    [
+        pytest.param("", 80, "", id="empty-string"),
+        pytest.param("abc123", 80, "abc123", id="basic-string"),
+        pytest.param("a" * 15, 10, ("a" * 7) + "...", id="truncated-string"),
+    ],
+)
+def test_truncate(text, length, expected):
+    assert truncate(text, length) == expected
+
+
+@pytest.mark.parametrize(
+    "structure, path, default, expected",
+    [
+        # If the key isn't in the structure, return default
+        ({}, "key1", None, None),
+        ({"key": "val1"}, "key1", None, None),
+        ({"key": {"sub_key": "val1"}}, "key1", None, None),
+        ({"key": {"sub_key": "val1"}}, "key.key1", "fred", "fred"),
+        # Return value at path if there
+        ({"key": {"sub_key": "val1"}}, "key.sub_key", None, "val1"),
+        # If the index isn't in the structure, return default
+        ([], "4", None, None),
+        ([1, 2, 3], "4", "fred", "fred"),
+        # Return value at index if there
+        ([1, 2, 3], "2", None, 3),
+        # Return value at complex path
+        (
+            {"key": {"sub_key": [{"sub_sub_key": "val1"}]}},
+            "key.sub_key.0.sub_sub_key",
+            None,
+            "val1",
+        ),
+    ],
+)
+def test_mini_glom(structure, path, default, expected):
+    assert mini_glom(structure, path, default=default) == expected
+
+
+@pytest.mark.parametrize(
+    "thread, expected",
+    [
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 1,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:1",
+                },
+            ],
+            id="everything_there",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 0,
+                    },
+                    {
+                        "frame": 1,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 1,
+                    },
+                    {
+                        "frame": 2,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 2,
+                    },
+                    {
+                        "frame": 3,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 3,
+                    },
+                    {
+                        "frame": 4,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 4,
+                    },
+                    {
+                        "frame": 5,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 5,
+                    },
+                    {
+                        "frame": 6,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 6,
+                    },
+                    {
+                        "frame": 7,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 7,
+                    },
+                    {
+                        "frame": 8,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 8,
+                    },
+                    {
+                        "frame": 9,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 9,
+                    },
+                    {
+                        "frame": 10,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 10,
+                    },
+                    {
+                        "frame": 11,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 11,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:0",
+                },
+                {
+                    "frame": 1,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:1",
+                },
+                {
+                    "frame": 2,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:2",
+                },
+                {
+                    "frame": 3,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:3",
+                },
+                {
+                    "frame": 4,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:4",
+                },
+                {
+                    "frame": 5,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:5",
+                },
+                {
+                    "frame": 6,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:6",
+                },
+                {
+                    "frame": 7,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:7",
+                },
+                {
+                    "frame": 8,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:8",
+                },
+                {
+                    "frame": 9,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:9",
+                },
+            ],
+            id="more_than_ten_frames",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(" + ("char* x, " * 15) + "int y)",
+                        "file": "fake.cpp",
+                        "line": 1,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, char* x, char* x, char* x, char* x, char* x, char* x, char*...",
+                    "source": "fake.cpp:1",
+                },
+            ],
+            id="long_frame_signature",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": 1,
+                        "inlines": [
+                            {
+                                "file": "foo_inline.cpp",
+                                "line": 100,
+                                "function": "_foo_inline",
+                            },
+                            {
+                                "file": "foo_inline.cpp",
+                                "line": 4,
+                                "function": "_foo_inline_amd64",
+                            },
+                        ],
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "_foo_inline",
+                    "source": "foo_inline.cpp:100",
+                },
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "_foo_inline_amd64",
+                    "source": "foo_inline.cpp:4",
+                },
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp:1",
+                },
+            ],
+            id="inline_functions",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": None,
+                        "signature": "(unloaded unmod@0xe4df)",
+                        "file": None,
+                        "line": None,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "?",
+                    "signature": "(unloaded unmod@0xe4df)",
+                    "source": "",
+                },
+            ],
+            id="unloaded_module",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": "fake.cpp",
+                        "line": None,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "fake.cpp",
+                },
+            ],
+            id="missing_lineno",
+        ),
+        pytest.param(
+            {
+                "frames": [
+                    {
+                        "frame": 0,
+                        "module": "fake_module",
+                        "signature": "foo::bar(char* x, int y)",
+                        "file": None,
+                        "line": 1,
+                    },
+                ]
+            },
+            [
+                {
+                    "frame": 0,
+                    "module": "fake_module",
+                    "signature": "foo::bar(char* x, int y)",
+                    "source": "",
+                },
+            ],
+            id="missing_file",
+        ),
+    ],
+)
+def test_minidump_thread_to_frames(thread, expected):
+    assert minidump_thread_to_frames(thread) == expected
+
+
+@pytest.mark.parametrize(
+    "frames, expected",
+    [
+        pytest.param(
+            [
+                {
+                    "module": "android.os.Parcel",
+                    "function": "createException",
+                    "in_app": True,
+                    "lineno": 1966,
+                    "filename": "Parcel.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "android.os.Parcel",
+                    "signature": "createException",
+                    "source": "Parcel.java:1966",
+                }
+            ],
+            id="everything_there",
+        ),
+        pytest.param(
+            [
+                {"function": "fun0"},
+                {"function": "fun1"},
+                {"function": "fun2"},
+                {"function": "fun3"},
+                {"function": "fun4"},
+                {"function": "fun5"},
+                {"function": "fun6"},
+                {"function": "fun7"},
+                {"function": "fun8"},
+                {"function": "fun9"},
+                {"function": "fun10"},
+                {"function": "fun11"},
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "?",
+                    "signature": "fun0",
+                    "source": "",
+                },
+                {
+                    "frame": 1,
+                    "module": "?",
+                    "signature": "fun1",
+                    "source": "",
+                },
+                {
+                    "frame": 2,
+                    "module": "?",
+                    "signature": "fun2",
+                    "source": "",
+                },
+                {
+                    "frame": 3,
+                    "module": "?",
+                    "signature": "fun3",
+                    "source": "",
+                },
+                {
+                    "frame": 4,
+                    "module": "?",
+                    "signature": "fun4",
+                    "source": "",
+                },
+                {
+                    "frame": 5,
+                    "module": "?",
+                    "signature": "fun5",
+                    "source": "",
+                },
+                {
+                    "frame": 6,
+                    "module": "?",
+                    "signature": "fun6",
+                    "source": "",
+                },
+                {
+                    "frame": 7,
+                    "module": "?",
+                    "signature": "fun7",
+                    "source": "",
+                },
+                {
+                    "frame": 8,
+                    "module": "?",
+                    "signature": "fun8",
+                    "source": "",
+                },
+                {
+                    "frame": 9,
+                    "module": "?",
+                    "signature": "fun9",
+                    "source": "",
+                },
+            ],
+            id="more_than_ten_frames",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": (
+                        "mozilla.components.browser.engine.gecko.GeckoTrackingProtectionExceptionStorage"
+                        + "$$ExternalSyntheticLambda0"
+                    ),
+                    "function": "accept",
+                    "in_app": True,
+                    "lineno": 85,
+                    "filename": "R8$$SyntheticClass",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "mozilla.components.browser.engine.gecko.GeckoTrackingProtectionExceptionStora...",
+                    "signature": "accept",
+                    "source": "R8$$SyntheticClass:85",
+                }
+            ],
+            id="long_module",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "test.module",
+                    "function": "test" + ("a" * 80),
+                    "in_app": True,
+                    "lineno": 42,
+                    "filename": "SomeClass.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "test.module",
+                    "signature": "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...",
+                    "source": "SomeClass.java:42",
+                }
+            ],
+            id="long_function",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "kotlinx.coroutines.BuildersKt",
+                    "function": "launch$default",
+                    "in_app": True,
+                    "lineno": 13,
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "kotlinx.coroutines.BuildersKt",
+                    "signature": "launch$default",
+                    "source": "",
+                }
+            ],
+            id="missing_filename",
+        ),
+        pytest.param(
+            [
+                {
+                    "module": "test.module",
+                    "function": "test",
+                    "in_app": True,
+                    "filename": "SomeClass.java",
+                },
+            ],
+            [
+                {
+                    "frame": 0,
+                    "module": "test.module",
+                    "signature": "test",
+                    "source": "SomeClass.java",
+                }
+            ],
+            id="missing_lineno",
+        ),
+        pytest.param(
+            [{}],
+            [{"frame": 0, "module": "?", "signature": "?", "source": ""}],
+            id="missing_everything",
+        ),
+    ],
+)
+def test_java_exception_to_frames(frames, expected):
+    assert java_exception_to_frames(frames) == expected
+
+
+class Testcrash_report_to_description:
+    URL = "http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401"
+
+    def test_comment(self):
+        processed_crash = {
+            "reason": "SIGSEGV /0x00000080",
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 1,
+                            },
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Reason: ```SIGSEGV /0x00000080```
+
+            Top 1 frame:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:1
+            ```"""
+        )
+
+    def test_comment_no_data(self):
+        processed_crash = {}
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            No stack."""
+        )
+
+    def test_comment_no_frame_data(self):
+        """If a frame is missing everything, do not throw an error."""
+        processed_crash = {
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {},
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        # NOTE(willkg): This is a silly looking stack, but the important part here is
+        # that it produces something and doesn't throw an error
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Top 1 frame:
+            ```
+            ?  ?
+            ```"""
+        )
+
+    def test_comment_reason(self):
+        """Verify Reason makes it into the comment."""
+        processed_crash = {
+            "reason": "SIGSEGV /0x00000080",
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 1,
+                            },
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Reason: ```SIGSEGV /0x00000080```
+
+            Top 1 frame:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:1
+            ```"""
+        )
+
+    def test_comment_moz_crash_reason(self):
+        """Verify moz_crash_reason makes it into comment--but not moz_crash_reason_raw."""
+        processed_crash = {
+            "moz_crash_reason": "good data",
+            "moz_crash_reason_raw": "bad data",
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 1,
+                            },
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            MOZ_CRASH Reason: ```good data```
+
+            Top 1 frame:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:1
+            ```"""
+        )
+
+    def test_comment_moz_crash_reason_upstages_reason(self):
+        """Verify moz_crash_reason shows up but not reason when they're both there."""
+        processed_crash = {
+            "reason": "EXCEPTION_BREAKPOINT",
+            "moz_crash_reason": "MOZ_CRASH(Quota manager shutdown timed out) (good)",
+            "moz_crash_reason_raw": "MOZ_CRASH(Quota manager shutdown timed out) (bad)",
+            "crashing_thread": 0,
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 1,
+                            },
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            MOZ_CRASH Reason: ```MOZ_CRASH(Quota manager shutdown timed out) (good)```
+
+            Top 1 frame:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:1
+            ```"""
+        )
+
+    def test_comment_crashing_thread_none(self):
+        """Verify no crashing thread is treated as thread 0 with note."""
+        processed_crash = {
+            "json_dump": {
+                "threads": [
+                    {
+                        "frames": [
+                            {
+                                "frame": 0,
+                                "module": "fake_module",
+                                "signature": "foo::bar(char* x, int y)",
+                                "file": "fake.cpp",
+                                "line": 1,
+                            },
+                        ],
+                    }
+                ],
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            No crashing thread identified; using thread 0.
+
+            Top 1 frame:
+            ```
+            0  fake_module  foo::bar(char* x, int y)  fake.cpp:1
+            ```"""
+        )
+
+    def test_comment_java_stack_trace(self):
+        """If there's a java stack trace, use that instead
+
+        Also verify tabs get converted to 4-spaces.
+
+        """
+        processed_crash = {
+            "java_stack_trace": dedent(
+                """\
+                java.lang.NoClassDefFoundError: kotlinx.coroutines.channels.BufferedChannel
+                \tat kotlinx.coroutines.channels.ChannelKt.Channel$default(Channel.kt:44)
+                \tat androidx.datastore.core.SimpleActor.<init>(SimpleActor.kt:18)
+                \tat androidx.datastore.core.SingleProcessDataStore.<init>(SingleProcessDataStore.kt:68)
+                \tat androidx.datastore.DataStoreSingletonDelegate.getValue(DataStoreDelegate.kt:81)"""
+            )
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Java stack trace:
+            ```
+            java.lang.NoClassDefFoundError: kotlinx.coroutines.channels.BufferedChannel
+                at kotlinx.coroutines.channels.ChannelKt.Channel$default(Channel.kt:44)
+                at androidx.datastore.core.SimpleActor.<init>(SimpleActor.kt:18)
+                at androidx.datastore.core.SingleProcessDataStore.<init>(SingleProcessDataStore.kt:68)
+                at androidx.datastore.DataStoreSingletonDelegate.getValue(DataStoreDelegate.kt:81)
+            ```"""
+        )
+
+    def test_comment_java_exception(self):
+        """If there's a java_exception, use that."""
+        processed_crash = {
+            "java_exception": {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "kotlinx.coroutines.channels.ChannelKt",
+                                        "function": "Channel$default",
+                                        "in_app": True,
+                                        "lineno": 44,
+                                        "filename": "Channel.kt",
+                                    },
+                                    {
+                                        "module": "androidx.datastore.core.SimpleActor",
+                                        "function": "<init>",
+                                        "in_app": True,
+                                        "lineno": 18,
+                                        "filename": "SimpleActor.kt",
+                                    },
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Top 2 frames:
+            ```
+            0  kotlinx.coroutines.channels.ChannelKt  Channel$default  Channel.kt:44
+            1  androidx.datastore.core.SimpleActor  <init>  SimpleActor.kt:18
+            ```"""
+        )
+
+    def test_comment_java_exception_upstages_java_stack_trace(self):
+        """Use java_exception instead of java_stack_trace."""
+        processed_crash = {
+            "java_stack_trace": dedent(
+                """\
+                java.lang.NoClassDefFoundError: kotlinx.coroutines.channels.BufferedChannel
+                \tat kotlinx.coroutines.channels.ChannelKt.Channel$default(Channel.kt:44)
+                \tat androidx.datastore.core.SimpleActor.<init>(SimpleActor.kt:18)
+                \tat androidx.datastore.core.SingleProcessDataStore.<init>(SingleProcessDataStore.kt:68)
+                \tat androidx.datastore.DataStoreSingletonDelegate.getValue(DataStoreDelegate.kt:81)"""
+            ),
+            "java_exception": {
+                "exception": {
+                    "values": [
+                        {
+                            "stacktrace": {
+                                "frames": [
+                                    {
+                                        "module": "kotlinx.coroutines.channels.ChannelKt",
+                                        "function": "Channel$default",
+                                        "in_app": True,
+                                        "lineno": 44,
+                                        "filename": "Channel.kt",
+                                    },
+                                    {
+                                        "module": "androidx.datastore.core.SimpleActor",
+                                        "function": "<init>",
+                                        "in_app": True,
+                                        "lineno": 18,
+                                        "filename": "SimpleActor.kt",
+                                    },
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+        }
+        comment = crash_report_to_description(self.URL, processed_crash)
+        assert comment == dedent(
+            """\
+            Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
+
+            Top 2 frames:
+            ```
+            0  kotlinx.coroutines.channels.ChannelKt  Channel$default  Channel.kt:44
+            1  androidx.datastore.core.SimpleActor  <init>  SimpleActor.kt:18
+            ```"""
+        )

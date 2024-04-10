@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import random
+import time
 from urllib.parse import urlsplit, parse_qs
 from unittest import mock
 
@@ -20,6 +21,9 @@ from socorro.external.boto.crashstorage import dict_to_str, build_keys as s3_bui
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
+
+# Amount of time to sleep between publish and pull so messages are available
+PUBSUB_DELAY_PULL = 0.5
 
 
 class TestGraphicsDevices(DjangoTestCase):
@@ -490,6 +494,9 @@ class TestReprocessing:
         crash_id = create_new_ooid()
         api.post(crash_ids=crash_id)
 
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
+
         crash_ids = queue_helper.get_published_crashids("reprocessing")
         assert set(crash_ids) == {crash_id}
 
@@ -503,6 +510,9 @@ class TestPriorityJob:
         api = models.PriorityJob()
 
         api.post(crash_ids="some-crash-id")
+
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
 
         crash_ids = queue_helper.get_published_crashids("priority")
         assert set(crash_ids) == {"some-crash-id"}
