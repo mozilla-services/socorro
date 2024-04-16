@@ -88,20 +88,20 @@ def build_crash_data():
     return crash_id, raw_crash, processed_crash
 
 
-def upload_crash_data(s3_helper, raw_crash, processed_crash):
+def upload_crash_data(storage_helper, raw_crash, processed_crash):
     """Validate crash data and upload it to crash bucket"""
     crash_id = processed_crash["uuid"]
-    bucket = s3_helper.get_crashstorage_bucket()
+    bucket = storage_helper.get_crashstorage_bucket()
 
     validate_instance(raw_crash, RAW_CRASH_SCHEMA)
     raw_key = build_keys("raw_crash", crash_id)[0]
-    s3_helper.upload_fileobj(
+    storage_helper.upload(
         bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
     )
 
     validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
     processed_key = build_keys("processed_crash", crash_id)[0]
-    s3_helper.upload_fileobj(
+    storage_helper.upload(
         bucket_name=bucket,
         key=processed_key,
         data=dict_to_str(processed_crash).encode("utf-8"),
@@ -405,7 +405,7 @@ class Test_quick_search:
 
 
 class Test_report_index:
-    def test_report_index(self, client, db, s3_helper, user_helper):
+    def test_report_index(self, client, db, storage_helper, user_helper):
         json_dump = {
             "system_info": {
                 "os": "Mac OS X",
@@ -419,7 +419,7 @@ class Test_report_index:
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         models.BugAssociation.objects.create(bug_id=222222, signature="FakeSignature1")
@@ -494,13 +494,13 @@ class Test_report_index:
         assert processed_crash["user_comments"] not in content
         assert raw_crash["URL"] not in content
 
-    def test_raw_crash_unicode_key(self, client, db, s3_helper, user_helper):
+    def test_raw_crash_unicode_key(self, client, db, storage_helper, user_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
         # NOTE(willkg): The collector doesn't remove non-ascii keys currently. At some
         # point, it probably should.
         raw_crash["Pr\u00e9nom"] = "Peter"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         # Log in with protected data access to view all data
@@ -512,7 +512,7 @@ class Test_report_index:
         assert response.status_code == 200
         assert "Pr\u00e9nom" in smart_str(response.content)
 
-    def test_additional_raw_dump_links(self, client, db, s3_helper, user_helper):
+    def test_additional_raw_dump_links(self, client, db, storage_helper, user_helper):
         json_dump = {
             "system_info": {
                 "os": "Mac OS X",
@@ -533,7 +533,7 @@ class Test_report_index:
         }
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         # Expect these urls
@@ -588,7 +588,7 @@ class Test_report_index:
         )
         assert bar_dump_url in smart_str(response.content)
 
-    def test_symbol_url_in_modules(self, client, db, s3_helper, user_helper):
+    def test_symbol_url_in_modules(self, client, db, storage_helper, user_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -621,7 +621,7 @@ class Test_report_index:
         raw_crash["additional_minidumps"] = "foo, bar,"
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -633,7 +633,7 @@ class Test_report_index:
             response.content
         )
 
-    def test_cert_subject_in_modules(self, client, db, s3_helper):
+    def test_cert_subject_in_modules(self, client, db, storage_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -667,7 +667,7 @@ class Test_report_index:
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -683,7 +683,7 @@ class Test_report_index:
             smart_str(response.content),
         )
 
-    def test_unloaded_modules(self, client, db, s3_helper):
+    def test_unloaded_modules(self, client, db, storage_helper):
         json_dump = {
             "status": "OK",
             "threads": [],
@@ -708,7 +708,7 @@ class Test_report_index:
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -721,7 +721,7 @@ class Test_report_index:
         # Assert that the second unloaded module cert subject shows up
         assert "<td>Microsoft Windows</td>" in smart_str(response.content)
 
-    def test_shutdownhang_signature(self, client, db, s3_helper):
+    def test_shutdownhang_signature(self, client, db, storage_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 2},
             "status": "OK",
@@ -739,7 +739,7 @@ class Test_report_index:
         processed_crash["json_dump"] = json_dump
         processed_crash["signature"] = "shutdownhang | foo::bar()"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -749,7 +749,7 @@ class Test_report_index:
         assert "Crashing Thread (2)" not in smart_str(response.content)
         assert "Crashing Thread (0)" in smart_str(response.content)
 
-    def test_no_crashing_thread(self, client, db, s3_helper):
+    def test_no_crashing_thread(self, client, db, storage_helper):
         # If the json_dump has no crashing thread available, do not display a
         # specific crashing thread, but instead display all threads.
         json_dump = {
@@ -767,7 +767,7 @@ class Test_report_index:
         processed_crash["json_dump"] = json_dump
         processed_crash["signature"] = "foo::bar()"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -779,7 +779,7 @@ class Test_report_index:
         assert "Thread 1" in smart_str(response.content)
         assert "Thread 2" in smart_str(response.content)
 
-    def test_crashing_thread_table(self, client, db, s3_helper):
+    def test_crashing_thread_table(self, client, db, storage_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 0},
             "status": "OK",
@@ -843,7 +843,7 @@ class Test_report_index:
         processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
         processed_crash["signature"] = "shutdownhang | foo::bar()"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -854,7 +854,7 @@ class Test_report_index:
         assert "context" in smart_str(response.content)
         assert "frame_pointer" in smart_str(response.content)
 
-    def test_inlines(self, client, db, s3_helper):
+    def test_inlines(self, client, db, storage_helper):
         json_dump = {
             "crash_info": {"crashing_thread": 0},
             "status": "OK",
@@ -909,7 +909,7 @@ class Test_report_index:
         processed_crash["signature"] = "shutdownhang | foo::bar()"
 
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -922,7 +922,7 @@ class Test_report_index:
         assert "InlineFunction2" in smart_str(response.content)
         assert "inlinefile2.cpp:374" in smart_str(response.content)
 
-    def test_java_exception_table_not_logged_in(self, client, db, s3_helper):
+    def test_java_exception_table_not_logged_in(self, client, db, storage_helper):
         java_exception = {
             "exception": {
                 "values": [
@@ -949,7 +949,7 @@ class Test_report_index:
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["java_exception"] = java_exception
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -962,7 +962,9 @@ class Test_report_index:
         # Make sure "PII" is not in the crash report
         assert "[PII]" not in smart_str(response.content)
 
-    def test_java_exception_table_logged_in(self, client, db, s3_helper, user_helper):
+    def test_java_exception_table_logged_in(
+        self, client, db, storage_helper, user_helper
+    ):
         java_exception = {
             "exception": {
                 "values": [
@@ -989,7 +991,7 @@ class Test_report_index:
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["java_exception"] = java_exception
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         user = user_helper.create_protected_user()
@@ -1005,7 +1007,7 @@ class Test_report_index:
         # Make sure "PII" is in the crash report
         assert "[PII]" in smart_str(response.content)
 
-    def test_last_error_value(self, client, db, s3_helper):
+    def test_last_error_value(self, client, db, storage_helper):
         json_dump = {
             "crash_info": {
                 "crashing_thread": 0,
@@ -1022,7 +1024,7 @@ class Test_report_index:
         processed_crash["json_dump"] = json_dump
         processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -1032,7 +1034,7 @@ class Test_report_index:
         # Assert it's not in the content
         assert "Last Error Value" in smart_str(response.content)
 
-    def test_unpaired_surrogate(self, client, db, s3_helper):
+    def test_unpaired_surrogate(self, client, db, storage_helper):
         """An unpaired surrogate like \udf03 can't be encoded in UTF-8, so it is escaped."""
         json_dump = {
             "crash_info": {"crashing_thread": 0},
@@ -1056,7 +1058,7 @@ class Test_report_index:
         processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
         processed_crash["signature"] = "shutdownhang | foo::bar()"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -1066,7 +1068,7 @@ class Test_report_index:
         # The escaped surrogate appears in the page
         assert "surrogate@example.com.xpi\\udf03" in smart_str(response.content)
 
-    def test_telemetry_environment(self, client, db, s3_helper):
+    def test_telemetry_environment(self, client, db, storage_helper):
         telemetry_environment = {
             "build": {
                 "applicationId": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
@@ -1083,7 +1085,7 @@ class Test_report_index:
         raw_crash["TelemetryEnvironment"] = json.dumps(telemetry_environment)
         processed_crash["telemetry_environment"] = telemetry_environment
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=(crash_id,))
@@ -1095,7 +1097,7 @@ class Test_report_index:
         # does it so let's just check the data attribute is there.
         assert 'id="telemetryenvironment-json"' in smart_str(response.content)
 
-    def test_odd_product_and_version(self, client, db, s3_helper):
+    def test_odd_product_and_version(self, client, db, storage_helper):
         # If the processed JSON references an unfamiliar product and version it should
         # not use that to make links in the nav to reports for that unfamiliar product
         # and version.
@@ -1106,7 +1108,7 @@ class Test_report_index:
         processed_crash["version"] = "99.9"
 
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
@@ -1123,11 +1125,11 @@ class Test_report_index:
         bad_url = reverse("crashstats:product_home", args=("WaterWolf",))
         assert bad_url not in smart_str(response.content)
 
-    def test_no_dump(self, client, db, s3_helper):
+    def test_no_dump(self, client, db, storage_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
         del processed_crash["json_dump"]
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
@@ -1135,7 +1137,7 @@ class Test_report_index:
         assert response.status_code == 200
         assert "No dump available" in smart_str(response.content)
 
-    def test_invalid_crash_id(self, client, db, s3_helper):
+    def test_invalid_crash_id(self, client, db, storage_helper):
         # Last 6 digits indicate 30th Feb 2012 which doesn't exist so this is an invalid
         # crash_id
         url = reverse(
@@ -1146,11 +1148,11 @@ class Test_report_index:
         assert "Invalid crash ID" in smart_str(response.content)
         assert response["Content-Type"] == "text/html; charset=utf-8"
 
-    def test_valid_install_time(self, client, db, s3_helper):
+    def test_valid_install_time(self, client, db, storage_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
         raw_crash["InstallTime"] = "1461170304"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
@@ -1159,13 +1161,13 @@ class Test_report_index:
         # This is what 1461170304 is in human friendly format.
         assert "2016-04-20 16:38:24" in smart_str(response.content)
 
-    def test_invalid_install_time(self, client, db, s3_helper):
+    def test_invalid_install_time(self, client, db, storage_helper):
         # NOTE(willkg): this is no longer an issue when we switch the template to
         # render the install time from the processed crash
         crash_id, raw_crash, processed_crash = build_crash_data()
         raw_crash["InstallTime"] = "bad number"
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
@@ -1178,26 +1180,26 @@ class Test_report_index:
             if pyquery.PyQuery(row).find("th").text() == "Install Time":
                 assert pyquery.PyQuery(row).find("td").text() == ""
 
-    def test_empty_json_dump(self, client, db, s3_helper):
+    def test_empty_json_dump(self, client, db, storage_helper):
         json_dump = {"stackwalker_version": "minidump_stackwalk 0.10.3 ..."}
 
         crash_id, raw_crash, processed_crash = build_crash_data()
         processed_crash["json_dump"] = json_dump
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])
         response = client.get(url)
         assert response.status_code == 200
 
-    def test_raw_crash_not_found(self, client, db, s3_helper):
+    def test_raw_crash_not_found(self, client, db, storage_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
 
-        bucket = s3_helper.get_crashstorage_bucket()
+        bucket = storage_helper.get_crashstorage_bucket()
         validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
         processed_key = build_keys("processed_crash", crash_id)[0]
-        s3_helper.upload_fileobj(
+        storage_helper.upload(
             bucket_name=bucket,
             key=processed_key,
             data=dict_to_str(processed_crash).encode("utf-8"),
@@ -1209,13 +1211,13 @@ class Test_report_index:
         assert response.status_code == 404
         assert "Crash Report Not Found" in smart_str(response.content)
 
-    def test_processed_crash_not_found(self, client, db, s3_helper, queue_helper):
+    def test_processed_crash_not_found(self, client, db, storage_helper, queue_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
 
-        bucket = s3_helper.get_crashstorage_bucket()
+        bucket = storage_helper.get_crashstorage_bucket()
         validate_instance(raw_crash, RAW_CRASH_SCHEMA)
         raw_key = build_keys("raw_crash", crash_id)[0]
-        s3_helper.upload_fileobj(
+        storage_helper.upload(
             bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
         )
 
@@ -1227,10 +1229,10 @@ class Test_report_index:
         assert "Please wait..." in content
         assert "Processing this crash report only takes a few seconds" in content
 
-    def test_redirect_by_prefix(self, client, db, s3_helper):
+    def test_redirect_by_prefix(self, client, db, storage_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse(
@@ -1240,7 +1242,7 @@ class Test_report_index:
         expected = reverse("crashstats:report_index", kwargs={"crash_id": crash_id})
         assert response.url == expected
 
-    def test_thread_name(self, client, db, s3_helper):
+    def test_thread_name(self, client, db, storage_helper):
         # Some threads now have a name. If there is one, verify that name is displayed
         # next to that thread's number.
         json_dump = {
@@ -1264,7 +1266,7 @@ class Test_report_index:
         processed_crash["json_dump"] = json_dump
         processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
         upload_crash_data(
-            s3_helper, raw_crash=raw_crash, processed_crash=processed_crash
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
         )
 
         url = reverse("crashstats:report_index", args=[crash_id])

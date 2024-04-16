@@ -9,7 +9,7 @@ This command checks known missing crashes to see if they've since been processed
 from django.core.management.base import BaseCommand
 
 from crashstats.crashstats.management.commands.verifyprocessed import (
-    is_in_s3,
+    is_in_storage,
     check_elasticsearch,
 )
 from crashstats.supersearch.models import SuperSearchUnredacted
@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def check_past_missing(self):
         """Check the table for missing crashes and check to see if they exist."""
-        s3_crash_dest = build_instance_from_settings(socorro_settings.S3_STORAGE)
+        crash_dest = build_instance_from_settings(socorro_settings.STORAGE)
 
         supersearch = SuperSearchUnredacted()
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         no_longer_missing = []
 
         for crash_id in crash_ids:
-            if is_in_s3(s3_crash_dest, crash_id):
+            if is_in_storage(crash_dest, crash_id):
                 missing = check_elasticsearch(supersearch, crash_id)
                 if not missing:
                     no_longer_missing.append(crash_id)

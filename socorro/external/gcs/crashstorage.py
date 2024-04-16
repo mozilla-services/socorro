@@ -2,18 +2,27 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import datetime
 import json
-import logging
+import os
 
 import markus
+from google.auth.credentials import AnonymousCredentials
+from google.api_core.exceptions import NotFound
+from google.cloud import storage
+from more_itertools import chunked
 
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
 )
-from socorro.external.boto.connection_context import S3Connection
+from socorro.external.boto.crashstorage import (
+    build_keys,
+    dict_to_str,
+    list_to_str,
+    str_to_list,
+)
+from socorro.lib import external_common, MissingArgumentError, BadArgumentError, libooid
 from socorro.lib.libjsonschema import JsonSchemaReducer
 from socorro.lib.libsocorrodataschema import (
     get_schema,
@@ -21,100 +30,20 @@ from socorro.lib.libsocorrodataschema import (
     SocorroDataReducer,
     transform_schema,
 )
-from socorro.lib.libooid import date_from_ooid
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
-LOGGER = logging.getLogger(__name__)
-
-
-def wait_time_generator():
-    yield from [1, 1, 1, 1, 1]
-
-
-class CrashIDMissingDatestamp(Exception):
-    """Indicates the crash id is invalid and missing a datestamp."""
-
-
-def get_datestamp(crashid):
-    """Parses out datestamp from a crashid.
-
-    :returns: datetime
-
-    :raises CrashIDMissingDatestamp: if the crash id has no datestamp at the end
-
-    """
-    datestamp = date_from_ooid(crashid)
-    if datestamp is None:
-        # We should never hit this situation unless the crashid is not valid
-        raise CrashIDMissingDatestamp(f"{crashid} is missing datestamp")
-    return datestamp
-
-
-def build_keys(name_of_thing, crashid):
-    """Builds a list of s3 pseudo-filenames
-
-    When using keys for saving a crash, always use the first one given.
-
-    When using keys for loading a crash, try each key in order. This lets us change our
-    key scheme and continue to access things saved using the old key.
-
-    :arg name_of_thing: the kind of thing we're building a filename for; e.g.
-        "raw_crash"
-    :arg crashid: the crash id for the thing being stored
-
-    :returns: list of keys to try in order
-
-    :raises CrashIDMissingDatestamp: if the crash id is missing a datestamp at the
-        end
-
-    """
-    if name_of_thing == "raw_crash":
-        date = get_datestamp(crashid).strftime("%Y%m%d")
-        return [f"v1/{name_of_thing}/{date}/{crashid}"]
-
-    elif name_of_thing == "crash_report":
-        # Crash data from the TelemetryBotoS3CrashStorage
-        date = get_datestamp(crashid).strftime("%Y%m%d")
-        return [f"v1/{name_of_thing}/{date}/{crashid}"]
-
-    return [f"v1/{name_of_thing}/{crashid}"]
-
-
-class JSONISOEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.date):
-            return obj.isoformat()
-        raise NotImplementedError(f"Don't know about {obj!r}")
-
-
-def dict_to_str(a_mapping):
-    return json.dumps(a_mapping, cls=JSONISOEncoder)
-
-
-def list_to_str(a_list):
-    return json.dumps(list(a_list))
-
-
-def str_to_list(a_string):
-    return json.loads(a_string)
-
-
-class BotoS3CrashStorage(CrashStorageBase):
-    """Saves and loads crash data to S3"""
+class GcsCrashStorage(CrashStorageBase):
+    """Saves and loads crash data to GCS"""
 
     def __init__(
         self,
         bucket="crashstats",
         dump_file_suffix=".dump",
-        metrics_prefix="processor.s3",
-        region=None,
-        access_key=None,
-        secret_access_key=None,
-        endpoint_url=None,
+        metrics_prefix="processor.gcs",
     ):
         """
-        :arg bucket: the S3 bucket to save to
+        :arg bucket: the GCS bucket to save to
         :arg dump_file_suffix: the suffix used to identify a dump file (for use in temp
             files)
         :arg region: the AWS region to use
@@ -125,42 +54,36 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         """
         super().__init__()
-        self.connection = self.build_connection(
-            region=region,
-            access_key=access_key,
-            secret_access_key=secret_access_key,
-            endpoint_url=endpoint_url,
-        )
+
+        if emulator := os.environ.get("STORAGE_EMULATOR_HOST"):
+            self.logger.debug(
+                "STORAGE_EMULATOR_HOST detected, connecting to emulator: %s",
+                emulator,
+            )
+            self.client = storage.Client(
+                credentials=AnonymousCredentials(),
+                project=os.environ.get("STORAGE_PROJECT_ID"),
+            )
+        else:
+            self.client = storage.Client()
+
         self.bucket = bucket
         self.dump_file_suffix = dump_file_suffix
 
         self.metrics = markus.get_metrics(metrics_prefix)
 
-    @classmethod
-    def build_connection(cls, region, access_key, secret_access_key, endpoint_url):
-        """
-        :arg region: the S3 region to use
-        :arg access_key: the S3 access_key to use
-        :arg secret_access_key: the S3 secret_access_key to use
-        :arg endpoint_url: the endpoint url to use when in a local development
-            environment
-
-        """
-        return S3Connection(
-            region=region,
-            access_key=access_key,
-            secret_access_key=secret_access_key,
-            endpoint_url=endpoint_url,
-        )
-
     def load_file(self, path):
-        return self.connection.load_file(self.bucket, path)
+        bucket = self.client.get_bucket(self.bucket)
+        blob = bucket.blob(path)
+        return blob.download_as_bytes()
 
     def save_file(self, path, data):
-        return self.connection.save_file(self.bucket, path, data)
+        bucket = self.client.get_bucket(self.bucket)
+        blob = bucket.blob(path)
+        blob.upload_from_string(data)
 
     def save_raw_crash(self, raw_crash, dumps, crash_id):
-        """Save raw crash data to S3 bucket.
+        """Save raw crash data to GCS bucket.
 
         A raw crash consists of the raw crash annotations and all the dumps that came in
         the crash report. We need to save the raw crash file, a dump names file listing
@@ -195,18 +118,22 @@ class BotoS3CrashStorage(CrashStorageBase):
         path = build_keys("processed_crash", crash_id)[0]
         self.save_file(path, data)
 
-    def list_objects_paginator(self, prefix, page_size=None):
+    def list_objects_paginator(self, prefix, page_size=1000):
         """Yield pages of object keys in the bucket that have a specified key prefix
 
         :arg prefix: the prefix to look at
         :arg page_size: the number of results to return per page
 
         :returns: generator of pages (lists) of object keys
+
         """
-        for page in self.connection.list_objects_paginator(
-            bucket=self.bucket, prefix=prefix, page_size=page_size
+        for page in chunked(
+            self.client.list_blobs(
+                bucket_or_name=self.bucket, prefix=prefix, page_size=page_size
+            ),
+            page_size,
         ):
-            yield [item["Key"] for item in page.get("Contents", [])]
+            yield [blob.name for blob in page]
 
     def exists_object(self, key):
         """Returns whether the object exists in the bucket
@@ -217,9 +144,10 @@ class BotoS3CrashStorage(CrashStorageBase):
 
         """
         try:
-            self.connection.head_object(bucket=self.bucket, key=key)
+            bucket = self.client.get_bucket(self.bucket)
+            bucket.get_blob(key)
             return True
-        except self.connection.KeyNotFound:
+        except NotFound:
             return False
 
     def get_raw_crash(self, crash_id):
@@ -235,7 +163,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 raw_crash_as_string = self.load_file(path)
                 data = json.loads(raw_crash_as_string)
                 return data
-            except self.connection.KeyNotFound:
+            except NotFound:
                 continue
 
         raise CrashIDNotFound(f"{crash_id} not found")
@@ -254,7 +182,7 @@ class BotoS3CrashStorage(CrashStorageBase):
             path = build_keys(name, crash_id)[0]
             a_dump = self.load_file(path)
             return a_dump
-        except self.connection.KeyNotFound as exc:
+        except NotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps(self, crash_id):
@@ -277,7 +205,7 @@ class BotoS3CrashStorage(CrashStorageBase):
                 path = build_keys(dump_name, crash_id)[0]
                 dumps[dump_name] = self.load_file(path)
             return dumps
-        except self.connection.KeyNotFound as exc:
+        except NotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
 
     def get_dumps_as_files(self, crash_id, tmpdir):
@@ -307,13 +235,55 @@ class BotoS3CrashStorage(CrashStorageBase):
         path = build_keys("processed_crash", crash_id)[0]
         try:
             processed_crash_as_string = self.load_file(path)
-            return json.loads(processed_crash_as_string)
-        except self.connection.KeyNotFound as exc:
+        except NotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
+        return json.loads(processed_crash_as_string)
+
+    def get(self, **kwargs):
+        """Return JSON data of a crash report, given its uuid."""
+        filters = [
+            ("uuid", None, str),
+            ("datatype", None, str),
+            ("name", None, str),  # only applicable if datatype == 'raw'
+        ]
+        params = external_common.parse_arguments(filters, kwargs, modern=True)
+
+        if not params["uuid"]:
+            raise MissingArgumentError("uuid")
+
+        if not libooid.is_crash_id_valid(params["uuid"]):
+            raise BadArgumentError("uuid")
+
+        if not params["datatype"]:
+            raise MissingArgumentError("datatype")
+
+        datatype_method_mapping = {
+            # Minidumps
+            "raw": "get_raw_dump",
+            # Raw Crash
+            "meta": "get_raw_crash",
+            # Redacted processed crash
+            "processed": "get_processed_crash",
+        }
+        if params["datatype"] not in datatype_method_mapping:
+            raise BadArgumentError(params["datatype"])
+        get = self.__getattribute__(datatype_method_mapping[params["datatype"]])
+        try:
+            if params["datatype"] == "raw":
+                return get(params["uuid"], name=params["name"])
+            else:
+                return get(params["uuid"])
+        except CrashIDNotFound as cidnf:
+            self.logger.warning("%s not found: %s", params["datatype"], cidnf)
+            # The CrashIDNotFound exception that happens inside the
+            # crashstorage is too revealing as exception message
+            # contains information about buckets and prefix keys.
+            # Re-wrap it here so the message is just the crash ID.
+            raise CrashIDNotFound(params["uuid"]) from cidnf
 
 
-class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
-    """Sends a subset of the processed crash to an S3 bucket
+class TelemetryGcsCrashStorage(GcsCrashStorage):
+    """Sends a subset of the processed crash to a GCS bucket
 
     The subset of the processed crash is based on the JSON Schema which is
     derived from "socorro/external/es/super_search_fields.py".
@@ -380,7 +350,7 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         self.save_file(path, data)
 
     def get_processed_crash(self, crash_id):
-        """Get a crash report from the S3 bucket.
+        """Get a crash report from the GCS bucket.
 
         :returns: dict
 
@@ -390,6 +360,24 @@ class TelemetryBotoS3CrashStorage(BotoS3CrashStorage):
         path = build_keys("crash_report", crash_id)[0]
         try:
             crash_report_as_str = self.load_file(path)
-            return json.loads(crash_report_as_str)
-        except self.connection.KeyNotFound as exc:
+        except NotFound as exc:
             raise CrashIDNotFound(f"{crash_id} not found: {exc}") from exc
+        return json.loads(crash_report_as_str)
+
+    def get(self, **kwargs):
+        """Return JSON data of a crash report, given its uuid."""
+        filters = [("uuid", None, str)]
+        params = external_common.parse_arguments(filters, kwargs, modern=True)
+
+        if not params["uuid"]:
+            raise MissingArgumentError("uuid")
+
+        try:
+            return self.get_processed_crash(params["uuid"])
+        except CrashIDNotFound as cidnf:
+            self.logger.warning("telemetry crash not found: %s", cidnf)
+            # The CrashIDNotFound exception that happens inside the
+            # crashstorage is too revealing as exception message contains
+            # information about buckets and prefix keys. Re-wrap it here so the
+            # message is just the crash ID.
+            raise CrashIDNotFound(params["uuid"]) from cidnf

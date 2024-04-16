@@ -542,6 +542,8 @@ class TelemetryCrash(SocorroMiddleware):
     delete = None
 
     def get_implementation(self):
+        if socorro_settings.CLOUD_PROVIDER == "GCP":
+            return build_instance_from_settings(socorro_settings.TELEMETRY_STORAGE)
         s3_settings = socorro_settings.TELEMETRY_STORAGE["options"]
         # FIXME(willkg): change this to BotoS3CrashStorage
         return TelemetryCrashData(**s3_settings)
@@ -627,6 +629,8 @@ class ProcessedCrash(SocorroMiddleware):
     API_ALLOWLIST = None
 
     def get_implementation(self):
+        if socorro_settings.CLOUD_PROVIDER == "GCP":
+            return build_instance_from_settings(socorro_settings.STORAGE)
         # FIXME(willkg): change this to BotoS3CrashStorage
         s3_settings = socorro_settings.S3_STORAGE["options"]
         return SimplifiedCrashData(**s3_settings)
@@ -736,6 +740,8 @@ class RawCrash(SocorroMiddleware):
     API_BINARY_PERMISSIONS = ("crashstats.view_rawdump",)
 
     def get_implementation(self):
+        if socorro_settings.CLOUD_PROVIDER == "GCP":
+            return build_instance_from_settings(socorro_settings.STORAGE)
         s3_settings = socorro_settings.S3_STORAGE["options"]
         # FIXME(willkg): change this to BotoS3CrashStorage
         return SimplifiedCrashData(**s3_settings)

@@ -18,6 +18,8 @@ import boto3
 from botocore.client import ClientError, Config
 from elasticsearch_dsl import Search
 from google.api_core.exceptions import AlreadyExists, NotFound
+from google.auth.credentials import AnonymousCredentials
+from google.cloud import storage
 from google.cloud.pubsub_v1 import PublisherClient, SubscriberClient
 from google.cloud.pubsub_v1.types import BatchSettings, PublisherOptions
 from markus.testing import MetricsMock
@@ -157,11 +159,17 @@ class S3Helper:
         self.create_bucket(bucket_name)
         self.conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
 
+    def upload(self, bucket_name, key, data):
+        self.upload_fileobj(bucket_name, key, data)
+
     def download_fileobj(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
         self.create_bucket(bucket_name)
         resp = self.conn.get_object(Bucket=bucket_name, Key=key)
         return resp["Body"].read()
+
+    def download(self, bucket_name, key):
+        return self.download_fileobj(bucket_name, key)
 
     def list(self, bucket_name):
         """Return list of keys for objects in bucket."""
@@ -179,13 +187,94 @@ def s3_helper():
     * ``get_client()``
     * ``get_crashstorage_bucket()``
     * ``create_bucket(bucket_name)``
-    * ``upload_fileobj(bucket_name, key, value)``
-    * ``download_fileobj(bucket_name, key)``
+    * ``upload(bucket_name, key, data)``
+    * ``download(bucket_name, key)``
     * ``list(bucket_name)``
 
     """
     with S3Helper() as s3_helper:
         yield s3_helper
+
+
+class GcsHelper:
+    """GCS helper class.
+
+    When used in a context, this will clean up any buckets created.
+
+    """
+
+    def __init__(self):
+        self._buckets_seen = None
+        if os.environ.get("STORAGE_EMULATOR_HOST"):
+            self.client = storage.Client(
+                credentials=AnonymousCredentials(),
+                project="test",
+            )
+        else:
+            self.client = storage.Client()
+
+    def __enter__(self):
+        self._buckets_seen = set()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        for bucket_name in self._buckets_seen:
+            try:
+                bucket = self.client.get_bucket(bucket_or_name=bucket_name)
+                bucket.delete(force=True)
+            except NotFound:
+                pass
+        self._buckets_seen = None
+
+    def get_crashstorage_bucket(self):
+        return os.environ["CRASHSTORAGE_GCS_BUCKET"]
+
+    def get_telemetry_bucket(self):
+        return os.environ["TELEMETRY_GCS_BUCKET"]
+
+    def create_bucket(self, bucket_name):
+        """Create specified bucket if it doesn't exist."""
+        try:
+            bucket = self.client.get_bucket(bucket_or_name=bucket_name)
+        except NotFound:
+            bucket = self.client.create_bucket(bucket_or_name=bucket_name)
+        if self._buckets_seen is not None:
+            self._buckets_seen.add(bucket_name)
+        return bucket
+
+    def upload(self, bucket_name, key, data):
+        """Puts an object into the specified bucket."""
+        bucket = self.create_bucket(bucket_name)
+        bucket.blob(blob_name=key).upload_from_string(data)
+
+    def download(self, bucket_name, key):
+        """Fetches an object from the specified bucket"""
+        bucket = self.create_bucket(bucket_name)
+        return bucket.blob(blob_name=key).download_as_bytes()
+
+    def list(self, bucket_name):
+        """Return list of keys for objects in bucket."""
+        self.create_bucket(bucket_name)
+        blobs = list(self.client.list_blobs(bucket_or_name=bucket_name))
+        return [blob.name for blob in blobs]
+
+
+@pytest.fixture
+def gcs_helper():
+    """Returns an GcsHelper for automating repetitive tasks in GCS setup.
+
+    Provides:
+
+    * ``get_crashstorage_bucket()``
+    * ``get_telemetry_bucket()``
+    * ``create_bucket(bucket_name)``
+    * ``upload(bucket_name, key, data)``
+    * ``download(bucket_name, key)``
+    * ``list(bucket_name)``
+
+    """
+    with GcsHelper() as gcs_helper:
+        yield gcs_helper
 
 
 class ElasticsearchHelper:
@@ -545,6 +634,26 @@ def queue_helper(cloud_provider):
         helper = PubSubHelper()
     else:
         helper = SQSHelper()
+
+    with helper as _helper:
+        yield _helper
+
+
+@pytest.fixture
+def storage_helper(cloud_provider):
+    """Generate and return a queue helper using env config."""
+    actual_backend = "s3"
+    if os.environ.get("CLOUD_PROVIDER", "").strip().upper() == "GCP":
+        actual_backend = "gcs"
+
+    expect_backend = "gcs" if cloud_provider == "gcp" else "s3"
+    if actual_backend != expect_backend:
+        pytest.fail(f"test requires {expect_backend} but found {actual_backend}")
+
+    if actual_backend == "gcs":
+        helper = GcsHelper()
+    else:
+        helper = S3Helper()
 
     with helper as _helper:
         yield _helper

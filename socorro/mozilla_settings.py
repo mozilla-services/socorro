@@ -210,27 +210,7 @@ QUEUE_PUBSUB = {
     },
 }
 
-
-def cloud_provider_parser(val):
-    """Return 'AWS' or 'GCP'."""
-    normalized = val.strip().upper()
-    if normalized in ("AWS", "GCP"):
-        return normalized
-    raise ValueError(f"cloud provider not supported, must be AWS or GCP: {val}")
-
-
-# Cloud provider specific configuration
-CLOUD_PROVIDER = _config(
-    "CLOUD_PROVIDER",
-    default="AWS",
-    parser=cloud_provider_parser,
-    doc="The cloud provider to use for queueing and blob storage. Must be AWS or GCP.",
-)
-if CLOUD_PROVIDER == "AWS":
-    QUEUE = QUEUE_SQS
-elif CLOUD_PROVIDER == "GCP":
-    QUEUE = QUEUE_PUBSUB
-
+# Crash report storage configuration if CLOUD_PROVIDER == AWS
 S3_STORAGE = {
     "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
     "options": {
@@ -258,6 +238,18 @@ S3_STORAGE = {
         "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
+# Crash report storage configuration if CLOUD_PROVIDER == GCP
+GCS_STORAGE = {
+    "class": "socorro.external.gcs.crashstorage.GcsCrashStorage",
+    "options": {
+        "metrics_prefix": "processor.gcs",
+        "bucket": _config(
+            "CRASHSTORAGE_GCS_BUCKET",
+            default="",
+            doc="GCS bucket name for crash report data.",
+        ),
+    },
+}
 
 ES_STORAGE = {
     "class": "socorro.external.es.crashstorage.ESCrashStorage",
@@ -277,7 +269,8 @@ ES_STORAGE = {
     },
 }
 
-TELEMETRY_STORAGE = {
+# Telemetry crash report storage configuration if CLOUD_PROVIDER == AWS
+TELEMETRY_S3_STORAGE = {
     "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
     "options": {
         "metrics_prefix": "processor.telemetry",
@@ -300,15 +293,52 @@ TELEMETRY_STORAGE = {
         "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
     },
 }
+# Telemetry crash report storage configuration if CLOUD_PROVIDER == GCP
+TELEMETRY_GCS_STORAGE = {
+    "class": "socorro.external.gcs.crashstorage.TelemetryGcsCrashStorage",
+    "options": {
+        "metrics_prefix": "processor.telemetry",
+        "bucket": _config(
+            "TELEMETRY_GCS_BUCKET",
+            default="",
+            doc="GCS bucket name for telemetry data export.",
+        ),
+    },
+}
 
-# Crash report storage source pulls from S3
-CRASH_SOURCE = S3_STORAGE
+
+def cloud_provider_parser(val):
+    """Return 'AWS' or 'GCP'."""
+    normalized = val.strip().upper()
+    if normalized in ("AWS", "GCP"):
+        return normalized
+    raise ValueError(f"cloud provider not supported, must be AWS or GCP: {val}")
+
+
+# Cloud provider specific configuration
+CLOUD_PROVIDER = _config(
+    "CLOUD_PROVIDER",
+    default="AWS",
+    parser=cloud_provider_parser,
+    doc="The cloud provider to use for queueing and blob storage. Must be AWS or GCP.",
+)
+if CLOUD_PROVIDER == "AWS":
+    QUEUE = QUEUE_SQS
+    STORAGE = S3_STORAGE
+    TELEMETRY_STORAGE = TELEMETRY_S3_STORAGE
+elif CLOUD_PROVIDER == "GCP":
+    QUEUE = QUEUE_PUBSUB
+    STORAGE = GCS_STORAGE
+    TELEMETRY_STORAGE = TELEMETRY_GCS_STORAGE
+
+# Crash report storage source pulls from S3 or GCS
+CRASH_SOURCE = STORAGE
 
 # Each key in this list corresponds to a key in this dict containing a crash report data
 # destination configuration
-CRASH_DESTINATIONS_ORDER = ["s3", "es", "telemetry"]
+CRASH_DESTINATIONS_ORDER = ["storage", "es", "telemetry"]
 CRASH_DESTINATIONS = {
-    "s3": S3_STORAGE,
+    "storage": STORAGE,
     "es": ES_STORAGE,
     "telemetry": TELEMETRY_STORAGE,
 }

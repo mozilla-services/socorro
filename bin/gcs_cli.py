@@ -9,6 +9,7 @@
 # Usage: ./bin/gcs_cli.py CMD
 
 import os
+from pathlib import Path
 
 import click
 
@@ -117,6 +118,46 @@ def list_objects(bucket_name, details):
                 click.echo(f"{blob.name}")
     else:
         click.echo("No objects in bucket.")
+
+
+@gcs_group.command("upload")
+@click.argument("source")
+@click.argument("destination")
+def upload(source, destination):
+    """Upload files to a bucket"""
+
+    client = get_client()
+
+    # remove protocol from destination if present
+    destination = destination.split("://", 1)[-1]
+    bucket_name, _, prefix = destination.partition("/")
+
+    try:
+        bucket = client.get_bucket(bucket_name)
+    except NotFound:
+        click.error(f"GCS bucket {bucket_name!r} does not exist.")
+        return
+
+    source_path = Path(source)
+    if not source_path.exists():
+        click.error("local path {source!r} does not exist.")
+    if source_path.is_dir():
+        prefix_path = Path(prefix)
+        sources = [p for p in source_path.rglob("*") if not p.is_dir()]
+    else:
+        sources = [source_path]
+    if not sources:
+        click.echo("No files in directory {source!r}.")
+        return
+    for path in sources:
+        if path == source_path:
+            key_path = prefix_path
+        else:
+            key_path = prefix_path / path.relative_to(source_path)
+        key = "/".join(key_path.parts)
+        blob = bucket.blob(key)
+        blob.upload_from_filename(path)
+        click.echo(f"Uploaded gs://{bucket_name}/{key}")
 
 
 def main(argv=None):
