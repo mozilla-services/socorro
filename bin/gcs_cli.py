@@ -17,9 +17,8 @@ from google.cloud import storage
 from google.cloud.exceptions import NotFound
 
 
-def get_endpoint_url(bucket_name):
-    base_url = os.environ["STORAGE_EMULATOR_HOST"]
-    return base_url
+def get_endpoint_url():
+    return os.environ["STORAGE_EMULATOR_HOST"]
 
 
 def get_client():
@@ -41,7 +40,7 @@ def create_bucket(bucket_name):
 
     """
     # README at https://github.com/fsouza/fake-gcs-server
-    endpoint_url = get_endpoint_url(bucket_name)
+    endpoint_url = get_endpoint_url()
 
     client = get_client()
 
@@ -62,7 +61,7 @@ def delete_bucket(bucket_name):
 
     """
     # README at https://github.com/fsouza/fake-gcs-server/
-    endpoint_url = get_endpoint_url(bucket_name)
+    endpoint_url = get_endpoint_url()
 
     client = get_client()
 
