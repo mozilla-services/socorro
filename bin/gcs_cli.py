@@ -19,11 +19,12 @@ from google.cloud.exceptions import NotFound
 
 def get_endpoint_url(bucket_name):
     base_url = os.environ["STORAGE_EMULATOR_HOST"]
-    return f"{base_url}/storage/v1/b/{bucket_name}"
+    return base_url
 
 
 def get_client():
-    return storage.Client(credentials=AnonymousCredentials(), project="test")
+        project_id = os.environ["STORAGE_PROJECT_ID"]
+        return storage.Client(credentials=AnonymousCredentials(), project=project_id)
 
 
 @click.group()
@@ -39,7 +40,7 @@ def create_bucket(bucket_name):
     Specify BUCKET_NAME.
 
     """
-    # https://github.com/fsouza/fake-gcs-server/blob/0c31d1573c14912fc58ae68118f9c9ece266756a/README.md?plain=1#L47
+    # README at https://github.com/fsouza/fake-gcs-server
     endpoint_url = get_endpoint_url(bucket_name)
 
     client = get_client()
@@ -60,7 +61,7 @@ def delete_bucket(bucket_name):
     Specify BUCKET_NAME.
 
     """
-    # https://github.com/fsouza/fake-gcs-server/blob/0c31d1573c14912fc58ae68118f9c9ece266756a/README.md?plain=1#L47
+    # README at https://github.com/fsouza/fake-gcs-server/
     endpoint_url = get_endpoint_url(bucket_name)
 
     client = get_client()
