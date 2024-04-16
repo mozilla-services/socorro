@@ -73,14 +73,7 @@ def delete_bucket(bucket_name):
         click.echo(f"GCS bucket {bucket_name!r} at {endpoint_url!r} does not exist.")
         return
 
-    # Delete any objects in the bucket
-    blobs = client.list_blobs(bucket_name)
-    for blob in blobs:
-        click.echo(f"Deleting GCS object {blob.name}...")
-        blob.delete()
-
-    # Then delete the bucket
-    bucket.delete()
+    bucket.delete(force=True)
     click.echo(f"GCS bucket {bucket_name!r} at {endpoint_url!r} deleted.")
 
 
