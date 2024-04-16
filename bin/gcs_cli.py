@@ -22,8 +22,8 @@ def get_endpoint_url():
 
 
 def get_client():
-        project_id = os.environ["STORAGE_PROJECT_ID"]
-        return storage.Client(credentials=AnonymousCredentials(), project=project_id)
+    project_id = os.environ["STORAGE_PROJECT_ID"]
+    return storage.Client(credentials=AnonymousCredentials(), project=project_id)
 
 
 @click.group()
