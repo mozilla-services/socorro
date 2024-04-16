@@ -50,7 +50,7 @@ my.env:
 .PHONY: build
 build: my.env  ## | Build docker images.
 	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} --progress plain app
-	${DC} build --progress plain oidcprovider fakesentry
+	${DC} build --progress plain oidcprovider fakesentry gcs-emulator
 	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch symbolsserver
 	touch .docker-build
 
@@ -84,6 +84,7 @@ run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required
 runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
 	${DC} up -d --remove-orphans \
 		elasticsearch \
+		gcs-emulator \
 		localstack \
 		memcached \
 		postgresql \

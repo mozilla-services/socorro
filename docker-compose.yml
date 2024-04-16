@@ -32,6 +32,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - gcs-emulator
       - pubsub
       - postgresql
       - elasticsearch
@@ -48,6 +49,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - gcs-emulator
       - pubsub
       - postgresql
       - elasticsearch
@@ -68,6 +70,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - gcs-emulator
       - pubsub
       - postgresql
       - elasticsearch
@@ -83,6 +86,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - gcs-emulator
       - pubsub
       - elasticsearch
       - symbolsserver
@@ -113,6 +117,7 @@ services:
       - fakesentry
       - statsd
       - localstack
+      - gcs-emulator
       - pubsub
       - postgresql
       - elasticsearch
@@ -160,6 +165,7 @@ services:
       - my.env
     depends_on:
       - localstack
+      - gcs-emulator
       - pubsub
       - statsd
     expose:
@@ -241,3 +247,18 @@ services:
     image: memcached:1.5.1
     ports:
       - "11211:11211"
+
+  # https://github.com/fsouza/fake-gcs-server
+  # Fake GCP GCS server for local development and testing
+  gcs-emulator:
+    build:
+      dockerfile: ./docker/Dockerfile.gcs-emulator
+    image: local/socorro_gcs_emulator
+    command: -port 8001 -scheme http
+    ports:
+      - "${EXPOSE_GCS_EMULATOR_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--insecure", "http://localhost:8001/storage/v1/b"]
+      interval: 1s
+      timeout: 3s
+      retries: 5

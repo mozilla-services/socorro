@@ -104,6 +104,7 @@ COMMANDS = [
             "es": import_path("es_cli.main"),
             "sqs": import_path("sqs_cli.main"),
             "pubsub": import_path("pubsub_cli.main"),
+            "gcs": import_path("gcs_cli.main"),
         },
     ),
     Group(
