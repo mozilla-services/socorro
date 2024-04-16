@@ -17,6 +17,12 @@ set -euo pipefail
 # types, indexes, and keys; also bulk-loads static data for some lookup tables
 /app/bin/setup_postgres.sh
 
+# Delete and create local GCS buckets
+/app/socorro-cmd gcs delete "${CRASHSTORAGE_GCS_BUCKET}"
+/app/socorro-cmd gcs create "${CRASHSTORAGE_GCS_BUCKET}"
+/app/socorro-cmd gcs delete "${TELEMETRY_GCS_BUCKET}"
+/app/socorro-cmd gcs create "${TELEMETRY_GCS_BUCKET}"
+
 # Delete and create local S3 buckets
 /app/bin/recreate_s3_buckets.sh
 
