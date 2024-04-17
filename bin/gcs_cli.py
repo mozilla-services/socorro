@@ -9,7 +9,7 @@
 # Usage: ./bin/gcs_cli.py CMD
 
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import click
 
@@ -124,37 +124,45 @@ def list_objects(bucket_name, details):
 @click.argument("source")
 @click.argument("destination")
 def upload(source, destination):
-    """Upload files to a bucket"""
+    """Upload files to a bucket
+
+    SOURCE is a path to a file or directory of files. will recurse on directory trees
+
+    DESTINATION is a path to a file or directory in the bucket. If SOURCE is a
+    directory or DESTINATION ends with "/", then DESTINATION is treated as a directory.
+    """
 
     client = get_client()
 
     # remove protocol from destination if present
     destination = destination.split("://", 1)[-1]
     bucket_name, _, prefix = destination.partition("/")
+    prefix_path = PurePosixPath(prefix)
 
     try:
         bucket = client.get_bucket(bucket_name)
-    except NotFound:
-        click.error(f"GCS bucket {bucket_name!r} does not exist.")
-        return
+    except NotFound as e:
+        raise click.ClickException(f"GCS bucket {bucket_name!r} does not exist.") from e
 
     source_path = Path(source)
     if not source_path.exists():
-        click.error("local path {source!r} does not exist.")
-    if source_path.is_dir():
-        prefix_path = Path(prefix)
+        raise click.ClickException(f"local path {source!r} does not exist.")
+    source_is_dir = source_path.is_dir()
+    if source_is_dir:
         sources = [p for p in source_path.rglob("*") if not p.is_dir()]
     else:
         sources = [source_path]
     if not sources:
-        click.echo("No files in directory {source!r}.")
-        return
+        raise click.ClickException(f"No files in directory {source!r}.")
     for path in sources:
-        if path == source_path:
-            key_path = prefix_path
+        if source_is_dir:
+            # source is a directory so treat destination as a directory
+            key = str(prefix_path / path.relative_to(source_path))
+        elif prefix == "" or prefix.endswith("/"):
+            # source is a file but destination is a directory, preserve file name
+            key = str(prefix_path / path.name)
         else:
-            key_path = prefix_path / path.relative_to(source_path)
-        key = "/".join(key_path.parts)
+            key = prefix
         blob = bucket.blob(key)
         blob.upload_from_filename(path)
         click.echo(f"Uploaded gs://{bucket_name}/{key}")
