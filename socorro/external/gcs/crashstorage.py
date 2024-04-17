@@ -46,11 +46,7 @@ class GcsCrashStorage(CrashStorageBase):
         :arg bucket: the GCS bucket to save to
         :arg dump_file_suffix: the suffix used to identify a dump file (for use in temp
             files)
-        :arg region: the AWS region to use
-        :arg access_key: the AWS access_key to use
-        :arg secret_access_key: the AWS secret_access_key to use
-        :arg endpoint_url: the endpoint url to use when in a local development
-            environment
+        :arg metrics_prefix: the metrics prefix for markus
 
         """
         super().__init__()
