@@ -87,4 +87,4 @@ workflows:
       - main:
           filters:
             tags:
-              only: /.*/
+              only: /v.*/
