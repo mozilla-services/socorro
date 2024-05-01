@@ -32,7 +32,7 @@ urlwait "${ELASTICSEARCH_URL}"
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${STORAGE_EMULATOR_HOST}/storage/v1/b" 10
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
-python ./bin/waitfor.py --verbose "${LOCAL_DEV_AWS_ENDPOINT_URL}health"
+python ./bin/waitfor.py --verbose "${LOCAL_DEV_AWS_ENDPOINT_URL}"
 
 echo ">>> build sqs things and db things"
 
