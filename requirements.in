@@ -65,7 +65,7 @@ sphinx_rtd_theme==2.0.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 5.2 (2025).
-django==4.2.11
+django==5.0.4
 
 # NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
 # because they work with the cluster we're using
