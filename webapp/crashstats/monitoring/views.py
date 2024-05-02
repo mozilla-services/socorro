@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
+import os
 import uuid
 
 from django.conf import settings
@@ -66,7 +67,11 @@ def dockerflow_version(requst):
     Returns contents of /app/version.json or {}.
 
     """
-    return get_version_info(settings.SOCORRO_ROOT)
+    version_info = get_version_info(settings.SOCORRO_ROOT)
+    # FIXME(willkg): Remove "cloud" after we finish the GCP migration. We use the
+    # environment variable here because settings doesn't have this variable.
+    version_info["cloud"] = os.environ.get("CLOUD_PROVIDER", "AWS")
+    return version_info
 
 
 class HeartbeatException(Exception):
