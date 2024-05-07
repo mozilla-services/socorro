@@ -5,21 +5,15 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "obs-team"
 
   - package-ecosystem: "docker"
     directory: "/docker"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "obs-team"
 
   # Set update schedule for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "obs-team"
     rebase-strategy: "disabled"
