@@ -6,7 +6,6 @@
 Convenience functions for Bugzilla-related things.
 """
 
-
 from itertools import islice
 
 
