@@ -10,6 +10,7 @@ import pytest
 
 from socorro.external.gcs.crashstorage import build_keys, dict_to_str
 from socorro.external.crashstorage_base import CrashIDNotFound, MemoryDumpsMapping
+from socorro.lib import MissingArgumentError, BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.lib.libooid import create_new_ooid
@@ -384,6 +385,84 @@ class TestGcsCrashStorage:
             crashstorage.get_processed_crash(crash_id)
 
 
+class TestGetMethod:
+    def test_get_processed(self, gcs_helper):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        gcs_helper.upload(
+            bucket_name=bucket,
+            key=f"v1/processed_crash/{crash_id}",
+            data=json.dumps({"foo": "bar"}).encode("utf-8"),
+        )
+
+        result = crashdata.get(uuid=crash_id, datatype="processed")
+        assert result == {"foo": "bar"}
+
+    def test_get_processed_not_found(self, gcs_helper):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        with pytest.raises(CrashIDNotFound):
+            crashdata.get(uuid=crash_id, datatype="processed")
+
+    def test_get_raw_dump(self, gcs_helper):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        gcs_helper.upload(
+            bucket_name=bucket,
+            key=f"v1/dump/{crash_id}",
+            data=b"\xa0",
+        )
+
+        result = crashdata.get(uuid=crash_id, datatype="raw")
+        assert result == b"\xa0"
+
+    def test_get_raw_dump_not_found(self, gcs_helper):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        with pytest.raises(CrashIDNotFound):
+            crashdata.get(uuid=crash_id, datatype="raw")
+
+    def test_get_raw_crash_not_found(self, gcs_helper):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        with pytest.raises(CrashIDNotFound):
+            crashdata.get(uuid=crash_id, datatype="meta")
+
+    def test_bad_arguments(self):
+        crashdata = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+
+        crash_id = create_new_ooid()
+
+        with pytest.raises(MissingArgumentError):
+            crashdata.get()
+
+        with pytest.raises(MissingArgumentError):
+            crashdata.get(uuid=crash_id)
+
+        with pytest.raises(BadArgumentError):
+            crashdata.get(uuid=crash_id, datatype="junk")
+
+
 class TestTelemetryGcsCrashStorage:
     def test_save_processed_crash(self, gcs_helper):
         crashstorage = build_instance_from_settings(TELEMETRY_SETTINGS)
@@ -468,3 +547,37 @@ class TestTelemetryGcsCrashStorage:
         # Get the crash and assert it's the same data
         data = crashstorage.get_processed_crash(crash_id=crash_id)
         assert data == crash_data
+
+
+class TestTelemetryGetMethod:
+    def test_get_data(self, gcs_helper):
+        crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
+
+        bucket = TELEMETRY_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+
+        gcs_helper.create_bucket(bucket)
+        gcs_helper.upload(
+            bucket_name=bucket,
+            key=f"v1/crash_report/20{crash_id[-6:]}/{crash_id}",
+            data=json.dumps({"foo": "bar"}).encode("utf-8"),
+        )
+
+        result = crashdata.get(uuid=crash_id)
+        assert result == {"foo": "bar"}
+
+    def test_get_data_not_found(self, gcs_helper):
+        crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
+
+        bucket = TELEMETRY_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+
+        gcs_helper.create_bucket(bucket)
+        with pytest.raises(CrashIDNotFound):
+            crashdata.get(uuid=crash_id)
+
+    def test_bad_arguments(self):
+        crashdata = build_instance_from_settings(TELEMETRY_SETTINGS)
+
+        with pytest.raises(MissingArgumentError):
+            crashdata.get()
