@@ -15,9 +15,7 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
-)
-from socorro.external.boto.crashstorage import (
-    build_keys,
+    get_datestamp,
     dict_to_str,
     list_to_str,
     str_to_list,
@@ -31,6 +29,36 @@ from socorro.lib.libsocorrodataschema import (
     transform_schema,
 )
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
+
+
+def build_keys(name_of_thing, crashid):
+    """Builds a list of pseudo-filenames
+
+    When using keys for saving a crash, always use the first one given.
+
+    When using keys for loading a crash, try each key in order. This lets us change our
+    key scheme and continue to access things saved using the old key.
+
+    :arg name_of_thing: the kind of thing we're building a filename for; e.g.
+        "raw_crash"
+    :arg crashid: the crash id for the thing being stored
+
+    :returns: list of keys to try in order
+
+    :raises CrashIDMissingDatestamp: if the crash id is missing a datestamp at the
+        end
+
+    """
+    if name_of_thing == "raw_crash":
+        date = get_datestamp(crashid).strftime("%Y%m%d")
+        return [f"v1/{name_of_thing}/{date}/{crashid}"]
+
+    elif name_of_thing == "crash_report":
+        # Crash data from the TelemetryBotoS3CrashStorage
+        date = get_datestamp(crashid).strftime("%Y%m%d")
+        return [f"v1/{name_of_thing}/{date}/{crashid}"]
+
+    return [f"v1/{name_of_thing}/{crashid}"]
 
 
 class GcsCrashStorage(CrashStorageBase):

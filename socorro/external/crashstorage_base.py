@@ -5,8 +5,12 @@
 """Base classes for crashstorage system."""
 
 from contextlib import suppress
+import datetime
+import json
 import logging
 import os
+
+from socorro.lib.libooid import date_from_ooid
 
 
 class MemoryDumpsMapping(dict):
@@ -262,3 +266,41 @@ class InMemoryCrashStorage(CrashStorageBase):
 
         with suppress(KeyError):
             del self._processed_crash_data[crash_id]
+
+
+class CrashIDMissingDatestamp(Exception):
+    """Indicates the crash id is invalid and missing a datestamp."""
+
+
+def get_datestamp(crashid):
+    """Parses out datestamp from a crashid.
+
+    :returns: datetime
+
+    :raises CrashIDMissingDatestamp: if the crash id has no datestamp at the end
+
+    """
+    datestamp = date_from_ooid(crashid)
+    if datestamp is None:
+        # We should never hit this situation unless the crashid is not valid
+        raise CrashIDMissingDatestamp(f"{crashid} is missing datestamp")
+    return datestamp
+
+
+class JSONISOEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return obj.isoformat()
+        raise NotImplementedError(f"Don't know about {obj!r}")
+
+
+def dict_to_str(a_mapping):
+    return json.dumps(a_mapping, cls=JSONISOEncoder)
+
+
+def list_to_str(a_list):
+    return json.dumps(list(a_list))
+
+
+def str_to_list(a_string):
+    return json.loads(a_string)

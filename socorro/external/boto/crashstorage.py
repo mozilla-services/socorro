@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import datetime
 import json
 import logging
 
@@ -12,6 +11,10 @@ from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
     MemoryDumpsMapping,
+    get_datestamp,
+    dict_to_str,
+    list_to_str,
+    str_to_list,
 )
 from socorro.external.boto.connection_context import S3Connection
 from socorro.lib.libjsonschema import JsonSchemaReducer
@@ -21,7 +24,6 @@ from socorro.lib.libsocorrodataschema import (
     SocorroDataReducer,
     transform_schema,
 )
-from socorro.lib.libooid import date_from_ooid
 from socorro.schemas import TELEMETRY_SOCORRO_CRASH_SCHEMA
 
 
@@ -30,25 +32,6 @@ LOGGER = logging.getLogger(__name__)
 
 def wait_time_generator():
     yield from [1, 1, 1, 1, 1]
-
-
-class CrashIDMissingDatestamp(Exception):
-    """Indicates the crash id is invalid and missing a datestamp."""
-
-
-def get_datestamp(crashid):
-    """Parses out datestamp from a crashid.
-
-    :returns: datetime
-
-    :raises CrashIDMissingDatestamp: if the crash id has no datestamp at the end
-
-    """
-    datestamp = date_from_ooid(crashid)
-    if datestamp is None:
-        # We should never hit this situation unless the crashid is not valid
-        raise CrashIDMissingDatestamp(f"{crashid} is missing datestamp")
-    return datestamp
 
 
 def build_keys(name_of_thing, crashid):
@@ -79,25 +62,6 @@ def build_keys(name_of_thing, crashid):
         return [f"v1/{name_of_thing}/{date}/{crashid}"]
 
     return [f"v1/{name_of_thing}/{crashid}"]
-
-
-class JSONISOEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.date):
-            return obj.isoformat()
-        raise NotImplementedError(f"Don't know about {obj!r}")
-
-
-def dict_to_str(a_mapping):
-    return json.dumps(a_mapping, cls=JSONISOEncoder)
-
-
-def list_to_str(a_list):
-    return json.dumps(list(a_list))
-
-
-def str_to_list(a_string):
-    return json.loads(a_string)
 
 
 class BotoS3CrashStorage(CrashStorageBase):
