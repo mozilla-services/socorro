@@ -154,22 +154,16 @@ class S3Helper:
         if self._buckets_seen is not None:
             self._buckets_seen.add(bucket_name)
 
-    def upload_fileobj(self, bucket_name, key, data):
+    def upload(self, bucket_name, key, data):
         """Puts an object into the specified bucket."""
         self.create_bucket(bucket_name)
         self.conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
 
-    def upload(self, bucket_name, key, data):
-        self.upload_fileobj(bucket_name, key, data)
-
-    def download_fileobj(self, bucket_name, key):
+    def download(self, bucket_name, key):
         """Fetches an object from the specified bucket"""
         self.create_bucket(bucket_name)
         resp = self.conn.get_object(Bucket=bucket_name, Key=key)
         return resp["Body"].read()
-
-    def download(self, bucket_name, key):
-        return self.download_fileobj(bucket_name, key)
 
     def list(self, bucket_name):
         """Return list of keys for objects in bucket."""

@@ -30,7 +30,7 @@ def test_upload(s3_helper):
     assert result.exit_code == 0
 
     # Get the crash data we just saved from the bucket and verify it's contents
-    crash_data = s3_helper.download_fileobj(
+    crash_data = s3_helper.download(
         bucket_name=TELEMETRY_BUCKET,
         key="telemetry_socorro_crash.json",
     )
