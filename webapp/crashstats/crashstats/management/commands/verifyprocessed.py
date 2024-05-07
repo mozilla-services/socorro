@@ -86,8 +86,7 @@ def check_crashids_for_date(firstchars_chunk, date):
         )
 
         for page in page_iterator:
-            # NOTE(willkg): Keys here look like /v2/raw_crash/ENTROPY/DATE/CRASHID or
-            # /v1/raw_crash/DATE/CRASHID
+            # NOTE(willkg): Keys here look like /v1/raw_crash/DATE/CRASHID
             crash_ids = [item.split("/")[-1] for item in page]
 
             if not crash_ids:

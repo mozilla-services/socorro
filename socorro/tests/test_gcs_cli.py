@@ -17,7 +17,7 @@ def test_it_runs():
 
 
 def test_upload_file_to_root(gcs_helper, tmp_path):
-    """Test whether the module loads and spits out help."""
+    """Test uploading one file to a bucket root."""
     bucket = gcs_helper.create_bucket("test").name
     path = tmp_path / uuid4().hex
     path.write_text(path.name)
@@ -29,7 +29,7 @@ def test_upload_file_to_root(gcs_helper, tmp_path):
 
 
 def test_upload_file_to_dir(gcs_helper, tmp_path):
-    """Test whether the module loads and spits out help."""
+    """Test uploading one file to a directory inside a bucket."""
     bucket = gcs_helper.create_bucket("test").name
     path = tmp_path / uuid4().hex
     path.write_text(path.name)
@@ -43,7 +43,7 @@ def test_upload_file_to_dir(gcs_helper, tmp_path):
 
 
 def test_upload_dir_to_dir(gcs_helper, tmp_path):
-    """Test whether the module loads and spits out help."""
+    """Test uploading a whole directory to a directory inside a bucket."""
     bucket = gcs_helper.create_bucket("test").name
     path = tmp_path / uuid4().hex
     path.write_text(path.name)

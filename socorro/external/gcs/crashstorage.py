@@ -237,6 +237,8 @@ class GcsCrashStorage(CrashStorageBase):
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""
+        # FIXME(relud): This method is used by the webapp API middleware nonsense. It
+        # shouldn't exist here. We should move it to the webapp.
         filters = [
             ("uuid", None, str),
             ("datatype", None, str),
@@ -362,6 +364,8 @@ class TelemetryGcsCrashStorage(GcsCrashStorage):
 
     def get(self, **kwargs):
         """Return JSON data of a crash report, given its uuid."""
+        # FIXME(relud): This method is used by the webapp API middleware nonsense. It
+        # shouldn't exist here. We should move it to the webapp.
         filters = [("uuid", None, str)]
         params = external_common.parse_arguments(filters, kwargs, modern=True)
 

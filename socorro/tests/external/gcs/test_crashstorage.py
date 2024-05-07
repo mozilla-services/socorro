@@ -335,8 +335,6 @@ class TestGcsCrashStorage:
             crash_id=crash_id, tmpdir=str(tmp_path)
         )
 
-        # We don't care much about the mocked internals as the bulk of that function is
-        # tested elsewhere. We just need to be concerned about the file writing worked.
         expected = {
             "content_dump": os.path.join(
                 str(tmp_path),
@@ -363,7 +361,6 @@ class TestGcsCrashStorage:
             "a": {"b": {"c": 11}},
             "sensitive": {"x": 2},
             "not_url": "not a url",
-            # These keys do not survive redaction
             "url": "http://example.com",
             "json_dump": {"sensitive": 22},
         }
