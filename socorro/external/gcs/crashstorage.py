@@ -97,12 +97,12 @@ class GcsCrashStorage(CrashStorageBase):
         self.metrics = markus.get_metrics(metrics_prefix)
 
     def load_file(self, path):
-        bucket = self.client.get_bucket(self.bucket)
+        bucket = self.client.bucket(self.bucket)
         blob = bucket.blob(path)
         return blob.download_as_bytes()
 
     def save_file(self, path, data):
-        bucket = self.client.get_bucket(self.bucket)
+        bucket = self.client.bucket(self.bucket)
         blob = bucket.blob(path)
         blob.upload_from_string(data)
 
@@ -167,12 +167,8 @@ class GcsCrashStorage(CrashStorageBase):
         :returns: bool
 
         """
-        try:
-            bucket = self.client.get_bucket(self.bucket)
-            bucket.get_blob(key)
-            return True
-        except NotFound:
-            return False
+        bucket = self.client.bucket(self.bucket)
+        return bucket.blob(key).exists()
 
     def get_raw_crash(self, crash_id):
         """Get the raw crash file for the given crash id
