@@ -219,11 +219,6 @@ class CSignatureTool:
         Takes a frame and returns the most meaningful single-string representation of
         the frame. Takes into account the following in this order of precedence
 
-        Returns a structured conglomeration of the input parameters to serve as a
-        signature. The parameter names of this function reflect the exact names of the
-        fields from the JSON MDSW frame output. This allows this function to be invoked
-        by passing a frame as ``**a_frame``.
-
         """
         # If there's a function symbol, use that--it's the best
         if function:
