@@ -1,0 +1,74 @@
+name: Build, test and push a Docker image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v20[0-9][0-9].[01][0-9].[0-3][0-9]  # e.g. v2023.12.04
+      - v20[0-9][0-9].[01][0-9].[0-3][0-9]-[0-9]  # e.g. v2023.12.04-2
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get info
+        run: |
+          uname -v
+          docker info
+      - name: Create version.json
+        run: |
+          # create a version.json per
+          # https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
+          printf '{"commit":"%s","version":"%s","source":"%s","build":"%s"}\n' \
+          "$GITHUB_SHA" \
+          "$GITHUB_REF_NAME" \
+          "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+          "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > version.json
+      - name: Output version.json
+        run: cat version.json
+      - name: Build Docker images
+        run: |
+          make build
+          docker compose images
+      - name: Verify requirements.txt contains correct dependencies
+        run: |
+          docker run --rm local/socorro_app shell ./bin/run_verify_reqs.sh
+      - name: Run lint check
+        run: |
+          docker run --rm local/socorro_app shell ./bin/lint.sh
+      - name: Run tests
+        run: |
+          make my.env
+          docker compose run --rm test-ci shell ./bin/test.sh
+
+      - name: Set Docker image tag to "latest" for updates of the main branch
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo IMAGE_TAG=latest >> "$GITHUB_ENV"
+          # Updates to the main branch are deployed to stage.
+          echo DEPLOYMENT_ENV=stage >> "$GITHUB_ENV"
+      - name: Set Docker image tag to the git tag for tagged builds
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo IMAGE_TAG="$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+          # Version tags are deployed to prod.
+          echo DEPLOYMENT_ENV=prod >> "$GITHUB_ENV"
+      - name: Push the Docker image to GAR
+        if: env.IMAGE_TAG != ''
+        uses: mozilla-it/deploy-actions/docker-push@v3.11.1
+        with:
+          local_image: local/socorro_app:latest
+          image_repo_path: ${{ secrets.DOCKER_IMAGE_PATH }}
+          image_tag: ${{ env.IMAGE_TAG }}
+          workload_identity_pool_project_number: ${{ secrets.WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          deployment_env: ${{ env.DEPLOYMENT_ENV }}
