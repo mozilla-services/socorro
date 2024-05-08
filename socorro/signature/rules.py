@@ -216,19 +216,24 @@ class CSignatureTool:
     ):
         """Normalizes a single frame
 
-        Returns a structured conglomeration of the input parameters to serve as a
-        signature. The parameter names of this function reflect the exact names of the
-        fields from the JSON MDSW frame output. This allows this function to be invoked
-        by passing a frame as ``**a_frame``.
+        Takes a frame and returns the most meaningful single-string representation of
+        the frame. Takes into account the following in this order of precedence:
+
+        1. function symbol (normalized with either Rust or C/C++ rules)
+        2. file#line
+        3. module name
+        4. first unloaded module name
+        5. offset
 
         """
+        # If there's a function symbol, use that--it's the best
         if function:
-            # If there's a filename and it ends in .rs, then normalize using
-            # Rust rules
+            # If there's a filename and it ends in .rs, then normalize the function
+            # symbol using Rust rules
             if file and (parse_source_file(file) or "").endswith(".rs"):
                 return self.normalize_rust_function(function=function, line=line)
 
-            # Otherwise normalize it with C/C++ rules
+            # Otherwise normalize the function symbol with C/C++ rules
             return self.normalize_cpp_function(function=function, line=line)
 
         # If there's a file and line number, use that
@@ -240,26 +245,23 @@ class CSignatureTool:
                 file = filename.rsplit("/")[-1]
             return f"{file}#{line}"
 
-        # If there's an offset and no module/module_offset, use that
-        if not module and not module_offset:
-            if unloaded_modules:
-                # Use the first unloaded module and the offset or "0"
-                unloaded_module = unloaded_modules[0]
-                unloaded_module_module = unloaded_module.get("module")
-                unloaded_module_offsets = unloaded_module.get("offsets")
-                if unloaded_module_module and unloaded_module_offsets:
-                    return "(unloaded {}@{})".format(
-                        unloaded_module_module,
-                        strip_leading_zeros(unloaded_module_offsets[0]),
-                    )
-                elif unloaded_module_module:
-                    return "(unloaded {})".format(unloaded_module_module)
+        # If there's a module, use that
+        if module:
+            return module
 
-            if offset:
-                return f"@{strip_leading_zeros(offset)}"
+        # If there are unloaded modules, use the first one
+        if unloaded_modules:
+            unloaded_module = unloaded_modules[0]
+            unloaded_module_module = unloaded_module.get("module")
+            return f"(unloaded {unloaded_module_module})"
 
-        # Return module/module_offset
-        return "{}@{}".format(module or "", strip_leading_zeros(module_offset))
+        # If there's only an offset, then begrudgingly use that
+        if offset:
+            return f"@{strip_leading_zeros(offset)}"
+
+        # We don't have anything meaningful to return, so return the empty string
+        # which will get ignored
+        return ""
 
     def frame_generator(self, frames):
         """Yields frames one at a time from a list of frames
@@ -366,26 +368,37 @@ class CSignatureTool:
         # have already been normalized at this point.
         new_signature_list = []
         for a_signature in source_list:
-            # If the signature matches the irrelevant signatures regex, skip to the next frame.
+            # If the frame signature is an empty string, skip it
+            if not a_signature:
+                debug_notes.append(f'empty string; ignoring: "{a_signature}"')
+                continue
+
+            # If the frame signature matches the irrelevant signatures regex, skip to
+            # the next frame
             if self.irrelevant_signature_re.match(a_signature):
                 debug_notes.append(f'irrelevant; ignoring: "{a_signature}"')
                 continue
 
-            # If the frame signature is a dll, remove the @xxxxx part.
-            if (
-                not a_signature.startswith("(unloaded")
-                and ".dll" in a_signature.lower()
+            # Skip repeating dll/so signatures
+            if not a_signature.startswith("(unloaded") and (
+                # A library on Windows or Linux
+                a_signature.lower().endswith((".dll", ".so"))
+                # XUL library on macOS
+                or a_signature == "XUL"
+                # Case where symbols file has "name omitted" as function symbol
+                or a_signature == "<name omitted>"
+                # Case where symbols file only has public function names. bug
+                # #1685178
+                or a_signature.startswith("<unknown in")
             ):
-                a_signature = a_signature.split("@")[0]
-
-                # If this trimmed DLL signature is the same as the previous frame's, skip it.
                 if new_signature_list and a_signature == new_signature_list[-1]:
                     continue
 
+            # Add the frame signature to the signature
             new_signature_list.append(a_signature)
 
             # If the signature does not match the prefix signatures regex, then it is the last
-            # one we add to the list.
+            # one we add to the list
             if not self.prefix_signature_re.match(a_signature):
                 debug_notes.append(f'not a prefix; stop: "{a_signature}"')
                 break

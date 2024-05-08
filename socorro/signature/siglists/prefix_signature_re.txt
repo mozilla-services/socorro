@@ -79,11 +79,11 @@ JS_NewStringCopyZ
 KiFastSystemCall
 kill
 __libc_message
-libc\.so(\.\d+)?@0x
-libc-\d+\.\d+(\.\d+)?\.so@0x
-libart\.so@0x
-libobjc.A.dylib@0x
-(libxul\.so|xul\.dll|XUL)@0x
+libc\.so(\.\d+)?
+libc-\d+\.\d+(\.\d+)?\.so
+libart\.so
+libobjc\.A\.dylib
+(libxul\.so|xul\.dll|XUL)
 LL_
 lstrcat(A|W)
 lstrlen(A|W)
@@ -130,7 +130,7 @@ mozilla::Vector<T>
 mozilla::WrapNotNull<
 mozilla.*FatalError
 MOZ_CrashPrintf
-msvcr120\.dll@0x
+msvcr120\.dll
 \<name omitted\>
 new\[\]
 NP_Shutdown
@@ -231,7 +231,7 @@ TlsGetValue
 __ulock_wait
 __unlink
 unlink
-vcruntime140\.dll@0x
+vcruntime140\.dll
 _VEC_memcpy
 _VEC_memzero
 .*WaitFor
