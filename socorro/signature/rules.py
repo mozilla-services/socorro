@@ -217,7 +217,13 @@ class CSignatureTool:
         """Normalizes a single frame
 
         Takes a frame and returns the most meaningful single-string representation of
-        the frame. Takes into account the following in this order of precedence
+        the frame. Takes into account the following in this order of precedence:
+
+        1. function symbol (normalized with either Rust or C/C++ rules)
+        2. file#line
+        3. module name
+        4. first unloaded module name
+        5. offset
 
         """
         # If there's a function symbol, use that--it's the best
