@@ -82,7 +82,7 @@ __libc_message
 libc\.so(\.\d+)?
 libc-\d+\.\d+(\.\d+)?\.so
 libart\.so
-libobjc.A.dylib
+libobjc\.A\.dylib
 (libxul\.so|xul\.dll|XUL)
 LL_
 lstrcat(A|W)

@@ -94,7 +94,7 @@ __libc_fatal
 __libc_message
 libEGL\.so
 libgui\.so
-libicudata.so\..*
+libicudata\.so
 libMali\.so
 libutils\.so
 libz\.so
@@ -113,7 +113,7 @@ mozalloc_abort
 mozalloc_handle_oom
 mozglue_static::oom_hook::hook
 mozglue_static::panic_hook
-mozcrt19.dll
+mozcrt19\.dll
 mozilla::AlignedBuffer<T>::Data
 mozilla::ArrayIterator<T>
 mozilla::Atomic<T>::Atomic
