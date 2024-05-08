@@ -245,16 +245,19 @@ class TestCSignatureTool:
     @pytest.mark.parametrize(
         "args, expected",
         [
-            # module, function, file, line, module_offset, offset, unloaded_modules
+            # (module, function, file, line, module_offset, offset, unloaded_modules)
+            # no function, but has file with / and line
             (("module", "", "source/", "23", "0xfff"), "source#23"),
+            # no function but has file with \ and line
             (("module", "", "source\\", "23", "0xfff"), "source#23"),
+            # no function but has file with path and line
             (("module", "", "/a/b/c/source", "23", "0xfff"), "source#23"),
             (("module", "", "\\a\\b\\c\\source", "23", "0xfff"), "source#23"),
             (("module", "", "\\a\\b\\c\\source", "23", "0xfff"), "source#23"),
-            (("module", "", "\\a\\b\\c\\source", "", "0xfff"), "module@0xfff"),
-            (("module", "", "", "23", "0xfff"), "module@0xfff"),
-            (("module", "", "", "", "0xfff"), "module@0xfff"),
-            ((None, "", "", "", "0xfff"), "@0xfff"),
+            # no function or line, so uses module
+            (("module", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
+            # no function or file, so uses module
+            (("module", "", "", "", "0xfff"), "module"),
             # Make sure frame normalization uses the right function: normalize
             # Rust frame (has a Rust fingerprint)
             (
@@ -290,7 +293,7 @@ class TestCSignatureTool:
                     "",
                     [{"module": "unmod", "offsets": ["0x0000000000005387"]}],
                 ),
-                "(unloaded unmod@0x5387)",
+                "(unloaded unmod)",
             ),
         ],
     )
@@ -488,15 +491,15 @@ class TestCSignatureTool:
         source_list = [
             "a",
             "d",
-            "foo32.dll@0x231423",
             "foo32.dll",
-            "foo32.dll@0x42",
+            "foo32.dll",
+            "foo32.dll",
             "g",
         ]
         sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == "d | foo32.dll | g"
 
-        source_list = ["foo32.dll", "foo32.dll@0x231423", "g"]
+        source_list = ["foo32.dll", "foo32.dll", "g"]
         sig, notes, debug_notes = sig_tool.generate(source_list)
         assert sig == "foo32.dll | g"
 
@@ -1393,7 +1396,7 @@ class TestSignatureGenerationRule:
             "@0x5e39bf21",
             "@0x5e39bf21",
             "@0x5e39bf21",
-            "user2.dll@0x20869",
+            "user2.dll",
         ]
         expected_proto_signature = " | ".join(expected_normalized_frames)
         assert result.extra["proto_signature"] == expected_proto_signature
