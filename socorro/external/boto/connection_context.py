@@ -204,17 +204,22 @@ class S3Connection:
                 f"(bucket={bucket!r} key={path}) not found, no value returned"
             ) from exc
 
-    def list_objects_paginator(self, bucket, prefix):
+    def list_objects_paginator(self, bucket, prefix, page_size=None):
         """Returns S3 client paginator of objects with key prefix in bucket
 
         :arg bucket: the name of the bucket
         :arg prefix: the key prefix
+        :arg page_size: the size of pages to request
 
         :returns: S3 paginator
 
         """
         paginator = self.client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+        page_iterator = paginator.paginate(
+            Bucket=bucket,
+            Prefix=prefix,
+            PaginationConfig={} if page_size is None else {"PageSize": page_size},
+        )
         return page_iterator
 
     def head_object(self, bucket, key):

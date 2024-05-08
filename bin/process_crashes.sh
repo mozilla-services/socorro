@@ -4,8 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Pulls down crash data for specified crash ids, syncs to the S3 bucket, and
-# sends the crash ids to the Pub/Sub queue.
+# Pulls down crash data for specified crash ids, syncs to the cloud storage
+# bucket, and sends the crash ids to the queue.
 #
 # Usage: ./bin/process_crashes.sh
 #
@@ -47,9 +47,16 @@ mkdir "${DATADIR}" || echo "${DATADIR} already exists."
 ./socorro-cmd fetch_crash_data "${DATADIR}" $@
 
 # Make the bucket and sync contents
-./bin/socorro_aws_s3.sh mb s3://dev-bucket/
-./bin/socorro_aws_s3.sh cp --recursive "${DATADIR}" "s3://${CRASHSTORAGE_S3_BUCKET}/"
-./bin/socorro_aws_s3.sh ls --recursive "s3://${CRASHSTORAGE_S3_BUCKET}/"
+# ^^ returns CLOUD_PROVIDER value as uppercase
+if [[ "${CLOUD_PROVIDER^^}" == "GCP" ]]; then
+  ./socorro-cmd gcs create "${CRASHSTORAGE_GCS_BUCKET}"
+  ./socorro-cmd gcs upload "${DATADIR}" "${CRASHSTORAGE_GCS_BUCKET}"
+  ./socorro-cmd gcs list_objects "${CRASHSTORAGE_GCS_BUCKET}"
+else
+  ./bin/socorro_aws_s3.sh mb "s3://${CRASHSTORAGE_S3_BUCKET}/"
+  ./bin/socorro_aws_s3.sh cp --recursive "${DATADIR}" "s3://${CRASHSTORAGE_S3_BUCKET}/"
+  ./bin/socorro_aws_s3.sh ls --recursive "s3://${CRASHSTORAGE_S3_BUCKET}/"
+fi
 
 # Add crash ids to queue
 # ^^ returns CLOUD_PROVIDER value as uppercase
