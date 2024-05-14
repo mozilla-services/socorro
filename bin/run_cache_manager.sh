@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Usage: bin/run_processor_cache_manager.sh
+# Usage: bin/run_cache_manager.sh
 #
 # Runs the processor cache manager.
 #

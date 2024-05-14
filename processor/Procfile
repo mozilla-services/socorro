@@ -1,2 +1,2 @@
-processor: /app/bin/run_processor_process.sh
-processor_cache_manager: /app/bin/run_processor_cache_manager.sh
+processor: /app/bin/run_processor.sh
+cache_manager: /app/bin/run_cache_manager.sh
