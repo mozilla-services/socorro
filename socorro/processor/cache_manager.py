@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -38,14 +40,19 @@ from socorro.lib.libdockerflow import get_release_name, get_version_info
 from socorro.lib.liblogging import set_up_logging
 
 
-LOGGER = logging.getLogger(__name__)
-REPOROOT_DIR = str(pathlib.Path(__file__).parent.parent.parent)
+# How many errors before we give up and terminate the process
 MAX_ERRORS = 10
-METRICS = markus.get_metrics("processor.cache_manager")
+
+# How many seconds between heartbeats
 HEARTBEAT_INTERVAL = 60
+
+# Metrics client to use
+METRICS = markus.get_metrics("processor.cache_manager")
 
 
 def count_sentry_scrub_error(msg):
+    # NOTE(willkg): we re-use the processor prefix here and differentiate with the
+    # service tag.
     metrics = markus.get_metrics("processor")
     metrics.incr("sentry_scrub_error", value=1, tags=["service:cachemanager"])
 
@@ -68,7 +75,8 @@ class LastUpdatedOrderedDict(OrderedDict):
 
 
 def handle_exception(exctype, value, tb):
-    LOGGER.error(
+    logger = logging.getLogger(__name__)
+    logger.error(
         "unhandled exception. Exiting. "
         + "".join(traceback.format_exception(exctype, value, tb))
     )
@@ -554,12 +562,14 @@ class DiskCacheManager:
 
 
 def main():
-    from socorro.processor import cache_manager
-
-    app = cache_manager.DiskCacheManager()
+    app = DiskCacheManager()
     app.set_up()
     app.run_loop()
 
 
 if __name__ == "__main__":
-    main()
+    # NOTE(willkg): we need to do this so that the cache_manager logger isn't `__main__`
+    # which causes problems when logging
+    from socorro.processor import cache_manager
+
+    cache_manager.main()

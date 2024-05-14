@@ -6,18 +6,13 @@
 
 # Usage: bin/run_processor.sh
 #
-# Runs processor process manager.
+# Runs the processor process.
 #
 # Note: This should be called from inside a container.
 
 set -euo pipefail
 
-PROCESSOR_WORKERS=${PROCESSOR_WORKERS:-"1"}
+export PROCESS_NAME=processor
 
-# Run honcho with PROCESSOR_WORKERS number of processor worker processes
-honcho \
-    --procfile /app/processor/Procfile \
-    --app-root /app \
-    --no-prefix \
-    start \
-    --concurrency "processor=${PROCESSOR_WORKERS}"
+# Run the processor
+python socorro/processor/processor_app.py

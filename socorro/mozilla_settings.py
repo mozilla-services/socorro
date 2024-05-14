@@ -70,7 +70,7 @@ SENTRY_DSN = _config(
 LOGGING_LEVEL = _config(
     "LOGGING_LEVEL",
     default="INFO",
-    doc="Default logging level. Should be one of INFO, DEBUG, WARNING, ERROR.",
+    doc="Default logging level. Should be one of DEBUG, INFO, WARNING, ERROR.",
 )
 
 # Markus configuration for metrics
@@ -349,7 +349,7 @@ CACHE_MANAGER_LOGGING_LEVEL = _config(
     "CACHE_MANAGER_LOGGING_LEVEL",
     default="INFO",
     doc=(
-        "Default logging level for the cache manager. Should be one of INFO, DEBUG, "
+        "Default logging level for the cache manager. Should be one of DEBUG, INFO, "
         "WARNING, ERROR."
     ),
 )

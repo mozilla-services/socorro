@@ -41,7 +41,7 @@ jobs:
           docker compose images
       - name: Verify requirements.txt contains correct dependencies
         run: |
-          docker run --rm local/socorro_app shell ./bin/run_verify_reqs.sh
+          docker run --rm local/socorro_app shell ./bin/verify_reqs.sh
       - name: Run lint check
         run: |
           docker run --rm local/socorro_app shell ./bin/lint.sh

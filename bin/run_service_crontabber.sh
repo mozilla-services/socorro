@@ -4,9 +4,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Usage: bin/run_crontabber.sh
+# Usage: bin/run_service_crontabber.sh
 #
-# Runs cronrun (used to be called crontabber).
+# Runs cronrun (used to be called crontabber) service.
 #
 # Note: This should be called from inside a container.
 

@@ -29,13 +29,13 @@ shift
 
 case ${SERVICE} in
 processor)  ## Run processor service
-    /app/bin/run_processor.sh "$@"
+    /app/bin/run_service_processor.sh "$@"
     ;;
 crontabber)  ## Run crontabber service
-    /app/bin/run_crontabber.sh "$@"
+    /app/bin/run_service_crontabber.sh "$@"
     ;;
 webapp)  ## Run webapp service
-    /app/bin/run_webapp.sh "$@"
+    /app/bin/run_service_webapp.sh "$@"
     ;;
 symbolsserver)  ## Runs a local symbols server
     /app/bin/run_symbolsserver.sh

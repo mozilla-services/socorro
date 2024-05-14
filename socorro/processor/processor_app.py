@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -21,7 +22,6 @@ import logging
 import os
 from pathlib import Path
 import signal
-import sys
 import tempfile
 import time
 
@@ -51,7 +51,7 @@ METRICS = markus.get_metrics("processor")
 
 
 def count_sentry_scrub_error(msg):
-    METRICS.incr("sentry_scrub_error", 1)
+    METRICS.incr("sentry_scrub_error", value=1, tags=["service:processor"])
 
 
 class ProcessorApp:
@@ -350,15 +350,8 @@ class ProcessorApp:
         with suppress(AttributeError):
             self.pipeline.close()
 
-    def main(self, *args):
-        """Main routine
-
-        Sets up the signal handlers, the source and destination crashstorage systems at
-        the theaded task manager. That starts a flock of threads that are ready to
-        shepherd tasks from the source to the destination.
-
-        """
-        # Set everything up
+    def set_up(self):
+        """Set up processor process scaffolding"""
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
             logging_level=settings.LOGGING_LEVEL,
@@ -372,24 +365,21 @@ class ProcessorApp:
         self._set_up_task_manager()
         self._set_up_source_and_destination()
 
-        # Run
+    def main(self):
+        """Run task manager blocking_start and then close when done"""
         self.task_manager.blocking_start()
-
-        # End processing and quit
         self.close()
-        self.logger.info("done.")
-        return 0
 
 
-def main(args=None):
-    if args is None:
-        args = sys.argv[1:]
+def main():
+    app = ProcessorApp()
+    app.set_up()
+    app.main()
+
+
+if __name__ == "__main__":
     # NOTE(willkg): we need to do this so that the processor app logger isn't `__main__`
     # which causes problems when logging
     from socorro.processor import processor_app
 
-    sys.exit(processor_app.ProcessorApp().main(args))
-
-
-if __name__ == "__main__":
-    main()
+    processor_app.main()

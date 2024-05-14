@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Usage: bin/run_verify_reqs.sh
+# Usage: bin/verify_reqs.sh
 #
 # Verifies that the requirements file is built by the version of Python that
 # runs in the container.
