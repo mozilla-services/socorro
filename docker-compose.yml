@@ -129,6 +129,20 @@ services:
     volumes:
       - .:/app
 
+  stage_submitter:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - my.env
+    depends_on:
+      - fakesentry
+      - localstack
+      - gcs-emulator
+      - pubsub
+    command: ["stage_submitter"]
+    volumes:
+      - .:/app
+
   # https://github.com/willkg/kent
   fakesentry:
     build:
@@ -174,6 +188,17 @@ services:
       - "8888:8000"
     volumes:
       - .:/socorro
+
+  fakecollector:
+    image: local/socorro_app
+    env_file:
+      - docker/config/local_dev.env
+      - my.env
+    command: ["fakecollector"]
+    ports:
+      - "9000:8000"
+    volumes:
+      - .:/app
 
   symbolsserver:
     image: local/socorro_app

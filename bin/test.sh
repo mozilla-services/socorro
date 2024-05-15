@@ -54,6 +54,7 @@ echo ">>> run tests"
 
 # Run socorro tests
 "${PYTEST}"
+CLOUD_PROVIDER=GCP "${PYTEST}" -m gcp
 
 # Collect static and then run pytest in the webapp
 pushd webapp

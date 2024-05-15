@@ -72,6 +72,7 @@ def set_up_logging(
             "fillmore": {"handlers": ["mozlog"], "level": logging.ERROR},
             "markus": {"handlers": ["console"], "level": logging.INFO},
             "socorro": {"handlers": ["console"], "level": logging_level},
+            "collector": {"handlers": ["console"], "level": logging.INFO},
             "py.warnings": {"handlers": ["console"]},
         }
 

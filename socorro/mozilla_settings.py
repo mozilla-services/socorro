@@ -418,3 +418,29 @@ BETAVERSIONRULE_VERSION_STRING_API = _config(
     default="https://crash-stats.mozilla.org/api/VersionString",
     doc="URL for the version string API endpoint in the Crash Stats webapp.",
 )
+
+
+# Stage submitter configuration
+STAGE_SUBMITTER_LOGGING_LEVEL = _config(
+    "STAGE_SUBMITTER_LOGGING_LEVEL",
+    default="INFO",
+    doc=(
+        "Default logging level for the stage submitter. Should be one of DEBUG, INFO, "
+        "WARNING, ERROR."
+    ),
+)
+
+STAGE_SUBMITTER_DESTINATIONS = _config(
+    "STAGE_SUBMITTER_DESTINATIONS",
+    default="",
+    doc=(
+        "Comma-separated pairs of ``DESTINATION_URL|SAMPLE`` where the "
+        "``DESTINATION_URL`` is an https url to submit the crash report to "
+        "and ``SAMPLE`` is a number between 0 and 100 representing the sample "
+        "rate. For example:\n"
+        "\n"
+        "* ``https://example.com|20``\n"
+        "* ``https://example.com|30,https://example2.com|100``"
+    ),
+    parser=ListOf(str),
+)
