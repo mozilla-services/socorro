@@ -149,7 +149,6 @@ def test_basic(queue_helper, storage_helper, mock_collector):
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
@@ -223,7 +222,6 @@ def test_multiple_destinations(queue_helper, storage_helper, mock_collector):
     ):
         app = get_app()
         app.run_once()
-        app.shutdown()
 
     # Verify payload was submitted
     #
@@ -266,7 +264,6 @@ def test_annotations_as_json(queue_helper, storage_helper, mock_collector):
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
@@ -318,7 +315,6 @@ def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
@@ -387,7 +383,6 @@ def test_compressed(queue_helper, storage_helper, mock_collector):
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
@@ -455,7 +450,6 @@ def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collect
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
@@ -492,7 +486,6 @@ def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collecto
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify no payload was submitted
     assert len(mock_collector.payloads) == 0
@@ -542,7 +535,6 @@ def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_colle
         app = get_app()
         with MetricsMock() as metricsmock:
             app.run_once()
-            app.shutdown()
 
     # Verify only second destination got a payload
     assert len(mock_collector.payloads) == 1
@@ -584,7 +576,6 @@ def test_user_agent(queue_helper, storage_helper, mock_collector):
     ):
         app = get_app()
         app.run_once()
-        app.shutdown()
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
