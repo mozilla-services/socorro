@@ -11,3 +11,4 @@ in concert with one another.
    processor
    webapp
    cron
+   stage_submitter

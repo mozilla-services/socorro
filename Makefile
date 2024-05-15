@@ -92,6 +92,13 @@ runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
 		statsd \
 		symbolsserver
 
+.PHONY: runsubmitter
+runsubmitter: my.env  ## | Run stage_submitter and fakecollector
+	${DC} up \
+		--attach stage_submitter \
+		--attach fakecollector \
+		stage_submitter fakecollector
+
 .PHONY: stop
 stop: my.env  ## | Stop all service containers.
 	${DC} stop

@@ -37,6 +37,12 @@ crontabber)  ## Run crontabber service
 webapp)  ## Run webapp service
     /app/bin/run_service_webapp.sh "$@"
     ;;
+stage_submitter)  ## Runs the stage submitter
+    /app/bin/run_service_stage_submitter.sh
+    ;;
+fakecollector)  ## Runs a local fake collector
+    /app/bin/run_fakecollector.sh
+    ;;
 symbolsserver)  ## Runs a local symbols server
     /app/bin/run_symbolsserver.sh
     ;;
