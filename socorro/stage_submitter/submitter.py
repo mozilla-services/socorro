@@ -34,13 +34,13 @@ from typing import Callable
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import markus
-import requests
 import sentry_sdk
 
 from socorro import settings
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.lib.libdockerflow import get_release_name, get_version_info
 from socorro.lib.liblogging import set_up_logging
+from socorro.lib.librequests import session_with_retries
 from socorro.libclass import build_instance_from_settings
 
 
@@ -346,6 +346,8 @@ class SubmitterApp:
                     # need to do more work
                     return
 
+                session = session_with_retries()
+
                 try:
                     raw_crash = self.source.get_raw_crash(crash_id)
                     dumps = self.source.get_dumps(crash_id)
@@ -391,8 +393,7 @@ class SubmitterApp:
                 for destination in destinations:
                     try:
                         # POST crash to new environment
-                        # FIXME(willkg): retryable post
-                        requests.post(destination.url, headers=headers, data=payload)
+                        session.post(destination.url, headers=headers, data=payload)
 
                     except Exception:
                         METRICS.incr("unknown_submit_error", value=1)
@@ -400,37 +401,36 @@ class SubmitterApp:
                             "Error: http post failed for unknown reason: %s", crash_id
                         )
 
-    def run_loop(self):
+    def run_loop(self, infinite_loop=True):
         """Run cache manager in a loop."""
         crashes = self.source_iterator()
         while True:
             crash = next(crashes)
-            crash_id = crash.crash_id
-            finished_func = crash.finished_func
-
             try:
                 self.process(crash)
             except Exception:
                 METRICS.incr("unknown_process_error", value=1)
                 self.logger.exception(
-                    "error: processing failed for unknown reason: %s", crash_id
+                    "error: processing failed for unknown reason: %s", crash.crash_id
                 )
             finally:
                 try:
-                    finished_func()
+                    crash.finished_func()
                 except Exception:
                     METRICS.incr("unknown_finished_func_error", value=1)
                     self.logger.exception(
-                        "error: finished_func failed for unknown reason: %s", crash_id
+                        "error: finished_func failed for unknown reason: %s",
+                        crash.crash_id,
                     )
+
+            if not infinite_loop:
+                break
 
         self.shutdown()
 
     def run_once(self):
         """Runs a nonblocking event generator once."""
-        crashes = self.source_iterator()
-        crash = next(crashes)
-        self.process(crash)
+        self.run_loop(infinite_loop=False)
 
     def shutdown(self):
         """Shut down an event generator."""
