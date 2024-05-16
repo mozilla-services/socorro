@@ -17,7 +17,7 @@ It pulls all its configuration from socorro.settings.
 
 To run::
 
-    $ /app/bin/run_processor_cache_manager.sh
+    $ /app/bin/run_cache_manager.sh
 
 """
 

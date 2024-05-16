@@ -11,8 +11,8 @@ Job configuration is in ``webapp/crashstats/cron/__init__.py``.
 
 Code is in ``webapp/crashstats/cron/``.
 
-Run script is ``/app/bin/run_crontabber.sh``. This is an infinite loop that
-runs the ``manage.py cronrun`` command every 5 minutes.
+Run script is ``/app/bin/run_service_crontabber.sh``. This is an infinite loop
+that runs the ``manage.py cronrun`` command every 5 minutes.
 
 
 manage.py cronrun

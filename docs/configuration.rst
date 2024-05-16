@@ -29,8 +29,8 @@ Gunicorn configuration:
 
    https://docs.gunicorn.org/en/stable/settings.html#timeout
 
-   Used in `bin/run_webapp.sh
-   <https://github.com/mozilla-services/socorro/blob/main/bin/run_webapp.sh>`_.
+   Used in `bin/run_service_webapp.sh
+   <https://github.com/mozilla-services/socorro/blob/main/bin/run_service_webapp.sh>`_.
 
 
 .. everett:option:: GUNICORN_WORKERS
@@ -44,8 +44,8 @@ Gunicorn configuration:
 
    http://docs.gunicorn.org/en/stable/design.html#how-many-workers
 
-   Used in `bin/run_webapp.sh
-   <https://github.com/mozilla-services/socorro/blob/main/bin/run_webapp.sh>`_.
+   Used in `bin/run_service_webapp.sh
+   <https://github.com/mozilla-services/socorro/blob/main/bin/run_service_webapp.sh>`_.
 
 
 .. everett:option:: GUNICORN_WORKER_CLASS
@@ -55,8 +55,8 @@ Gunicorn configuration:
 
    https://docs.gunicorn.org/en/stable/settings.html#workers
 
-   Used in `bin/run_webapp.sh
-   <https://github.com/mozilla-services/socorro/blob/main/bin/run_webapp.sh>`_.
+   Used in `bin/run_service_webapp.sh
+   <https://github.com/mozilla-services/socorro/blob/main/bin/run_service_webapp.sh>`_.
 
 
 .. everett:option:: GUNICORN_MAX_REQUESTS
@@ -66,8 +66,8 @@ Gunicorn configuration:
 
    https://docs.gunicorn.org/en/stable/settings.html#workers
 
-   Used in `bin/run_webapp.sh
-   <https://github.com/mozilla-services/socorro/blob/main/bin/run_webapp.sh>`_.
+   Used in `bin/run_service_webapp.sh
+   <https://github.com/mozilla-services/socorro/blob/main/bin/run_service_webapp.sh>`_.
 
 
 .. everett:option:: GUNICORN_MAX_REQUESTS_JITTER
@@ -78,8 +78,8 @@ Gunicorn configuration:
 
    https://docs.gunicorn.org/en/stable/settings.html#workers
 
-   Used in `bin/run_webapp.sh
-   <https://github.com/mozilla-services/socorro/blob/main/bin/run_webapp.sh>`_.
+   Used in `bin/run_service_webapp.sh
+   <https://github.com/mozilla-services/socorro/blob/main/bin/run_service_webapp.sh>`_.
 
 
 Webapp configuration:
