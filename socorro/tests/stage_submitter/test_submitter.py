@@ -24,7 +24,7 @@ def get_app():
     return app
 
 
-def generate_s3_key(kind, crash_id):
+def generate_storage_key(kind, crash_id):
     """Generates the key in S3 for this object kind
 
     :arg kind: the kind of thing to fetch
@@ -34,12 +34,12 @@ def generate_s3_key(kind, crash_id):
 
     """
     if kind == "raw_crash":
-        return "v1/raw_crash/20%s/%s" % (crash_id[-6:], crash_id)
+        return f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}"
     if kind == "dump_names":
-        return "v1/dump_names/%s" % crash_id
+        return f"v1/dump_names/{crash_id}"
     if kind in (None, "", "upload_file_minidump"):
         kind = "dump"
-    return "v1/%s/%s" % (kind, crash_id)
+    return f"v1/{kind}/{crash_id}"
 
 
 def jsonify(data):
@@ -50,18 +50,18 @@ def save_crash(storage_helper, bucket, raw_crash, dumps):
     crash_id = raw_crash["uuid"]
 
     # Save raw crash
-    key = generate_s3_key("raw_crash", crash_id)
+    key = generate_storage_key("raw_crash", crash_id)
     data = jsonify(raw_crash).encode("utf-8")
     storage_helper.upload(bucket, key, data)
 
     # Save dump_names
-    key = generate_s3_key("dump_names", crash_id)
+    key = generate_storage_key("dump_names", crash_id)
     data = jsonify(list(dumps.keys())).encode("utf-8")
     storage_helper.upload(bucket, key, data)
 
     # Save dumps
     for name, data in dumps.items():
-        key = generate_s3_key(name, crash_id)
+        key = generate_storage_key(name, crash_id)
         data = data.encode("utf-8")
         storage_helper.upload(bucket, key, data)
 
