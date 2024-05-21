@@ -4,7 +4,6 @@
 
 from datetime import date, datetime, time, timezone
 import json
-import pytest
 
 from click.testing import CliRunner
 
@@ -62,14 +61,10 @@ def test_it_runs():
     assert result.exit_code == 0
 
 
-@pytest.mark.skipif(
-    settings.CLOUD_PROVIDER != "AWS",
-    reason="Skipping test because CLOUD_PROVIDER is not set to 'AWS'",
-)
-def test_it_loads_processed_crashes_by_date_s3(s3_helper, es_helper):
+def test_it_loads_processed_crashes_by_date(storage_helper, es_helper):
     """Test whether the module loads processed crashes by date from S3."""
     date_str = "2024-05-01"
-    expected_crashes = load_crashes_into_crashstorage_source(s3_helper, date_str)
+    expected_crashes = load_crashes_into_crashstorage_source(storage_helper, date_str)
     runner = CliRunner()
     result = runner.invoke(load_crashes, ["--date", date_str])
     assert result.exit_code == 0
@@ -80,48 +75,9 @@ def test_it_loads_processed_crashes_by_date_s3(s3_helper, es_helper):
         assert actual_crash == expected_crash
 
 
-@pytest.mark.skipif(
-    settings.CLOUD_PROVIDER != "AWS",
-    reason="Skipping test because CLOUD_PROVIDER is not set to 'AWS'",
-)
-def test_it_loads_processed_crashes_by_crashid_s3(s3_helper, es_helper):
+def test_it_loads_processed_crashes_by_crashid(storage_helper, es_helper):
     """Test whether the module loads processed crashes by crash id from S3."""
-    expected_crashes = load_crashes_into_crashstorage_source(s3_helper)
-    runner = CliRunner()
-    expected_crash = expected_crashes[0]
-    crash_id = expected_crash["uuid"]
-    result = runner.invoke(load_crashes, ["--crash-id", crash_id])
-    assert result.exit_code == 0
-    es_helper.refresh()
-    actual_crash = es_helper.get_crash_data(crash_id)["processed_crash"]
-    assert actual_crash == expected_crash
-
-
-@pytest.mark.skipif(
-    settings.CLOUD_PROVIDER != "GCP",
-    reason="Skipping test because CLOUD_PROVIDER is not set to 'GCP'",
-)
-def test_it_loads_processed_crashes_by_date_gcs(gcs_helper, es_helper):
-    """Test whether the module loads processed crashes by date from GCS."""
-    date_str = "2024-05-01"
-    expected_crashes = load_crashes_into_crashstorage_source(gcs_helper, date_str)
-    runner = CliRunner()
-    result = runner.invoke(load_crashes, ["--date", date_str])
-    assert result.exit_code == 0
-    es_helper.refresh()
-    for expected_crash in expected_crashes:
-        crash_id = expected_crash["uuid"]
-        actual_crash = es_helper.get_crash_data(crash_id)["processed_crash"]
-        assert actual_crash == expected_crash
-
-
-@pytest.mark.skipif(
-    settings.CLOUD_PROVIDER != "GCP",
-    reason="Skipping test because CLOUD_PROVIDER is not set to 'GCP'",
-)
-def test_it_loads_processed_crashes_by_crashid_gcs(gcs_helper, es_helper):
-    """Test whether the module loads processed crashes by crash id from GCS."""
-    expected_crashes = load_crashes_into_crashstorage_source(gcs_helper)
+    expected_crashes = load_crashes_into_crashstorage_source(storage_helper)
     runner = CliRunner()
     expected_crash = expected_crashes[0]
     crash_id = expected_crash["uuid"]
