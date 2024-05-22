@@ -62,7 +62,7 @@ def test_it_runs():
 
 
 def test_it_loads_processed_crashes_by_date(storage_helper, es_helper):
-    """Test whether the module loads processed crashes by date from S3."""
+    """Test whether the module loads processed crashes by date."""
     date_str = "2024-05-01"
     expected_crashes = load_crashes_into_crashstorage_source(storage_helper, date_str)
     runner = CliRunner()
@@ -76,7 +76,7 @@ def test_it_loads_processed_crashes_by_date(storage_helper, es_helper):
 
 
 def test_it_loads_processed_crashes_by_crashid(storage_helper, es_helper):
-    """Test whether the module loads processed crashes by crash id from S3."""
+    """Test whether the module loads processed crashes by crash id."""
     expected_crashes = load_crashes_into_crashstorage_source(storage_helper)
     runner = CliRunner()
     expected_crash = expected_crashes[0]
