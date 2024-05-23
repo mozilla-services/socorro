@@ -159,6 +159,8 @@ mozilla::RangeBoundaryBase<T>::operator
 mozilla::RefPtrTraits<T>::
 mozilla::SegmentedVector<T>::SegmentImpl<T>::
 mozilla::Span<T>
+mozilla::StringBuffer::AddRef
+mozilla::StringBuffer::Release
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::TaskQueue::
 mozilla::ThreadEventQueue
@@ -174,6 +176,8 @@ nsMaybeWeakPtr<T>::
 nsQueryObject<T>::operator
 nsRunnableMethodReceiver<T>::nsRunnableMethodReceiver
 ns.*Hashtable
+nsStringBuffer::AddRef
+nsStringBuffer::Release
 nsTArrayElementTraits
 nsTArrayInfallibleAllocator
 nsTArray_base<
@@ -201,6 +205,7 @@ RaiseException
 RealMsgWaitFor
 RefPtr<T>::
 regex::pool::impl
+ReleaseData
 _report_gsfailure
 __report_gsfailure
 _rust_alloc_error_handler
