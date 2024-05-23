@@ -123,7 +123,7 @@ class TestPipeline:
             processed_crash = {}
 
             rulesets = {"default": [BadRule()]}
-            processor = Pipeline(rulesets=rulesets)
+            processor = Pipeline(rulesets=rulesets, hostname="testhost")
             processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
@@ -146,7 +146,7 @@ class TestPipeline:
         processed_crash = {"processor_notes": "previousnotes"}
 
         rulesets = {"default": [CPUInfoRule(), OSInfoRule()]}
-        pipeline = Pipeline(rulesets=rulesets)
+        pipeline = Pipeline(rulesets=rulesets, hostname="testhost")
 
         now = utc_now()
         with freezegun.freeze_time(now):

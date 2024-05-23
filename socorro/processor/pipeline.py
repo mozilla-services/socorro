@@ -33,14 +33,14 @@ class Status:
 class Pipeline:
     """Processor pipeline for Mozilla crash ingestion."""
 
-    def __init__(self, rulesets, host_id=None):
+    def __init__(self, rulesets, hostname):
         """
         :arg rulesets: either a dict of name -> list of rules or a Python dotted
             string path to a dict of name -> list of rules
-        :arg host_id: the id of the host this is running on; used for logging
+        :arg hostname: the id of the host this is running on; used for logging
         """
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-        self.host_id = host_id or "unknown"
+        self.hostname = hostname
 
         if isinstance(rulesets, str):
             rulesets = import_class(rulesets)
@@ -72,7 +72,7 @@ class Pipeline:
         start_time = utc_now()
         processed_crash["started_datetime"] = date_to_string(start_time)
 
-        status.add_note(f">>> Start processing: {start_time} ({self.host_id})")
+        status.add_note(f">>> Start processing: {start_time} ({self.hostname})")
 
         processed_crash["signature"] = "EMPTY: crash failed to process"
 

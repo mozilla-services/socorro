@@ -184,7 +184,10 @@ def test_basic(queue_helper, storage_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    metricsmock.assert_incr("socorro.submitter.accept")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_multiple_destinations(queue_helper, storage_helper, mock_collector):
@@ -284,7 +287,10 @@ def test_annotations_as_json(queue_helper, storage_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    metricsmock.assert_incr("socorro.submitter.accept")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
@@ -351,7 +357,10 @@ def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    metricsmock.assert_incr("socorro.submitter.accept")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_compressed(queue_helper, storage_helper, mock_collector):
@@ -417,7 +426,10 @@ def test_compressed(queue_helper, storage_helper, mock_collector):
         b"--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    metricsmock.assert_incr("socorro.submitter.accept")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collector):
@@ -453,7 +465,10 @@ def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collect
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
-    metricsmock.assert_incr("socorro.submitter.accept")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collector):
@@ -490,8 +505,12 @@ def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collecto
     # Verify no payload was submitted
     assert len(mock_collector.payloads) == 0
 
-    metricsmock.assert_not_incr("socorro.submitter.accept")
-    metricsmock.assert_incr("socorro.submitter.ignore")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_not_incr("submitter.accept")
+        metricsmock.assert_incr("submitter.ignore")
+    else:
+        metricsmock.assert_not_incr("socorro.submitter.accept")
+        metricsmock.assert_incr("socorro.submitter.ignore")
 
 
 def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_collector):
@@ -539,8 +558,12 @@ def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_colle
     # Verify only second destination got a payload
     assert len(mock_collector.payloads) == 1
     assert mock_collector.payloads[0].hostname == "antenna_2"
-    metricsmock.assert_incr("socorro.submitter.accept")
-    metricsmock.assert_incr("socorro.submitter.ignore")
+    if settings.CLOUD_PROVIDER == "AWS":
+        metricsmock.assert_incr("submitter.accept")
+        metricsmock.assert_incr("submitter.ignore")
+    else:
+        metricsmock.assert_incr("socorro.submitter.accept")
+        metricsmock.assert_incr("socorro.submitter.ignore")
 
 
 def test_user_agent(queue_helper, storage_helper, mock_collector):

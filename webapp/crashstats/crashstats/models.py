@@ -19,13 +19,13 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse, NoReverseMatch
 from django.utils.encoding import iri_to_uri
 
-import markus
 from pymemcache.exceptions import MemcacheServerError
 
 from socorro import settings as socorro_settings
 from socorro.external.boto.crash_data import SimplifiedCrashData, TelemetryCrashData
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
+from socorro.libmarkus import METRICS
 from socorro.lib.libooid import is_crash_id_valid
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import (
@@ -37,9 +37,6 @@ from socorro.lib.libsocorrodataschema import (
 
 
 logger = logging.getLogger("crashstats.models")
-
-
-metrics = markus.get_metrics("webapp.crashstats.models")
 
 
 RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
@@ -324,7 +321,7 @@ class SocorroCommon:
             try:
                 cache.set(cache_key, result, timeout=self.cache_seconds)
             except MemcacheServerError:
-                metrics.incr("cache_set_error")
+                METRICS.incr("webapp.crashstats.models.cache_set_error")
 
         return result
 

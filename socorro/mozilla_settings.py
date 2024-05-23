@@ -53,8 +53,8 @@ LOCAL_DEV_ENV = _config(
     doc="Whether or not this is a local development environment.",
 )
 
-HOST_ID = _config(
-    "HOST_ID",
+HOSTNAME = _config(
+    "HOSTNAME",
     default=socket.gethostname(),
     doc="Name of the host this is running on.",
 )
@@ -73,27 +73,9 @@ LOGGING_LEVEL = _config(
     doc="Default logging level. Should be one of DEBUG, INFO, WARNING, ERROR.",
 )
 
-# Markus configuration for metrics
-MARKUS_BACKENDS = [
-    {
-        "class": "markus.backends.datadog.DatadogMetrics",
-        "options": {
-            "statsd_host": _config(
-                "STATSD_HOST",
-                default="localhost",
-                doc="statsd host.",
-            ),
-            "statsd_port": _config(
-                "STATSD_PORT",
-                default="8125",
-                parser=int,
-                doc="statsd port.",
-            ),
-        },
-    },
-]
-if LOCAL_DEV_ENV:
-    MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
+
+STATSD_HOST = _config("STATSD_HOST", default="localhost", doc="statsd host.")
+STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int, doc="statsd port.")
 
 
 # Processor configuration
@@ -120,7 +102,7 @@ PROCESSOR = {
         "class": "socorro.processor.pipeline.Pipeline",
         "options": {
             "rulesets": "socorro.mozilla_rulesets.RULESETS",
-            "host_id": HOST_ID,
+            "hostname": HOSTNAME,
         },
     },
     "temporary_path": _config(

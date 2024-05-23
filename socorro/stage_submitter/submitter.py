@@ -33,19 +33,16 @@ from typing import Callable
 
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
-import markus
 import sentry_sdk
 
 from socorro import settings
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.libmarkus import METRICS, set_up_metrics
 from socorro.lib.libdockerflow import get_release_name, get_version_info
 from socorro.lib.liblogging import set_up_logging
 from socorro.lib.librequests import session_with_retries
 from socorro.libclass import build_instance_from_settings
 
-
-# Metrics client to use
-METRICS = markus.get_metrics("socorro.submitter")
 
 # Default user agent to use when submitting to a destination url
 DEFAULT_USER_AGENT = "stage-submitter/2.0"
@@ -238,7 +235,7 @@ def get_payload_compressed(raw_crash):
 
 def count_sentry_scrub_error(msg):
     """Counts sentry scrub errors"""
-    METRICS.incr("sentry_scrub_error", value=1, tags=["service:submitter"])
+    METRICS.incr("submitter.sentry_scrub_error", value=1, tags=["service:submitter"])
 
 
 def handle_exception(exctype, value, tb):
@@ -262,9 +259,14 @@ class SubmitterApp:
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
             logging_level=settings.STAGE_SUBMITTER_LOGGING_LEVEL,
-            host_id=settings.HOST_ID,
+            hostname=settings.HOSTNAME,
         )
-        markus.configure(backends=settings.MARKUS_BACKENDS)
+        set_up_metrics(
+            statsd_host=settings.STATSD_HOST,
+            statsd_port=settings.STATSD_PORT,
+            hostname=settings.HOSTNAME,
+            debug=settings.LOCAL_DEV_ENV,
+        )
 
         scrubber = Scrubber(
             rules=SCRUB_RULES_DEFAULT,
@@ -273,7 +275,7 @@ class SubmitterApp:
         set_up_sentry(
             sentry_dsn=settings.SENTRY_DSN,
             release=get_release_name(self.basedir),
-            host_id=settings.HOST_ID,
+            host_id=settings.HOSTNAME,
             before_send=scrubber,
         )
 
@@ -325,7 +327,7 @@ class SubmitterApp:
         ]
 
     def process(self, crash):
-        with METRICS.timer("process"):
+        with METRICS.timer("submitter.process"):
             with sentry_sdk.push_scope() as scope:
                 crash_id = crash.crash_id
                 self.logger.debug(f"processing {crash}")
@@ -336,9 +338,9 @@ class SubmitterApp:
                 destinations = []
                 for dest in self.destinations:
                     if dest.sample < 100 and random.randint(0, 100) > dest.sample:
-                        METRICS.incr("ignore")
+                        METRICS.incr("submitter.ignore")
                     else:
-                        METRICS.incr("accept")
+                        METRICS.incr("submitter.accept")
                         destinations.append(dest)
 
                 if not destinations:
@@ -396,7 +398,7 @@ class SubmitterApp:
                         session.post(destination.url, headers=headers, data=payload)
 
                     except Exception:
-                        METRICS.incr("unknown_submit_error", value=1)
+                        METRICS.incr("submitter.unknown_submit_error", value=1)
                         self.logger.exception(
                             "Error: http post failed for unknown reason: %s", crash_id
                         )
@@ -409,7 +411,7 @@ class SubmitterApp:
             try:
                 self.process(crash)
             except Exception:
-                METRICS.incr("unknown_process_error", value=1)
+                METRICS.incr("submitter.unknown_process_error", value=1)
                 self.logger.exception(
                     "error: processing failed for unknown reason: %s", crash.crash_id
                 )
@@ -417,7 +419,7 @@ class SubmitterApp:
                 try:
                     crash.finished_func()
                 except Exception:
-                    METRICS.incr("unknown_finished_func_error", value=1)
+                    METRICS.incr("submitter.unknown_finished_func_error", value=1)
                     self.logger.exception(
                         "error: finished_func failed for unknown reason: %s",
                         crash.crash_id,

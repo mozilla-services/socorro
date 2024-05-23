@@ -27,7 +27,6 @@ import time
 
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
-import markus
 import psutil
 import sentry_sdk
 from sentry_sdk.integrations.atexit import AtexitIntegration
@@ -41,17 +40,15 @@ from sentry_sdk.integrations.threading import ThreadingIntegration
 from socorro import settings
 from socorro.external.crashstorage_base import CrashIDNotFound
 from socorro.libclass import build_instance, build_instance_from_settings
+from socorro.libmarkus import set_up_metrics, METRICS
 from socorro.lib.libdatetime import isoformat_to_time
 from socorro.lib.libdockerflow import get_release_name, get_version_info
 from socorro.lib.liblogging import set_up_logging
 from socorro.lib.task_manager import respond_to_SIGTERM
 
 
-METRICS = markus.get_metrics("processor")
-
-
 def count_sentry_scrub_error(msg):
-    METRICS.incr("sentry_scrub_error", value=1, tags=["service:processor"])
+    METRICS.incr("processor.sentry_scrub_error", value=1, tags=["service:processor"])
 
 
 class ProcessorApp:
@@ -82,7 +79,7 @@ class ProcessorApp:
         set_up_sentry(
             sentry_dsn=settings.SENTRY_DSN,
             release=release,
-            host_id=settings.HOST_ID,
+            host_id=settings.HOSTNAME,
             # Disable frame-local variables
             with_locals=False,
             # Disable request data from being added to Sentry events
@@ -132,7 +129,9 @@ class ProcessorApp:
                 crash_id, ruleset_name = task, "default"
 
             # Set up metrics and sentry scopes
-            with METRICS.timer("process_crash", tags=[f"ruleset:{ruleset_name}"]):
+            with METRICS.timer(
+                "processor.process_crash", tags=[f"ruleset:{ruleset_name}"]
+            ):
                 with sentry_sdk.push_scope() as scope:
                     scope.set_extra("crash_id", crash_id)
                     scope.set_extra("ruleset", ruleset_name)
@@ -212,7 +211,7 @@ class ProcessorApp:
         for dest in self.destinations:
             try:
                 with METRICS.timer(
-                    f"{dest.crash_destination_name}.save_processed_crash"
+                    f"processor.{dest.crash_destination_name}.save_processed_crash"
                 ):
                     dest.save_processed_crash(raw_crash, processed_crash)
             except Exception as storage_error:
@@ -225,7 +224,7 @@ class ProcessorApp:
                 # Re-raise the original exception with the correct traceback
                 raise
 
-        METRICS.incr("save_processed_crash")
+        METRICS.incr("processor.save_processed_crash")
 
         self.logger.info("saved %s", crash_id)
 
@@ -238,7 +237,7 @@ class ProcessorApp:
             if collected:
                 delta = time.time() - isoformat_to_time(collected)
                 delta = delta * 1000
-                METRICS.timing("ingestion_timing", value=delta)
+                METRICS.timing("processor.ingestion_timing", value=delta)
 
         self.logger.info("completed %s", crash_id)
 
@@ -327,11 +326,15 @@ class ProcessorApp:
                 )
                 open_files += open_files_count
 
-            METRICS.gauge("open_files", open_files)
+            METRICS.gauge("processor.open_files", open_files)
             for proc_type, val in processes_by_type.items():
-                METRICS.gauge("processes_by_type", val, tags=[f"proctype:{proc_type}"])
+                METRICS.gauge(
+                    "processor.processes_by_type", val, tags=[f"proctype:{proc_type}"]
+                )
             for status, val in processes_by_status.items():
-                METRICS.gauge("processes_by_status", val, tags=[f"procstatus:{status}"])
+                METRICS.gauge(
+                    "processor.processes_by_status", val, tags=[f"procstatus:{status}"]
+                )
 
         except Exception as exc:
             sentry_sdk.capture_exception(exc)
@@ -355,11 +358,16 @@ class ProcessorApp:
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
             logging_level=settings.LOGGING_LEVEL,
-            host_id=settings.HOST_ID,
+            hostname=settings.HOSTNAME,
         )
         self.log_config()
 
-        markus.configure(backends=settings.MARKUS_BACKENDS)
+        set_up_metrics(
+            statsd_host=settings.STATSD_HOST,
+            statsd_port=settings.STATSD_PORT,
+            hostname=settings.HOSTNAME,
+            debug=settings.LOCAL_DEV_ENV,
+        )
         self._set_up_sentry()
 
         self._set_up_task_manager()

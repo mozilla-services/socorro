@@ -10,8 +10,8 @@ import shlex
 import subprocess
 
 import glom
-import markus
 
+from socorro.libmarkus import METRICS
 from socorro.processor.rules.base import Rule
 
 
@@ -164,10 +164,6 @@ class TruncateStacksRule(Rule):
     MAX_FRAMES = 500
     HALF_MAX_FRAMES = int(MAX_FRAMES / 2)
 
-    def __init__(self):
-        super().__init__()
-        self.metrics = markus.get_metrics("processor.truncatestacksrule")
-
     def truncation_frame(self, truncated_frames):
         return {"truncated": {"msg": f"{len(truncated_frames):,} frames truncated"}}
 
@@ -180,8 +176,8 @@ class TruncateStacksRule(Rule):
             frame in the middle
 
         """
-        self.metrics.gauge("stack_size", len(frames))
-        self.metrics.incr("truncated")
+        METRICS.gauge("processor.truncatestackrule.stack_size", len(frames))
+        METRICS.incr("processor.truncatestackrule.truncated")
 
         first_frames = frames[: self.HALF_MAX_FRAMES]
         truncated_frames = frames[self.HALF_MAX_FRAMES : -self.HALF_MAX_FRAMES]
@@ -331,8 +327,6 @@ class MinidumpStackwalkRule(Rule):
         self.stackwalk_version = self.get_version()
         self.build_directories()
 
-        self.metrics = markus.get_metrics("processor.minidumpstackwalk")
-
     def __repr__(self):
         keys = (
             "dump_field",
@@ -478,8 +472,8 @@ class MinidumpStackwalkRule(Rule):
             status.add_note(msg)
             self.logger.warning("%s (%s)", msg, crash_id)
 
-        self.metrics.incr(
-            "run",
+        METRICS.incr(
+            "processor.minidumpstackwalk.run",
             tags=[
                 "outcome:%s" % ("success" if stackwalker_data["success"] else "fail"),
                 "exitcode:%s" % returncode,

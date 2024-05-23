@@ -12,19 +12,19 @@ from decouple import config as CONFIG
 
 LOGGING_LEVEL = CONFIG("LOGGING_LEVEL", "INFO")
 LOCAL_DEV_ENV = CONFIG("LOCAL_DEV_ENV", False, cast=bool)
-HOST_ID = socket.gethostname()
+HOSTNAME = CONFIG("HOSTNAME", default=socket.gethostname())
 
 
-class AddHostID(logging.Filter):
+class AddHostname(logging.Filter):
     def filter(self, record):
-        record.host_id = HOST_ID
+        record.hostname = HOSTNAME
         return True
 
 
 logconfig_dict = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {"add_hostid": {"()": AddHostID}},
+    "filters": {"add_hostname": {"()": AddHostname}},
     "handlers": {
         "console": {
             "level": LOGGING_LEVEL,
@@ -35,7 +35,7 @@ logconfig_dict = {
             "level": LOGGING_LEVEL,
             "class": "logging.StreamHandler",
             "formatter": "mozlog",
-            "filters": ["add_hostid"],
+            "filters": ["add_hostname"],
         },
     },
     "formatters": {
