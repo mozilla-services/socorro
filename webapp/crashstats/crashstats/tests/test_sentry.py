@@ -179,4 +179,4 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        metricsmock.assert_incr("webapp.crashstats.apps.sentry_scrub_error", value=1)
+        metricsmock.assert_incr("webapp.sentry_scrub_error", value=1)

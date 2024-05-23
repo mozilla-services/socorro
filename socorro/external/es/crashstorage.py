@@ -23,7 +23,7 @@ from socorro.external.es.super_search_fields import (
     is_indexable,
     parse_mapping,
 )
-
+from socorro.libmarkus import METRICS, build_prefix
 from socorro.lib.libdatetime import JsonDTEncoder, string_to_datetime, utc_now
 
 
@@ -293,7 +293,9 @@ class ESCrashStorage(CrashStorageBase):
 
         self.client = self.build_client(url=url, timeout=timeout)
 
-        self.metrics = markus.get_metrics(metrics_prefix)
+        # Create a MetricsInterface that includes the base prefix plus the prefix passed
+        # into __init__
+        self.metrics = markus.get_metrics(build_prefix(METRICS.prefix, metrics_prefix))
 
         self.index = index
         self.index_regex = index_regex

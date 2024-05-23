@@ -6,7 +6,6 @@ import functools
 import time
 from urllib.parse import urlsplit
 
-import markus
 from markus.utils import generate_tag
 
 from django.contrib.auth.decorators import REDIRECT_FIELD_NAME, user_passes_test
@@ -15,6 +14,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 from crashstats.crashstats import utils
+from socorro.libmarkus import METRICS
 
 
 def login_required(
@@ -103,8 +103,6 @@ def pass_default_context(view):
     return inner
 
 
-VIEW_METRICS = markus.get_metrics("webapp.view")
-
 # List of url pattern names (see urls.py files) to use the url path
 # instead of the resolver route
 USE_PATH_VIEWS = [
@@ -175,8 +173,8 @@ def track_view(view):
             path = request.path
 
         delta = (time.time() - start_time) * 1000
-        VIEW_METRICS.timing(
-            "pageview",
+        METRICS.timing(
+            "webapp.view.pageview",
             value=delta,
             tags=[
                 cached_generate_tag("ajax", value=str(is_ajax).lower()),

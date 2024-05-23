@@ -5,7 +5,6 @@
 import json
 import os
 
-import markus
 from google.auth.credentials import AnonymousCredentials
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -93,8 +92,6 @@ class GcsCrashStorage(CrashStorageBase):
 
         self.bucket = bucket
         self.dump_file_suffix = dump_file_suffix
-
-        self.metrics = markus.get_metrics(metrics_prefix)
 
     def load_file(self, path):
         bucket = self.client.bucket(self.bucket)

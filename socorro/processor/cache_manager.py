@@ -33,9 +33,9 @@ from boltons.dictutils import OneToOne
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 from inotify_simple import INotify, flags, Event
-import markus
 
 from socorro import settings
+from socorro.libmarkus import METRICS, set_up_metrics
 from socorro.lib.libdockerflow import get_release_name, get_version_info
 from socorro.lib.liblogging import set_up_logging
 
@@ -46,15 +46,11 @@ MAX_ERRORS = 10
 # How many seconds between heartbeats
 HEARTBEAT_INTERVAL = 60
 
-# Metrics client to use
-METRICS = markus.get_metrics("processor.cache_manager")
-
 
 def count_sentry_scrub_error(msg):
     # NOTE(willkg): we re-use the processor prefix here and differentiate with the
     # service tag.
-    metrics = markus.get_metrics("processor")
-    metrics.incr("sentry_scrub_error", value=1, tags=["service:cachemanager"])
+    METRICS.incr("processor.sentry_scrub_error", value=1, tags=["service:cachemanager"])
 
 
 class LastUpdatedOrderedDict(OrderedDict):
@@ -149,9 +145,14 @@ class DiskCacheManager:
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
             logging_level=settings.CACHE_MANAGER_LOGGING_LEVEL,
-            host_id=settings.HOST_ID,
+            hostname=settings.HOSTNAME,
         )
-        markus.configure(backends=settings.MARKUS_BACKENDS)
+        set_up_metrics(
+            statsd_host=settings.STATSD_HOST,
+            statsd_port=settings.STATSD_PORT,
+            hostname=settings.HOSTNAME,
+            debug=settings.LOCAL_DEV_ENV,
+        )
 
         scrubber = Scrubber(
             rules=SCRUB_RULES_DEFAULT,
@@ -160,7 +161,7 @@ class DiskCacheManager:
         set_up_sentry(
             sentry_dsn=settings.SENTRY_DSN,
             release=get_release_name(self.basedir),
-            host_id=settings.HOST_ID,
+            host_id=settings.HOSTNAME,
             before_send=scrubber,
         )
 
@@ -273,7 +274,7 @@ class DiskCacheManager:
                 continue
 
             self.logger.debug("evicted %s %s", rm_path, f"{rm_size:,d}")
-            METRICS.incr("evict")
+            METRICS.incr("processor.cache_manager.evict")
 
         self.total_size -= removed
 
@@ -339,7 +340,7 @@ class DiskCacheManager:
                             continue
 
                         if flags.Q_OVERFLOW & event_mask:
-                            METRICS.incr("q_overflow")
+                            METRICS.incr("processor.cache_manager.q_overflow")
                             continue
 
                         try:
@@ -495,23 +496,33 @@ class DiskCacheManager:
                 now = time.time()
                 if now > next_heartbeat:
                     if is_verbose:
-                        METRICS.gauge("usage", value=self.total_size)
+                        METRICS.gauge(
+                            "processor.cache_manager.usage", value=self.total_size
+                        )
 
                     if self.lru:
                         sorted_sizes = list(sorted(self.lru.values()))
                         avg = int(sum(sorted_sizes) / len(sorted_sizes))
                         # Some metrics about file sizes
-                        METRICS.gauge("file_sizes.avg", avg)
-                        METRICS.gauge("file_sizes.median", get_index(sorted_sizes, 50))
+                        METRICS.gauge("processor.cache_manager.file_sizes.avg", avg)
                         METRICS.gauge(
-                            "file_sizes.ninety_five", get_index(sorted_sizes, 95)
+                            "processor.cache_manager.file_sizes.median",
+                            get_index(sorted_sizes, 50),
                         )
-                        METRICS.gauge("file_sizes.max", sorted_sizes[-1])
+                        METRICS.gauge(
+                            "processor.cache_manager.file_sizes.ninety_five",
+                            get_index(sorted_sizes, 95),
+                        )
+                        METRICS.gauge(
+                            "processor.cache_manager.file_sizes.max", sorted_sizes[-1]
+                        )
 
                         # Some metrics about what's in the cache
-                        METRICS.gauge("files.count", len(sorted_sizes))
+                        METRICS.gauge(
+                            "processor.cache_manager.files.count", len(sorted_sizes)
+                        )
                         gt_500 = len([fs for fs in sorted_sizes if fs > 500_000_000])
-                        METRICS.gauge("files.gt_500", gt_500)
+                        METRICS.gauge("processor.cache_manager.files.gt_500", gt_500)
 
                     next_heartbeat = now + HEARTBEAT_INTERVAL
 

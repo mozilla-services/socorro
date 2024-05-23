@@ -14,9 +14,9 @@ from zlib import error as ZlibError
 
 from glom import glom
 import jsonschema
-import markus
 import sentry_sdk
 
+from socorro.libmarkus import METRICS
 from socorro.lib import libsocorrodataschema
 from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
@@ -744,7 +744,6 @@ class BetaVersionRule(Rule):
         self.cache = ExpiringCache(
             max_size=self.CACHE_MAX_SIZE, default_ttl=self.SHORT_CACHE_TTL
         )
-        self.metrics = markus.get_metrics("processor.betaversionrule")
 
         # For looking up version strings
         self.version_string_api = version_string_api
@@ -771,10 +770,10 @@ class BetaVersionRule(Rule):
 
         key = "%s:%s:%s" % (product, channel, build_id)
         if key in self.cache:
-            self.metrics.incr("cache", tags=["result:hit"])
+            METRICS.incr("processor.betaversionrule.cache", tags=["result:hit"])
             return self.cache[key]
 
-        self.metrics.incr("cache", tags=["result:miss"])
+        METRICS.incr("processor.betaversionrule.cache", tags=["result:miss"])
 
         resp = self.session.get(
             self.version_string_api,
@@ -790,7 +789,7 @@ class BetaVersionRule(Rule):
             # We didn't get an answer which could mean that this is a weird build and
             # there is no answer or it could mean that Socorro doesn't know, yet. Maybe
             # in the future we get a better answer so we use the short ttl.
-            self.metrics.incr("lookup", tags=["result:fail"])
+            METRICS.incr("processor.betaversionrule.lookup", tags=["result:fail"])
             self.cache.set(key, value=None, ttl=self.SHORT_CACHE_TTL)
             return None
 
@@ -798,7 +797,7 @@ class BetaVersionRule(Rule):
         # a real answer and it's not going to change so use the long ttl plus
         # a fudge factor.
         real_version = versions[0]["version_string"]
-        self.metrics.incr("lookup", tags=["result:success"])
+        METRICS.incr("processor.betaversionrule.lookup", tags=["result:success"])
         self.cache.set(key, value=real_version, ttl=self.LONG_CACHE_TTL)
         return real_version
 

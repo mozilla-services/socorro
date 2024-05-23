@@ -13,7 +13,6 @@ import concurrent.futures
 import datetime
 from functools import partial
 
-import markus
 from more_itertools import chunked
 
 from django.core.management.base import BaseCommand, CommandError
@@ -26,6 +25,7 @@ from crashstats.supersearch.models import SuperSearchUnredacted
 from socorro import settings as socorro_settings
 from socorro.lib.libooid import date_from_ooid
 from socorro.libclass import build_instance_from_settings
+from socorro.libmarkus import METRICS
 
 
 # Number of seconds until we decide a worker has stalled
@@ -33,9 +33,6 @@ WORKER_TIMEOUT = 15 * 60
 
 # Number of prefix variations to pass to a check_crashids subprocess
 CHUNK_SIZE = 4
-
-
-metrics = markus.get_metrics("cron.verifyprocessed")
 
 
 def is_in_storage(crash_dest, crash_id):
@@ -151,7 +148,7 @@ class Command(BaseCommand):
 
     def handle_missing(self, date, missing):
         """Report crash ids for missing processed crashes."""
-        metrics.gauge("missing_processed", len(missing))
+        METRICS.gauge("cron.verifyprocessed.missing_processed", len(missing))
         if missing:
             for crash_id in missing:
                 self.stdout.write(f"Missing: {crash_id}")

@@ -5,8 +5,6 @@
 import json
 import logging
 
-import markus
-
 from socorro.external.crashstorage_base import (
     CrashStorageBase,
     CrashIDNotFound,
@@ -97,8 +95,6 @@ class BotoS3CrashStorage(CrashStorageBase):
         )
         self.bucket = bucket
         self.dump_file_suffix = dump_file_suffix
-
-        self.metrics = markus.get_metrics(metrics_prefix)
 
     @classmethod
     def build_connection(cls, region, access_key, secret_access_key, endpoint_url):

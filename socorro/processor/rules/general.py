@@ -5,12 +5,9 @@
 import re
 
 from glom import glom
-import markus
 
+from socorro.libmarkus import METRICS
 from socorro.processor.rules.base import Rule
-
-
-METRICS = markus.get_metrics("processor")
 
 
 class DeNullRule(Rule):
@@ -55,7 +52,7 @@ class DeNullRule(Rule):
                 raw_crash[new_key] = new_val
 
         if had_nulls:
-            METRICS.incr("denullrule.has_nulls")
+            METRICS.incr("processor.denullrule.has_nulls")
 
 
 class DeNoneRule(Rule):
@@ -76,7 +73,7 @@ class DeNoneRule(Rule):
                 del raw_crash[key]
 
         if had_nones:
-            METRICS.incr("denonerule.had_nones")
+            METRICS.incr("processor.denonerule.had_nones")
 
 
 class IdentifierRule(Rule):

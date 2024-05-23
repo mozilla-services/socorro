@@ -11,16 +11,23 @@ import socket
 def set_up_logging(
     local_dev_env=False,
     logging_level="INFO",
-    host_id=None,
+    hostname=None,
 ):
-    """Initialize Python logging."""
+    """Initialize Python logging.
 
-    if host_id is None:
-        host_id = socket.gethostname()
+    :arg local_dev_env: whether or not this is running in a local development
+        environment
+    :arg logging_level: the logging level to emit records at
+    :arg hostname: the hostname for this instance
 
-    class AddHostID(logging.Filter):
+    """
+
+    if hostname is None:
+        hostname = socket.gethostname()
+
+    class AddHostname(logging.Filter):
         def filter(self, record):
-            record.host_id = host_id
+            record.hostname = hostname
             return True
 
     class AddProcessName(logging.Filter):
@@ -34,7 +41,7 @@ def set_up_logging(
         "version": 1,
         "disable_existing_loggers": False,
         "filters": {
-            "add_hostid": {"()": AddHostID},
+            "add_hostname": {"()": AddHostname},
             "add_processname": {"()": AddProcessName},
         },
         "formatters": {
@@ -59,7 +66,7 @@ def set_up_logging(
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "mozlog",
-                "filters": ["add_hostid", "add_processname"],
+                "filters": ["add_hostname", "add_processname"],
             },
         },
     }

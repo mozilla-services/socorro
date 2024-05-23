@@ -92,7 +92,7 @@ class App:
 @click.option("--host", default="0.0.0.0", help="host to bind to")
 @click.option("--port", default=8000, type=int, help="port to listen on")
 def main(host, port):
-    set_up_logging(local_dev_env=True, host_id="localhost")
+    set_up_logging(local_dev_env=True, hostname="localhost")
 
     from werkzeug.serving import run_simple
     app = App()

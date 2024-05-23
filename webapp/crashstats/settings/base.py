@@ -214,23 +214,23 @@ DJANGO_LOGGING_LEVEL = _config(
     doc="Logging level for Django logging (requests, SQL, etc)",
 )
 
-HOST_ID = _config(
-    "HOST_ID",
+HOSTNAME = _config(
+    "HOSTNAME",
     default=socket.gethostname(),
-    doc="Name of the host this is running on. Used in logging.",
+    doc="Name of the host this is running on.",
 )
 
 
-class AddHostID(logging.Filter):
+class AddHostname(logging.Filter):
     def filter(self, record):
-        record.host_id = HOST_ID
+        record.hostname = HOSTNAME
         return True
 
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {"add_hostid": {"()": AddHostID}},
+    "filters": {"add_hostname": {"()": AddHostname}},
     "handlers": {
         "console": {
             "level": LOGGING_LEVEL,
@@ -241,7 +241,7 @@ LOGGING = {
             "level": LOGGING_LEVEL,
             "class": "logging.StreamHandler",
             "formatter": "mozlog",
-            "filters": ["add_hostid"],
+            "filters": ["add_hostname"],
         },
     },
     "formatters": {
@@ -418,25 +418,8 @@ CACHE_IMPLEMENTATION_FETCHES = _config(
 )
 
 # for local development these don't matter
-STATSD_HOST = _config("STATSD_HOST", default="localhost")
-STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int)
-STATSD_PREFIX = _config("STATSD_PREFIX", default="") or None
-
-# set up markus backends for metrics
-MARKUS_BACKENDS = [
-    {
-        "class": "markus.backends.datadog.DatadogMetrics",
-        "options": {
-            "statsd_host": STATSD_HOST,
-            "statsd_port": STATSD_PORT,
-            "statsd_namespace": STATSD_PREFIX,
-        },
-    },
-]
-if LOCAL_DEV_ENV:
-    # Add logging backend in local dev environment so we see metrics without
-    # needing a whole statsd/grafana backend.
-    MARKUS_BACKENDS.append({"class": "markus.backends.logging.LoggingMetrics"})
+STATSD_HOST = _config("STATSD_HOST", default="localhost", doc="statsd host.")
+STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int, doc="statsd port.")
 
 
 CACHES = {

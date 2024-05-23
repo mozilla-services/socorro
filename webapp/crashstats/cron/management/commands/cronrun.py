@@ -9,8 +9,6 @@ import sys
 import time
 import traceback
 
-import markus
-
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -32,11 +30,10 @@ from crashstats.cron.utils import (
     get_run_times,
     time_to_run,
 )
+from socorro.libmarkus import METRICS
 
 
 logger = logging.getLogger("crashstats.cron")
-
-metrics = markus.get_metrics("cron")
 
 
 class Command(BaseCommand):
@@ -206,7 +203,7 @@ class Command(BaseCommand):
         Log.objects.create(
             app_name=cmd, success=success_date, duration="%.5f" % duration
         )
-        metrics.gauge("job_success_runtime", value=duration, tags=["job:%s" % cmd])
+        METRICS.gauge("cron.job_success_runtime", value=duration, tags=["job:%s" % cmd])
 
     def _remember_failure(self, cmd, duration, exc_type, exc_value, exc_tb):
         Log.objects.create(
@@ -216,7 +213,7 @@ class Command(BaseCommand):
             exc_value=repr(exc_value),
             exc_traceback="".join(traceback.format_tb(exc_tb)),
         )
-        metrics.gauge("job_failure_runtime", value=duration, tags=["job:%s" % cmd])
+        METRICS.gauge("cron.job_failure_runtime", value=duration, tags=["job:%s" % cmd])
 
     @contextlib.contextmanager
     def lock_job(self, cmd):

@@ -4,10 +4,7 @@
 
 import logging
 
-import markus
-
-
-metrics = markus.get_metrics("processor.rule")
+from socorro.libmarkus import METRICS
 
 
 class Rule:
@@ -65,7 +62,7 @@ class Rule:
 
         """
         class_name = self.__class__.__name__
-        with metrics.timer("act.timing", tags=["rule:%s" % class_name]):
+        with METRICS.timer("processor.rule.act.timing", tags=["rule:%s" % class_name]):
             ret = self.predicate(
                 raw_crash=raw_crash,
                 dumps=dumps,
