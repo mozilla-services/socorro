@@ -295,7 +295,10 @@ class ESCrashStorage(CrashStorageBase):
 
         # Create a MetricsInterface that includes the base prefix plus the prefix passed
         # into __init__
-        self.metrics = markus.get_metrics(build_prefix(METRICS.prefix, metrics_prefix))
+        self.metrics = markus.get_metrics(
+            build_prefix(METRICS.prefix, metrics_prefix),
+            filters=list(METRICS.filters),
+        )
 
         self.index = index
         self.index_regex = index_regex
