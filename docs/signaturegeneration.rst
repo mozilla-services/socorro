@@ -38,10 +38,14 @@ The lists for configuring the C signature generation class are here:
 https://github.com/mozilla-services/socorro/tree/main/socorro/signature/siglists
 
 
-How to request a change to signature generation
-===============================================
+How to make a signature generation change
+=========================================
 
-To request a change to signature generation:
+Signature generation changes are typically self-service. Code reviews and
+deployments are handled by the Socorro maintainers, but we ask you to file a
+pull request on GitHub with the desired change.
+
+To make a change to signature generation:
 
 `Write up a bug in the Socorro product
 <https://bugzilla.mozilla.org/enter_bug.cgi?format=__standard__&product=Socorro&short_desc=[siglist]>`_
@@ -49,18 +53,11 @@ and please include the following:
 
 1. explanation of what the problem you want to solve is
 2. urls of examples of crashes that have the problem you're trying to solve
-3. expected signatures for those crashes
-
-We need this to make sure we can help you make the right changes.
 
 Examples of signature generation change bugs:
 
 * https://bugzilla.mozilla.org/show_bug.cgi?id=1397926
 * https://bugzilla.mozilla.org/show_bug.cgi?id=1402037
-
-
-How to make a signature generation change
-=========================================
 
 If you've made changes to signature generation before or you're confident in
 the change you're making, you can make changes directly using the GitHub
@@ -80,6 +77,8 @@ works, what files are involved, and how to test changes.
 
 How to review a signature generation changes
 ============================================
+
+This is done by the Socorro maintainers.
 
 1. Make sure the PR has a corresponding bug in Bugzilla and references the bug
    in the commit summary.
@@ -109,8 +108,9 @@ If you don't want to wait for new crash reports to arrive, you can find an
 existing one and send it to reprocessing. That can be done on the report/index
 page directly, or via the admin panel.
 
-Note that after a signature change has been pushed to production, you might want
-to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
+Note that after a signature change has been pushed to production, it may be
+useful to `reprocess the affected signatures <https://github.com/adngdb/reprocess>`_.
+We can help with this if the change author requests it.
 
 
 Philosophy on signature generation
