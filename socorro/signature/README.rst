@@ -42,6 +42,8 @@ Examples:
 
     $ socorro-cmd fetch_crashids --num=10 | socorro-cmd signature
 
+  (Note that ``fetch_crashids`` defaults to ``--product=Firefox``.)
+
 * getting crash ids for crash reports with a specific signature and then
   checking to see if the signatures have changed::
 
