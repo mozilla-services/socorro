@@ -490,6 +490,8 @@ SECRET_KEY = _config(
     doc="Make this unique, and don't share it with anybody. It cannot be blank.",
 )
 
+CSRF_COOKIE_NAME = "crashstatscsrfcookie"
+
 SESSION_COOKIE_SECURE = _config(
     "SESSION_COOKIE_SECURE",
     default="true",
