@@ -126,13 +126,13 @@ MIDDLEWARE = [
     # CORS needs to go before other response-generating middlewares
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "crashstats.tokens.middleware.APIAuthenticationMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "mozilla_django_oidc.middleware.SessionRefresh",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # If you run crashstats behind a load balancer, your `REMOTE_ADDR` header
     # will be that of the load balancer instead of the actual user. The
@@ -491,6 +491,7 @@ SECRET_KEY = _config(
 )
 
 CSRF_COOKIE_NAME = "crashstatscsrfcookie"
+CSRF_USE_SESSIONS = True
 
 SESSION_COOKIE_SECURE = _config(
     "SESSION_COOKIE_SECURE",
