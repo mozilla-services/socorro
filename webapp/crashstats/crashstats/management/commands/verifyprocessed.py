@@ -20,7 +20,7 @@ from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
-from crashstats.crashstats.models import MissingProcessedCrash
+from crashstats.crashstats.models import MissingProcessedCrash, Reprocessing
 from crashstats.supersearch.models import SuperSearchUnredacted
 from socorro import settings as socorro_settings
 from socorro.lib.libooid import date_from_ooid
@@ -147,9 +147,10 @@ class Command(BaseCommand):
         return list(missing)
 
     def handle_missing(self, date, missing):
-        """Report crash ids for missing processed crashes."""
+        """Report and reprocess crash ids for missing processed crashes."""
         METRICS.gauge("cron.verifyprocessed.missing_processed", len(missing))
         if missing:
+            reprocessing_api = Reprocessing()
             for crash_id in missing:
                 self.stdout.write(f"Missing: {crash_id}")
 
@@ -163,6 +164,8 @@ class Command(BaseCommand):
                         pass
                     else:
                         raise
+                reprocessing_api.post(crash_ids=crash_id)
+
         else:
             self.stdout.write(f"All crashes for {date} were processed.")
 
