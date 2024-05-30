@@ -164,7 +164,7 @@ class TestVerifyProcessed:
         captured = capsys.readouterr()
         assert ("All crashes for %s were processed." % TODAY) in captured.out
 
-    def test_handle_missing_some_missing(self, capsys, db):
+    def test_handle_missing_some_missing(self, capsys, db, queue_helper):
         crash_ids = [create_new_ooid(), create_new_ooid()]
         crash_ids.sort()
         cmd = Command()
@@ -175,3 +175,5 @@ class TestVerifyProcessed:
         assert "Missing: %s" % crash_ids[1] in captured.out
 
         assert crash_ids == list(self.fetch_crashids())
+
+        assert queue_helper.get_published_crashids("reprocessing") == crash_ids
