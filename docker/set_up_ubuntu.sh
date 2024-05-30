@@ -31,6 +31,9 @@ PACKAGES_TO_INSTALL=(
 
     # For nodejs and npm
     curl
+
+    # For database maintenance
+    postgresql-client
 )
 
 # Install Ubuntu packages
