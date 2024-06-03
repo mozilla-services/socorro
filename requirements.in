@@ -17,7 +17,7 @@ dockerflow==2024.4.2
 enforce-typing==1.0.0.post1
 everett==3.3.0
 fillmore==1.2.0
-freezegun==1.4.0
+freezegun==1.5.1
 glom==23.5.0
 google-cloud-pubsub==2.21.1
 google-cloud-storage==2.16.0
