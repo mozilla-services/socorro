@@ -291,9 +291,9 @@ django-jinja==2.11.0 \
 django-npm==1.0.0 \
     --hash=sha256:2e6bba65e728fa18b9db3c8dc0d4490b70cb7f43bacf60eb3654d7dcb6424272
     # via -r requirements.in
-django-pipeline==3.0.0 \
-    --hash=sha256:49a8bee298668100bb6e8a2144dff8c607baa5297820a2503793c38693f34103 \
-    --hash=sha256:e9e08b084ef3ebf599795510519a8d44f2240b487782bebf4a8fcaf6302c31d1
+django-pipeline==3.1.0 \
+    --hash=sha256:36470aeced4889694b899a995bcd2eda512f45b61ac68d50adc5863c8bad5ee4 \
+    --hash=sha256:aa973adeb480762f9d795818140da32e0348b7cd85a90b316205b8e966f986b7
     # via -r requirements.in
 django-ratelimit==4.1.0 \
     --hash=sha256:555943b283045b917ad59f196829530d63be2a39adb72788d985b90c81ba808b \
