@@ -10,12 +10,17 @@ from markus.testing import MetricsMock
 import pytest
 
 from socorro import settings
+from socorro.lib.libooid import create_new_ooid
 from socorro.stage_submitter.submitter import (
     get_payload_compressed,
     get_payload_type,
     remove_collector_keys,
     SubmitterApp,
 )
+
+
+# Only run submitter tests in GCP mode
+pytestmark = pytest.mark.gcp
 
 
 def get_app():
@@ -46,24 +51,24 @@ def jsonify(data):
     return json.dumps(data, sort_keys=True)
 
 
-def save_crash(storage_helper, bucket, raw_crash, dumps):
+def save_crash(gcs_helper, bucket, raw_crash, dumps):
     crash_id = raw_crash["uuid"]
 
     # Save raw crash
     key = generate_storage_key("raw_crash", crash_id)
     data = jsonify(raw_crash).encode("utf-8")
-    storage_helper.upload(bucket, key, data)
+    gcs_helper.upload(bucket, key, data)
 
     # Save dump_names
     key = generate_storage_key("dump_names", crash_id)
     data = jsonify(list(dumps.keys())).encode("utf-8")
-    storage_helper.upload(bucket, key, data)
+    gcs_helper.upload(bucket, key, data)
 
     # Save dumps
     for name, data in dumps.items():
         key = generate_storage_key(name, crash_id)
         data = data.encode("utf-8")
-        storage_helper.upload(bucket, key, data)
+        gcs_helper.upload(bucket, key, data)
 
 
 @pytest.mark.parametrize(
@@ -118,11 +123,11 @@ def test_remove_collector_keys(raw_crash, expected):
     assert remove_collector_keys(raw_crash) == expected
 
 
-def test_basic(queue_helper, storage_helper, mock_collector):
-    bucket = storage_helper.get_crashstorage_bucket()
+def test_basic(pubsub_helper, gcs_helper, mock_collector):
+    bucket = gcs_helper.get_crashstorage_bucket()
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "Product": "Firefox",
@@ -139,7 +144,10 @@ def test_basic(queue_helper, storage_helper, mock_collector):
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    # The submitter will only consume and submit from the standard topic
+    pubsub_helper.publish("standard", crash_id)
+    pubsub_helper.publish("reprocessing", create_new_ooid())
+    pubsub_helper.publish("priority", create_new_ooid())
 
     # Capture logs, make sure it doesn't get sampled by setting sample to 100, and
     # invoke the Lambda function
@@ -190,12 +198,12 @@ def test_basic(queue_helper, storage_helper, mock_collector):
         metricsmock.assert_incr("socorro.submitter.accept")
 
 
-def test_multiple_destinations(queue_helper, storage_helper, mock_collector):
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+def test_multiple_destinations(pubsub_helper, gcs_helper, mock_collector):
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "Product": "Firefox",
@@ -212,7 +220,7 @@ def test_multiple_destinations(queue_helper, storage_helper, mock_collector):
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs, configure to send to two destinations with sample set to 100, and
     # invoke the Lambda function
@@ -238,12 +246,12 @@ def test_multiple_destinations(queue_helper, storage_helper, mock_collector):
     assert mock_collector.payloads[0].text == mock_collector.payloads[1].text
 
 
-def test_annotations_as_json(queue_helper, storage_helper, mock_collector):
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+def test_annotations_as_json(pubsub_helper, gcs_helper, mock_collector):
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "uuid": crash_id,
@@ -257,7 +265,7 @@ def test_annotations_as_json(queue_helper, storage_helper, mock_collector):
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs, make sure it doesn't get sampled, and invoke the Lambda
     # function
@@ -293,12 +301,12 @@ def test_annotations_as_json(queue_helper, storage_helper, mock_collector):
         metricsmock.assert_incr("socorro.submitter.accept")
 
 
-def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+def test_multiple_dumps(pubsub_helper, gcs_helper, mock_collector):
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "uuid": crash_id,
@@ -311,7 +319,7 @@ def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
         },
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs, make sure it doesn't get sampled, and invoke the Lambda
     # function
@@ -363,12 +371,12 @@ def test_multiple_dumps(queue_helper, storage_helper, mock_collector):
         metricsmock.assert_incr("socorro.submitter.accept")
 
 
-def test_compressed(queue_helper, storage_helper, mock_collector):
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+def test_compressed(pubsub_helper, gcs_helper, mock_collector):
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "uuid": crash_id,
@@ -382,7 +390,7 @@ def test_compressed(queue_helper, storage_helper, mock_collector):
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs, make sure it doesn't get sampled, and invoke the Lambda
     # function
@@ -432,17 +440,17 @@ def test_compressed(queue_helper, storage_helper, mock_collector):
         metricsmock.assert_incr("socorro.submitter.accept")
 
 
-def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collector):
+def test_sample_accepted(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
     def always_20(*args, **kwargs):
         return 20
 
     monkeypatch.setattr(random, "randint", always_20)
 
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "uuid": crash_id,
@@ -452,7 +460,7 @@ def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collect
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture the log and set sample value above the mocked randint--this should
     # get submitted
@@ -471,17 +479,17 @@ def test_sample_accepted(queue_helper, monkeypatch, storage_helper, mock_collect
         metricsmock.assert_incr("socorro.submitter.accept")
 
 
-def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collector):
+def test_sample_skipped(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
     def always_20(*args, **kwargs):
         return 20
 
     monkeypatch.setattr(random, "randint", always_20)
 
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "uuid": crash_id,
@@ -491,7 +499,7 @@ def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collecto
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture the logs and set sample value below the mocked randint--this
     # should get skipped
@@ -513,17 +521,17 @@ def test_sample_skipped(queue_helper, monkeypatch, storage_helper, mock_collecto
         metricsmock.assert_incr("socorro.submitter.ignore")
 
 
-def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_collector):
+def test_different_samples(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
     def always_20(*args, **kwargs):
         return 20
 
     monkeypatch.setattr(random, "randint", always_20)
 
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "Product": "Firefox",
@@ -540,7 +548,7 @@ def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_colle
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs and invoke lambda function
     with settings.override(
@@ -566,14 +574,14 @@ def test_different_samples(queue_helper, monkeypatch, storage_helper, mock_colle
         metricsmock.assert_incr("socorro.submitter.ignore")
 
 
-def test_user_agent(queue_helper, storage_helper, mock_collector):
+def test_user_agent(pubsub_helper, gcs_helper, mock_collector):
     user_agent = "crash-reporter/1.0"
 
-    bucket = storage_helper.get_crashstorage_bucket()
-    storage_helper.create_bucket(bucket)
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
     crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
     save_crash(
-        storage_helper=storage_helper,
+        gcs_helper=gcs_helper,
         bucket=bucket,
         raw_crash={
             "Product": "Firefox",
@@ -591,7 +599,7 @@ def test_user_agent(queue_helper, storage_helper, mock_collector):
         dumps={"upload_file_minidump": "abcdef"},
     )
 
-    queue_helper.publish("standard", crash_id)
+    pubsub_helper.publish("standard", crash_id)
 
     # Capture logs and invoke lambda function
     with settings.override(
