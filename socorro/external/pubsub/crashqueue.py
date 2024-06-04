@@ -128,15 +128,19 @@ class PubSubCrashQueue(CrashQueueBase):
             publisher_options=PublisherOptions(retry=None, timeout=publish_timeout),
         )
 
-        self.standard_topic_path = self.publisher.topic_path(
-            project_id, standard_topic_name
+        def create_topic_path(publisher, project_id, name):
+            return publisher.topic_path(project_id, name) if name else None
+
+        self.standard_topic_path = create_topic_path(
+            self.publisher, project_id, standard_topic_name
         )
-        self.priority_topic_path = self.publisher.topic_path(
-            project_id, priority_topic_name
+        self.priority_topic_path = create_topic_path(
+            self.publisher, project_id, priority_topic_name
         )
-        self.reprocessing_topic_path = self.publisher.topic_path(
-            project_id, reprocessing_topic_name
+        self.reprocessing_topic_path = create_topic_path(
+            self.publisher, project_id, reprocessing_topic_name
         )
+
         self.queue_to_topic_path = {
             "standard": self.standard_topic_path,
             "priority": self.priority_topic_path,
@@ -144,19 +148,24 @@ class PubSubCrashQueue(CrashQueueBase):
         }
 
         self.subscriber = SubscriberClient()
-        self.standard_subscription_path = self.subscriber.subscription_path(
-            project_id, standard_subscription_name
+
+        def create_subscription_path(subscriber, project_id, name):
+            return subscriber.subscription_path(project_id, name) if name else None
+
+        self.standard_subscription_path = create_subscription_path(
+            self.subscriber, project_id, standard_subscription_name
         )
-        self.priority_subscription_path = self.subscriber.subscription_path(
-            project_id, priority_subscription_name
+        self.priority_subscription_path = create_subscription_path(
+            self.subscriber, project_id, priority_subscription_name
         )
-        self.reprocessing_subscription_path = self.subscriber.subscription_path(
-            project_id, reprocessing_subscription_name
+        self.reprocessing_subscription_path = create_subscription_path(
+            self.subscriber, project_id, reprocessing_subscription_name
         )
-        # order matters here, and is checked in tests
+
+        # Order matters here, and is checked in tests
         self.queue_to_subscription_path = {
-            "priority": self.priority_subscription_path,
             "standard": self.standard_subscription_path,
+            "priority": self.priority_subscription_path,
             "reprocessing": self.reprocessing_subscription_path,
         }
 
@@ -184,6 +193,9 @@ class PubSubCrashQueue(CrashQueueBase):
         while True:
             has_msgs = {}
             for subscription_path in self.queue_to_subscription_path.values():
+                if subscription_path is None:
+                    continue
+
                 resp = self.subscriber.pull(
                     subscription=subscription_path,
                     max_messages=self.pull_max_messages,
@@ -230,11 +242,16 @@ class PubSubCrashQueue(CrashQueueBase):
             crash ids with the list of crash ids that failed to publish
 
         """
-        assert queue in self.queue_to_topic_path
+        topic_path = self.queue_to_topic_path.get(queue)
+        if topic_path is None:
+            logger.warning(
+                "asked to publish to topic %s which has None topic path",
+                queue,
+            )
+            return
 
         failed = []
 
-        topic_path = self.queue_to_topic_path[queue]
         for batch in chunked(crash_ids, self.publish_max_messages):
             futures = [
                 self.publisher.publish(topic=topic_path, data=crash_id.encode("utf-8"))
@@ -244,7 +261,11 @@ class PubSubCrashQueue(CrashQueueBase):
                 try:
                     future.result()
                 except Exception:
-                    logger.exception(f"Crashid failed to publish: {batch[i]}")
+                    logger.exception(
+                        "Crashid failed to publish: %s %s",
+                        queue,
+                        batch[i],
+                    )
                     failed.append(batch[i])
 
         if failed:

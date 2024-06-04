@@ -6,11 +6,11 @@
 This defines the stage submitter application. It's designed to run as a standalone
 service.
 
-It consumes crash ids from a queue, determines what to do with them, pulls the crash
-data from storage, assembles a payload, and submits them to a destination.
+It consumes crash ids from the standard topic, determines what to do with them, pulls
+the crash data from storage, assembles a payload, and submits them to a destination.
 
-It pulls all its configuration from socorro.settings reusing processor configuration
-where convenient.
+It pulls configuration from socorro.settings reusing processor configuration where
+convenient.
 
 To run::
 
@@ -281,8 +281,13 @@ class SubmitterApp:
 
         self.log_config()
 
-        # This re-uses settings from the processor
-        self.queue = build_instance_from_settings(settings.QUEUE)
+        # This uses the same settings as the processor except that it stomps on
+        # the priority and reprocessing subscription names so it doesn't pull
+        # crash ids from them
+        queue_settings = dict(settings.QUEUE)
+        queue_settings["options"]["priority_subscription_name"] = None
+        queue_settings["options"]["reprocessing_subscription_name"] = None
+        self.queue = build_instance_from_settings(queue_settings)
         self.source = build_instance_from_settings(settings.CRASH_SOURCE)
 
         # Build destinations
