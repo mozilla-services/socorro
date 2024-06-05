@@ -2796,9 +2796,13 @@ properties:
     type: ["string", "null"]
     permissions: ["public"]
   missing_symbols:
-    description: >
-      Set of `;` delimited `module/version/debugid` strings of modules that the
-      stackwalker couldn't find symbols for.
+    description: |
+      Set of `;` delimited module information strings that the stackwalker
+      couldn't find symbols for. Module information strings have one of
+      these forms:
+
+      * module/version/debugid
+      * module/version/debugid/codeid
     type: string
     permissions: ["public"]
   modules_in_stack:

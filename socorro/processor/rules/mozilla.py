@@ -630,15 +630,20 @@ class TopMostFilesRule(Rule):
 class MissingSymbolsRule(Rule):
     """
     Adds ``missing_symbols`` field where the value is a semi-colon separated set of
-    ``module/version/debugid`` strings for modules where the stackwalker couldn't find a
-    symbols file.
+    module information strings for modules where the stackwalker couldn't find a symbols
+    file. Module information strings have one of two forms depending on whether there's
+    a codeid value in the module data or not:
+
+    * ``module/version/debugid``
+    * ``module/version/debugid/codeid``
+
     """
 
     # Filenames should contain A-Za-z0-9_.- and that's it.
     BAD_FILENAME_CHARACTERS = re.compile(r"[^a-zA-Z0-9_\.-]", re.IGNORECASE)
 
-    # Debug ids are hex strings
-    BAD_DEBUGID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
+    # Debug ids and code ids are hex strings
+    BAD_HEXID_CHARACTERS = re.compile(r"[^a-f0-9]", re.IGNORECASE)
 
     NULL_DEBUG_ID = "0" * 33
 
@@ -650,9 +655,16 @@ class MissingSymbolsRule(Rule):
         version = version.replace("/", "\\/")
 
         debugid = item.get("debug_id", self.NULL_DEBUG_ID)
-        debugid = self.BAD_DEBUGID_CHARACTERS.sub("", debugid)
+        debugid = self.BAD_HEXID_CHARACTERS.sub("", debugid)
 
-        return f"{filename}/{version}/{debugid}"
+        codeid = item.get("code_id", None)
+        if codeid:
+            codeid = self.BAD_HEXID_CHARACTERS.sub("", codeid)
+
+        if codeid:
+            return f"{filename}/{version}/{debugid}/{codeid}"
+        else:
+            return f"{filename}/{version}/{debugid}"
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
         return bool(glom(processed_crash, "json_dump.modules", default=[]))
