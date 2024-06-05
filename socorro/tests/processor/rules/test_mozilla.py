@@ -1527,14 +1527,27 @@ class TestMissingSymbolsRule:
                 },
                 "libxul_2.dll/1.0/51C36FAFFD214DB4A0D91D93B38336CEA",
             ),
+            # With a code id
+            (
+                {
+                    "filename": "ntdll.dll",
+                    "version": "10.0.14393.6343",
+                    "debug_id": "0879DB9512094636AA777326F6A5C01E1",
+                    "code_id": "6502749b182000",
+                    "missing_symbols": True,
+                },
+                "ntdll.dll/10.0.14393.6343/0879DB9512094636AA777326F6A5C01E1/6502749b182000",
+            ),
+            # Clean up fields
             (
                 {
                     "filename": " l\nib (foo)",
                     "version": "1.0/5",
                     "debug_id": "this is bad",
+                    "code_id": "ou812",
                     "missing_symbols": True,
                 },
-                "libfoo/1.0\\/5/bad",
+                "libfoo/1.0\\/5/bad/812",
             ),
         ],
     )
