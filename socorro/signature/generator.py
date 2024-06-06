@@ -16,7 +16,6 @@ from .rules import (
     SignatureGenerationRule,
     SignatureIPCChannelError,
     SignatureIPCMessageName,
-    SignatureParentIDNotEqualsChildID,
     SignatureRunWatchDog,
     SignatureShutdownTimeout,
     SigTruncate,
@@ -35,7 +34,6 @@ DEFAULT_RULESET = [
     SignatureRunWatchDog,
     SignatureIPCChannelError,
     SignatureIPCMessageName,
-    SignatureParentIDNotEqualsChildID,
     StackOverflowSignature,
     HungProcess,
     # NOTE(willkg): These should always come last and in this order

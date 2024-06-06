@@ -84,10 +84,6 @@ This is the schema for the signature generation crash data structure::
                                        // gets generated when the Socorro processor runs the
                                        // minidump through minidump-stackwalk. If you're not
                                        // using minidump-stackwalk, you can ignore this.
-
-    moz_crash_reason: <string>,        // Optional, This is the MOZ_CRASH_REASON value. This
-                                       // doesn't affect anything unless the value is
-                                       // "MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)".
   }
 
 

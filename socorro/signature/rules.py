@@ -1096,31 +1096,6 @@ class SignatureIPCMessageName(Rule):
         return True
 
 
-class SignatureParentIDNotEqualsChildID(Rule):
-    """Stomp on the signature if ``moz_crash_reason`` is ``parentBuildID != childBuildID``.
-
-    In the case where the assertion fails, then the parent buildid and the child buildid are
-    different. This causes a lot of strangeness particularly in symbolification, so the signatures
-    end up as junk. Instead, we want to bucket all these together so we replace the signature.
-
-    """
-
-    def predicate(self, crash_data, result):
-        value = "MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)"
-        return crash_data.get("moz_crash_reason") == value
-
-    def action(self, crash_data, result):
-        result.info(
-            self.name,
-            'Signature replaced with MOZ_RELEASE_ASSERT, was: "%s"',
-            result.signature,
-        )
-
-        # The MozCrashReason lists the assertion that failed, so we put "!=" in the signature
-        result.set_signature(self.name, "parentBuildID != childBuildID")
-        return True
-
-
 class HungProcess(Rule):
     """Prepends ``hang: <hang_type>`` to the signature of hangs.
 
