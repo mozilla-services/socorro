@@ -2038,42 +2038,6 @@ class TestSignatureIPCMessageName:
         assert result.signature == "fooo::baar | IPC_Message_Name=foo, bar"
 
 
-class TestSignatureParentIDNotEqualsChildID:
-    def test_predicate_no_moz_crash_reason(self):
-        rule = rules.SignatureParentIDNotEqualsChildID()
-        result = {"signature": "", "notes": []}
-        assert rule.predicate({}, result) is False
-
-    def test_predicate_empty_moz_crash_reason(self):
-        rule = rules.SignatureParentIDNotEqualsChildID()
-        crash_data = {"moz_crash_reason": ""}
-        result = {"signature": "", "notes": []}
-        assert rule.predicate(crash_data, result) is False
-
-    def test_predicate_match(self):
-        rule = rules.SignatureParentIDNotEqualsChildID()
-        crash_data = {
-            "moz_crash_reason": "MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)"
-        }
-        result = generator.Result()
-        result.signature = "fooo::baar"
-        assert rule.predicate(crash_data, result) is True
-
-    def test_action(self):
-        rule = rules.SignatureParentIDNotEqualsChildID()
-        crash_data = {
-            "moz_crash_reason": "MOZ_RELEASE_ASSERT(parentBuildID == childBuildID)"
-        }
-        result = generator.Result()
-        result.signature = "fooo::baar"
-        action_result = rule.action(crash_data, result)
-        assert action_result is True
-        assert result.signature == "parentBuildID != childBuildID"
-        assert result.notes == [
-            'SignatureParentIDNotEqualsChildID: Signature replaced with MOZ_RELEASE_ASSERT, was: "fooo::baar"'  # noqa
-        ]
-
-
 class TestHungProcess:
     def test_predicate_no_match(self):
         result = generator.Result()

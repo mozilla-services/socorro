@@ -94,19 +94,17 @@ This is the signature generation ruleset defined at ``socorro.signature.generato
    
    Appends ``ipc_message_name`` value to signature.
 
-10. **Rule: SignatureParentIDNotEqualsChildID**
-    
-    Stomp on the signature if ``moz_crash_reason`` is ``parentBuildID != childBuildID``.
-    
-    In the case where the assertion fails, then the parent buildid and the child buildid are
-    different. This causes a lot of strangeness particularly in symbolification, so the signatures
-    end up as junk. Instead, we want to bucket all these together so we replace the signature.
-
-11. **Rule: StackOverflowSignature**
+10. **Rule: StackOverflowSignature**
     
     Prepends ``stackoverflow``
     
     See `bug #1796389 <https://bugzilla.mozilla.org/show_bug.cgi?id=1796389>`__.
+
+11. **Rule: HungProcess**
+    
+    Prepends ``hang: <hang_type>`` to the signature of hangs.
+    
+    See bug `#1826703 <https://bugzilla.mozilla.org/show_bug.cgi?id=1826703>`__.
 
 12. **Rule: SigFixWhitespace**
     
