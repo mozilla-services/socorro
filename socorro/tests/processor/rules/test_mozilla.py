@@ -2072,7 +2072,7 @@ class TestSignatureGeneratorRule:
             assert "proto_signature" not in processed_crash
             assert status.notes == ["BadRule: Rule failed: Cough"]
 
-            (event,) = sentry_client.events
+            (event,) = sentry_client.envelope_payloads
             # NOTE(willkg): Some of the extra bits come from the processor app and since
             # we're testing SignatureGenerator in isolation, those don't get added to
             # the sentry scope

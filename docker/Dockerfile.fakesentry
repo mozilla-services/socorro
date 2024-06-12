@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 RUN pip install -U 'pip>=20' && \
-    pip install --no-cache-dir 'kent==1.2.0'
+    pip install --no-cache-dir 'kent==2.0.0'
 
 USER kent
 

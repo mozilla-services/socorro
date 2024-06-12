@@ -3,9 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import pathlib
+import time
 from unittest.mock import ANY
 
-from fillmore.test import diff_event
+from fillmore.test import diff_structure
 from markus.testing import MetricsMock
 import pytest
 
@@ -183,13 +184,14 @@ def test_eviction_of_least_recently_used(cm, tmp_path):
     file4 = tmp_path / "xul__iris.symc"
     file4.write_bytes(b"ab")
 
-    # Access rose so it's recently used
-    file1.read_bytes()
-
     # Run events and verify LRU
     cm.run_once()
     assert cm.lru == {str(file1): 2, str(file2): 2, str(file3): 2, str(file4): 2}
     assert cm.total_size == 8
+
+    # Access rose so it's recently used
+    time.sleep(0.5)
+    file1.read_bytes()
 
     # Add new file which will evict files--but not rose which was accessed
     # most recently
@@ -265,6 +267,8 @@ def test_nested_directories(cm, tmp_path):
     file1 = subdir1 / "file1.symc"
     file1.write_bytes(b"abcde")
 
+    time.sleep(0.5)
+
     file2 = subdir1 / "file2.symc"
     file2.write_bytes(b"abcd")
 
@@ -296,6 +300,7 @@ def test_nested_directories_evict(cm, tmp_path):
     subdir2.mkdir()
 
     # Run to pick up new subsubdirectories and watch them
+    time.sleep(0.5)
     cm.run_once()
 
     # Create two files in the subsubdirectory with 9 bytes
@@ -305,6 +310,7 @@ def test_nested_directories_evict(cm, tmp_path):
     file2 = subdir2 / "file2.symc"
     file2.write_bytes(b"abcd")
 
+    time.sleep(0.5)
     cm.run_once()
     assert cm.lru == {str(file1): 5, str(file2): 4}
 
@@ -440,14 +446,15 @@ def test_sentry_scrubbing(sentry_helper, cm, monkeypatch, tmp_path):
     redact the parts that will change using ANY so it passes tests.
 
     """
+
+    # Mock out "make_room" so we can force the cache manager to raise an exception in
+    # the area it might raise a real exception
+    def mock_make_room(*args, **kwargs):
+        raise Exception("intentional exception")
+
+    monkeypatch.setattr(cm, "make_room", mock_make_room)
+
     with sentry_helper.reuse() as sentry_client:
-        # Mock out "make_room" so we can force the cache manager to raise an exception in
-        # the area it might raise a real exception
-        def mock_make_room(*args, **kwargs):
-            raise Exception("intentional exception")
-
-        monkeypatch.setattr(cm, "make_room", mock_make_room)
-
         # Add some files to trigger the make_room call
         file1 = tmp_path / "xul__5byte.symc"
         file1.write_bytes(b"abcde")
@@ -456,13 +463,13 @@ def test_sentry_scrubbing(sentry_helper, cm, monkeypatch, tmp_path):
         file2.write_bytes(b"abcd")
         cm.run_once()
 
-        (event,) = sentry_client.events
+        (event,) = sentry_client.envelope_payloads
 
         # Drop the "_meta" bit because we don't want to compare that.
         del event["_meta"]
 
         # Assert that the event is what we expected
-        differences = diff_event(event, BROKEN_EVENT)
+        differences = diff_structure(event, BROKEN_EVENT)
         assert differences == []
 
 
