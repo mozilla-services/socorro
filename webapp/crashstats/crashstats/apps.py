@@ -60,9 +60,9 @@ def configure_sentry():
         host_id=settings.HOSTNAME,
         sentry_dsn=settings.SENTRY_DSN,
         # Disable frame-local variables
-        with_locals=False,
+        include_local_variables=False,
         # Disable request data from being added to Sentry events
-        request_bodies="never",
+        max_request_body_size="never",
         # All integrations should be intentionally enabled
         default_integrations=False,
         integrations=[

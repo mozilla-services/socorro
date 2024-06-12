@@ -5,7 +5,7 @@
 from unittest.mock import ANY
 
 import freezegun
-from fillmore.test import diff_event
+from fillmore.test import diff_structure
 
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.processor.processor_app import ProcessorApp
@@ -24,7 +24,7 @@ class BadRule(Rule):
 # data (line numbers, file names, post/pre_context), event ids, build ids, versions,
 # etc.
 RULE_ERROR_EVENT = {
-    "breadcrumbs": {"values": []},
+    "breadcrumbs": ANY,
     "contexts": {
         "runtime": {
             "build": ANY,
@@ -117,13 +117,14 @@ class TestPipeline:
     def test_rule_error(self, tmp_path, sentry_helper):
         ProcessorApp()._set_up_sentry()
 
-        with sentry_helper.reuse() as sentry_client:
-            # Test with Sentry enabled (dsn set)
-            raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
-            processed_crash = {}
+        # Test with Sentry enabled (dsn set)
+        raw_crash = {"uuid": "7c67ad15-518b-4ccb-9be0-6f4c82220721"}
+        processed_crash = {}
 
-            rulesets = {"default": [BadRule()]}
-            processor = Pipeline(rulesets=rulesets, hostname="testhost")
+        rulesets = {"default": [BadRule()]}
+        processor = Pipeline(rulesets=rulesets, hostname="testhost")
+
+        with sentry_helper.reuse() as sentry_client:
             processor.process_crash("default", raw_crash, {}, processed_crash, tmp_path)
 
             # Notes were added again
@@ -134,10 +135,10 @@ class TestPipeline:
                 + "failed: KeyError"
             )
 
-            (event,) = sentry_client.events
+            (event,) = sentry_client.envelope_payloads
 
             # Assert that the event is what we expected
-            differences = diff_event(event, RULE_ERROR_EVENT)
+            differences = diff_structure(event, RULE_ERROR_EVENT)
             assert differences == []
 
     def test_process_crash_existing_processed_crash(self, tmp_path):

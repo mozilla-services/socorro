@@ -6,7 +6,7 @@
 
 from unittest.mock import ANY
 
-from fillmore.test import diff_event
+from fillmore.test import diff_structure
 from markus.testing import MetricsMock
 from werkzeug.test import Client
 
@@ -166,12 +166,12 @@ def test_sentry_scrubbing(sentry_helper, transactional_db):
         )
         assert resp.status_code == 500
 
-        (event,) = sentry_client.events
+        (event,) = sentry_client.envelope_payloads
 
         # Drop the "_meta" bit because we don't want to compare that.
         del event["_meta"]
 
-        differences = diff_event(event, BROKEN_EVENT)
+        differences = diff_structure(event, BROKEN_EVENT)
         assert differences == []
 
 
