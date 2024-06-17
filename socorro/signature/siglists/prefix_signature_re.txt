@@ -100,6 +100,7 @@ mozilla::CheckCheckedUnsafePtrs<T>::Check
 mozilla::CheckedInt
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
+mozilla::Variant<T>::
 mozilla::dom::AutoJSAPI::Init
 mozilla::dom::Promise::
 mozilla::dom::syncedcontext::Transaction<T>::Commit

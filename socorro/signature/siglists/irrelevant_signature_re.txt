@@ -128,6 +128,7 @@ mozilla::detail::MutexImpl
 mozilla::detail::RunnableMethodImpl<T>::RunnableMethodImpl
 mozilla::detail::ThreadLocalNativeStorage<T>::get
 mozilla::detail::ThreadLocal<T>::get
+mozilla::detail::VariantImplementation<T>::
 mozilla::dom::Optional_base<T>::Construct<T>
 mozilla::dom::ThreadSafeRequestHandle::GetContext
 mozilla::gfx::Log<
