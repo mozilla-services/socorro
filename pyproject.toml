@@ -16,12 +16,6 @@ ignore = ["E501"]
 docstring-quotes = "double"
 
 
-[tool.black]
-line-length = 88
-# Need to keep using Python 3.7 until socorro-siggen drops support for it
-target-version = ["py37"]
-
-
 [tool.release]
 github_user = "mozilla-services"
 github_project = "socorro"
