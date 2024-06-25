@@ -23,9 +23,9 @@ attrs==23.2.0 \
     #   glom
     #   jsonschema
     #   referencing
-awscli==1.32.95 \
-    --hash=sha256:63ab1e6348a84051308d980c1c8329cbdb694e06949711a6da873a9f1fdcb9b0 \
-    --hash=sha256:9c99008120cd139e5fca773c9bb821e0ccdad63f18aeb39077d1504563dc9add
+awscli==1.33.15 \
+    --hash=sha256:54a8089edb6756da46addcfcd56fdca21307a121216a81ef542e17b284cbe9c9 \
+    --hash=sha256:5a8d7e68a4cf68afc9d9ba4bef511526eb71027360f95a1080d39158bc930083
     # via -r requirements.in
 babel==2.13.1 \
     --hash=sha256:33e0952d7dd6374af8dbf6768cc4ddf3ccfefc244f9986d4074704f2fbd18900 \
@@ -42,9 +42,9 @@ boto3==1.34.95 \
     --hash=sha256:decf52f8d5d8a1b10c9ff2a0e96ee207ed79e33d2e53fdf0880a5cbef70785e0 \
     --hash=sha256:e836b71d79671270fccac0a4d4c8ec239a6b82ea47c399b64675aa597d0ee63b
     # via -r requirements.in
-botocore==1.34.95 \
-    --hash=sha256:6bd76a2eadb42b91fa3528392e981ad5b4dfdee3968fa5b904278acf6cbf15ff \
-    --hash=sha256:ead5823e0dd6751ece5498cb979fd9abf190e691c8833bcac6876fd6ca261fa7
+botocore==1.34.133 \
+    --hash=sha256:5ea609aa4831a6589e32eef052a359ad8d7311733b4d86a9d35dab4bd3ec80ff \
+    --hash=sha256:f269dad8e17432d2527b97ed9f1fd30ec8dc705f8b818957170d1af484680ef2
     # via
     #   awscli
     #   boto3
