@@ -15,6 +15,7 @@ Allocator<T>::malloc
 AllocInfo::Get<T>
 alloc::raw_vec::capacity_overflow
 _alloca_probe
+APP_DATA::FreeCachedMem
 arena_
 BaseAllocator
 BaseGetNamedObjectDirectory
@@ -233,10 +234,12 @@ strlen
 strncpy
 strstr
 syscall
+SysFreeString
 TlsGetValue
 __ulock_wait
 __unlink
 unlink
+VariantClear
 vcruntime140\.dll
 _VEC_memcpy
 _VEC_memzero
