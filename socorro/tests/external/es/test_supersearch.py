@@ -1594,6 +1594,79 @@ class TestIntegrationSuperSearch:
         for hit in res["hits"]:
             assert "4.0b" in hit["version"]
 
+    def test_get_with_platform(self, es_helper):
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "OOM | small | linux",
+                "os_name": "Linux",
+                "product": "WaterWolf",
+                "version": "4.0b2",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "mozilla::dom::ClientHandle::Control | linux",
+                "os_name": "Linux",
+                "product": "WaterWolf",
+                "version": "4.0b3",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "js::gc::detail::CellHasStoreBuffer | mac os x",
+                "os_name": "Mac OS X",
+                "product": "WaterWolf",
+                "version": "5.0a1",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "hmpalert.dll | windows",
+                "os_name": "Windows",
+                "product": "WaterWolf",
+                "version": "5.0a1",
+                "date_processed": now,
+            },
+        )
+        es_helper.refresh()
+
+        # Test querying a single platform
+        resp = api.get(platform=["Linux"])
+        assert resp["total"] == 2
+        signatures = [x["signature"] for x in resp["hits"]]
+        assert list(sorted(signatures)) == [
+            "OOM | small | linux",
+            "mozilla::dom::ClientHandle::Control | linux",
+        ]
+
+        # Test querying a single platform--this one has spaces in the name
+        resp = api.get(platform=["Mac OS X"])
+        assert resp["total"] == 1
+        signatures = [x["signature"] for x in resp["hits"]]
+        assert signatures == [
+            "js::gc::detail::CellHasStoreBuffer | mac os x",
+        ]
+
+        # Test querying multiple platforms--one with spaces in the name
+        resp = api.get(platform=["Linux", "Mac OS X"])
+        assert resp["total"] == 3
+        signatures = [x["signature"] for x in resp["hits"]]
+        assert list(sorted(signatures)) == [
+            "OOM | small | linux",
+            "js::gc::detail::CellHasStoreBuffer | mac os x",
+            "mozilla::dom::ClientHandle::Control | linux",
+        ]
+
     def test_get_against_nonexistent_index(self, es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
