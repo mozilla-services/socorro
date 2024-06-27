@@ -82,6 +82,8 @@ guard_dispatch_icall_nop
 handle_error$
 IPC::EnumSerializer<T>::Write
 IPC::WriteParam
+JSContext::checkImpl
+js::ContextChecks::check
 js::gc::CellWithTenuredGCPointer<T>::headerPtr
 JS::loader::ScriptLoadRequest::GetWorkerLoadContext
 JSObject::nonCCWRealm

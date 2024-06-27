@@ -73,8 +73,12 @@ invalid_parameter_noinfo
 _invalid_parameter_noinfo
 je_
 _JNIEnv
+JSContext::check
 js::AutoEnterOOMUnsafeRegion::crash
+js::ContextChecks::fail
 js::LifoAlloc::getOrCreateChunk
+JS::Call
+JS_CallFunctionValue
 JS_NewStringCopyZ
 KiFastSystemCall
 kill
