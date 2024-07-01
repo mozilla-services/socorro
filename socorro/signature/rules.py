@@ -348,7 +348,7 @@ class CSignatureTool:
         # Shorten source_list to the first sentinel found
         sentinel_locations = []
         for a_sentinel in self.signature_sentinels:
-            if type(a_sentinel) == tuple:
+            if type(a_sentinel) is tuple:
                 a_sentinel, condition_fn = a_sentinel
                 if not condition_fn(source_list):
                     continue
