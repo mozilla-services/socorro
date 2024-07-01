@@ -266,28 +266,28 @@ class SuperSearch(SearchBase):
                 filter_value = None
 
                 if not param.operator:
-                    # contains one of the terms
+                    # We use "match" queries here because then ES will analyze the
+                    # search text using the same analyzer as the field allowing it
+                    # to match for analyzed and non-analyzed supersearch fields.
                     if len(param.value) == 1:
-                        val = param.value[0]
-
-                        if not isinstance(val, str) or " " not in val:
-                            # There's only one term and no white space, this
-                            # is a simple term filter.
-                            filter_value = val
-                        else:
-                            # If the term contains white spaces, we want to
-                            # perform a phrase query.
-                            filter_type = "query"
-                            args = Q(
-                                "simple_query_string",
-                                query=param.value[0],
-                                fields=[search_key],
-                                default_operator="and",
-                            ).to_dict()
+                        # Only one value, so we only do a single match
+                        filter_type = "query"
+                        args = Q({"match": {search_key: param.value[0]}}).to_dict()
                     else:
-                        # There are several terms, this is a terms filter.
-                        filter_type = "terms"
-                        filter_value = param.value
+                        # Multiple values, so we do multiple matches wrapped in a bool
+                        # query where at least one of them should match
+                        filter_type = "query"
+                        args = Q(
+                            {
+                                "bool": {
+                                    "should": [
+                                        {"match": {search_key: param_value}}
+                                        for param_value in param.value
+                                    ],
+                                    "minimum_should_match": 1,
+                                }
+                            }
+                        ).to_dict()
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
