@@ -79,7 +79,7 @@ JSContext::check
 js::AutoEnterOOMUnsafeRegion::crash
 js::ContextChecks::fail
 js::LifoAlloc::getOrCreateChunk
-JS::Call
+JS::Call$
 JS_CallFunctionValue
 JS_NewStringCopyZ
 KiFastSystemCall
