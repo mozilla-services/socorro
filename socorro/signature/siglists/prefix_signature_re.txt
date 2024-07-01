@@ -201,6 +201,7 @@ Rtl
 _Rtl
 __Rtl
 __rust_start_panic
+SafeVariantClear
 SEC_.*Item
 seckey_
 SECKEY_
@@ -240,6 +241,7 @@ __ulock_wait
 __unlink
 unlink
 VariantClear
+VariantCopy
 vcruntime140\.dll
 _VEC_memcpy
 _VEC_memzero
