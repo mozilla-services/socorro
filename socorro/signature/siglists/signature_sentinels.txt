@@ -34,3 +34,7 @@ __assert_fail
 
 # Rust allocation errors
 alloc::alloc::handle_alloc_error
+
+# IPC fatal errors
+IPC::MessageReader::FatalError
+IPC::MessageWriter::FatalError
