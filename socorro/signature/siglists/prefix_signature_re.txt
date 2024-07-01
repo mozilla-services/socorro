@@ -71,6 +71,8 @@ InfallibleAllocPolicy
 InvalidArrayIndex_CRASH
 invalid_parameter_noinfo
 _invalid_parameter_noinfo
+IPC::MessageReader::FatalError
+IPC::MessageWriter::FatalError
 je_
 _JNIEnv
 JSContext::check
