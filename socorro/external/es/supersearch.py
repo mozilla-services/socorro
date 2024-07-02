@@ -245,10 +245,6 @@ class SuperSearch(SearchBase):
 
                 if param.data_type in ("date", "datetime"):
                     param.value = libdatetime.date_to_string(param.value)
-                elif param.data_type == "enum":
-                    param.value = [x.lower() for x in param.value]
-                elif param.data_type == "str" and not param.operator:
-                    param.value = [x.lower() for x in param.value]
 
                 # Operators needing wildcards, and the associated value
                 # transformation with said wildcards.

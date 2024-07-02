@@ -1714,7 +1714,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "enum",
         # FIXME(willkg): storage_mapping should either be not_analyzed or analyzed as a
-        # keyword and not whatever this is
+        # keyword
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
