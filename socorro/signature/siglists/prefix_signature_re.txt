@@ -113,6 +113,7 @@ mozilla::dom::syncedcontext::Transaction<T>::Commit
 mozilla::dom::ToJSValue
 mozilla::DOMEventTargetHelper::AddRef
 mozilla::Maybe<T>
+mozilla::media::Interval<T>
 mozilla::net::ShutdownEvent::PostAndWait
 mozilla::SegmentedVector
 mozilla::TimeStamp::Now
