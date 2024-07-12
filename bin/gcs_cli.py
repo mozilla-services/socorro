@@ -74,7 +74,12 @@ def delete_bucket(bucket_name):
         click.echo(f"GCS bucket {bucket_name!r} at {endpoint_url!r} does not exist.")
         return
 
-    bucket.delete(force=True)
+    # delete blobs before deleting bucket, because bucket.delete(force=True) doesn't
+    # work if there are more than 256 blobs in the bucket.
+    for blob in bucket.list_blobs():
+        blob.delete()
+
+    bucket.delete()
     click.echo(f"GCS bucket {bucket_name!r} at {endpoint_url!r} deleted.")
 
 
