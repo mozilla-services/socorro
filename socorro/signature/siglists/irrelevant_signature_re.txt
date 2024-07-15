@@ -119,7 +119,7 @@ mozglue_static::panic_hook
 mozcrt19\.dll
 mozilla::AlignedBuffer<T>::Data
 mozilla::ArrayIterator<T>
-mozilla::Atomic<T>::Atomic
+mozilla::Atomic<T>
 mozilla::detail::Atomic
 mozilla::detail::BaseAutoLock
 mozilla::detail::BaseMonitorAutoLock
