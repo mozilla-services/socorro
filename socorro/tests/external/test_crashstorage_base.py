@@ -27,7 +27,7 @@ class TestCrashStorageBase:
             crashstorage.get_processed_crash(crash_id)
 
         with pytest.raises(NotImplementedError):
-            crashstorage.remove(crash_id)
+            crashstorage.delete_crash(crash_id)
 
         crashstorage.close()
 

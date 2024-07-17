@@ -195,13 +195,13 @@ class CrashStorageBase:
         """
         raise NotImplementedError("get_processed_crash is not implemented")
 
-    def remove(self, crash_id):
+    def delete_crash(self, crash_id):
         """Delete crash report data from storage
 
         :param crash_id: crash report id
 
         """
-        raise NotImplementedError("remove is not implemented")
+        raise NotImplementedError("delete_crash is not implemented")
 
 
 class InMemoryCrashStorage(CrashStorageBase):
@@ -257,7 +257,7 @@ class InMemoryCrashStorage(CrashStorageBase):
         except KeyError as exc:
             raise CrashIDNotFound(f"{crash_id} not found") from exc
 
-    def remove(self, crash_id):
+    def delete_crash(self, crash_id):
         with suppress(KeyError):
             del self._raw_crash_data[crash_id]
 

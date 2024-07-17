@@ -10,6 +10,7 @@ import time
 
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError
+from elasticsearch_dsl import Search
 import glom
 import markus
 
@@ -655,3 +656,18 @@ class ESCrashStorage(CrashStorageBase):
                     exc_info=True,
                 )
                 raise
+
+    def delete_crash(self, crash_id):
+        with self.client() as conn:
+            try:
+                search = Search(using=conn, doc_type=self.get_doctype())
+                search = search.filter("term", **{"processed_crash.uuid": crash_id})
+                results = search.execute().to_dict()
+                hits = results["hits"]["hits"]
+                if hits:
+                    hit = hits[0]
+                    conn.delete(
+                        index=hit["_index"], doc_type=hit["_type"], id=hit["_id"]
+                    )
+            except Exception:
+                self.logger.exception(f"ERROR: es: when deleting {crash_id}")

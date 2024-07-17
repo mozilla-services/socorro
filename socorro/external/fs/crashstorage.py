@@ -231,7 +231,7 @@ class FSPermanentStorage(CrashStorageBase):
             + self._get_radix(crash_id)
         )
 
-    def remove(self, crash_id):
+    def delete_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
             raise CrashIDNotFound
