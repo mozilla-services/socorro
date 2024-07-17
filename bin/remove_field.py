@@ -6,7 +6,7 @@
 
 """
 Given a set of crash report ids via a file and a list of fields to remove, removes the
-fields from the raw crash file in S3 and the document in Elasticsearch.
+fields from the raw crash file and the document in Elasticsearch.
 
 Usage::
 
@@ -22,19 +22,16 @@ Lines prefixed with "#" are ignored.
 
 import concurrent.futures
 from functools import partial
-import io
 import json
 import logging
 import os
 
-from botocore.client import ClientError
 import click
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch_dsl import Search
 from more_itertools import chunked
 
 from socorro import settings
-from socorro.external.boto.crashstorage import build_keys, dict_to_str
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.util import retry
 
@@ -49,9 +46,9 @@ CHUNK_SIZE = 1000
 logger = logging.getLogger(__name__)
 
 
-def get_s3_crashstorage():
-    """Return an S3 crash storage instance."""
-    return build_instance_from_settings(settings.CRASH_DESTINATIONS["s3"])
+def get_raw_crashstorage():
+    """Return a crash storage instance."""
+    return build_instance_from_settings(settings.CRASH_DESTINATIONS["storage"])
 
 
 def get_es_crashstorage():
@@ -74,36 +71,12 @@ def wait_times_access():
     yield from [5, 5, 5, 5, 5]
 
 
-@retry(
-    retryable_exceptions=[ClientError],
-    wait_time_generator=wait_times_access,
-    module_logger=logger,
-)
-def fix_data_in_s3(fields, s3_crashstorage, crash_data):
-    """Fix data in raw_crash file in S3."""
-    bucket = s3_crashstorage.bucket
-    s3_client = s3_crashstorage.connection
-
+def fix_data_in_raw(fields, raw_crashstorage, crash_data):
+    """Fix data in raw_crash file."""
     crashid = crash_data["crashid"]
 
-    # Iterate through the available keys until we find one we like.
-    paths = build_keys("raw_crash", crashid)
-    path = None
-    for possible_path in paths:
-        try:
-            resp = s3_client.load_file(bucket=bucket, path=possible_path)
-            path = possible_path
-            break
-        except s3_client.KeyNotFound:
-            continue
+    data = raw_crashstorage.get_raw_crash(crashid)
 
-    if not path:
-        # We're in a weird situation where we know there's a raw crash, but we can't
-        # find it with the key options.
-        raise Exception(f"raw crash not available at any keys: {paths}")
-
-    raw_crash_as_string = resp["Body"].read()
-    data = json.loads(raw_crash_as_string)
     should_save = False
     for field in fields:
         if field in data:
@@ -111,14 +84,13 @@ def fix_data_in_s3(fields, s3_crashstorage, crash_data):
             should_save = True
 
     if should_save:
-        s3_client.save_file(
-            bucket=bucket,
-            path=path,
-            data=io.BytesIO(dict_to_str(data).encode("utf-8")),
-        )
-        click.echo("# s3: fixed raw crash")
+        # NOTE(relud): this is not guaranteed to save the modified raw crash in the same
+        # location as the original, but it will still be read instead of the original if
+        # that happens. In practice as of 2024-07-17 it always overwrites the original.
+        raw_crashstorage.save_raw_crash(raw_crash=data, dumps=None, crash_id=crashid)
+        click.echo("# raw: fixed raw crash")
     else:
-        click.echo("# s3: raw crash was fine")
+        click.echo("# raw: raw crash was fine")
 
 
 @retry(
@@ -155,15 +127,15 @@ def fix_data_in_es(fields, es_crashstorage, crash_data):
 
 
 def fix_data(crashids, fields):
-    s3_crashstorage = get_s3_crashstorage()
+    raw_crashstorage = get_raw_crashstorage()
     es_crashstorage = get_es_crashstorage()
 
     for crashid in crashids:
         click.echo("# working on %s" % crashid)
 
-        # Fix the data in S3 and then Elasticsearch
+        # Fix the data in raw crash storage and then Elasticsearch
         try:
-            fix_data_in_s3(fields, s3_crashstorage, crashid)
+            fix_data_in_raw(fields, raw_crashstorage, crashid)
             fix_data_in_es(fields, es_crashstorage, crashid)
         except Exception:
             # If this throws an exception, print it out and move on. Then we'll finish
@@ -191,7 +163,7 @@ def fix_data(crashids, fields):
 @click.pass_context
 def cmd_remove_field(ctx, parallel, max_workers, crashidsfile, fields):
     """
-    Remove a field from raw crash data on S3 and Elasticsearch.
+    Remove a field from raw crash file and Elasticsearch.
 
     The crashidsfile is a path to a file with crash ids in it. File should be a set of
     lines of the form:
