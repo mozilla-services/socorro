@@ -7,7 +7,7 @@ import json
 import os
 import os.path
 
-from socorro.external.boto.crashstorage import build_keys
+from socorro.external.gcs.crashstorage import build_keys
 from socorro.lib.libdatetime import JsonDTEncoder
 from socorro.lib.librequests import session_with_retries
 from socorro.scripts import FallbackToPipeAction, FlagAction, WrappedTextHelpFormatter
@@ -53,7 +53,7 @@ def fetch_crash(
 ):
     """Fetch crash data and save to correct place on the file system
 
-    http://antenna.readthedocs.io/en/latest/architecture.html#aws-s3-file-hierarchy
+    https://antenna.readthedocs.io/en/latest/overview.html#cloud-storage-file-hierarchy
 
     """
     if api_token:

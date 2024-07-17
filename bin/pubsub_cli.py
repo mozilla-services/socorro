@@ -173,7 +173,7 @@ def pull(ctx, project_id, subscription_name, ack, max_messages):
 @pubsub_group.command("create-all")
 @click.pass_context
 def create_all(ctx):
-    """Create SQS queues related to processing."""
+    """Create Pub/Sub queues related to processing."""
     options = settings.QUEUE_PUBSUB["options"]
     project_id = options["project_id"]
     queues = {
@@ -194,7 +194,7 @@ def create_all(ctx):
 @pubsub_group.command("delete-all")
 @click.pass_context
 def delete_all(ctx):
-    """Delete SQS queues related to processing."""
+    """Delete Pub/Sub queues related to processing."""
     options = settings.QUEUE_PUBSUB["options"]
     project_id = options["project_id"]
     for topic_name in (

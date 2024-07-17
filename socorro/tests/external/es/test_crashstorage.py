@@ -238,7 +238,7 @@ class TestESCrashStorage:
                 processed_crash=processed_crash,
             )
 
-            mm.assert_histogram("processor.es.crash_document_size", value=169)
+            mm.assert_histogram("socorro.processor.es.crash_document_size", value=169)
 
     def test_index_data_capture(self, es_helper):
         """Verify we capture index data in ES crashstorage"""
@@ -264,8 +264,12 @@ class TestESCrashStorage:
                     crash_id=None,
                 )
 
-            mm.assert_histogram_once("processor.es.index", tags=["outcome:successful"])
-            mm.assert_histogram_once("processor.es.index", tags=["outcome:failed"])
+            mm.assert_histogram_once(
+                "socorro.processor.es.index", tags=["outcome:successful"]
+            )
+            mm.assert_histogram_once(
+                "socorro.processor.es.index", tags=["outcome:failed"]
+            )
 
     def test_delete_expired_indices(self, es_helper):
         # Delete any existing indices first

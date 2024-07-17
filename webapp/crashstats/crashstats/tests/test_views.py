@@ -22,8 +22,7 @@ from django.test.utils import override_settings
 
 from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import BaseTestViews, Response
-from socorro import settings as socorro_settings
-from socorro.external.boto.crashstorage import build_keys, dict_to_str
+from socorro.external.gcs.crashstorage import build_keys, dict_to_str
 from socorro.lib.libdatetime import date_to_string
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
@@ -394,15 +393,16 @@ class Test_quick_search:
         with MetricsMock() as metrics_mock:
             response = client.get(url)
         assert response.status_code == 302
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/search/quick/",
-                "status:302",
-            ],
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
         )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/search/quick/",
+            "status:302",
+        }.issubset(records[0].tags)
 
 
 class Test_report_index:
@@ -476,30 +476,16 @@ class Test_report_index:
         # shows up.
         assert "The address where the crashing thread crashed." in content
 
-        if socorro_settings.CLOUD_PROVIDER == "AWS":
-            metrics_mock.assert_timing(
-                "webapp.view.pageview",
-                tags=[
-                    "ajax:false",
-                    "api:false",
-                    "path:/report/index/_crashid_crash_id_",
-                    "status:200",
-                ],
-            )
-        else:
-            records = metrics_mock.filter_records(
-                "timing", stat="socorro.webapp.view.pageview"
-            )
-            assert len(records) == 1
-            record_tags = set(records[0].tags)
-            expected_tags = {
-                "ajax:false",
-                "api:false",
-                "path:/report/index/_crashid_crash_id_",
-                "status:200",
-            }
-
-            assert expected_tags.issubset(record_tags)
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/report/index/_crashid_crash_id_",
+            "status:200",
+        }.issubset(records[0].tags)
 
         # If the user ceases to be active, these PII fields should disappear
         user.is_active = False
@@ -1343,15 +1329,16 @@ class TestProductHomeViews(BaseTestViews):
         with MetricsMock() as metrics_mock:
             response = self.client.get(url)
         assert response.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=[
-                "ajax:false",
-                "api:false",
-                "path:/home/product/waterwolf",
-                "status:200",
-            ],
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
         )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/home/product/waterwolf",
+            "status:200",
+        }.issubset(records[0].tags)
 
 
 class TestHomeView:
@@ -1360,7 +1347,13 @@ class TestHomeView:
         with MetricsMock() as metrics_mock:
             resp = client.get(url)
         assert resp.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=["ajax:false", "api:false", "path:/", "status:200"],
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
         )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/",
+            "status:200",
+        }.issubset(records[0].tags)

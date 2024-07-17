@@ -6,7 +6,7 @@
 
 # Usage: bin/setup_services.sh
 #
-# Deletes all service state data and rebuilds database tables, S3 buckets,
+# Deletes all service state data and rebuilds database tables, buckets,
 # and other service state.
 #
 # Note: This should be called from inside a container.
@@ -23,16 +23,9 @@ set -euo pipefail
 /app/socorro-cmd gcs delete "${TELEMETRY_GCS_BUCKET}"
 /app/socorro-cmd gcs create "${TELEMETRY_GCS_BUCKET}"
 
-# Delete and create local S3 buckets
-/app/bin/recreate_s3_buckets.sh
-
 # Delete and create Elasticsearch indices
 /app/socorro-cmd es delete
 /app/socorro-cmd es create
-
-# Delete and create SQS queues
-/app/socorro-cmd sqs delete-all
-/app/socorro-cmd sqs create-all
 
 # Delete and create Pub/Sub queues
 /app/socorro-cmd pubsub delete-all

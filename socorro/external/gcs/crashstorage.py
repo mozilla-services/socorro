@@ -53,7 +53,7 @@ def build_keys(name_of_thing, crashid):
         return [f"v1/{name_of_thing}/{date}/{crashid}"]
 
     elif name_of_thing == "crash_report":
-        # Crash data from the TelemetryBotoS3CrashStorage
+        # Crash data from the TelemetryGcsCrashStorage
         date = get_datestamp(crashid).strftime("%Y%m%d")
         return [f"v1/{name_of_thing}/{date}/{crashid}"]
 

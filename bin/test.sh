@@ -19,7 +19,6 @@ echo ">>> set up environment"
 DATABASE_URL="${DATABASE_URL:-}"
 SENTRY_DSN="${SENTRY_DSN:-}"
 ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-}"
-LOCAL_DEV_AWS_ENDPOINT_URL="${LOCAL_DEV_AWS_ENDPOINT_URL:-}"
 
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
@@ -32,12 +31,8 @@ urlwait "${ELASTICSEARCH_URL}"
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${STORAGE_EMULATOR_HOST}/storage/v1/b" 10
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
-python ./bin/waitfor.py --timeout 20 --verbose "${LOCAL_DEV_AWS_ENDPOINT_URL}"
 
-echo ">>> build sqs things and db things"
-
-# Clear SQS for tests
-./socorro-cmd sqs delete-all
+echo ">>> build queue things and db things"
 
 # Clear Pub/Sub for tests
 ./socorro-cmd pubsub delete-all
@@ -54,12 +49,9 @@ echo ">>> run tests"
 
 # Run socorro tests
 "${PYTEST}"
-CLOUD_PROVIDER=GCP "${PYTEST}" -m gcp
 
 # Collect static and then run pytest in the webapp
 pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
 "${PYTEST}"
-# default cloud provider is aws, now configure gcp and run only impacted tests
-CLOUD_PROVIDER=GCP "${PYTEST}" -m gcp
 popd

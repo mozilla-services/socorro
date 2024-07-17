@@ -906,7 +906,7 @@ class TestMinidumpStackwalkRule:
             assert processed_crash["stackwalk_version"] == rule.stackwalk_version
 
             mm.assert_incr(
-                "processor.minidumpstackwalk.run",
+                "socorro.processor.minidumpstackwalk.run",
                 tags=["outcome:success", "exitcode:0"],
             )
 
@@ -947,7 +947,7 @@ class TestMinidumpStackwalkRule:
             ]
 
             mm.assert_incr(
-                "processor.minidumpstackwalk.run",
+                "socorro.processor.minidumpstackwalk.run",
                 tags=["outcome:fail", "exitcode:-9"],
             )
 

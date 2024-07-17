@@ -51,7 +51,7 @@ my.env:
 build: my.env  ## | Build docker images.
 	${DC} build ${DOCKER_BUILD_OPTS} --build-arg userid=${SOCORRO_UID} --build-arg groupid=${SOCORRO_GID} --progress plain app
 	${DC} build --progress plain oidcprovider fakesentry gcs-emulator
-	${DC} build --progress plain statsd postgresql memcached localstack elasticsearch symbolsserver
+	${DC} build --progress plain statsd postgresql memcached elasticsearch symbolsserver
 	touch .docker-build
 
 .PHONY: devcontainerbuild
@@ -64,7 +64,7 @@ devcontainer: my.env .devcontainer-build  ## | Run VS Code development container
 	${DC} up --detach devcontainer
 
 .PHONY: setup
-setup: my.env .docker-build  ## | Set up Postgres, Elasticsearch, local SQS, and local S3 services.
+setup: my.env .docker-build  ## | Set up Postgres, Elasticsearch, local Pub/Sub, and local GCS services.
 	${DC} run --rm app shell /app/bin/setup_services.sh
 
 .PHONY: updatedata
@@ -81,11 +81,10 @@ run: my.env  ## | Run processor, webapp, fakesentry, symbolsserver, and required
 		processor webapp fakesentry symbolsserver
 
 .PHONY: runservices
-runservices: my.env  ## | Run service containers (Postgres, SQS, etc)
+runservices: my.env  ## | Run service containers (Postgres, Pub/Sub, etc)
 	${DC} up -d --remove-orphans \
 		elasticsearch \
 		gcs-emulator \
-		localstack \
 		memcached \
 		postgresql \
 		pubsub \
@@ -133,18 +132,14 @@ psql: my.env .docker-build  ## | Open psql cli.
 
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.
-	# Make sure services are started and start localstack before the others to
-	# give it a little more time to wake up
-	${DC} up -d localstack
+	# Make sure services are started
 	${DC} up -d elasticsearch postgresql statsd
 	# Run tests
 	${DC} run --rm test shell ./bin/test.sh
 
 .PHONY: test-ci
 test-ci: my.env .docker-build  ## | Run unit tests in CI.
-	# Make sure services are started and start localstack before the others to
-	# give it a little more time to wake up
-	${DC} up -d localstack
+	# Make sure services are started
 	${DC} up -d elasticsearch postgresql statsd
 	# Run tests in test-ci which doesn't volume mount local directory
 	${DC} run --rm test-ci shell ./bin/test.sh

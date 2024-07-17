@@ -19,10 +19,6 @@ from socorro.stage_submitter.submitter import (
 )
 
 
-# Only run submitter tests in GCP mode
-pytestmark = pytest.mark.gcp
-
-
 def get_app():
     app = SubmitterApp()
     app.set_up()
@@ -30,7 +26,7 @@ def get_app():
 
 
 def generate_storage_key(kind, crash_id):
-    """Generates the key in S3 for this object kind
+    """Generates the key in crash storage for this object kind
 
     :arg kind: the kind of thing to fetch
     :arg crash_id: the crash id
@@ -192,10 +188,7 @@ def test_basic(pubsub_helper, gcs_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_multiple_destinations(pubsub_helper, gcs_helper, mock_collector):
@@ -295,10 +288,7 @@ def test_annotations_as_json(pubsub_helper, gcs_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_multiple_dumps(pubsub_helper, gcs_helper, mock_collector):
@@ -365,10 +355,7 @@ def test_multiple_dumps(pubsub_helper, gcs_helper, mock_collector):
         "--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_compressed(pubsub_helper, gcs_helper, mock_collector):
@@ -434,10 +421,7 @@ def test_compressed(pubsub_helper, gcs_helper, mock_collector):
         b"--01659896d5dc42cabd7f3d8a3dcdd3bb--\r\n"
     )
 
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_sample_accepted(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
@@ -473,10 +457,7 @@ def test_sample_accepted(pubsub_helper, monkeypatch, gcs_helper, mock_collector)
 
     # Verify payload was submitted
     assert len(mock_collector.payloads) == 1
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.accept")
 
 
 def test_sample_skipped(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
@@ -513,12 +494,8 @@ def test_sample_skipped(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
     # Verify no payload was submitted
     assert len(mock_collector.payloads) == 0
 
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_not_incr("submitter.accept")
-        metricsmock.assert_incr("submitter.ignore")
-    else:
-        metricsmock.assert_not_incr("socorro.submitter.accept")
-        metricsmock.assert_incr("socorro.submitter.ignore")
+    metricsmock.assert_not_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.ignore")
 
 
 def test_different_samples(pubsub_helper, monkeypatch, gcs_helper, mock_collector):
@@ -566,12 +543,8 @@ def test_different_samples(pubsub_helper, monkeypatch, gcs_helper, mock_collecto
     # Verify only second destination got a payload
     assert len(mock_collector.payloads) == 1
     assert mock_collector.payloads[0].hostname == "antenna_2"
-    if settings.CLOUD_PROVIDER == "AWS":
-        metricsmock.assert_incr("submitter.accept")
-        metricsmock.assert_incr("submitter.ignore")
-    else:
-        metricsmock.assert_incr("socorro.submitter.accept")
-        metricsmock.assert_incr("socorro.submitter.ignore")
+    metricsmock.assert_incr("socorro.submitter.accept")
+    metricsmock.assert_incr("socorro.submitter.ignore")
 
 
 def test_user_agent(pubsub_helper, gcs_helper, mock_collector):

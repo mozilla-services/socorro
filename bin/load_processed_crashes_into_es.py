@@ -4,12 +4,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# Loads a processed crash by either crash ID or date from either
-# GCS or S3 into Elasticsearch, depending on `settings.CRASH_SOURCE`,
+# Loads a processed crash by either crash ID or date from crash
+# storage into Elasticsearch, depending on `settings.CRASH_SOURCE`,
 # optionally skipping crashes already in Elasticsearch.
 
-# Uses a variation of `check_crash_ids_for_date`
-# from the `verifyprocessed` command in Crash Stats to get crash IDs from S3/GCS:
+# Uses a variation of `check_crash_ids_for_date` from the `verifyprocessed`
+# command in Crash Stats to get crash IDs from crash storage:
 # https://github.com/mozilla-services/socorro/blob/3f39c6aaa7f294884f3261fd268e8084d5eec93a/webapp/crashstats/crashstats/management/commands/verifyprocessed.py#L77-L115
 
 # Usage: ./bin/load_processed_crash_into_es.py [OPTIONS] [CRASH_ID | DATE]
@@ -170,8 +170,7 @@ def save_crash_to_es(crash_id):
 @click.pass_context
 def load_crashes(ctx, date, crash_id, num_workers, only_missing_in_es):
     """
-    Loads processed crashes into Elasticsearch by crash source (S3 or GCS)
-    and either crash ID or date.
+    Loads processed crashes into Elasticsearch by either crash ID or date.
 
     Must specify either CRASH_ID or DATE.
 

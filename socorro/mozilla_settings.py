@@ -112,45 +112,7 @@ PROCESSOR = {
     ),
 }
 
-LOCAL_DEV_AWS_ENDPOINT_URL = _config(
-    "LOCAL_DEV_AWS_ENDPOINT_URL",
-    default="",
-    doc=(
-        "Endpoint url for AWS SQS/S3 in the local dev environment. "
-        "Don't set this in server environments."
-    ),
-)
-
-# Crash report processing queue configuration if CLOUD_PROVIDER == AWS
-QUEUE_SQS = {
-    "class": "socorro.external.sqs.crashqueue.SQSCrashQueue",
-    "options": {
-        "standard_queue": _config(
-            "SQS_STANDARD_QUEUE",
-            default="standard-queue",
-            doc="Name for the standard processing queue.",
-        ),
-        "priority_queue": _config(
-            "SQS_PRIORITY_QUEUE",
-            default="priority-queue",
-            doc="Name for the priority processing queue.",
-        ),
-        "reprocessing_queue": _config(
-            "SQS_REPROCESSING_QUEUE",
-            default="reprocessing-queue",
-            doc="Name for the reprocessing queue.",
-        ),
-        "access_key": _config("SQS_ACCESS_KEY", default="", doc="SQS access key."),
-        "secret_access_key": _config(
-            "SQS_SECRET_ACCESS_KEY",
-            default="",
-            doc="SQS secret access key.",
-        ),
-        "region": _config("SQS_REGION", default="", doc="SQS region."),
-        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
-    },
-}
-# Crash report processing queue configuration if CLOUD_PROVIDER == GCP
+# Crash report processing queue configuration
 QUEUE_PUBSUB = {
     "class": "socorro.external.pubsub.crashqueue.PubSubCrashQueue",
     "options": {
@@ -192,35 +154,7 @@ QUEUE_PUBSUB = {
     },
 }
 
-# Crash report storage configuration if CLOUD_PROVIDER == AWS
-S3_STORAGE = {
-    "class": "socorro.external.boto.crashstorage.BotoS3CrashStorage",
-    "options": {
-        "metrics_prefix": "processor.s3",
-        "bucket": _config(
-            "CRASHSTORAGE_S3_BUCKET",
-            default="",
-            doc="S3 bucket name for crash report data.",
-        ),
-        "access_key": _config(
-            "CRASHSTORAGE_S3_ACCESS_KEY",
-            default="",
-            doc="S3 access key for crash report data.",
-        ),
-        "secret_access_key": _config(
-            "CRASHSTORAGE_S3_SECRET_ACCESS_KEY",
-            default="",
-            doc="S3 secret access key for crash report data.",
-        ),
-        "region": _config(
-            "CRASHSTORAGE_S3_REGION",
-            default="",
-            doc="S3 region for crash report data.",
-        ),
-        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
-    },
-}
-# Crash report storage configuration if CLOUD_PROVIDER == GCP
+# Crash report storage configuration
 GCS_STORAGE = {
     "class": "socorro.external.gcs.crashstorage.GcsCrashStorage",
     "options": {
@@ -251,31 +185,7 @@ ES_STORAGE = {
     },
 }
 
-# Telemetry crash report storage configuration if CLOUD_PROVIDER == AWS
-TELEMETRY_S3_STORAGE = {
-    "class": "socorro.external.boto.crashstorage.TelemetryBotoS3CrashStorage",
-    "options": {
-        "metrics_prefix": "processor.telemetry",
-        "bucket": _config(
-            "TELEMETRY_S3_BUCKET",
-            default="",
-            doc="S3 bucket name for telemetry data export.",
-        ),
-        "access_key": _config(
-            "TELEMETRY_S3_ACCESS_KEY",
-            default="",
-            doc="S3 access key for telemetry bucket.",
-        ),
-        "secret_access_key": _config(
-            "TELEMETRY_S3_SECRET_ACCESS_KEY",
-            default="",
-            doc="S3 secret access key for telemetry bucket.",
-        ),
-        "region": _config("TELEMETRY_S3_REGION", default="", doc="S3 region."),
-        "endpoint_url": LOCAL_DEV_AWS_ENDPOINT_URL,
-    },
-}
-# Telemetry crash report storage configuration if CLOUD_PROVIDER == GCP
+# Telemetry crash report storage configuration
 TELEMETRY_GCS_STORAGE = {
     "class": "socorro.external.gcs.crashstorage.TelemetryGcsCrashStorage",
     "options": {
@@ -288,32 +198,11 @@ TELEMETRY_GCS_STORAGE = {
     },
 }
 
+QUEUE = QUEUE_PUBSUB
+STORAGE = GCS_STORAGE
+TELEMETRY_STORAGE = TELEMETRY_GCS_STORAGE
 
-def cloud_provider_parser(val):
-    """Return 'AWS' or 'GCP'."""
-    normalized = val.strip().upper()
-    if normalized in ("AWS", "GCP"):
-        return normalized
-    raise ValueError(f"cloud provider not supported, must be AWS or GCP: {val}")
-
-
-# Cloud provider specific configuration
-CLOUD_PROVIDER = _config(
-    "CLOUD_PROVIDER",
-    default="AWS",
-    parser=cloud_provider_parser,
-    doc="The cloud provider to use for queueing and blob storage. Must be AWS or GCP.",
-)
-if CLOUD_PROVIDER == "AWS":
-    QUEUE = QUEUE_SQS
-    STORAGE = S3_STORAGE
-    TELEMETRY_STORAGE = TELEMETRY_S3_STORAGE
-elif CLOUD_PROVIDER == "GCP":
-    QUEUE = QUEUE_PUBSUB
-    STORAGE = GCS_STORAGE
-    TELEMETRY_STORAGE = TELEMETRY_GCS_STORAGE
-
-# Crash report storage source pulls from S3 or GCS
+# Crash report storage source pulls from GCS
 CRASH_SOURCE = STORAGE
 
 # Each key in this list corresponds to a key in this dict containing a crash report data

@@ -102,7 +102,6 @@ COMMANDS = [
             "upload_telemetry_schema": import_path("upload_telemetry_schema.main"),
             "db": import_path("socorro.scripts.db.db_group"),
             "es": import_path("es_cli.main"),
-            "sqs": import_path("sqs_cli.main"),
             "pubsub": import_path("pubsub_cli.main"),
             "gcs": import_path("gcs_cli.main"),
         },

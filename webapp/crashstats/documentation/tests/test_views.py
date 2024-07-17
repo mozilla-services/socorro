@@ -14,15 +14,14 @@ def test_home_metrics(client, db):
     with MetricsMock() as metrics_mock:
         resp = client.get(url)
     assert resp.status_code == 200
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/",
-            "status:200",
-        ],
-    )
+    records = metrics_mock.filter_records("timing", stat="socorro.webapp.view.pageview")
+    assert len(records) == 1
+    assert {
+        "ajax:false",
+        "api:false",
+        "path:/documentation/",
+        "status:200",
+    }.issubset(records[0].tags)
 
 
 def test_supersearch_home(client, db):
@@ -31,15 +30,14 @@ def test_supersearch_home(client, db):
         response = client.get(url)
     assert response.status_code == 200
     assert "What is Super Search?" in smart_str(response.content)
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/supersearch/",
-            "status:200",
-        ],
-    )
+    records = metrics_mock.filter_records("timing", stat="socorro.webapp.view.pageview")
+    assert len(records) == 1
+    assert {
+        "ajax:false",
+        "api:false",
+        "path:/documentation/supersearch/",
+        "status:200",
+    }.issubset(records[0].tags)
 
 
 def test_whatsnew(client, db):
@@ -48,15 +46,14 @@ def test_whatsnew(client, db):
         response = client.get(url)
     assert response.status_code == 200
     assert "What's New in Crash Stats" in smart_str(response.content)
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/whatsnew/",
-            "status:200",
-        ],
-    )
+    records = metrics_mock.filter_records("timing", stat="socorro.webapp.view.pageview")
+    assert len(records) == 1
+    assert {
+        "ajax:false",
+        "api:false",
+        "path:/documentation/whatsnew/",
+        "status:200",
+    }.issubset(records[0].tags)
 
 
 def test_supersearch_examples(client, db):
@@ -65,15 +62,14 @@ def test_supersearch_examples(client, db):
         response = client.get(url)
     assert response.status_code == 200
     assert "Examples" in smart_str(response.content)
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/supersearch/examples/",
-            "status:200",
-        ],
-    )
+    records = metrics_mock.filter_records("timing", stat="socorro.webapp.view.pageview")
+    assert len(records) == 1
+    assert {
+        "ajax:false",
+        "api:false",
+        "path:/documentation/supersearch/examples/",
+        "status:200",
+    }.issubset(records[0].tags)
 
 
 def test_supersearch_api(client, db):
@@ -84,15 +80,14 @@ def test_supersearch_api(client, db):
     assert "_results_number" in smart_str(response.content)
     assert "_aggs.*" in smart_str(response.content)
     assert "signature" in smart_str(response.content)
-    metrics_mock.assert_timing(
-        "webapp.view.pageview",
-        tags=[
-            "ajax:false",
-            "api:false",
-            "path:/documentation/supersearch/api/",
-            "status:200",
-        ],
-    )
+    records = metrics_mock.filter_records("timing", stat="socorro.webapp.view.pageview")
+    assert len(records) == 1
+    assert {
+        "ajax:false",
+        "api:false",
+        "path:/documentation/supersearch/api/",
+        "status:200",
+    }.issubset(records[0].tags)
 
 
 def test_memory_dump_access_redirect(client, db):

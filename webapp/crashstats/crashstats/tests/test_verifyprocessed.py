@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
 
 from crashstats.crashstats.models import MissingProcessedCrash
 from crashstats.crashstats.management.commands.verifyprocessed import Command
@@ -11,7 +10,6 @@ from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 TODAY = utc_now().strftime("%Y%m%d")
-BUCKET_NAME = os.environ.get("resource.boto.bucket_name")
 
 
 def get_threechars_subset(self):

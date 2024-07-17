@@ -7,15 +7,12 @@ pytest plugins for socorro/tests/ and webapp/ test suites.
 """
 
 import datetime
-import io
 import logging
 import os
 import pathlib
 import uuid
 import sys
 
-import boto3
-from botocore.client import ClientError, Config
 from elasticsearch_dsl import Search
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.auth.credentials import AnonymousCredentials
@@ -96,98 +93,6 @@ class DebugIdHelper:
 @pytest.fixture
 def debug_id_helper():
     yield DebugIdHelper()
-
-
-class S3Helper:
-    """S3 helper class.
-
-    When used in a context, this will clean up any buckets created.
-
-    """
-
-    def __init__(self):
-        self._buckets_seen = None
-        self.conn = self.get_client()
-
-    def get_client(self):
-        session = boto3.session.Session(
-            # NOTE(willkg): these use environment variables set in
-            # docker/config/test.env
-            aws_access_key_id=os.environ["CRASHSTORAGE_S3_ACCESS_KEY"],
-            aws_secret_access_key=os.environ["CRASHSTORAGE_S3_SECRET_ACCESS_KEY"],
-        )
-        client = session.client(
-            service_name="s3",
-            config=Config(s3={"addressing_style": "path"}),
-            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
-        )
-        return client
-
-    def __enter__(self):
-        self._buckets_seen = set()
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        for bucket in self._buckets_seen:
-            # Delete any objects in the bucket
-            resp = self.conn.list_objects(Bucket=bucket)
-            for obj in resp.get("Contents", []):
-                key = obj["Key"]
-                self.conn.delete_object(Bucket=bucket, Key=key)
-
-            # Then delete the bucket
-            self.conn.delete_bucket(Bucket=bucket)
-        self._buckets_seen = None
-
-    def get_crashstorage_bucket(self):
-        return os.environ["CRASHSTORAGE_S3_BUCKET"]
-
-    def get_telemetry_bucket(self):
-        return os.environ["TELEMETRY_S3_BUCKET"]
-
-    def create_bucket(self, bucket_name):
-        """Create specified bucket if it doesn't exist."""
-        try:
-            self.conn.head_bucket(Bucket=bucket_name)
-        except ClientError:
-            self.conn.create_bucket(Bucket=bucket_name)
-        if self._buckets_seen is not None:
-            self._buckets_seen.add(bucket_name)
-
-    def upload(self, bucket_name, key, data):
-        """Puts an object into the specified bucket."""
-        self.create_bucket(bucket_name)
-        self.conn.upload_fileobj(Fileobj=io.BytesIO(data), Bucket=bucket_name, Key=key)
-
-    def download(self, bucket_name, key):
-        """Fetches an object from the specified bucket"""
-        self.create_bucket(bucket_name)
-        resp = self.conn.get_object(Bucket=bucket_name, Key=key)
-        return resp["Body"].read()
-
-    def list(self, bucket_name):
-        """Return list of keys for objects in bucket."""
-        self.create_bucket(bucket_name)
-        resp = self.conn.list_objects(Bucket=bucket_name)
-        return [obj["Key"] for obj in resp["Contents"]]
-
-
-@pytest.fixture
-def s3_helper():
-    """Returns an S3Helper for automating repetitive tasks in S3 setup.
-
-    Provides:
-
-    * ``get_client()``
-    * ``get_crashstorage_bucket()``
-    * ``create_bucket(bucket_name)``
-    * ``upload(bucket_name, key, data)``
-    * ``download(bucket_name, key)``
-    * ``list(bucket_name)``
-
-    """
-    with S3Helper() as s3_helper:
-        yield s3_helper
 
 
 class GcsHelper:
@@ -395,91 +300,6 @@ def es_helper():
     es_helper.delete_indices()
 
 
-class SQSHelper:
-    """Helper class for setting up, tearing down, and publishing to SQS."""
-
-    def __init__(self):
-        self.conn = self.get_client()
-
-        self.queue_to_queue_name = {
-            "standard": os.environ["SQS_STANDARD_QUEUE"],
-            "priority": os.environ["SQS_PRIORITY_QUEUE"],
-            "reprocessing": os.environ["SQS_REPROCESSING_QUEUE"],
-        }
-
-        self.conn = self.get_client()
-
-        # Visibility timeout for the AWS SQS queue in seconds
-        self.visibility_timeout = 1
-
-    def get_client(self):
-        session = boto3.session.Session(
-            # NOTE(willkg): these use environment variables set in
-            # docker/config/test.env
-            aws_access_key_id=os.environ["SQS_ACCESS_KEY"],
-            aws_secret_access_key=os.environ["SQS_SECRET_ACCESS_KEY"],
-        )
-        client = session.client(
-            service_name="sqs",
-            region_name=os.environ["SQS_REGION"],
-            endpoint_url=os.environ["LOCAL_DEV_AWS_ENDPOINT_URL"],
-        )
-        return client
-
-    def setup_queues(self):
-        for queue_name in self.queue_to_queue_name.values():
-            self.create_queue(queue_name)
-
-    def teardown_queues(self):
-        for queue_name in self.queue_to_queue_name.values():
-            try:
-                queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
-                self.conn.delete_queue(QueueUrl=queue_url)
-            except self.conn.exceptions.QueueDoesNotExist:
-                print(f"skipping teardown {queue_name!r}: does not exist")
-
-    def __enter__(self):
-        self.setup_queues()
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.teardown_queues()
-
-    def create_queue(self, queue_name):
-        self.conn.create_queue(
-            QueueName=queue_name,
-            Attributes={"VisibilityTimeout": str(self.visibility_timeout)},
-        )
-
-    def get_published_crashids(self, queue):
-        queue_name = self.queue_to_queue_name[queue]
-        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
-        all_crashids = []
-        while True:
-            resp = self.conn.receive_message(
-                QueueUrl=queue_url,
-                WaitTimeSeconds=0,
-                VisibilityTimeout=1,
-            )
-            msgs = resp.get("Messages", [])
-            if not msgs:
-                break
-            all_crashids.extend([msg["Body"] for msg in msgs])
-
-        return all_crashids
-
-    def publish(self, queue, crash_id):
-        queue_name = self.queue_to_queue_name[queue]
-        queue_url = self.conn.get_queue_url(QueueName=queue_name)["QueueUrl"]
-        self.conn.send_message(QueueUrl=queue_url, MessageBody=crash_id)
-
-
-@pytest.fixture
-def sqs_helper():
-    with SQSHelper() as sqs:
-        yield sqs
-
-
 class PubSubHelper:
     """Helper class for setting up, tearing down, and publishing to Pub/Sub."""
 
@@ -598,56 +418,15 @@ def pubsub_helper():
         yield pubsub
 
 
-@pytest.fixture(
-    # define these params once and reference this fixture to prevent undesirable
-    # combinations, i.e. tests marked with aws *and* gcp for pubsub+s3 or sqs+gcs
-    params=[
-        # tests that require a specific cloud provider backend must be marked with that
-        # provider, and non-default backends must be excluded by default, for example
-        # via pytest.ini's addopts, i.e. addopts = -m 'not gcp'
-        pytest.param("aws", marks=pytest.mark.aws),
-        pytest.param("gcp", marks=pytest.mark.gcp),
-    ]
-)
-def cloud_provider(request):
-    return request.param
+@pytest.fixture
+def queue_helper():
+    """Generate and return a queue helper using env config."""
+    with PubSubHelper() as helper:
+        yield helper
 
 
 @pytest.fixture
-def queue_helper(cloud_provider):
+def storage_helper():
     """Generate and return a queue helper using env config."""
-    actual_backend = "sqs"
-    if os.environ.get("CLOUD_PROVIDER", "").strip().upper() == "GCP":
-        actual_backend = "pubsub"
-
-    expect_backend = "pubsub" if cloud_provider == "gcp" else "sqs"
-    if actual_backend != expect_backend:
-        pytest.fail(f"test requires {expect_backend} but found {actual_backend}")
-
-    if actual_backend == "pubsub":
-        helper = PubSubHelper()
-    else:
-        helper = SQSHelper()
-
-    with helper as _helper:
-        yield _helper
-
-
-@pytest.fixture
-def storage_helper(cloud_provider):
-    """Generate and return a queue helper using env config."""
-    actual_backend = "s3"
-    if os.environ.get("CLOUD_PROVIDER", "").strip().upper() == "GCP":
-        actual_backend = "gcs"
-
-    expect_backend = "gcs" if cloud_provider == "gcp" else "s3"
-    if actual_backend != expect_backend:
-        pytest.fail(f"test requires {expect_backend} but found {actual_backend}")
-
-    if actual_backend == "gcs":
-        helper = GcsHelper()
-    else:
-        helper = S3Helper()
-
-    with helper as _helper:
-        yield _helper
+    with GcsHelper() as helper:
+        yield helper

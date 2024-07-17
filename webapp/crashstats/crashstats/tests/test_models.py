@@ -17,7 +17,7 @@ from crashstats.crashstats import models
 from crashstats.crashstats.tests.conftest import Response
 from crashstats.crashstats.tests.testbase import DjangoTestCase
 from socorro import settings as socorro_settings
-from socorro.external.boto.crashstorage import dict_to_str, build_keys
+from socorro.external.gcs.crashstorage import dict_to_str, build_keys
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
