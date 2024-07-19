@@ -627,9 +627,9 @@ class TestCrashVerify:
         assert data == {
             "uuid": uuid,
             "elasticsearch_crash": True,
-            "s3_raw_crash": False,
-            "s3_processed_crash": False,
-            "s3_telemetry_crash": False,
+            "raw_crash": False,
+            "processed_crash": False,
+            "telemetry_crash": False,
         }
 
     def test_raw_crash_has_crash(self, storage_helper, client):
@@ -655,10 +655,10 @@ class TestCrashVerify:
 
         assert data == {
             "uuid": uuid,
-            "s3_raw_crash": True,
-            "s3_processed_crash": False,
+            "raw_crash": True,
+            "processed_crash": False,
             "elasticsearch_crash": False,
-            "s3_telemetry_crash": False,
+            "telemetry_crash": False,
         }
 
     def test_processed_has_crash(self, storage_helper, client):
@@ -687,10 +687,10 @@ class TestCrashVerify:
 
         assert data == {
             "uuid": uuid,
-            "s3_processed_crash": True,
-            "s3_raw_crash": False,
+            "processed_crash": True,
+            "raw_crash": False,
             "elasticsearch_crash": False,
-            "s3_telemetry_crash": False,
+            "telemetry_crash": False,
         }
 
     def test_telemetry_has_crash(self, storage_helper, client):
@@ -719,9 +719,9 @@ class TestCrashVerify:
 
         assert data == {
             "uuid": uuid,
-            "s3_telemetry_crash": True,
-            "s3_raw_crash": False,
-            "s3_processed_crash": False,
+            "telemetry_crash": True,
+            "raw_crash": False,
+            "processed_crash": False,
             "elasticsearch_crash": False,
         }
 
