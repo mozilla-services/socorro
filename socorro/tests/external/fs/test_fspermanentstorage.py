@@ -113,7 +113,7 @@ class TestFSPermanentStorage:
         fs.get_dumps(crash_id)
 
         # Remove the data
-        fs.remove(crash_id)
+        fs.delete_crash(crash_id)
         assert not os.path.exists(fs._get_radixed_parent_directory(crash_id))
         with pytest.raises(CrashIDNotFound):
             fs.get_raw_crash(crash_id)

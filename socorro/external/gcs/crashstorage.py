@@ -93,6 +93,11 @@ class GcsCrashStorage(CrashStorageBase):
         self.bucket = bucket
         self.dump_file_suffix = dump_file_suffix
 
+    def delete_file(self, path):
+        bucket = self.client.bucket(self.bucket)
+        blob = bucket.blob(path)
+        return blob.delete()
+
     def load_file(self, path):
         bucket = self.client.bucket(self.bucket)
         blob = bucket.blob(path)
@@ -300,6 +305,47 @@ class GcsCrashStorage(CrashStorageBase):
             # Re-wrap it here so the message is just the crash ID.
             raise CrashIDNotFound(params["uuid"]) from cidnf
 
+    def delete_crash(self, crash_id):
+        # delete raw and processed crash
+        for source in ["raw_crash", "processed_crash"]:
+            for key in build_keys(source, crash_id):
+                try:
+                    self.delete_file(key)
+                except NotFound:
+                    pass
+                except Exception:
+                    self.logger.exception(
+                        f"could not delete {source}: gs://{self.bucket}/{key}"
+                    )
+
+        # delete dumps
+        for key in build_keys("dump_names", crash_id):
+            try:
+                dump_names = json.loads(self.load_file(key))
+            except NotFound:
+                pass
+            except json.JSONDecodeError:
+                self.logger.exception(
+                    f"could not parse dump_names: gs://{self.bucket}/{key}"
+                )
+            else:
+                errors = 0
+                for dump_name in dump_names:
+                    if dump_name in (None, "", "upload_file_minidump"):
+                        dump_name = "dump"
+
+                    for dump_key in build_keys(dump_name, crash_id):
+                        try:
+                            self.delete_file(dump_key)
+                        except NotFound:
+                            pass
+                        except Exception:
+                            self.logger.exception(
+                                f"could not delete dump: gs://{self.bucket}/{dump_key}"
+                            )
+                if not errors:
+                    self.delete_file(key)
+
 
 class TelemetryGcsCrashStorage(GcsCrashStorage):
     """Sends a subset of the processed crash to a GCS bucket
@@ -402,3 +448,6 @@ class TelemetryGcsCrashStorage(GcsCrashStorage):
             # information about buckets and prefix keys. Re-wrap it here so the
             # message is just the crash ID.
             raise CrashIDNotFound(params["uuid"]) from cidnf
+
+    def delete_crash(self, crash_id):
+        raise NotImplementedError("telemetry is write-only")
