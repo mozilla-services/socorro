@@ -141,7 +141,6 @@ class TestDockerflowHeartbeatViews:
 
 
 class TestDockerflowVersionView:
-    @pytest.mark.aws
     def test_version_no_file(self, client, settings, tmp_path):
         """Test with no version.json file"""
         # The tmp_path definitely doesn't have a version.json in it, so we use
@@ -151,23 +150,8 @@ class TestDockerflowVersionView:
         resp = client.get(reverse("monitoring:dockerflow_version"))
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json; charset=UTF-8"
-        version_info = {"cloud": "AWS"}
-        assert json.loads(smart_str(resp.content)) == version_info
+        assert json.loads(smart_str(resp.content)) == {}
 
-    @pytest.mark.gcp
-    def test_version_no_file_gcp(self, client, settings, tmp_path):
-        """Test with no version.json file"""
-        # The tmp_path definitely doesn't have a version.json in it, so we use
-        # that
-        settings.SOCORRO_ROOT = str(tmp_path)
-
-        resp = client.get(reverse("monitoring:dockerflow_version"))
-        assert resp.status_code == 200
-        assert resp["Content-Type"] == "application/json; charset=UTF-8"
-        version_info = {"cloud": "GCP"}
-        assert json.loads(smart_str(resp.content)) == version_info
-
-    @pytest.mark.aws
     def test_version_with_file(self, client, settings, tmp_path):
         """Test with a version.json file"""
         settings.SOCORRO_ROOT = str(tmp_path)
@@ -182,25 +166,6 @@ class TestDockerflowVersionView:
         assert resp.status_code == 200
         assert resp["Content-Type"] == "application/json; charset=UTF-8"
         version_info = json.loads(text)
-        version_info["cloud"] = "AWS"
-        assert json.loads(smart_str(resp.content)) == version_info
-
-    @pytest.mark.gcp
-    def test_version_with_file_gcp(self, client, settings, tmp_path):
-        """Test with a version.json file"""
-        settings.SOCORRO_ROOT = str(tmp_path)
-
-        text = '{"commit": "d6ac5a5d2acf99751b91b2a3ca651d99af6b9db3"}'
-
-        # Create the version.json file in the tmp_path
-        version_json = tmp_path / "version.json"
-        version_json.write_text(text)
-
-        resp = client.get(reverse("monitoring:dockerflow_version"))
-        assert resp.status_code == 200
-        assert resp["Content-Type"] == "application/json; charset=UTF-8"
-        version_info = json.loads(text)
-        version_info["cloud"] = "GCP"
         assert json.loads(smart_str(resp.content)) == version_info
 
 

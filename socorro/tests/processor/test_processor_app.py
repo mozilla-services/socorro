@@ -74,9 +74,9 @@ class TestProcessorApp:
                 app.heartbeat()
 
                 # Assert it emitted some metrics
-                metricsmock.assert_gauge("processor.open_files")
-                metricsmock.assert_gauge("processor.processes_by_type")
-                metricsmock.assert_gauge("processor.processes_by_status")
+                metricsmock.assert_gauge("socorro.processor.open_files")
+                metricsmock.assert_gauge("socorro.processor.processes_by_type")
+                metricsmock.assert_gauge("socorro.processor.processes_by_status")
 
                 # Assert it didn't throw an exception
                 assert len(sentry_client.envelopes) == 0
@@ -242,7 +242,6 @@ TRANSFORM_GET_ERROR = {
     "sdk": {
         "integrations": [
             "atexit",
-            "boto3",
             "dedupe",
             "excepthook",
             "modules",
@@ -295,7 +294,7 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        metricsmock.assert_incr("processor.sentry_scrub_error", value=1)
+        metricsmock.assert_incr("socorro.processor.sentry_scrub_error", value=1)
 
 
 def test_transform_save_error(processor_settings, sentry_helper, caplogpp, tmp_path):

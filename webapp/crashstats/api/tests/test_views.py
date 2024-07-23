@@ -96,7 +96,7 @@ class TestViews(BaseTestViews):
             response = self.client.get(url)
         assert response.status_code == 404
         # Assert no metrics were emitted
-        metrics_mock.assert_not_timing("webapp.view.pageview")
+        metrics_mock.assert_not_timing("socorro.webapp.view.pageview")
 
     def test_base_classes_raise_not_found(self):
         url = reverse("api:model_wrapper", args=("SocorroMiddleware",))
@@ -131,9 +131,12 @@ class TestViews(BaseTestViews):
         with MetricsMock() as metrics_mock:
             response = self.client.get(url, {"product": "good"})
         assert response.status_code == 200
-        metrics_mock.assert_timing(
-            "webapp.view.pageview",
-            tags=["ajax:false", "api:true", "path:/api/noop/", "status:200"],
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {"ajax:false", "api:true", "path:/api/noop/", "status:200"}.issubset(
+            records[0].tags
         )
 
     def test_param_exceptions(self):

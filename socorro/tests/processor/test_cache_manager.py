@@ -477,6 +477,8 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        metricsmock.assert_incr(
-            "processor.sentry_scrub_error", value=1, tags=["service:cachemanager"]
+        records = metricsmock.filter_records(
+            "incr", stat="socorro.processor.sentry_scrub_error", value=1
         )
+        assert len(records) == 1
+        assert {"service:cachemanager"}.issubset(records[0].tags)

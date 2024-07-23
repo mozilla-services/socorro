@@ -117,8 +117,8 @@ class SuperSearch(ESSocorroMiddleware):
         )
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.SuperSearch(crashstorage=s3_crash_dest)
+        es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return supersearch.SuperSearch(crashstorage=es_crash_dest)
 
     def _get_extended_params(self):
         # Add histogram fields for all 'date','integer', or 'float' fields.
@@ -226,8 +226,8 @@ class SuperSearchUnredacted(SuperSearch):
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.SuperSearch(crashstorage=s3_crash_dest)
+        es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return supersearch.SuperSearch(crashstorage=es_crash_dest)
 
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
@@ -277,5 +277,5 @@ class Query(ESSocorroMiddleware):
     possible_params = ("indices",)
 
     def get_implementation(self):
-        s3_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return query.Query(crashstorage=s3_crash_dest)
+        es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        return query.Query(crashstorage=es_crash_dest)

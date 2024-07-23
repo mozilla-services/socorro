@@ -28,15 +28,16 @@ class TestViews:
         with MetricsMock() as metrics_mock:
             response = client.get(url)
             assert response.status_code == 200
-            metrics_mock.assert_timing(
-                "webapp.view.pageview",
-                tags=[
-                    "ajax:false",
-                    "api:false",
-                    "path:/search/",
-                    "status:200",
-                ],
-            )
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/search/",
+            "status:200",
+        }.issubset(records[0].tags)
 
     def test_search(self, client, db, es_helper):
         url = reverse("supersearch:search")
@@ -76,15 +77,16 @@ class TestViews:
         with MetricsMock() as metrics_mock:
             response = client.get(url)
             assert response.status_code == 200
-            metrics_mock.assert_timing(
-                "webapp.view.pageview",
-                tags=[
-                    "ajax:false",
-                    "api:false",
-                    "path:/search/fields/",
-                    "status:200",
-                ],
-            )
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/search/fields/",
+            "status:200",
+        }.issubset(records[0].tags)
 
     def test_search_results(self, client, db, es_helper):
         BugAssociation.objects.create(
@@ -222,15 +224,16 @@ class TestViews:
         with MetricsMock() as metrics_mock:
             response = client.get(url, {"product": "Firefox"})
             assert response.status_code == 200
-            metrics_mock.assert_timing(
-                "webapp.view.pageview",
-                tags=[
-                    "ajax:false",
-                    "api:false",
-                    "path:/search/results/",
-                    "status:200",
-                ],
-            )
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/search/results/",
+            "status:200",
+        }.issubset(records[0].tags)
 
     def test_search_results_ratelimited(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
@@ -456,15 +459,16 @@ class TestCustomQuery:
         with MetricsMock() as metrics_mock:
             response = client.get(url)
             assert response.status_code == 200
-            metrics_mock.assert_timing(
-                "webapp.view.pageview",
-                tags=[
-                    "ajax:false",
-                    "api:false",
-                    "path:/search/custom/",
-                    "status:200",
-                ],
-            )
+        records = metrics_mock.filter_records(
+            "timing", stat="socorro.webapp.view.pageview"
+        )
+        assert len(records) == 1
+        assert {
+            "ajax:false",
+            "api:false",
+            "path:/search/custom/",
+            "status:200",
+        }.issubset(records[0].tags)
 
     def test_search_custom_parameters(self, client, db, es_helper, user_helper):
         es_helper.health_check()

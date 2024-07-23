@@ -14,7 +14,7 @@ import click
 import jsonschema
 import requests
 
-from socorro.external.boto.crashstorage import TelemetryBotoS3CrashStorage
+from socorro.external.gcs.crashstorage import TelemetryGcsCrashStorage
 from socorro.lib.libjsonschema import lookup_definition
 
 
@@ -22,8 +22,14 @@ API_BASE = "https://crash-stats.mozilla.org/api/{}/"
 HERE = os.path.dirname(__file__)
 
 
-class MockConn:
+class MockedTelemetryGcsCrashStorage(TelemetryGcsCrashStorage):
     def __init__(self):
+        # Deliberately not doing anything fancy with config. So no super call.
+        resp = requests.get(API_BASE.format("SuperSearchFields"))
+        click.echo("resp.url %s" % resp.url)
+        self._all_fields = resp.json()
+        self.build_reducers()
+
         self.last_path = None
         self.last_data = None
 
@@ -32,16 +38,6 @@ class MockConn:
 
         # We have to convert the data from bytes back to a dict so we can check it
         self.last_data = json.loads(data)
-
-
-class MockedTelemetryBotoS3CrashStorage(TelemetryBotoS3CrashStorage):
-    def __init__(self):
-        # Deliberately not doing anything fancy with config. So no super call.
-        resp = requests.get(API_BASE.format("SuperSearchFields"))
-        click.echo("resp.url %s" % resp.url)
-        self._all_fields = resp.json()
-        self.conn = MockConn()
-        self.build_reducers()
 
     def get_last_data(self):
         return self.conn.last_data
@@ -137,7 +133,7 @@ def validate_and_test(ctx, crashes_per_url, url):
         search = resp.json()
         uuids = [x["uuid"] for x in search["hits"]]
 
-    crashstorage = MockedTelemetryBotoS3CrashStorage()
+    crashstorage = MockedTelemetryGcsCrashStorage()
 
     # Figure out the schema keys to types mapping
     # schema path -> schema type

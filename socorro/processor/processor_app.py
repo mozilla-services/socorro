@@ -30,7 +30,6 @@ from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
 import psutil
 import sentry_sdk
 from sentry_sdk.integrations.atexit import AtexitIntegration
-from sentry_sdk.integrations.boto3 import Boto3Integration
 from sentry_sdk.integrations.dedupe import DedupeIntegration
 from sentry_sdk.integrations.excepthook import ExcepthookIntegration
 from sentry_sdk.integrations.modules import ModulesIntegration
@@ -88,7 +87,6 @@ class ProcessorApp:
             default_integrations=False,
             integrations=[
                 AtexitIntegration(),
-                Boto3Integration(),
                 ExcepthookIntegration(),
                 DedupeIntegration(),
                 StdlibIntegration(),
