@@ -132,15 +132,10 @@ psql: my.env .docker-build  ## | Open psql cli.
 
 .PHONY: test
 test: my.env .docker-build  ## | Run unit tests.
-	# Make sure services are started
-	${DC} up -d elasticsearch postgresql statsd
-	# Run tests
 	${DC} run --rm test shell ./bin/test.sh
 
 .PHONY: test-ci
 test-ci: my.env .docker-build  ## | Run unit tests in CI.
-	# Make sure services are started
-	${DC} up -d elasticsearch postgresql statsd
 	# Run tests in test-ci which doesn't volume mount local directory
 	${DC} run --rm test-ci shell ./bin/test.sh
 
