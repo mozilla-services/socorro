@@ -60,7 +60,7 @@ def main(argv=None):
                 "git",
                 "log",
                 "%s..%s" % (dest_sha, source_sha),
-                "--oneline",
+                "--pretty=%h  %s  (%an)",
                 "socorro/signature",
             ]
         )
