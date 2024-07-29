@@ -353,7 +353,7 @@ class SubmitterApp:
                     # need to do more work
                     return
 
-                session = session_with_retries()
+                session = session_with_retries(default_timeout=10.0)
 
                 try:
                     raw_crash = self.source.get_raw_crash(crash_id)
