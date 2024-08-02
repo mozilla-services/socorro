@@ -84,11 +84,11 @@ def main(argv=None):
 
     with open(args.output, "w") as fp:
         fp.write(".. THIS IS AUTOGEMERATED USING:\n")
-        fp.write("   \n")
+        fp.write("\n")
         fp.write("   %s\n" % (" ".join(sys.argv)))
-        fp.write("   \n")
+        fp.write("\n")
         fp.write("Signature generation ruleset\n")
-        fp.write("============================n")
+        fp.write("============================\n")
         fp.write("\n")
         fp.write("\n")
         fp.write(
