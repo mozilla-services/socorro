@@ -1,9 +1,10 @@
 .. THIS IS AUTOGEMERATED USING:
-   
+
    ./socorro-cmd signature-doc socorro.signature.generator.DEFAULT_RULESET socorro/signature/pipeline.rst
-   
+
 Signature generation ruleset
-============================n
+============================
+
 
 This is the signature generation ruleset defined at ``socorro.signature.generator.DEFAULT_RULESET``:
 
