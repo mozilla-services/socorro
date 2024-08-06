@@ -41,7 +41,9 @@ def home(request):
                             "You do not have this permission"
                         )
             token = models.Token.objects.create(
-                user=request.user, notes=form.cleaned_data["notes"]
+                user=request.user,
+                notes=form.cleaned_data["notes"],
+                expires=form.cleaned_data["expires"],
             )
             if "permissions" in form.cleaned_data:
                 for permission in form.cleaned_data["permissions"]:

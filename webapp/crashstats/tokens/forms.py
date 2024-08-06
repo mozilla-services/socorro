@@ -8,10 +8,15 @@ from crashstats.crashstats.forms import BaseModelForm
 from crashstats.tokens import models
 
 
+class DateInput(forms.DateInput):
+    input_type = "date"
+
+
 class GenerateTokenForm(BaseModelForm):
     class Meta:
         model = models.Token
-        fields = ("permissions", "notes")
+        fields = ("permissions", "notes", "expires")
+        widgets = {"expires": DateInput()}
 
     def __init__(self, *args, **kwargs):
         possible_permissions = kwargs.pop("possible_permissions")
@@ -30,6 +35,10 @@ class GenerateTokenForm(BaseModelForm):
         else:
             del self.fields["permissions"]
         self.fields["notes"].help_text = "Optional. Entirely for your own records."
+        self.fields["expires"].required = False
+        self.fields["expires"].help_text = (
+            "Optional. Select the token expiration date."
+        )
 
     def clean_notes(self):
         value = self.cleaned_data["notes"]
