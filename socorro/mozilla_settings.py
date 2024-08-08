@@ -181,7 +181,11 @@ ES_STORAGE = {
             default="^socorro[0-9]{6}$",
             doc="Regex for matching Elasticsearch index names.",
         ),
-        "url": _config("ELASTICSEARCH_URL", doc="Elasticsearch url."),
+        "url": _config(
+            "LEGACY_ELASTICSEARCH_URL",
+            alternate_keys=["ELASTICSEARCH_URL"],
+            doc="Elasticsearch url.",
+        ),
     },
 }
 

@@ -214,12 +214,16 @@ services:
       - "8126:8126"
 
   # https://hub.docker.com/_/elasticsearch/
-  # Note: This image is deprecated, but the new one requires fiddling.
-  elasticsearch:
+  legacy-elasticsearch:
     image: mozilla/socorro_elasticsearch:1.4.5
     ports:
       - "9200:9200"
-      - "9300:9300"
+
+  # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    ports:
+      - "9201:9200"
 
   # https://hub.docker.com/_/postgres/
   postgresql:
