@@ -13,8 +13,8 @@ import datetime
 import json
 
 import click
-from elasticsearch_dsl import Search
-from elasticsearch.client import IndicesClient
+from elasticsearch_dsl_0_0_11 import Search
+from elasticsearch_1_9_0.client import IndicesClient
 
 from socorro import settings
 from socorro.external.es.base import generate_list_of_indexes

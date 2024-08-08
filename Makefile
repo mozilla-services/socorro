@@ -146,6 +146,8 @@ testshell: my.env .docker-build  ## | Open a shell in the test environment.
 .PHONY: rebuildreqs
 rebuildreqs: .env .docker-build  ## | Rebuild requirements.txt file after requirements.in changes.
 	${DC} run --rm --no-deps app shell pip-compile --generate-hashes --strip-extras
+	${DC} run --rm --no-deps app shell pip-compile --generate-hashes --generate-hashes \
+		--unsafe-package=python-dateutil --unsafe-package=six --unsafe-package=urllib3 legacy-es-requirements.in
 
 .PHONY: updatereqs
 updatereqs: .env .docker-build  ## | Update deps in requirements.txt file.

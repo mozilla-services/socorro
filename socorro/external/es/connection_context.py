@@ -4,7 +4,7 @@
 
 import contextlib
 
-import elasticsearch
+import elasticsearch_1_9_0 as elasticsearch
 
 
 class ConnectionContext:

@@ -1,0 +1,4 @@
+# NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
+# because they work with the cluster we're using
+elasticsearch==1.9.0
+elasticsearch-dsl==0.0.11

@@ -5,8 +5,8 @@
 from dataclasses import dataclass
 import datetime
 
-import elasticsearch
-from elasticsearch_dsl import Search
+import elasticsearch_1_9_0 as elasticsearch
+from elasticsearch_dsl_0_0_11 import Search
 
 from socorro import settings as socorro_settings
 from socorro.external.es.super_search_fields import FIELDS
