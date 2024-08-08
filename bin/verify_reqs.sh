@@ -14,3 +14,7 @@ set -euo pipefail
 cp requirements.txt requirements.txt.orig
 pip-compile --quiet --generate-hashes --strip-extras
 diff requirements.txt requirements.txt.orig
+
+cp legacy-es-requirements.txt legacy-es-requirements.txt.orig
+pip-compile --quiet --generate-hashes --unsafe-package=python-dateutil --unsafe-package=six --unsafe-package=urllib3 legacy-es-requirements.in
+diff legacy-es-requirements.txt legacy-es-requirements.txt.orig

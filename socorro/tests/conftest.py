@@ -13,7 +13,7 @@ import pathlib
 import uuid
 import sys
 
-from elasticsearch_dsl import Search
+from elasticsearch_dsl_0_0_11 import Search
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.auth.credentials import AnonymousCredentials
 from google.cloud import storage

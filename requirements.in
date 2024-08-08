@@ -66,5 +66,11 @@ django==4.2.15
 
 # NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
 # because they work with the cluster we're using
-elasticsearch==1.9.0
-elasticsearch-dsl==0.0.11
+# NOTE(relud): these dependencies are installed separately, relocated, and patched to reference the
+# new location (aka shaded), so that they can be installed at the same time as newer versions
+# elasticsearch==1.9.0
+# elasticsearch-dsl==0.0.11
+# NOTE(relud): specify transitive dependencies that are not shaded
+python-dateutil # via elasticsearch-dsl
+six # via elasticsearch-dsl
+urllib3>=1.8, <2.0 # via elasticsearch

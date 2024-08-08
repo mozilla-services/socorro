@@ -8,9 +8,9 @@ import json
 import re
 import time
 
-import elasticsearch
-from elasticsearch.exceptions import NotFoundError
-from elasticsearch_dsl import Search
+import elasticsearch_1_9_0 as elasticsearch
+from elasticsearch_1_9_0.exceptions import NotFoundError
+from elasticsearch_dsl_0_0_11 import Search
 import glom
 import markus
 
