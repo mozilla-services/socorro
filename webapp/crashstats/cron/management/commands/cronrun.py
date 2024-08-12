@@ -203,7 +203,9 @@ class Command(BaseCommand):
         Log.objects.create(
             app_name=cmd, success=success_date, duration="%.5f" % duration
         )
-        METRICS.gauge("cron.job_success_runtime", value=duration, tags=["job:%s" % cmd])
+        METRICS.timing(
+            "cron.job_run", value=duration, tags=[f"job:{cmd}", "result:success"]
+        )
 
     def _remember_failure(self, cmd, duration, exc_type, exc_value, exc_tb):
         Log.objects.create(
@@ -213,7 +215,9 @@ class Command(BaseCommand):
             exc_value=repr(exc_value),
             exc_traceback="".join(traceback.format_tb(exc_tb)),
         )
-        METRICS.gauge("cron.job_failure_runtime", value=duration, tags=["job:%s" % cmd])
+        METRICS.histogram(
+            "cron.job_run", value=duration, tags=[f"job:{cmd}", "result:failure"]
+        )
 
     @contextlib.contextmanager
     def lock_job(self, cmd):

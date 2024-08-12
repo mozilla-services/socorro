@@ -3,23 +3,15 @@
 # When adding a new metric, make sure to add it here first.
 ---
 
-socorro.cron.job_failure_runtime:
-  type: "gauge"
+socorro.cron.job_run:
+  type: "timing"
   description: |
-    Gauge (but should be a timing) of the duration for a failed cron job.
+    Duration of how long it took to run the cron job.
 
     Tags:
 
     * ``job``: short string for the job that failed
-
-socorro.cron.job_success_runtime:
-  type: "gauge"
-  description: |
-    Gauge (but should be a timing) of the duration for a successful cron job.
-
-    Tags:
-
-    * ``job``: short string for the job that failed
+    * ``result``: ``success`` or ``failure``
 
 socorro.cron.verifyprocessed.missing_processed:
   type: "gauge"
