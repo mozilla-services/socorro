@@ -12,7 +12,7 @@ from markus.filters import AddTagFilter, RegisteredMetricsFilter
 import yaml
 
 
-_IS_MARKUS_SETUP = False
+_IS_MARKUS_SET_UP = False
 
 LOGGER = logging.getLogger(__name__)
 METRICS = markus.get_metrics("socorro")
@@ -40,8 +40,8 @@ def set_up_metrics(statsd_host, statsd_port, hostname, debug=False):
     :arg debug: whether or not to additionally log metrics to the logger
 
     """
-    global _IS_MARKUS_SETUP, METRICS
-    if _IS_MARKUS_SETUP:
+    global _IS_MARKUS_SET_UP, METRICS
+    if _IS_MARKUS_SET_UP:
         return
 
     markus_backends = [
@@ -76,7 +76,7 @@ def set_up_metrics(statsd_host, statsd_port, hostname, debug=False):
 
     markus.configure(markus_backends)
 
-    _IS_MARKUS_SETUP = True
+    _IS_MARKUS_SET_UP = True
 
 
 def build_prefix(*parts):

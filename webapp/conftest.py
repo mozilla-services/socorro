@@ -2,14 +2,28 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+
 import pytest
 
 from django.core.cache import cache
 from django.contrib.auth.models import Group
 
+from socorro import settings as socorro_settings
+from socorro.libmarkus import set_up_metrics
+
 
 # Load the socorro/tests/conftest.py file so webapp tests can use those pytest fixtures
 pytest_plugins = ["socorro.tests.conftest"]
+
+
+def pytest_sessionstart(session):
+    # Make sure Markus is set up with the RegisteredMetricsFilter
+    set_up_metrics(
+        statsd_host=socorro_settings.STATSD_HOST,
+        statsd_port=socorro_settings.STATSD_PORT,
+        hostname=socorro_settings.HOSTNAME,
+        debug=socorro_settings.LOCAL_DEV_ENV,
+    )
 
 
 def pytest_runtest_setup(item):
