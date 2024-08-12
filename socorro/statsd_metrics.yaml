@@ -1,0 +1,295 @@
+# statsd metrics emitted using Markus.
+#
+# When adding a new metric, make sure to add it here first.
+---
+
+socorro.cron.job_failure_runtime:
+  type: "gauge"
+  description: |
+    Gauge (but should be a timing) of the duration for a failed cron job.
+
+    Tags:
+
+    * ``job``: short string for the job that failed
+
+socorro.cron.job_success_runtime:
+  type: "gauge"
+  description: |
+    Gauge (but should be a timing) of the duration for a successful cron job.
+
+    Tags:
+
+    * ``job``: short string for the job that failed
+
+socorro.cron.verifyprocessed.missing_processed:
+  type: "gauge"
+  description: |
+    Gauge of crash reports for which there was no processed crash file.
+
+socorro.processor.betaversionrule.cache:
+  type: "incr"
+  description: |
+    Counter for whether the BetaVersionRule pulled version information from
+    cache or not.
+
+    Tags:
+
+    * ``result``: ``hit`` or ``miss``
+
+socorro.processor.betaversionrule.lookup:
+  type: "incr"
+  description: |
+    Counter for whether the BetaVersionRule did a lookup using the Crash Stats
+    VersionString API.
+
+    Tags:
+
+    * ``result``: ``success`` or ``fail``
+
+socorro.processor.cache_manager.evict:
+  type: "incr"
+  description: |
+    Counter for file evictions.
+
+socorro.processor.cache_manager.q_overflow:
+  type: "incr"
+  description: |
+    Counter for inotify Q_OVERFLOW events in cache manager.
+
+socorro.processor.cache_manager.usage:
+  type: "gauge"
+  description: |
+    Gauge for total size of cache. In bytes.
+
+socorro.processor.cache_manager.file_sizes.avg:
+  type: "gauge"
+  description: |
+    Gauge for the average file size for files in the cache. In bytes.
+
+socorro.processor.cache_manager.file_sizes.median:
+  type: "gauge"
+  description: |
+    Gauge for the median file size for files in the cache. In bytes.
+
+socorro.processor.cache_manager.file_sizes.ninety_five:
+  type: "gauge"
+  description: |
+    Gauge for the 95 percentile file size for files in the cache. In bytes.
+
+socorro.processor.cache_manager.file_sizes.max:
+  type: "gauge"
+  description: |
+    Gauge for max file size in cache. In bytes.
+
+socorro.processor.cache_manager.files.count:
+  type: "gauge"
+  description: |
+    Total number of files in the cache.
+
+socorro.processor.cache_manager.files.gt_500:
+  type: "gauge"
+  description: |
+    Total number of files in cache greater than 500mb.
+
+socorro.processor.denonerule.had_nones:
+  type: "incr"
+  description: |
+    Counter for how many crash annotation values were ``None``.
+
+    All crash annotation values should be strings, so ``None`` isn't valid and
+    usually comes from a bug in the crash reporter.
+
+socorro.processor.denullrule.has_nulls:
+  type: "incr"
+  description: |
+    Counter for how many nulls were in keys and values for crash annotations.
+
+socorro.processor.dest1.save_processed_crash:
+  type: "timing"
+  description: |
+    Used in tests.
+
+socorro.processor.es.crash_document_size:
+  type: "histogram"
+  description: |
+    Size of crash document. In bytes.
+
+socorro.processor.es.index:
+  type: "histogram"
+  description: |
+    Total time it took to index the crash document in Elasticsearch.
+
+socorro.processor.es.indexerror:
+  type: "incr"
+  description: |
+    Counter for errors when indexing a document in Elasticsearch.
+
+    Tags:
+
+    * ``error``: the error code indicating what happened
+
+socorro.processor.es.save_processed_crash:
+  type: "timing"
+  description: |
+    Timer for how long it takes to save the processed crash to Elasticsearch.
+
+socorro.processor.ingestion_timing:
+  type: "timing"
+  description: |
+    Timer for how long it took for a crash report to be ingested. This is the
+    time between the submitted timestamp all the way through when processing
+    was completed.
+
+    This uses the ``submitted_timestamp`` from the collector as the start time.
+
+socorro.processor.minidumpstackwalk.run:
+  type: "incr"
+  description: |
+    Counter for minidump stackwalk executions.
+
+    Tags:
+
+    * ``outcome``: either ``success`` or ``fail``
+    * ``exitcode``: the exit code of the minidump stackwalk process
+
+socorro.processor.open_files:
+  type: "gauge"
+  description: |
+    Gauge of currently open files for all processes running in the container.
+
+socorro.processor.processes_by_type:
+  type: "gauge"
+  description: |
+    Gauge of processes by type.
+
+    Tags:
+
+    * ``proctype``: one of ``shell``, ``python``, ``stackwalker``, or ``other``
+
+socorro.processor.processes_by_status:
+  type: "gauge"
+  description: |
+    Gauge of processes by process status.
+
+    Tags:
+
+    * ``procstatus``: one of ``running``, ``sleeping``, or other process
+      statuses.
+
+socorro.processor.process_crash:
+  type: "timing"
+  description: |
+    Timer for how long it takes to process a crash report.
+
+    Tags:
+
+    * ``ruleset``: the ruleset used for processing
+
+socorro.processor.rule.act.timing:
+  type: "timing"
+  description: |
+    Timer for how long it takes for the rule to run.
+
+    Tags:
+
+    * ``rule``: rule class name
+
+socorro.processor.save_processed_crash:
+  type: "incr"
+  description: |
+    Counter for number of crash reports successfully processed and saved to
+    storage.
+
+socorro.processor.sentry_scrub_error:
+  type: "incr"
+  description: |
+    Emitted when there are errors scrubbing Sentry events. Monitor these
+    because it means we're missing Sentry event data.
+
+    Tags:
+
+    * ``service``: either ``processor`` or ``cache_manager``
+
+socorro.processor.storage.save_processed_crash:
+  type: "timing"
+  description: |
+    Timer for how long it takes to save the processed crash to storage bucket.
+
+socorro.processor.telemetry.save_processed_crash:
+  type: "timing"
+  description: |
+    Timer for how long it takes to save the processed crash to Telemetry
+    storage bucket.
+
+socorro.processor.truncatestackrule.stack_size:
+  type: "gauge"
+  description: |
+    Gauge for stack sizes.
+
+socorro.processor.truncatestackrule.truncated:
+  type: "incr"
+  description: |
+    Counter for stacks that were truncated because they were too large.
+
+socorro.submitter.accept:
+  type: "incr"
+  description: |
+    Counter for how many destinations the crash report was resubmitted to.
+
+socorro.submitter.ignore:
+  type: "incr"
+  description: |
+    Counter for how many destinations were ignored for resubmitting the crash
+    report.
+
+socorro.submitter.process:
+  type: "timing"
+  description: |
+    Timer for how long it takes to process a crash report which involves
+    figuring out where the crash report should get sent to, downloading the
+    data, creating the payload, and submitting it.
+
+socorro.submitter.sentry_scrub_error:
+  type: "incr"
+  description: |
+    Emitted when there are errors scrubbing Sentry events. Monitor these
+    because it means we're missing Sentry event data.
+
+socorro.submitter.unknown_finished_func_error:
+  type: "incr"
+  description: |
+    Counter for how many unknown finished func errors were encountered.
+
+socorro.submitter.unknown_process_error:
+  type: "incr"
+  description: |
+    Counter for how many unknown process errors were encountered.
+
+socorro.submitter.unknown_submit_error:
+  type: "incr"
+  description: |
+    Counter for how many unknown submit errors were encountered.
+
+socorro.webapp.crashstats.models.cache_set_error:
+  type: "incr"
+  description: |
+    Counter for errors when caching middleware model request results.
+
+socorro.webapp.view.pageview:
+  type: "timing"
+  description: |
+    Timer for how long it takes to handle an HTTP request.
+
+    Tags:
+
+    * ``ajax``: whether or not the request was an AJAX request
+    * ``api``: whether or not the request was an API request (path starts with
+      ``/api/``)
+    * ``path``: the path of the request
+    * ``status``: the HTTP response code
+
+socorro.webapp.sentry_scrub_error:
+  type: "incr"
+  description: |
+    Emitted when there are errors scrubbing Sentry events. Monitor these
+    because it means we're missing Sentry event data.
