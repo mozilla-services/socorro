@@ -7,7 +7,7 @@ import time
 from unittest.mock import ANY
 
 from fillmore.test import diff_structure
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro import settings
@@ -482,8 +482,8 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        records = metricsmock.filter_records(
-            "incr", stat="socorro.processor.sentry_scrub_error", value=1
+        metricsmock.assert_incr(
+            stat="socorro.sentry_scrub_error",
+            value=1,
+            tags=["service:cachemanager", AnyTagValue("host")],
         )
-        assert len(records) == 1
-        assert {"service:cachemanager"}.issubset(records[0].tags)

@@ -7,7 +7,7 @@
 from unittest.mock import ANY
 
 from fillmore.test import diff_structure
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 from werkzeug.test import Client
 
 from django.contrib.auth.models import User
@@ -178,4 +178,8 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        metricsmock.assert_incr("socorro.webapp.sentry_scrub_error", value=1)
+        metricsmock.assert_incr(
+            "socorro.sentry_scrub_error",
+            value=1,
+            tags=["service:webapp", AnyTagValue("host")],
+        )
