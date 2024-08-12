@@ -47,7 +47,7 @@ from socorro.lib.task_manager import respond_to_SIGTERM
 
 
 def count_sentry_scrub_error(msg):
-    METRICS.incr("processor.sentry_scrub_error", value=1, tags=["service:processor"])
+    METRICS.incr("sentry_scrub_error", value=1, tags=["service:processor"])
 
 
 class ProcessorApp:

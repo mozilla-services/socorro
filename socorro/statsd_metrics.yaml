@@ -200,16 +200,6 @@ socorro.processor.save_processed_crash:
     Counter for number of crash reports successfully processed and saved to
     storage.
 
-socorro.processor.sentry_scrub_error:
-  type: "incr"
-  description: |
-    Emitted when there are errors scrubbing Sentry events. Monitor these
-    because it means we're missing Sentry event data.
-
-    Tags:
-
-    * ``service``: either ``processor`` or ``cache_manager``
-
 socorro.processor.storage.save_processed_crash:
   type: "timing"
   description: |
@@ -231,6 +221,17 @@ socorro.processor.truncatestackrule.truncated:
   description: |
     Counter for stacks that were truncated because they were too large.
 
+socorro.sentry_scrub_error:
+  type: "incr"
+  description: |
+    Emitted when there are errors scrubbing Sentry events. Monitor these
+    because it means we're missing Sentry event data.
+
+    Tags:
+
+    * ``service``: ``webapp``, ``submitter``, ``processor`` or
+      ``cache_manager``
+
 socorro.submitter.accept:
   type: "incr"
   description: |
@@ -248,12 +249,6 @@ socorro.submitter.process:
     Timer for how long it takes to process a crash report which involves
     figuring out where the crash report should get sent to, downloading the
     data, creating the payload, and submitting it.
-
-socorro.submitter.sentry_scrub_error:
-  type: "incr"
-  description: |
-    Emitted when there are errors scrubbing Sentry events. Monitor these
-    because it means we're missing Sentry event data.
 
 socorro.submitter.unknown_finished_func_error:
   type: "incr"
@@ -287,9 +282,3 @@ socorro.webapp.view.pageview:
       ``/api/``)
     * ``path``: the path of the request
     * ``status``: the HTTP response code
-
-socorro.webapp.sentry_scrub_error:
-  type: "incr"
-  description: |
-    Emitted when there are errors scrubbing Sentry events. Monitor these
-    because it means we're missing Sentry event data.

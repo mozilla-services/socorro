@@ -265,10 +265,12 @@ class TestESCrashStorage:
                 )
 
             mm.assert_histogram_once(
-                "socorro.processor.es.index", tags=["outcome:successful", AnyTagValue("host")]
+                "socorro.processor.es.index",
+                tags=["outcome:successful", AnyTagValue("host")],
             )
             mm.assert_histogram_once(
-                "socorro.processor.es.index", tags=["outcome:failed", AnyTagValue("host")]
+                "socorro.processor.es.index",
+                tags=["outcome:failed", AnyTagValue("host")],
             )
 
     def test_delete_expired_indices(self, es_helper):
