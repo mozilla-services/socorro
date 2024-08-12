@@ -5,15 +5,30 @@
 """Holds Markus utility functions and global state."""
 
 import logging
+from pathlib import Path
 
 import markus
-from markus.filters import AddTagFilter
+from markus.filters import AddTagFilter, RegisteredMetricsFilter
+import yaml
 
 
 _IS_MARKUS_SETUP = False
 
 LOGGER = logging.getLogger(__name__)
 METRICS = markus.get_metrics("socorro")
+
+
+# Complete index of all metrics. This is used in documentation and to filter outgoing
+# metrics.
+def _load_registered_metrics():
+    # Load the metrics yaml file in this directory
+    path = Path(__file__).parent / "statsd_metrics.yaml"
+    with open(path) as fp:
+        data = yaml.safe_load(fp)
+    return data
+
+
+STATSD_METRICS = _load_registered_metrics()
 
 
 def set_up_metrics(statsd_host, statsd_port, hostname, debug=False):
@@ -48,6 +63,13 @@ def set_up_metrics(statsd_host, statsd_port, hostname, debug=False):
                 },
             }
         )
+
+        # In local dev and test environments, we want the RegisteredMetricsFilter to
+        # raise exceptions when metrics are used incorrectly.
+        metrics_filter = RegisteredMetricsFilter(
+            registered_metrics=STATSD_METRICS, raise_error=True
+        )
+        METRICS.filters.append(metrics_filter)
 
     if hostname:
         METRICS.filters.append(AddTagFilter(f"host:{hostname}"))
