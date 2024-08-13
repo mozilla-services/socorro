@@ -6,10 +6,10 @@
 
   // All available operators.
   var OPERATORS = {
-    has: 'has terms',
-    '!': 'does not have terms',
-    '=': 'is',
-    '!=': 'is not',
+    match: 'matches',
+    '!': 'does not match',
+    '=': 'is exactly',
+    '!=': 'is not exactly',
     '~': 'contains',
     '!~': 'does not contain',
     '^': 'starts with',
@@ -30,7 +30,7 @@
 
   // Order matters here, the first operator will be used as the default
   // value when no operator is passed for a field.
-  var OPERATORS_BASE = ['has', '!'];
+  var OPERATORS_BASE = ['match', '!'];
   var OPERATORS_RANGE = ['>', '>=', '<', '<='];
   var OPERATORS_REGEX = ['~', '=', '$', '^', '@', '!=', '!~', '!$', '!^', '!@'];
   var OPERATORS_EXISTENCE = ['__null__', '!__null__'];
@@ -210,7 +210,7 @@
       value = value.slice(operator.length);
 
       if (operator === '') {
-        // if the operator is missing, use the default one
+        // if the operator is missing, use the default one which is "match"
         operator = allowed_operators[0];
       }
 
