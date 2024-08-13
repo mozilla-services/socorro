@@ -463,17 +463,11 @@ class TestIntegrationSuperSearch:
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        sigs = (
-            "js::break_your_browser",
-            "mozilla::js::function",
-            "js<isKewl>",
-            "foo(bar)",
-        )
 
         es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
-                "signature": sigs[0],
+                "signature": "js::break_your_browser",
                 "app_notes": "foo bar mozilla",
                 "product": "WaterWolf",
                 "date_processed": now,
@@ -482,7 +476,7 @@ class TestIntegrationSuperSearch:
         es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
-                "signature": sigs[1],
+                "signature": "mozilla::js::function",
                 "app_notes": "foo bar",
                 "product": "WaterWolf",
                 "date_processed": now,
@@ -491,7 +485,7 @@ class TestIntegrationSuperSearch:
         es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
-                "signature": sigs[2],
+                "signature": "js<isKewl>",
                 "app_notes": "foo mozilla",
                 "product": "EarthRacoon",
                 "date_processed": now,
@@ -500,7 +494,7 @@ class TestIntegrationSuperSearch:
         es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
-                "signature": sigs[3],
+                "signature": "foo(bar)",
                 "app_notes": "mozilla bar",
                 "product": "EarthRacoon",
                 "date_processed": now,
@@ -508,27 +502,38 @@ class TestIntegrationSuperSearch:
         )
         es_helper.refresh()
 
+        # Search for signatures matching "js" or containing "::"
         res = api.get(signature=["js", "~::"])
         assert res["total"] == 3
-        assert sorted([x["signature"] for x in res["hits"]]), sorted(
-            [sigs[0], sigs[1], sigs[2]]
-        )
+        signatures = [x["signature"] for x in res["hits"]]
+        assert list(sorted(signatures)) == [
+            "js::break_your_browser",
+            "js<isKewl>",
+            "mozilla::js::function",
+        ]
 
+        # Search for signatures matching "js" or containing "::" AND product is
+        # "Unknown" -- there are none
         res = api.get(signature=["js", "~::"], product=["Unknown"])
         assert res["total"] == 0
         assert len(res["hits"]) == 0
 
-        res = api.get(signature=["js", "~::"], product=["WaterWolf", "EarthRacoon"])
-        assert res["total"] == 3
-        assert sorted([x["signature"] for x in res["hits"]]) == sorted(
-            [sigs[0], sigs[1], sigs[2]]
-        )
-
-        res = api.get(signature=["js", "~::"], app_notes=["foo bar"])
+        # Search for signatures matching "js" or containing "::" AND product is
+        # "WaterWolf"
+        res = api.get(signature=["js", "~::"], product=["WaterWolf"])
         assert res["total"] == 2
-        assert sorted([x["signature"] for x in res["hits"]]) == sorted(
-            [sigs[0], sigs[1]]
-        )
+        signatures = [x["signature"] for x in res["hits"]]
+        assert list(sorted(signatures)) == [
+            "js::break_your_browser",
+            "mozilla::js::function",
+        ]
+
+        # Search for signatures matching "js" or containing "::" AND app_notes is
+        # exactly "foo bar"
+        res = api.get(signature=["js", "~::"], app_notes=["=foo bar"])
+        assert res["total"] == 1
+        signatures = [x["signature"] for x in res["hits"]]
+        assert list(sorted(signatures)) == ["mozilla::js::function"]
 
     def test_get_with_pagination(self, es_helper):
         crashstorage = self.build_crashstorage()
