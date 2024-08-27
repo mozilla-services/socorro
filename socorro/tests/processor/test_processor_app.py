@@ -6,7 +6,7 @@ from unittest import mock
 from unittest.mock import ANY
 
 from fillmore.test import diff_structure
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro import settings
@@ -294,7 +294,11 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        metricsmock.assert_incr("socorro.processor.sentry_scrub_error", value=1)
+        metricsmock.assert_incr(
+            "socorro.sentry_scrub_error",
+            value=1,
+            tags=["service:processor", AnyTagValue("host")],
+        )
 
 
 def test_transform_save_error(processor_settings, sentry_helper, caplogpp, tmp_path):

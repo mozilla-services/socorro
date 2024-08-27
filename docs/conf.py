@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 extensions = [
     "sphinx.ext.graphviz",
     "exts.adr_log",
+    "exts.document_metrics",
     "everett.sphinxext",
 ]
 
@@ -67,8 +68,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "Socorro"
-copyright = "2013-2023 Mozilla Foundation"
-author = "Socorro team"
+copyright = "2013-2024 Mozilla Foundation"
+author = "Observability Team"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

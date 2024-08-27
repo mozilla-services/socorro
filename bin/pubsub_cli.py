@@ -79,7 +79,11 @@ def create_subscription(ctx, project_id, topic_name, subscription_name):
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(project_id, subscription_name)
     try:
-        subscriber.create_subscription(name=subscription_path, topic=topic_path)
+        subscriber.create_subscription(
+            name=subscription_path,
+            topic=topic_path,
+            ack_deadline_seconds=600,
+        )
         click.echo(f"Subscription created: {subscription_path}")
     except AlreadyExists:
         click.echo("Subscription already created.")
