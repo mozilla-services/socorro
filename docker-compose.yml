@@ -229,6 +229,10 @@ services:
   # https://www.elastic.co/guide/en/elasticsearch/reference/8.14/docker.html
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    command:
+    - bin/elasticsearch
+    - -Expack.security.enabled=false
+    - -Ediscovery.type=single-node
     ports:
       - "9201:9200"
 
