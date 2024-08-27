@@ -228,21 +228,18 @@
           <td>not</td>
           <td><code>!</code></td>
           <td><i>all</i></td>
-          <td>Meta operator, to put before any other operator to turn it into the opposite.</td>
+          <td>Meta operator to put before any other operator to turn it into the opposite.</td>
         </tr>
         <tr>
-          <td>has terms</td>
+          <td>matches</td>
           <td><code></code></td>
-          <td>enum, keyword, integer, float, string</td>
+          <td>all field types</td>
           <td>
             <p>Default operator.</p>
             <p>
-              For enum, keyword, integer, and float, the field contains
-              at least one instance of the specified term.
-            </p>
-            <p>
-              For analyzed strings, the analyzed field value contains at least
-              one instance of the value. This is case-insensitive.
+              The field value matches the searched value. This will use the
+              analyzer of the field, so it's not case-sensitive, handles
+              differences in spaces and punctuation, and matches closely.
             </p>
           </td>
         </tr>
@@ -250,31 +247,31 @@
           <td>contains</td>
           <td><code>~</code></td>
           <td>string</td>
-          <td>The field contains the given substring. This is case-sensitive.</td>
+          <td>The field value contains the searched value as a substring. This is case-sensitive.</td>
         </tr>
         <tr>
           <td>is exactly</td>
           <td><code>=</code></td>
           <td>string</td>
-          <td>The field is exactly the given value.</td>
+          <td>The field value is exactly the searched value.</td>
         </tr>
         <tr>
           <td>starts with</td>
           <td><code>^</code></td>
           <td>string</td>
-          <td>The field starts with the given value.</td>
+          <td>The field value starts with the searched value.</td>
         </tr>
         <tr>
           <td>ends with</td>
           <td><code>$</code></td>
           <td>string</td>
-          <td>The field ends with the given substring.</td>
+          <td>The field value ends with the searched value.</td>
         </tr>
         <tr>
           <td>matches regex</td>
           <td><code>@</code></td>
           <td>string</td>
-          <td>The field matches the given regular expression. The accepted syntax is described in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-regexp-query.html#regexp-syntax">Elasticsearch documentation</a>.</td>
+          <td>The field value matches the given regular expression. The accepted syntax is described in the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.4/query-dsl-regexp-query.html#regexp-syntax">Elasticsearch documentation</a>.</td>
         </tr>
         <tr>
           <td>does not exist</td>
@@ -282,7 +279,7 @@
           <td>string, boolean, integer, float</td>
           <td>
             <p>
-              The field is missing or has a null value.
+              The field value is missing or has a null value.
             </p>
             <p>
               Note: This will not match empty string values.
@@ -293,31 +290,31 @@
           <td>greater than</td>
           <td><code>&gt;</code></td>
           <td>date, integer, float</td>
-          <td>The field is greater than the given date, float, or integer value.</td>
+          <td>The field value is greater than the searched date, float, or integer value.</td>
         </tr>
         <tr>
           <td>greater than or equal</td>
           <td><code>&gt;=</code></td>
           <td>date, integer, float</td>
-          <td>The field is greater than or equal the given date, float, or integer value.</td>
+          <td>The field value is greater than or equal the searched date, float, or integer value.</td>
         </tr>
         <tr>
           <td>lower than</td>
           <td><code>&lt;</code></td>
           <td>date, integer, float</td>
-          <td>The field is lower than the given date, float, or integer value.</td>
+          <td>The field value is lower than the searched date, float, or integer value.</td>
         </tr>
         <tr>
           <td>lower than or equal</td>
           <td><code>&lt;=</code></td>
           <td>date, integer, float</td>
-          <td>The field is lower than or equal the given date, float, or integer value.</td>
+          <td>The field value is lower than or equal to the searched date, float, or integer value.</td>
         </tr>
         <tr>
           <td>is true</td>
           <td><code>__true__</code></td>
           <td>boolean</td>
-          <td>The field has a value that is truthy.</td>
+          <td>The field value is true.</td>
         </tr>
       </tbody>
     </table>

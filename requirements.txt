@@ -776,9 +776,9 @@ markupsafe==2.1.3 \
     # via
     #   jinja2
     #   werkzeug
-markus==4.2.0 \
-    --hash=sha256:156398b7de56db4e8ef420a80fcce1c49b6d3d41405874a3e128cb209cf4bfd8 \
-    --hash=sha256:9dd41ce53b25a3e806b0d065808fec00c4ec945e80cf5a72431bf9b61b44d7fb
+markus==5.0.0 \
+    --hash=sha256:14fe47ebe3d3447cc5eebcd4691f71e7f38dee6338e4eb5d72d64d67f289c6ff \
+    --hash=sha256:fd0f0de0914a3ae645cc1eac760dca2fa28943fbbb3671692e09916f7f2e2237
     # via -r requirements.in
 mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \

@@ -44,7 +44,7 @@ SCRUB_RULES_WEBAPP = [
 
 
 def count_sentry_scrub_error(msg):
-    METRICS.incr("webapp.sentry_scrub_error", 1)
+    METRICS.incr("sentry_scrub_error", 1, tags=["service:webapp"])
 
 
 def configure_sentry():

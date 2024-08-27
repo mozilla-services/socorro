@@ -7,7 +7,7 @@ import time
 from unittest.mock import ANY
 
 from fillmore.test import diff_structure
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro import settings
@@ -177,20 +177,23 @@ def test_eviction_of_least_recently_used(cm, tmp_path):
 
     file2 = tmp_path / "xul__dandelion.symc"
     file2.write_bytes(b"ab")
+    time.sleep(0.5)
 
     file3 = tmp_path / "xul__orchid.symc"
     file3.write_bytes(b"ab")
+    time.sleep(0.5)
 
     file4 = tmp_path / "xul__iris.symc"
     file4.write_bytes(b"ab")
+    time.sleep(0.5)
 
     # Run events and verify LRU
     cm.run_once()
     assert cm.lru == {str(file1): 2, str(file2): 2, str(file3): 2, str(file4): 2}
     assert cm.total_size == 8
+    time.sleep(0.5)
 
     # Access rose so it's recently used
-    time.sleep(0.5)
     file1.read_bytes()
 
     # Add new file which will evict files--but not rose which was accessed
@@ -298,19 +301,20 @@ def test_nested_directories_evict(cm, tmp_path):
 
     subdir2 = dir1 / "subdir2"
     subdir2.mkdir()
+    time.sleep(0.5)
 
     # Run to pick up new subsubdirectories and watch them
-    time.sleep(0.5)
     cm.run_once()
 
     # Create two files in the subsubdirectory with 9 bytes
     file1 = subdir1 / "file1.symc"
     file1.write_bytes(b"abcde")
+    time.sleep(0.5)
 
     file2 = subdir2 / "file2.symc"
     file2.write_bytes(b"abcd")
-
     time.sleep(0.5)
+
     cm.run_once()
     assert cm.lru == {str(file1): 5, str(file2): 4}
 
@@ -318,7 +322,8 @@ def test_nested_directories_evict(cm, tmp_path):
     file3 = dir1 / "file3.symc"
     file3.write_bytes(b"ab")
 
-    # Run to handle CREATE file3 which kicks off the eviction
+    # Run to handle CREATE file3 which kicks off the eviction of file 1
+    # because it's the oldest
     cm.run_once()
 
     # Run to handle DELETE | ISDIR for subdir1
@@ -477,8 +482,8 @@ def test_count_sentry_scrub_error():
     with MetricsMock() as metricsmock:
         metricsmock.clear_records()
         count_sentry_scrub_error("foo")
-        records = metricsmock.filter_records(
-            "incr", stat="socorro.processor.sentry_scrub_error", value=1
+        metricsmock.assert_incr(
+            stat="socorro.sentry_scrub_error",
+            value=1,
+            tags=["service:cachemanager", AnyTagValue("host")],
         )
-        assert len(records) == 1
-        assert {"service:cachemanager"}.issubset(records[0].tags)

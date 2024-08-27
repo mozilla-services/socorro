@@ -25,6 +25,7 @@ import requests_mock
 
 from socorro import settings
 from socorro.libclass import build_instance_from_settings
+from socorro.libmarkus import set_up_metrics
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
@@ -34,6 +35,16 @@ REPOROOT = pathlib.Path(__file__).parent.parent.parent
 
 # Add bin directory to Python path
 sys.path.insert(0, str(REPOROOT / "bin"))
+
+
+def pytest_sessionstart():
+    # Make sure Markus is set up with the RegisteredMetricsFilter
+    set_up_metrics(
+        statsd_host=settings.STATSD_HOST,
+        statsd_port=settings.STATSD_PORT,
+        hostname=settings.HOSTNAME,
+        debug=settings.LOCAL_DEV_ENV,
+    )
 
 
 @pytest.fixture

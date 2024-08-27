@@ -7,7 +7,7 @@ from datetime import timedelta
 from unittest import mock
 
 import glom
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro import settings
@@ -265,10 +265,12 @@ class TestESCrashStorage:
                 )
 
             mm.assert_histogram_once(
-                "socorro.processor.es.index", tags=["outcome:successful"]
+                "socorro.processor.es.index",
+                tags=["outcome:successful", AnyTagValue("host")],
             )
             mm.assert_histogram_once(
-                "socorro.processor.es.index", tags=["outcome:failed"]
+                "socorro.processor.es.index",
+                tags=["outcome:failed", AnyTagValue("host")],
             )
 
     def test_delete_expired_indices(self, es_helper):

@@ -6,7 +6,7 @@ import copy
 import json
 from unittest import mock
 
-from markus.testing import MetricsMock
+from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro.lib.libsocorrodataschema import get_schema, validate_instance
@@ -907,7 +907,7 @@ class TestMinidumpStackwalkRule:
 
             mm.assert_incr(
                 "socorro.processor.minidumpstackwalk.run",
-                tags=["outcome:success", "exitcode:0"],
+                tags=["outcome:success", "exitcode:0", AnyTagValue("host")],
             )
 
     def test_stackwalker_timeout(self, tmp_path):
@@ -948,7 +948,7 @@ class TestMinidumpStackwalkRule:
 
             mm.assert_incr(
                 "socorro.processor.minidumpstackwalk.run",
-                tags=["outcome:fail", "exitcode:-9"],
+                tags=["outcome:fail", "exitcode:-9", AnyTagValue("host")],
             )
 
     def test_stackwalker_bad_output(self, tmp_path):

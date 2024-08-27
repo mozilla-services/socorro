@@ -48,9 +48,7 @@ HEARTBEAT_INTERVAL = 60
 
 
 def count_sentry_scrub_error(msg):
-    # NOTE(willkg): we re-use the processor prefix here and differentiate with the
-    # service tag.
-    METRICS.incr("processor.sentry_scrub_error", value=1, tags=["service:cachemanager"])
+    METRICS.incr("sentry_scrub_error", value=1, tags=["service:cachemanager"])
 
 
 class LastUpdatedOrderedDict(OrderedDict):

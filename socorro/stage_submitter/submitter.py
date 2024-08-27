@@ -235,7 +235,7 @@ def get_payload_compressed(raw_crash):
 
 def count_sentry_scrub_error(msg):
     """Counts sentry scrub errors"""
-    METRICS.incr("submitter.sentry_scrub_error", value=1, tags=["service:submitter"])
+    METRICS.incr("sentry_scrub_error", value=1, tags=["service:submitter"])
 
 
 def handle_exception(exctype, value, tb):
