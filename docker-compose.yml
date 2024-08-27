@@ -15,6 +15,7 @@ services:
       - statsd
       - pubsub
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
     volumes:
       - .:/app
@@ -33,6 +34,7 @@ services:
       - gcs-emulator
       - pubsub
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
     volumes:
       - .:/app
@@ -49,6 +51,7 @@ services:
       - gcs-emulator
       - pubsub
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
 
   devcontainer:
@@ -69,6 +72,7 @@ services:
       - gcs-emulator
       - pubsub
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
     volumes:
       - .:/app
@@ -83,6 +87,7 @@ services:
       - statsd
       - gcs-emulator
       - pubsub
+      - legacy-elasticsearch
       - elasticsearch
       - symbolsserver
     command: ["processor"]
@@ -98,6 +103,7 @@ services:
       - fakesentry
       - statsd
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
     command: ["crontabber"]
     volumes:
@@ -114,6 +120,7 @@ services:
       - gcs-emulator
       - pubsub
       - postgresql
+      - legacy-elasticsearch
       - elasticsearch
       - memcached
       - oidcprovider
@@ -219,7 +226,7 @@ services:
     ports:
       - "9200:9200"
 
-  # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+  # https://www.elastic.co/guide/en/elasticsearch/reference/8.14/docker.html
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
     ports:
