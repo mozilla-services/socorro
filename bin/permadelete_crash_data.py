@@ -30,6 +30,7 @@ Usage::
 
 """
 
+import datetime
 import logging
 import os
 
@@ -77,10 +78,15 @@ def cmd_permadelete(ctx, crashidsfile):
 
     for crashid in crashids:
         click.echo(f"Working on {crashid!r}")
+        start_time = datetime.datetime.now()
         # delete from storage
+        click.echo(">>> Deleting from storage ...")
         crashstorage.delete_crash(crashid)
         # delete from es
+        click.echo(">>> Deleting from Elasticsearch ...")
         es_crashstorage.delete_crash(crashid)
+        end_time = datetime.datetime.now()
+        click.echo(f">>> Time: {end_time - start_time}")
 
     click.echo("Done!")
 
