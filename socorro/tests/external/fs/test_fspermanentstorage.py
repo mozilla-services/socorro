@@ -96,7 +96,7 @@ class TestFSPermanentStorage:
         expected = MemoryDumpsMapping(dumps)
         assert fs.get_dumps(crash_id) == expected
 
-    def test_remove(self, tmp_path):
+    def test_delete_crash(self, tmp_path):
         fs = FSPermanentStorage(fs_root=str(tmp_path))
 
         crash_id = "0bba929f-8721-460c-dead-a43c20071025"

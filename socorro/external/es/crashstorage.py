@@ -669,5 +669,6 @@ class ESCrashStorage(CrashStorageBase):
                     conn.delete(
                         index=hit["_index"], doc_type=hit["_type"], id=hit["_id"]
                     )
+                    self.client.refresh()
             except Exception:
                 self.logger.exception(f"ERROR: es: when deleting {crash_id}")

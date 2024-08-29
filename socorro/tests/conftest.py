@@ -274,7 +274,7 @@ class ElasticsearchHelper:
 
         :arg crash_id: the crash id to fetch the source for
 
-        :returns: source as a Python dict
+        :returns: source as a Python dict or None if it doesn't exist
 
         """
         index = self._crashstorage.get_index_for_date(date_from_ooid(crash_id))
@@ -285,7 +285,8 @@ class ElasticsearchHelper:
             search = search.filter("term", **{"processed_crash.uuid": crash_id})
             results = search.execute().to_dict()
 
-            return results["hits"]["hits"][0]["_source"]
+            if results["hits"]["hits"]:
+                return results["hits"]["hits"][0]["_source"]
 
 
 @pytest.fixture
