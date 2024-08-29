@@ -223,6 +223,22 @@ class TestESCrashStorage:
             )
             assert field not in doc["_source"]["processed_crash"]
 
+    def test_catalog_crash(self, es_helper):
+        crash_id = create_new_ooid()
+        processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
+        processed_crash["date_processed"] = date_to_string(utc_now())
+        processed_crash["uuid"] = crash_id
+
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
+            raw_crash={},
+            processed_crash=processed_crash,
+        )
+        es_helper.refresh()
+
+        data = crashstorage.catalog_crash(crash_id=crash_id)
+        assert data == ["es_processed_crash"]
+
     def test_delete_crash(self, es_helper):
         """Test deleting a crash document."""
         crash_id = create_new_ooid()

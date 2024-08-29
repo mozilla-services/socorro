@@ -305,6 +305,34 @@ class GcsCrashStorage(CrashStorageBase):
             # Re-wrap it here so the message is just the crash ID.
             raise CrashIDNotFound(params["uuid"]) from cidnf
 
+    def catalog_crash(self, crash_id):
+        """Return a list of data items for this crash id"""
+        contents = []
+        for source in ["raw_crash", "processed_crash"]:
+            for key in build_keys(source, crash_id):
+                try:
+                    self.load_file(key)
+                    contents.append(f"gcs_{source}")
+                except NotFound:
+                    pass
+
+        for key in build_keys("dump_names", crash_id):
+            try:
+                dump_names = json.loads(self.load_file(key))
+                contents.append("gcs_dump_names")
+                for dump_name in dump_names:
+                    contents.append(f"gcs_dump_{dump_name}")
+
+            except NotFound:
+                pass
+
+            except json.JSONDecodeError:
+                self.logger.exception(
+                    f"could not parse dump_names: gs://{self.bucket}/{key}"
+                )
+
+        return contents
+
     def delete_crash(self, crash_id):
         # delete raw and processed crash
         for source in ["raw_crash", "processed_crash"]:

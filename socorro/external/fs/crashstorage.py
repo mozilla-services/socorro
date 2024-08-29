@@ -231,6 +231,23 @@ class FSPermanentStorage(CrashStorageBase):
             + self._get_radix(crash_id)
         )
 
+    def catalog_crash(self, crash_id):
+        """Return a list of data items for this crash id"""
+        contents = []
+        with suppress(CrashIDNotFound):
+            self.get_raw_crash(crash_id)
+            contents.append("fs_raw_crash")
+
+        dumps = self.get_dumps(crash_id)
+        for dump_name in dumps.keys():
+            contents.append(f"fs_dump_{dump_name}")
+
+        with suppress(CrashIDNotFound):
+            self.get_processed_crash(crash_id)
+            contents.append("fs_processed_crash")
+
+        return contents
+
     def delete_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)
         if not os.path.exists(parent_dir):
