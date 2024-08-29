@@ -49,7 +49,7 @@ def crashid_generator(fn):
     with open(fn) as fp:
         for line in fp:
             line = line.strip()
-            if line.startswith("#"):
+            if not line or line.startswith("#"):
                 continue
             yield line
 
