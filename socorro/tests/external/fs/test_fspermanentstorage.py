@@ -107,11 +107,11 @@ class TestFSPermanentStorage:
         fs.save_raw_crash(raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
         fs.save_processed_crash(raw_crash=raw_crash, processed_crash=processed_crash)
 
-        assert fs.catalog_crash(crash_id=crash_id) == [
-            "fs_raw_crash",
-            "fs_dump_upload_file_minidump",
+        assert list(sorted(fs.catalog_crash(crash_id=crash_id))) == [
             "fs_dump_memory_report",
+            "fs_dump_upload_file_minidump",
             "fs_processed_crash",
+            "fs_raw_crash",
         ]
 
     def test_delete_crash(self, tmp_path):

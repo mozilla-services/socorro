@@ -331,7 +331,7 @@ class GcsCrashStorage(CrashStorageBase):
                     f"could not parse dump_names: gs://{self.bucket}/{key}"
                 )
 
-        return contents
+        return list(sorted(contents))
 
     def delete_crash(self, crash_id):
         # delete raw and processed crash
