@@ -246,7 +246,7 @@ class FSPermanentStorage(CrashStorageBase):
             self.get_processed_crash(crash_id)
             contents.append("fs_processed_crash")
 
-        return contents
+        return list(sorted(contents))
 
     def delete_crash(self, crash_id):
         parent_dir = self._get_radixed_parent_directory(crash_id)

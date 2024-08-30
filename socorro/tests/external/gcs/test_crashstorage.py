@@ -415,11 +415,11 @@ class TestGcsCrashStorage:
         )
 
         assert crashstorage.catalog_crash(crash_id=crash_id) == [
-            "gcs_raw_crash",
-            "gcs_processed_crash",
-            "gcs_dump_names",
             "gcs_dump_dump",
             "gcs_dump_memory_report",
+            "gcs_dump_names",
+            "gcs_processed_crash",
+            "gcs_raw_crash",
         ]
 
     def test_delete_crash(self, gcs_helper):
