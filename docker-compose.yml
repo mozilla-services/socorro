@@ -229,6 +229,7 @@ services:
   # https://www.elastic.co/guide/en/elasticsearch/reference/8.14/docker.html
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    mem_limit: 1g
     command:
     - bin/elasticsearch
     - -Expack.security.enabled=false
