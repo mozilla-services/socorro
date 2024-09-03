@@ -30,9 +30,15 @@ RUN /tmp/set_up_stackwalker.sh && \
 COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
+# NOTE(relud): these dependencies are installed separately, relocated, and patched to reference the
+# new location (aka shaded), so that they can be installed at the same time as newer versions
+COPY --chown=app:app legacy-es-requirements.txt /app/
+COPY docker/set_up_legacy_es_requirements.sh /tmp/set_up_legacy_es_requirements.sh
+RUN /tmp/set_up_legacy_es_requirements.sh && \
+    rm /tmp/set_up_legacy_es_requirements.sh
+
 COPY --chown=app:app requirements.txt /app/
-RUN pip install -U 'pip==24.0' && \
-    pip install --no-cache-dir --no-deps -r requirements.txt && \
+RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED=1 \

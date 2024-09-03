@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-import elasticsearch
+import elasticsearch_1_9_0 as elasticsearch
 import json
 import re
 
