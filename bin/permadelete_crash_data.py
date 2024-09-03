@@ -30,6 +30,7 @@ Usage::
 
 """
 
+import datetime
 import logging
 import os
 
@@ -49,7 +50,7 @@ def crashid_generator(fn):
     with open(fn) as fp:
         for line in fp:
             line = line.strip()
-            if line.startswith("#"):
+            if not line or line.startswith("#"):
                 continue
             yield line
 
@@ -67,8 +68,8 @@ def cmd_permadelete(ctx, crashidsfile):
 
     """
     if not os.path.exists(crashidsfile):
-        click.echo(f"File {crashidsfile!r} does not exist.")
-        return 1
+        click.echo(f"File {crashidsfile!r} does not exist.", err=True)
+        ctx.exit(1)
 
     crashstorage = build_instance_from_settings(settings.STORAGE)
     es_crashstorage = build_instance_from_settings(settings.ES_STORAGE)
@@ -77,10 +78,25 @@ def cmd_permadelete(ctx, crashidsfile):
 
     for crashid in crashids:
         click.echo(f"Working on {crashid!r}")
-        # delete from storage
+        start_time = datetime.datetime.now()
+
+        data = crashstorage.catalog_crash(crash_id=crashid)
+        data.extend(es_crashstorage.catalog_crash(crash_id=crashid))
+        click.echo(f">>> before: {data}")
+
+        # Delete from storage
+        click.echo(">>> Deleting from storage ...")
         crashstorage.delete_crash(crashid)
-        # delete from es
+        click.echo(">>> Deleting from Elasticsearch ...")
         es_crashstorage.delete_crash(crashid)
+
+        data = crashstorage.catalog_crash(crash_id=crashid)
+        data.extend(es_crashstorage.catalog_crash(crash_id=crashid))
+        click.echo(f">>> after: {data}")
+
+        end_time = datetime.datetime.now()
+        click.echo(f">>> Time: {end_time - start_time}")
+        click.echo("")
 
     click.echo("Done!")
 

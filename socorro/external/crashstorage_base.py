@@ -195,6 +195,16 @@ class CrashStorageBase:
         """
         raise NotImplementedError("get_processed_crash is not implemented")
 
+    def catalog_crash(self, crash_id):
+        """Return a list of data items for this crash id
+
+        :param crash_id: crash report id
+
+        :returns: list of strings indicating what storage contents
+
+        """
+        raise NotImplementedError("inventory_crash is not implemented")
+
     def delete_crash(self, crash_id):
         """Delete crash report data from storage
 
@@ -256,6 +266,19 @@ class InMemoryCrashStorage(CrashStorageBase):
             return self._processed_crash_data[crash_id]
         except KeyError as exc:
             raise CrashIDNotFound(f"{crash_id} not found") from exc
+
+    def catalog_crash(self, crash_id):
+        """Return a list of data items for this crash id"""
+        contents = []
+        if crash_id in self._raw_crash_data:
+            contents.append("inmemory_raw_crash")
+
+        if crash_id in self._dumps:
+            for dump_name in self._dumps[crash_id].keys():
+                contents.append(f"inmemory_dump_{dump_name}")
+
+        if crash_id in self._processed_crash_data:
+            contents.append("inmemory_processed_crash")
 
     def delete_crash(self, crash_id):
         with suppress(KeyError):

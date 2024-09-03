@@ -657,6 +657,21 @@ class ESCrashStorage(CrashStorageBase):
                 )
                 raise
 
+    def catalog_crash(self, crash_id):
+        """Return a list of data items for this crash id"""
+        contents = []
+        with self.client() as conn:
+            try:
+                search = Search(using=conn, doc_type=self.get_doctype())
+                search = search.filter("term", **{"processed_crash.uuid": crash_id})
+                results = search.execute().to_dict()
+                hits = results["hits"]["hits"]
+                if hits:
+                    contents.append("es_processed_crash")
+            except Exception:
+                self.logger.exception(f"ERROR: es: when deleting {crash_id}")
+        return contents
+
     def delete_crash(self, crash_id):
         with self.client() as conn:
             try:
@@ -669,5 +684,6 @@ class ESCrashStorage(CrashStorageBase):
                     conn.delete(
                         index=hit["_index"], doc_type=hit["_type"], id=hit["_id"]
                     )
+                    self.client.refresh()
             except Exception:
                 self.logger.exception(f"ERROR: es: when deleting {crash_id}")
