@@ -231,9 +231,9 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
     mem_limit: 1g
     command:
-    - bin/elasticsearch
-    - -Expack.security.enabled=false
-    - -Ediscovery.type=single-node
+      - bin/elasticsearch
+      - -Expack.security.enabled=false
+      - -Ediscovery.type=single-node
     ports:
       - "9201:9200"
 
