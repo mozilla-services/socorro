@@ -4,9 +4,11 @@
 
 import copy
 import datetime
+import functools
 import json
 import re
 import time
+import traceback
 
 import elasticsearch_1_9_0 as elasticsearch
 from elasticsearch_1_9_0.exceptions import NotFoundError
@@ -45,6 +47,29 @@ MAX_STRING_FIELD_VALUE_SIZE = 32_766
 # Valid Elasticsearch keys contain one or more ascii alphanumeric characters,
 # underscore, and hyphen and that's it
 VALID_KEY = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+# Bug 1911612: Temporary decorator to log the method name, arguments and traceback
+# for each ESCrashStorage and SuperSearch method to better understand where ES gets
+# used by the webapp.
+def es_usage_logger(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        stack_trace = "".join(traceback.format_stack())
+        class_name = self.__class__.__name__
+        method_name = func.__name__
+        self.logger.info(
+            "Bug 1911612"
+            # f"{class_name}.{method_name} called",
+            # f"Arguments were: {args}, {kwargs}",
+            # f"Traceback: {stack_trace}",
+        )
+
+        # Call the original function with its arguments and ensure we
+        # return whatever it returns.
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 def is_valid_key(key):
@@ -316,10 +341,12 @@ class ESCrashStorage(CrashStorageBase):
     def build_client(cls, url, timeout):
         return ConnectionContext(url=url, timeout=timeout)
 
+    @es_usage_logger
     def get_index_template(self):
         """Return template for index names."""
         return self.index
 
+    @es_usage_logger
     def get_index_for_date(self, date):
         """Return the index name for a given date.
 
@@ -334,14 +361,17 @@ class ESCrashStorage(CrashStorageBase):
         template = self.get_index_template()
         return date.strftime(template)
 
+    @es_usage_logger
     def get_doctype(self):
         """Return doctype."""
         return self.doctype
 
+    @es_usage_logger
     def get_retention_policy(self):
         """Return retention policy in weeks."""
         return self.retention_policy
 
+    @es_usage_logger
     def get_socorro_index_settings(self, mappings):
         """Return a dictionary containing settings for an Elasticsearch index."""
         return {
@@ -355,6 +385,7 @@ class ESCrashStorage(CrashStorageBase):
             "mappings": mappings,
         }
 
+    @es_usage_logger
     def get_mapping(self, index_name, es_doctype, reraise=False):
         """Retrieves the mapping for a given index and doctype
 
@@ -382,6 +413,7 @@ class ESCrashStorage(CrashStorageBase):
                     raise
         return mapping
 
+    @es_usage_logger
     def create_index(self, index_name, mappings=None):
         """Create an index that will receive crash reports.
 
@@ -401,9 +433,11 @@ class ESCrashStorage(CrashStorageBase):
             index_settings=index_settings,
         )
 
+    @es_usage_logger
     def delete_index(self, index_name):
         return self.client.delete_index(index_name=index_name)
 
+    @es_usage_logger
     def get_indices(self):
         """Return list of existing crash report indices.
 
@@ -417,6 +451,7 @@ class ESCrashStorage(CrashStorageBase):
         indices.sort()
         return indices
 
+    @es_usage_logger
     def delete_expired_indices(self):
         """Delete indices that exceed our retention policy.
 
@@ -437,6 +472,7 @@ class ESCrashStorage(CrashStorageBase):
 
         return was_deleted
 
+    @es_usage_logger
     def get_keys_for_indexable_fields(self):
         """Return keys for FIELDS in "namespace.key" format
 
@@ -458,6 +494,7 @@ class ESCrashStorage(CrashStorageBase):
 
         return keys
 
+    @es_usage_logger
     def get_keys_for_mapping(self, index_name, es_doctype):
         """Get the keys in "namespace.key" format for a given mapping
 
@@ -479,6 +516,7 @@ class ESCrashStorage(CrashStorageBase):
             self._keys_for_mapping_cache[cache_key] = keys
         return keys
 
+    @es_usage_logger
     def get_keys(self, index_name, es_doctype):
         supersearch_fields_keys = self.get_keys_for_indexable_fields()
         try:
@@ -494,6 +532,7 @@ class ESCrashStorage(CrashStorageBase):
 
         return all_valid_keys
 
+    @es_usage_logger
     def save_processed_crash(self, raw_crash, processed_crash):
         """Save processed crash report to Elasticsearch"""
         crash_id = processed_crash["uuid"]
@@ -522,6 +561,7 @@ class ESCrashStorage(CrashStorageBase):
             crash_document=crash_document,
         )
 
+    @es_usage_logger
     def capture_crash_metrics(self, crash_document):
         """Capture metrics about crash data being saved to Elasticsearch"""
 
@@ -537,6 +577,7 @@ class ESCrashStorage(CrashStorageBase):
 
         _capture("crash_document_size", crash_document)
 
+    @es_usage_logger
     def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
         try:
             start_time = time.time()
@@ -553,6 +594,7 @@ class ESCrashStorage(CrashStorageBase):
                 "index", value=elapsed_time * 1000.0, tags=["outcome:" + index_outcome]
             )
 
+    @es_usage_logger
     def _submit_crash_to_elasticsearch(
         self, crash_id, es_doctype, index_name, crash_document
     ):
@@ -657,6 +699,7 @@ class ESCrashStorage(CrashStorageBase):
                 )
                 raise
 
+    @es_usage_logger
     def catalog_crash(self, crash_id):
         """Return a list of data items for this crash id"""
         contents = []
@@ -672,6 +715,7 @@ class ESCrashStorage(CrashStorageBase):
                 self.logger.exception(f"ERROR: es: when deleting {crash_id}")
         return contents
 
+    @es_usage_logger
     def delete_crash(self, crash_id):
         with self.client() as conn:
             try:
