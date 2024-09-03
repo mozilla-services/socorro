@@ -384,6 +384,98 @@ class TestGcsCrashStorage:
         with pytest.raises(CrashIDNotFound):
             crashstorage.get_processed_crash(crash_id)
 
+    def test_catalog_crash(self, gcs_helper):
+        crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        gcs_helper.create_bucket(bucket)
+
+        # Save crash data
+        raw_crash = {"submitted_timestamp": date_to_string(now)}
+        dumps = {
+            "dump": b"fake data",
+            "memory_report": b"fake data",
+        }
+        processed_crash = {
+            "uuid": crash_id,
+            "completed_datetime": date_to_string(now),
+            "signature": "now_this_is_a_signature",
+        }
+
+        crashstorage.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=MemoryDumpsMapping(dumps),
+            crash_id=crash_id,
+        )
+        crashstorage.save_processed_crash(
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
+        )
+
+        assert crashstorage.catalog_crash(crash_id=crash_id) == [
+            "gcs_dump_dump",
+            "gcs_dump_memory_report",
+            "gcs_dump_names",
+            "gcs_processed_crash",
+            "gcs_raw_crash",
+        ]
+
+    def test_delete_crash(self, gcs_helper):
+        crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+
+        now = utc_now()
+        crash_id = create_new_ooid(timestamp=now)
+        gcs_helper.create_bucket(bucket)
+
+        # Save crash data
+        raw_crash = {"submitted_timestamp": date_to_string(now)}
+        dumps = {
+            "dump": b"fake data",
+            "memory_report": b"fake data",
+        }
+        processed_crash = {
+            "uuid": crash_id,
+            "completed_datetime": date_to_string(now),
+            "signature": "now_this_is_a_signature",
+        }
+
+        crashstorage.save_raw_crash(
+            raw_crash=raw_crash,
+            dumps=MemoryDumpsMapping(dumps),
+            crash_id=crash_id,
+        )
+        crashstorage.save_processed_crash(
+            raw_crash=raw_crash,
+            processed_crash=processed_crash,
+        )
+
+        # Verify the data was saved
+        assert gcs_helper.list(bucket_name=bucket) == [
+            f"v1/dump/{crash_id}",
+            f"v1/dump_names/{crash_id}",
+            f"v1/memory_report/{crash_id}",
+            f"v1/processed_crash/{crash_id}",
+            f"v1/raw_crash/20{crash_id[-6:]}/{crash_id}",
+        ]
+
+        # Delete the crash data
+        crashstorage.delete_crash(crash_id=crash_id)
+
+        # Asssert it's all gone
+        assert gcs_helper.list(bucket_name=bucket) == []
+
+    def test_delete_crash_doesnt_exist(self, gcs_helper):
+        crashstorage = build_instance_from_settings(CRASHSTORAGE_SETTINGS)
+        bucket = CRASHSTORAGE_SETTINGS["options"]["bucket"]
+        crash_id = create_new_ooid()
+        gcs_helper.create_bucket(bucket)
+
+        # Delete the crash data
+        crashstorage.delete_crash(crash_id=crash_id)
+
 
 class TestGetMethod:
     def test_get_processed(self, gcs_helper):

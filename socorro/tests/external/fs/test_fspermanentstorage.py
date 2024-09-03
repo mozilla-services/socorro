@@ -96,7 +96,25 @@ class TestFSPermanentStorage:
         expected = MemoryDumpsMapping(dumps)
         assert fs.get_dumps(crash_id) == expected
 
-    def test_remove(self, tmp_path):
+    def test_catalog_crash(self, tmp_path):
+        fs = FSPermanentStorage(fs_root=str(tmp_path))
+
+        crash_id = "0bba929f-8721-460c-dead-a43c20071025"
+        raw_crash = {"ProductName": "Firefox"}
+        processed_crash = {"uuid": crash_id, "product_name": "Firefox"}
+        dumps = {"memory_report": b"12345", fs.dump_field: b"abcde"}
+
+        fs.save_raw_crash(raw_crash=raw_crash, dumps=dumps, crash_id=crash_id)
+        fs.save_processed_crash(raw_crash=raw_crash, processed_crash=processed_crash)
+
+        assert list(sorted(fs.catalog_crash(crash_id=crash_id))) == [
+            "fs_dump_memory_report",
+            "fs_dump_upload_file_minidump",
+            "fs_processed_crash",
+            "fs_raw_crash",
+        ]
+
+    def test_delete_crash(self, tmp_path):
         fs = FSPermanentStorage(fs_root=str(tmp_path))
 
         crash_id = "0bba929f-8721-460c-dead-a43c20071025"

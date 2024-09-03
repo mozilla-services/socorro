@@ -223,6 +223,54 @@ class TestESCrashStorage:
             )
             assert field not in doc["_source"]["processed_crash"]
 
+    def test_catalog_crash(self, es_helper):
+        crash_id = create_new_ooid()
+        processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
+        processed_crash["date_processed"] = date_to_string(utc_now())
+        processed_crash["uuid"] = crash_id
+
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
+            raw_crash={},
+            processed_crash=processed_crash,
+        )
+        es_helper.refresh()
+
+        data = crashstorage.catalog_crash(crash_id=crash_id)
+        assert data == ["es_processed_crash"]
+
+    def test_delete_crash(self, es_helper):
+        """Test deleting a crash document."""
+        crash_id = create_new_ooid()
+        processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
+        processed_crash["date_processed"] = date_to_string(utc_now())
+        processed_crash["uuid"] = crash_id
+
+        crashstorage = self.build_crashstorage()
+        crashstorage.save_processed_crash(
+            raw_crash={},
+            processed_crash=processed_crash,
+        )
+        es_helper.refresh()
+
+        # Verify the crash is in the index
+        data = es_helper.get_crash_data(crash_id=crash_id)
+        assert data is not None
+
+        # Delete the crash and refresh cluster
+        crashstorage.delete_crash(crash_id=crash_id)
+
+        # Verify crash data is gone
+        data = es_helper.get_crash_data(crash_id=crash_id)
+        assert data is None
+
+    def test_delete_crash_doesnt_exist(self, es_helper):
+        """Test deleting a crash document."""
+        crash_id = create_new_ooid()
+
+        crashstorage = self.build_crashstorage()
+        crashstorage.delete_crash(crash_id=crash_id)
+
     def test_crash_size_capture(self):
         """Verify saving a processed crash emits a metric for crash document size"""
         crash_id = create_new_ooid()
