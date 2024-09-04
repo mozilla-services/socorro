@@ -8,12 +8,12 @@ import json
 import re
 
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
-from socorro.external.es.base import generate_list_of_indexes
-from socorro.external.es.supersearch import BAD_INDEX_REGEX
+from socorro.external.legacy_es.base import generate_list_of_indexes
+from socorro.external.legacy_es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import libdatetime, external_common
 
 
-class Query:
+class LegacyQuery:
     """Implement the /query service with ElasticSearch."""
 
     filters = [("query", None, "json"), ("indices", None, ["list", "str"])]

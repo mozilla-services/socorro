@@ -7,11 +7,11 @@ from socorro.libclass import build_instance
 from socorro.lib.libdatetime import utc_now
 
 
-class TestConnectionContext:
+class TestLegacyConnectionContext:
     def build_conn(self):
         return build_instance(
-            class_path="socorro.external.es.connection_context.ConnectionContext",
-            kwargs=settings.ES_STORAGE["options"],
+            class_path="socorro.external.legacy_es.connection_context.LegacyConnectionContext",
+            kwargs=settings.LEGACY_ES_STORAGE["options"],
         )
 
     def test_create_index(self, es_helper):

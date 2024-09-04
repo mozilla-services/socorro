@@ -9,7 +9,7 @@ import elasticsearch_1_9_0 as elasticsearch
 from elasticsearch_dsl_0_0_11 import Search
 
 from socorro import settings as socorro_settings
-from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.legacy_es.super_search_fields import FIELDS
 from socorro.libclass import build_instance_from_settings
 
 

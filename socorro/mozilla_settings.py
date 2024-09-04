@@ -167,8 +167,9 @@ GCS_STORAGE = {
     },
 }
 
-ES_STORAGE = {
-    "class": "socorro.external.es.crashstorage.ESCrashStorage",
+# Elasticsearch crash storage configuration
+LEGACY_ES_STORAGE = {
+    "class": "socorro.external.legacy_es.crashstorage.LegacyESCrashStorage",
     "options": {
         "metrics_prefix": "processor.es",
         "index": _config(
@@ -188,6 +189,53 @@ ES_STORAGE = {
         ),
     },
 }
+
+
+def es_mode_parser(val):
+    """Return 'LEGACY_ONLY' or 'PREFER_NEW'."""
+    normalized = val.strip().upper()
+    if normalized in ("LEGACY_ONLY", "PREFER_NEW"):
+        return normalized
+    raise ValueError(
+        f"elasticsearch mode not supported, must be LEGACY_ONLY or PREFER_NEW: {val}"
+    )
+
+
+ELASTICSEARCH_MODE = _config(
+    "ELASTICSEARCH_MODE",
+    default="LEGACY_ONLY",
+    parser=es_mode_parser,
+    doc=(
+        "Elasticsearch transition mode. Should be one of LEGACY_ONLY or PREFER_NEW. "
+        "When set to LEGACY_ONLY the processor and webapp will only use legacy es. "
+        "When set to PREFER_NEW the processor while write to both and the webapp will "
+        "only use new. "
+    ),
+)
+
+if ELASTICSEARCH_MODE == "LEGACY_ONLY":
+    ES_STORAGE = LEGACY_ES_STORAGE
+elif ELASTICSEARCH_MODE == "PREFER_NEW":
+    ES_STORAGE = {
+        "class": "socorro.external.es.crashstorage.ESCrashStorage",
+        "options": {
+            "metrics_prefix": "processor.es",
+            "index": _config(
+                "ELASTICSEARCH_INDEX",
+                default="socorro%Y%W",
+                doc="Template for Elasticsearch index names.",
+            ),
+            "index_regex": _config(
+                "ELASTICSEARCH_INDEX_REGEX",
+                default="^socorro[0-9]{6}$",
+                doc="Regex for matching Elasticsearch index names.",
+            ),
+            "url": _config(
+                "ELASTICSEARCH_URL",
+                doc="Elasticsearch url.",
+            ),
+        },
+    }
 
 # Telemetry crash report storage configuration
 TELEMETRY_GCS_STORAGE = {
@@ -217,6 +265,10 @@ CRASH_DESTINATIONS = {
     "es": ES_STORAGE,
     "telemetry": TELEMETRY_STORAGE,
 }
+
+if ELASTICSEARCH_MODE == "PREFER_NEW":
+    CRASH_DESTINATIONS_ORDER.append("legacy_es")
+    CRASH_DESTINATIONS["legacy_es"] = LEGACY_ES_STORAGE
 
 
 # Disk cache manager configuration

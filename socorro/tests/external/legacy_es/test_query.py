@@ -9,25 +9,22 @@ import pytest
 
 from socorro import settings
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
-from socorro.libclass import build_instance
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid
-from socorro.external.es.base import generate_list_of_indexes
-from socorro.external.es.query import Query
+from socorro.external.legacy_es.base import generate_list_of_indexes
+from socorro.external.legacy_es.query import LegacyQuery
 from socorro.lib.libdatetime import utc_now, date_to_string
 
 
 class TestIntegrationQuery:
-    """Test Query with an elasticsearch database containing fake data."""
+    """Test LegacyQuery with an elasticsearch database containing fake data."""
 
     def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
+        return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
     def test_get(self, es_helper):
         crashstorage = self.build_crashstorage()
-        api = Query(crashstorage=crashstorage)
+        api = LegacyQuery(crashstorage=crashstorage)
 
         datestamp = date_to_string(utc_now())
         es_helper.index_crash(
@@ -63,7 +60,7 @@ class TestIntegrationQuery:
 
     def test_get_with_errors(self, es_helper):
         crashstorage = self.build_crashstorage()
-        api = Query(crashstorage=crashstorage)
+        api = LegacyQuery(crashstorage=crashstorage)
 
         # Test missing argument.
         with pytest.raises(MissingArgumentError):
@@ -79,7 +76,7 @@ class TestIntegrationQuery:
     def test_get_with_indices(self, es_helper, monkeypatch):
         """Verify that .get() uses the correct indices."""
         crashstorage = self.build_crashstorage()
-        api = Query(crashstorage=crashstorage)
+        api = LegacyQuery(crashstorage=crashstorage)
         doc_type = api.crashstorage.get_doctype()
 
         # Mock the connection so we can see the list of indexes it's building

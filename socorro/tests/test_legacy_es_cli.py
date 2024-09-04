@@ -4,7 +4,7 @@
 
 from click.testing import CliRunner
 
-from es_cli import es_group
+from legacy_es_cli import es_group
 
 
 def test_it_runs():

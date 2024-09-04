@@ -11,9 +11,9 @@ from crashstats.supersearch.libsupersearch import (
     SuperSearchStatusModel,
 )
 from socorro import settings as socorro_settings
-from socorro.external.es import query
-from socorro.external.es import supersearch
-from socorro.external.es.super_search_fields import get_source_key
+from socorro.external.legacy_es import query
+from socorro.external.legacy_es import supersearch
+from socorro.external.legacy_es.super_search_fields import get_source_key
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 
@@ -118,7 +118,7 @@ class SuperSearch(ESSocorroMiddleware):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.SuperSearch(crashstorage=es_crash_dest)
+        return supersearch.LegacySuperSearch(crashstorage=es_crash_dest)
 
     def _get_extended_params(self):
         # Add histogram fields for all 'date','integer', or 'float' fields.
@@ -227,7 +227,7 @@ class SuperSearchUnredacted(SuperSearch):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.SuperSearch(crashstorage=es_crash_dest)
+        return supersearch.LegacySuperSearch(crashstorage=es_crash_dest)
 
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
@@ -278,4 +278,4 @@ class Query(ESSocorroMiddleware):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return query.Query(crashstorage=es_crash_dest)
+        return query.LegacyQuery(crashstorage=es_crash_dest)

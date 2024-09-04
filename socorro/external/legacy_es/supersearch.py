@@ -10,8 +10,8 @@ import re
 from elasticsearch_1_9_0.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl_0_0_11 import A, F, Q, Search
 
-from socorro.external.es.base import generate_list_of_indexes
-from socorro.external.es.super_search_fields import get_search_key
+from socorro.external.legacy_es.base import generate_list_of_indexes
+from socorro.external.legacy_es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
 from socorro.lib.search_common import SearchBase
 
@@ -47,7 +47,7 @@ def prune_invalid_indices(indices, policy, template):
     return list(set(indices) & set(valid_indices))
 
 
-class SuperSearch(SearchBase):
+class LegacySuperSearch(SearchBase):
     def __init__(self, crashstorage):
         """Create a SuperSearch instance.
 

@@ -7,7 +7,7 @@ import contextlib
 import elasticsearch_1_9_0 as elasticsearch
 
 
-class ConnectionContext:
+class LegacyConnectionContext:
     """Elasticsearch connection manager.
 
     Used for accessing Elasticsearch and managing indexes.

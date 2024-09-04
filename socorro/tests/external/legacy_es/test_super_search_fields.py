@@ -7,7 +7,7 @@ import json
 
 import pytest
 
-from socorro.external.es.super_search_fields import (
+from socorro.external.legacy_es.super_search_fields import (
     add_doc_values,
     build_mapping,
     FIELDS,
@@ -122,7 +122,7 @@ class Test_build_mapping:
 
 @pytest.mark.parametrize("name, properties", FIELDS.items())
 def test_validate_super_search_fields(name, properties):
-    """Validates the contents of socorro.external.es.super_search_fields.FIELDS"""
+    """Validates the contents of socorro.external.legacy_es.super_search_fields.FIELDS"""
 
     # FIXME(willkg): When we start doing schema stuff in Python, we should switch this
     # to a schema validation.

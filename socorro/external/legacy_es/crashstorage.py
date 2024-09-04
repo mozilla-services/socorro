@@ -15,8 +15,8 @@ import glom
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase
-from socorro.external.es.connection_context import ConnectionContext
-from socorro.external.es.super_search_fields import (
+from socorro.external.legacy_es.connection_context import LegacyConnectionContext
+from socorro.external.legacy_es.super_search_fields import (
     build_mapping,
     FIELDS,
     get_destination_keys,
@@ -270,7 +270,7 @@ def build_document(src, crash_document, fields, all_keys):
                 glom.assign(crash_document, dest_key, value, missing=dict)
 
 
-class ESCrashStorage(CrashStorageBase):
+class LegacyESCrashStorage(CrashStorageBase):
     """Indexes documents based on the processed crash to Elasticsearch."""
 
     # These regex will catch field names from Elasticsearch exceptions. They
@@ -314,7 +314,7 @@ class ESCrashStorage(CrashStorageBase):
 
     @classmethod
     def build_client(cls, url, timeout):
-        return ConnectionContext(url=url, timeout=timeout)
+        return LegacyConnectionContext(url=url, timeout=timeout)
 
     def get_index_template(self):
         """Return template for index names."""

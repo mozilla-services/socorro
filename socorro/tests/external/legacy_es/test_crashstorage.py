@@ -11,7 +11,7 @@ from markus.testing import AnyTagValue, MetricsMock
 import pytest
 
 from socorro import settings
-from socorro.external.es.crashstorage import (
+from socorro.external.legacy_es.crashstorage import (
     fix_boolean,
     fix_integer,
     fix_keyword,
@@ -20,8 +20,8 @@ from socorro.external.es.crashstorage import (
     is_valid_key,
 )
 
-from socorro.external.es.super_search_fields import build_mapping
-from socorro.libclass import build_instance
+from socorro.external.legacy_es.super_search_fields import build_mapping
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
@@ -94,10 +94,7 @@ class TestIsValidKey:
 
 class TestESCrashStorage:
     def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
+        return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
     def test_index_crash(self, es_helper):
         """Test indexing a crash document."""

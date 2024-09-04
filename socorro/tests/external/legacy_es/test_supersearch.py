@@ -9,16 +9,16 @@ import requests_mock
 import pytest
 
 from socorro import settings
-from socorro.external.es.supersearch import SuperSearch
-from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.legacy_es.supersearch import LegacySuperSearch
+from socorro.external.legacy_es.super_search_fields import FIELDS
 from socorro.lib import BadArgumentError, libdatetime, search_common
 
-from socorro.libclass import build_instance
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
 
 
-class SuperSearchWithFields(SuperSearch):
+class SuperSearchWithFields(LegacySuperSearch):
     """Adds FIELDS to all .get() calls"""
 
     def get(self, **kwargs):
@@ -31,10 +31,7 @@ class TestIntegrationSuperSearch:
     """Test SuperSearch with an elasticsearch database containing fake data."""
 
     def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
+        return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
     def test_get_indices(self, es_helper):
         crashstorage = self.build_crashstorage()
@@ -1747,8 +1744,8 @@ class TestIntegrationSuperSearch:
         index_name = "testsocorro_module"
         with settings.override(
             **{
-                "ES_STORAGE.options.index": index_name,
-                "ES_STORAGE.options.index_regex": f"^{index_name}$",
+                "LEGACY_ES_STORAGE.options.index": index_name,
+                "LEGACY_ES_STORAGE.options.index_regex": f"^{index_name}$",
             }
         ):
             crashstorage = self.build_crashstorage()

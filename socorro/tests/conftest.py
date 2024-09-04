@@ -187,15 +187,15 @@ def gcs_helper():
         yield gcs_helper
 
 
-class ElasticsearchHelper:
-    """Elasticsearch helper class.
+class LegacyElasticsearchHelper:
+    """Legacy Elasticsearch helper class.
 
     When used in a context, this will clean up any indexes created.
 
     """
 
     def __init__(self):
-        self._crashstorage = build_instance_from_settings(settings.ES_STORAGE)
+        self._crashstorage = build_instance_from_settings(settings.LEGACY_ES_STORAGE)
         self.conn = self._crashstorage.client
 
     def get_index_template(self):
@@ -237,7 +237,7 @@ class ElasticsearchHelper:
 
     def get_url(self):
         """Returns the Elasticsearch url."""
-        return settings.ES_STORAGE["options"]["url"]
+        return settings.LEGACY_ES_STORAGE["options"]["url"]
 
     def refresh(self):
         self.conn.refresh()
@@ -290,8 +290,8 @@ class ElasticsearchHelper:
 
 
 @pytest.fixture
-def es_helper():
-    """Returns an ElasticsearchHelper for helping tests.
+def legacy_es_helper():
+    """Returns a legacy Elasticsearch helper for tests.
 
     Provides:
 
@@ -306,10 +306,20 @@ def es_helper():
     * ``get_crash_data()``
 
     """
-    es_helper = ElasticsearchHelper()
-    es_helper.create_indices()
-    yield es_helper
-    es_helper.delete_indices()
+    legacy_es_helper = LegacyElasticsearchHelper()
+    legacy_es_helper.create_indices()
+    yield legacy_es_helper
+    legacy_es_helper.delete_indices()
+
+
+@pytest.fixture
+def es_helper(legacy_es_helper):
+    """Returns an Elasticsearch helper for tests.
+
+    This returns a legacy or non-legacy helper depending on how the webapp is
+    configured. For now that means it always returns a legacy helper.
+    """
+    yield legacy_es_helper
 
 
 class PubSubHelper:
