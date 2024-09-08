@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import copy
+import logging
 
 from crashstats import libproduct
 from crashstats.crashstats import models
@@ -16,6 +17,7 @@ from socorro.external.es import supersearch
 from socorro.external.es.super_search_fields import get_source_key
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
+from socorro.lib.util import es_usage_logger
 
 
 SUPERSEARCH_META_PARAMS = (
@@ -225,10 +227,14 @@ class SuperSearchUnredacted(SuperSearch):
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
 
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
+
+    @es_usage_logger
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
         return supersearch.SuperSearch(crashstorage=es_crash_dest)
 
+    @es_usage_logger
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
         kwargs["_fields"] = self.all_fields
