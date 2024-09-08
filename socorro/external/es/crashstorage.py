@@ -4,11 +4,9 @@
 
 import copy
 import datetime
-import functools
 import json
 import re
 import time
-import traceback
 
 import elasticsearch_1_9_0 as elasticsearch
 from elasticsearch_1_9_0.exceptions import NotFoundError
@@ -28,6 +26,7 @@ from socorro.external.es.super_search_fields import (
 )
 from socorro.libmarkus import METRICS, build_prefix
 from socorro.lib.libdatetime import JsonDTEncoder, string_to_datetime, utc_now
+from socorro.lib.util import es_usage_logger
 
 
 # Additional custom analyzers for crash report data
@@ -47,29 +46,6 @@ MAX_STRING_FIELD_VALUE_SIZE = 32_766
 # Valid Elasticsearch keys contain one or more ascii alphanumeric characters,
 # underscore, and hyphen and that's it
 VALID_KEY = re.compile(r"^[a-zA-Z0-9_-]+$")
-
-
-# Bug 1911612: Temporary decorator to log the method name, arguments and traceback
-# for each ESCrashStorage and SuperSearch method to better understand where ES gets
-# used by the webapp.
-def es_usage_logger(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        stack_trace = "".join(traceback.format_stack())
-        class_name = self.__class__.__name__
-        method_name = func.__name__
-        self.logger.info(
-            "Bug 1911612"
-            # f"{class_name}.{method_name} called",
-            # f"Arguments were: {args}, {kwargs}",
-            # f"Traceback: {stack_trace}",
-        )
-
-        # Call the original function with its arguments and ensure we
-        # return whatever it returns.
-        return func(self, *args, **kwargs)
-
-    return wrapper
 
 
 def is_valid_key(key):

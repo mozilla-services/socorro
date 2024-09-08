@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from functools import wraps
+import traceback
 import time
 
 from more_itertools import peekable
@@ -144,3 +145,23 @@ def retry(
         return _retry_fun
 
     return _retry_inner
+
+
+# Bug 1911612: Temporary decorator to log the method name, arguments and traceback
+# for each ESCrashStorage and SuperSearch method to better understand where ES gets
+# used by the webapp.
+def es_usage_logger(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        stack_trace = "".join(traceback.format_stack())
+        class_name = self.__class__.__name__
+        method_name = func.__name__
+        self.logger.info(
+            f"Bug 1911612,\n{class_name}.{method_name} method called,\nArguments were: {args}, {kwargs},\nTraceback:\n{stack_trace}",
+        )
+
+        # Call the original function with its arguments and ensure we
+        # return whatever it returns.
+        return func(self, *args, **kwargs)
+
+    return wrapper
