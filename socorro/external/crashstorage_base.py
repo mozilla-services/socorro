@@ -106,7 +106,15 @@ class CrashStorageBase:
         # implementation. This may be fetched by a client of the crashstorge so that it
         # can determine if it can try a failed storage operation again.
         self.exceptions_eligible_for_retry = ()
+
+        # Configure logger
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
 
     def close(self):
         """Close resources used by this crashstorage."""
