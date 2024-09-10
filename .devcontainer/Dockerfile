@@ -1,5 +1,5 @@
 # This should be kept in sync with the python version used in docker/Dockerfile
-FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/python:3.11-bullseye@sha256:105bf6a63ab025206f019a371a735fec6553db0be520030c7a2fd0e002947232
+FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/python:3.11-bullseye@sha256:105bf6a63ab025206f019a371a735fec6553db0be520030c7a2fd0e002947232 AS devcontainer_amd64
 
 ARG userid=10001
 ARG groupid=10001
@@ -31,10 +31,20 @@ RUN /tmp/set_up_stackwalker.sh && \
 COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
+# NOTE(relud): these dependencies are installed separately, relocated, and patched to reference the
+# new location (aka shaded), so that they can be installed at the same time as newer versions
+COPY --chown=app:app legacy-es-requirements.txt /app/
+RUN pip install -U 'pip==24.0' && \
+    pip install --no-cache-dir --no-deps -r legacy-es-requirements.txt && \
+    cd /usr/local/lib/python3.11/site-packages/ && \
+    mv elasticsearch elasticsearch_1_9_0 && \
+    mv elasticsearch_dsl elasticsearch_dsl_0_0_11 && \
+    cd elasticsearch_dsl_0_0_11/ && \
+    sed 's/^from elasticsearch/from elasticsearch_1_9_0/' -i connections.py search.py serializer.py
+
 # Install Python dependencies
 COPY requirements.txt /app/
-RUN pip install -U 'pip>=20' && \
-    pip install --no-cache-dir --no-deps -r requirements.txt && \
+RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip install --no-cache-dir ipython && \
     pip check --disable-pip-version-check
 

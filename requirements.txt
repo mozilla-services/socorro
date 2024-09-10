@@ -236,9 +236,9 @@ cssselect==1.2.0 \
     --hash=sha256:666b19839cfaddb9ce9d36bfe4c969132c647b92fc9088c4e23f786b30f1b3dc \
     --hash=sha256:da1885f0c10b60c03ed5eccbb6b68d6eff248d91976fcde348f395d54c9fd35e
     # via pyquery
-datadog==0.49.1 \
-    --hash=sha256:4a56d57490ea699a0dfd9253547485a57b4120e93489defadcf95c66272374d6 \
-    --hash=sha256:4cb7a7991af6cadb868fe450cd456473e65f11fc678b7d7cf61044ff1c6074d8
+datadog==0.50.0 \
+    --hash=sha256:3a58e85f8da47c4a47893b42c759570ba0280cd212413d9b7246cb8fcb86f586 \
+    --hash=sha256:bac96fa0ef555cb10e828c05a7810a13db2bf3bfed34813fac45d3c9a2227b43
     # via
     #   -r requirements.in
     #   markus
@@ -246,9 +246,9 @@ dj-database-url==2.2.0 \
     --hash=sha256:3e792567b0aa9a4884860af05fe2aa4968071ad351e033b6db632f97ac6db9de \
     --hash=sha256:9f9b05058ddf888f1e6f840048b8d705ff9395e3b52a07165daa3d8b9360551b
     # via -r requirements.in
-django==4.2.15 \
-    --hash=sha256:61ee4a130efb8c451ef3467c67ca99fdce400fedd768634efc86a68c18d80d30 \
-    --hash=sha256:c77f926b81129493961e19c0e02188f8d07c112a1162df69bfab178ae447f94a
+django==4.2.16 \
+    --hash=sha256:1ddc333a16fc139fd253035a1606bb24261951bbc3a6ca256717fa06cc41a898 \
+    --hash=sha256:6f1616c2786c408ce86ab7e10f792b8f15742f7b7b7460243929cb371e7f1dad
     # via
     #   -r requirements.in
     #   dj-database-url
@@ -298,16 +298,6 @@ docutils==0.20.1 \
     # via
     #   sphinx
     #   sphinx-rtd-theme
-elasticsearch==1.9.0 \
-    --hash=sha256:cbee23c29f9947b1b78be5c0f741c1f8b504d3c53163b1355ea08f69cbd0fc0c \
-    --hash=sha256:eb0d4b5b20a4ccf9e49bd20498b6215d5e960d8a63a0eae44cd4431e3f303a24
-    # via
-    #   -r requirements.in
-    #   elasticsearch-dsl
-elasticsearch-dsl==0.0.11 \
-    --hash=sha256:59a76c4142478a1952bba6f9a9ca4fc7b029afb619e8ffcf0d135ce37ea692da \
-    --hash=sha256:663fb62ad39200c7d903e973aa0aa693578613264d83796455cbf4cd172bd878
-    # via -r requirements.in
 enforce-typing==1.0.0.post1 \
     --hash=sha256:90347a61d08e7f7578d9714b4f0fd8abd9b6bc48c8ac8d46d7f290d413afabb7 \
     --hash=sha256:d3184dfdbfd7f9520c884986561751a6106c57cdd65d730470645d2d40c47e18
@@ -321,9 +311,9 @@ face==20.1.1 \
     --hash=sha256:7d59ca5ba341316e58cf72c6aff85cca2541cf5056c4af45cb63af9a814bed3e \
     --hash=sha256:ca3a1d8b8b6aa8e61d62a300e9ee24e09c062aceda549e9a640128e4fa0f4559
     # via glom
-fillmore==2.0.0 \
-    --hash=sha256:840901d80799ce50db49c3e377815424a356c3e81c6cea5111684c58113d7ad1 \
-    --hash=sha256:fd1a2c2e829073cef3d49f032033d78dbee48f377eb4b915f29084e76f6facb4
+fillmore==2.0.1 \
+    --hash=sha256:28c1c47063d116909009e4b31f40098702ce1944df7793e8f47642c7c39a78cf \
+    --hash=sha256:a1f194416133b32656bb9918225cd1599359042eb7c63f7c4842ff0b312017ed
     # via -r requirements.in
 freezegun==1.5.1 \
     --hash=sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9 \
@@ -794,9 +784,9 @@ mdurl==0.1.2 \
     --hash=sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
     # via markdown-it-py
-more-itertools==10.3.0 \
-    --hash=sha256:e5d93ef411224fbcef366a6e8ddc4c5781bc6359d43412a65dd5964e46111463 \
-    --hash=sha256:ea6a02e24a9161e51faad17a8782b92a0df82c12c1c8886fec7f0c3fa1a1b320
+more-itertools==10.5.0 \
+    --hash=sha256:037b0d3203ce90cca8ab1defbbdac29d5f993fc20131f3664dc8d6acfa872aef \
+    --hash=sha256:5482bfef7849c25dc3c6dd53a6173ae4795da2a41a80faea6700d9f5846c5da6
     # via -r requirements.in
 mozilla-django-oidc==4.0.1 \
     --hash=sha256:04ef58759be69f22cdc402d082480aaebf193466cad385dc9e4f8df2a0b187ca \
@@ -1002,7 +992,7 @@ python-dateutil==2.8.2 \
     --hash=sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86 \
     --hash=sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9
     # via
-    #   elasticsearch-dsl
+    #   -r requirements.in
     #   freezegun
 python-decouple==3.8 \
     --hash=sha256:ba6e2657d4f376ecc46f77a3a615e058d93ba5e465c01bbe57289bfb7cce680f \
@@ -1224,7 +1214,7 @@ six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
     # via
-    #   elasticsearch-dsl
+    #   -r requirements.in
     #   isodate
     #   oauth2client
     #   python-dateutil
@@ -1292,7 +1282,7 @@ urllib3==1.26.19 \
     --hash=sha256:37a0344459b199fce0e80b0d3569837ec6b6937435c5244e7fd73fa6006830f3 \
     --hash=sha256:3e3d753a8618b86d7de333b4223005f68720bcd6a7d2bcb9fbd2229ec7c1e429
     # via
-    #   elasticsearch
+    #   -r requirements.in
     #   requests
     #   sentry-sdk
 urlwait==1.0 \

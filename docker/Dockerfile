@@ -5,7 +5,7 @@
 # https://hub.docker.com/_/python
 # NOTE(willkg): stick with slim-bullseye which matches how we build the
 # stackwalker
-FROM --platform=linux/amd64 python:3.11.9-slim-bullseye@sha256:8850f5e6e8da9081a6d156252a11161aa22f04d6ed1723c57ca2d5a5d48132bc
+FROM --platform=linux/amd64 python:3.11.9-slim-bullseye@sha256:8850f5e6e8da9081a6d156252a11161aa22f04d6ed1723c57ca2d5a5d48132bc AS app_amd64
 
 # Set up user and group
 ARG groupid=10001
@@ -30,9 +30,15 @@ RUN /tmp/set_up_stackwalker.sh && \
 COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
+# NOTE(relud): these dependencies are installed separately, relocated, and patched to reference the
+# new location (aka shaded), so that they can be installed at the same time as newer versions
+COPY --chown=app:app legacy-es-requirements.txt /app/
+COPY docker/set_up_legacy_es_requirements.sh /tmp/set_up_legacy_es_requirements.sh
+RUN /tmp/set_up_legacy_es_requirements.sh && \
+    rm /tmp/set_up_legacy_es_requirements.sh
+
 COPY --chown=app:app requirements.txt /app/
-RUN pip install -U 'pip==24.0' && \
-    pip install --no-cache-dir --no-deps -r requirements.txt && \
+RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
 
 ENV PYTHONUNBUFFERED=1 \

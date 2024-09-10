@@ -19,6 +19,7 @@ echo ">>> set up environment"
 DATABASE_URL="${DATABASE_URL:-}"
 SENTRY_DSN="${SENTRY_DSN:-}"
 ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-}"
+LEGACY_ELASTICSEARCH_URL="${LEGACY_ELASTICSEARCH_URL:-}"
 
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
@@ -27,10 +28,12 @@ PYTHON="$(which python)"
 echo ">>> wait for services to be ready"
 
 urlwait "${DATABASE_URL}"
-urlwait "${ELASTICSEARCH_URL}"
+urlwait "${LEGACY_ELASTICSEARCH_URL}"
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${STORAGE_EMULATOR_HOST}/storage/v1/b" 10
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
+# wait for this last because it's the slowest to start
+urlwait "${ELASTICSEARCH_URL}" 10
 
 echo ">>> build queue things and db things"
 

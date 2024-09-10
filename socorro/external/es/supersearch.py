@@ -7,8 +7,8 @@ from contextlib import suppress
 import datetime
 import re
 
-from elasticsearch.exceptions import NotFoundError, RequestError
-from elasticsearch_dsl import A, F, Q, Search
+from elasticsearch_1_9_0.exceptions import NotFoundError, RequestError
+from elasticsearch_dsl_0_0_11 import A, F, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.super_search_fields import get_search_key
