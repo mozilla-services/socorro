@@ -75,4 +75,4 @@ django==4.2.16
 # NOTE(relud): specify transitive dependencies that are not shaded
 python-dateutil # via elasticsearch-dsl==0.0.11
 six # via elasticsearch-dsl==0.0.11
-urllib3>=1.8, <2.0 # via elasticsearch==1.9.0
+urllib3>=1.8, <3.0 # via elasticsearch==1.9.0
