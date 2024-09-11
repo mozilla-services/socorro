@@ -980,9 +980,9 @@ pytest==8.3.3 \
     #   -r requirements.in
     #   pytest-django
     #   pytest-env
-pytest-django==4.8.0 \
-    --hash=sha256:5d054fe011c56f3b10f978f41a8efb2e5adfc7e680ef36fb571ada1f24779d90 \
-    --hash=sha256:ca1ddd1e0e4c227cf9e3e40a6afc6d106b3e70868fd2ac5798a22501271cd0c7
+pytest-django==4.9.0 \
+    --hash=sha256:1d83692cb39188682dbb419ff0393867e9904094a549a7d38a3154d5731b2b99 \
+    --hash=sha256:8bf7bc358c9ae6f6fc51b6cebb190fe20212196e6807121f11bd6a3b03428314
     # via -r requirements.in
 pytest-env==1.1.4 \
     --hash=sha256:86653658da8f11c6844975db955746c458a9c09f1e64957603161e2ff93f5133 \
