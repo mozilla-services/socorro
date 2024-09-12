@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from functools import wraps
+import json
 import traceback
 import time
 
@@ -156,9 +157,16 @@ def es_usage_logger(func):
         stack_trace = "".join(traceback.format_stack())
         class_name = self.__class__.__name__
         method_name = func.__name__
-        self.logger.info(
-            f"Bug 1911612,\n{class_name}.{method_name} method called,\nArguments were: {args}, {kwargs},\nTraceback:\n{stack_trace}",
-        )
+
+        log_entry_part_one = {
+            "bug_id": "1911612",
+            "method": f"{class_name}.{method_name}",
+            "arguments": {"args": args, "kwargs": kwargs},
+        }
+
+        log_entry_part_two = f"\ntraceback:\n{stack_trace}"
+
+        self.logger.info(json.dumps(log_entry_part_one, indent=4) + log_entry_part_two)
 
         # Call the original function with its arguments and ensure we
         # return whatever it returns.
