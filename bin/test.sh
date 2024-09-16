@@ -32,8 +32,8 @@ urlwait "${LEGACY_ELASTICSEARCH_URL}"
 urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
 urlwait "${STORAGE_EMULATOR_HOST}/storage/v1/b" 10
 python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
-# wait for this last because it's the slowest to start
-urlwait "${ELASTICSEARCH_URL}" 10
+# wait for this last because it's slow to start
+urlwait "${ELASTICSEARCH_URL}" 30
 
 echo ">>> build queue things and db things"
 
@@ -51,10 +51,16 @@ popd
 echo ">>> run tests"
 
 # Run socorro tests
-"${PYTEST}"
+ELASTICSEARCH_MODE=LEGACY_ONLY "${PYTEST}"
+# override ELASTICSEARCH_URL to use legacy elasticsearch so we can test PREFER_NEW without
+# implementing es8 support. Override will be removed when socorrro/external/es expects es8
+ELASTICSEARCH_MODE=PREFER_NEW ELASTICSEARCH_URL="${LEGACY_ELASTICSEARCH_URL}" "${PYTEST}"
 
 # Collect static and then run pytest in the webapp
 pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
-"${PYTEST}"
+ELASTICSEARCH_MODE=LEGACY_ONLY "${PYTEST}"
+# override ELASTICSEARCH_URL to use legacy elasticsearch so we can test PREFER_NEW without
+# implementing es8 support. Override will be removed when socorrro/external/es expects es8
+ELASTICSEARCH_MODE=PREFER_NEW ELASTICSEARCH_URL="${LEGACY_ELASTICSEARCH_URL}" "${PYTEST}"
 popd

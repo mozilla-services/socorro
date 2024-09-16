@@ -17,12 +17,12 @@ from elasticsearch_dsl_0_0_11 import Search
 from elasticsearch_1_9_0.client import IndicesClient
 
 from socorro import settings
-from socorro.external.es.base import generate_list_of_indexes
+from socorro.external.legacy_es.base import generate_list_of_indexes
 from socorro.libclass import build_instance_from_settings
 
 
 def get_crashstorage():
-    return build_instance_from_settings(settings.ES_STORAGE)
+    return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
 
 @click.group()

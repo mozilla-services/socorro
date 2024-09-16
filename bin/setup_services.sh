@@ -24,8 +24,13 @@ set -euo pipefail
 /app/socorro-cmd gcs create "${TELEMETRY_GCS_BUCKET}"
 
 # Delete and create Elasticsearch indices
-/app/socorro-cmd es delete
-/app/socorro-cmd es create
+/app/socorro-cmd legacy_es delete
+/app/socorro-cmd legacy_es create
+ELASTICSEARCH_MODE="${ELASTICSEARCH_MODE:-LEGACY_ONLY}"
+if [ "${ELASTICSEARCH_MODE^^}" == "PREFER_NEW" ]; then
+    /app/socorro-cmd es delete
+    /app/socorro-cmd es create
+fi
 
 # Delete and create Pub/Sub queues
 /app/socorro-cmd pubsub delete-all
