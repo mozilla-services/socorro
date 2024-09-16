@@ -16,7 +16,7 @@ class LegacyConnectionContext:
 
     def __init__(
         self,
-        url="http://localhost:9200",
+        url="http://legacy-elasticsearch:9200",
         timeout=30,
         **kwargs,
     ):

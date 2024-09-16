@@ -281,7 +281,7 @@ class LegacyESCrashStorage(CrashStorageBase):
 
     def __init__(
         self,
-        url="http://localhost:9200",
+        url="http://legacy-elasticsearch:9200",
         index="socorro%Y%W",
         index_regex=r"^socorro[0-9]{6}$",
         retention_policy=26,
