@@ -208,8 +208,8 @@ ELASTICSEARCH_MODE = _config(
     doc=(
         "Elasticsearch transition mode. Should be one of LEGACY_ONLY or PREFER_NEW. "
         "When set to LEGACY_ONLY the processor and webapp will only use legacy es. "
-        "When set to PREFER_NEW the processor while write to both and the webapp will "
-        "only use new. "
+        "When set to PREFER_NEW the processor will write to both and the webapp will "
+        "only use new."
     ),
 )
 
