@@ -92,7 +92,7 @@ class TestIsValidKey:
         assert is_valid_key(key) is False
 
 
-class TestESCrashStorage:
+class TestLegacyESCrashStorage:
     def build_crashstorage(self):
         return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 

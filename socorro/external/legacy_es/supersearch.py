@@ -51,7 +51,7 @@ class LegacySuperSearch(SearchBase):
     def __init__(self, crashstorage):
         """Create a SuperSearch instance.
 
-        :arg crashstorage: an ESCrashStorage instance
+        :arg crashstorage: a LegacyESCrashStorage instance
 
         """
         self.crashstorage = crashstorage

@@ -358,8 +358,8 @@ class LegacyESCrashStorage(CrashStorageBase):
     def get_mapping(self, index_name, es_doctype, reraise=False):
         """Retrieves the mapping for a given index and doctype
 
-        NOTE(willkg): Mappings are cached on the ESCrashStorage instance. If you change
-        the indices (like in tests), you should get a new ESCrashStorage instance.
+        NOTE(willkg): Mappings are cached on the LegacyESCrashStorage instance. If you change
+        the indices (like in tests), you should get a new LegacyESCrashStorage instance.
 
         :arg str index_name: the index to retrieve the mapping for
         :arg str es_doctype: the doctype to retrieve the mapping for
@@ -440,8 +440,8 @@ class LegacyESCrashStorage(CrashStorageBase):
     def get_keys_for_indexable_fields(self):
         """Return keys for FIELDS in "namespace.key" format
 
-        NOTE(willkg): Results are cached on this ESCrashStorage instance. If you change
-        FIELDS (like in tests), create a new ESCrashStorage instance.
+        NOTE(willkg): Results are cached on this LegacyESCrashStorage instance. If you change
+        FIELDS (like in tests), create a new LegacyESCrashStorage instance.
 
         :returns: set of "namespace.key" strings
 
@@ -461,7 +461,7 @@ class LegacyESCrashStorage(CrashStorageBase):
     def get_keys_for_mapping(self, index_name, es_doctype):
         """Get the keys in "namespace.key" format for a given mapping
 
-        NOTE(willkg): Results are cached on this ESCrashStorage instance.
+        NOTE(willkg): Results are cached on this LegacyESCrashStorage instance.
 
         :arg str index_name: the name of the index
         :arg str es_doctype: the doctype for the index

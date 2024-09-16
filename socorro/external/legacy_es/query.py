@@ -20,7 +20,7 @@ class LegacyQuery:
 
     def __init__(self, crashstorage, timeout=120):
         """
-        :arg crashstorage: an ESCrashStorage instance
+        :arg crashstorage: a LegacyESCrashStorage instance
         """
         self.crashstorage = crashstorage
         self.timeout = timeout
