@@ -22,7 +22,7 @@ from socorro.libclass import build_instance_from_settings
 
 
 def get_crashstorage():
-    return build_instance_from_settings(settings.CRASH_DESTINATIONS["es"])
+    return build_instance_from_settings(settings.ES_STORAGE)
 
 
 @click.group()
