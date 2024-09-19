@@ -13,8 +13,8 @@ import datetime
 import json
 
 import click
-from elasticsearch_dsl_0_0_11 import Search
-from elasticsearch_1_9_0.client import IndicesClient
+from elasticsearch_dsl import Search
+from elasticsearch import Elasticsearch
 
 from socorro import settings
 from socorro.external.es.base import generate_list_of_indexes
@@ -107,7 +107,7 @@ def cmd_print_mapping(ctx, index):
     crashstorage = get_crashstorage()
     doctype = crashstorage.get_doctype()
     with crashstorage.client() as conn:
-        indices_client = IndicesClient(conn)
+        indices_client = Elasticsearch.indices(conn)
         resp = indices_client.get_mapping(index=index)
         mapping = resp[index]["mappings"][doctype]["properties"]
         click.echo(json.dumps(mapping, indent=2, sort_keys=True))

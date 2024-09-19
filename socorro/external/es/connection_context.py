@@ -39,8 +39,7 @@ class ConnectionContext:
 
         return elasticsearch.Elasticsearch(
             hosts=self.url,
-            timeout=timeout,
-            connection_class=elasticsearch.connection.RequestsHttpConnection,
+            request_timeout=timeout,
             verify_certs=True,
         )
 
@@ -51,7 +50,7 @@ class ConnectionContext:
         http://elasticsearch-py.readthedocs.org/en/latest/api.html#indices
 
         """
-        return elasticsearch.client.IndicesClient(self.connection())
+        return self.connection().indices
 
     @contextlib.contextmanager
     def __call__(self, name=None, timeout=None):
@@ -74,8 +73,9 @@ class ConnectionContext:
 
         except elasticsearch.exceptions.RequestError as exc:
             # If this index already exists, swallow the error.
-            # NOTE! This is NOT how the error looks like in ES 2.x
-            if "IndexAlreadyExistsException" not in str(exc):
+            # NOTE! This is how the error string looks like in ES 8.15.0.
+            # In previous versions, especially 1.4.5, it looks completely different.
+            if "resource_already_exists_exception" not in str(exc):
                 raise
             return False
 
@@ -85,23 +85,20 @@ class ConnectionContext:
         :returns: list of str
 
         """
-        indices_client = self.indices_client()
-        status = indices_client.status()
-        indices = status["indices"].keys()
-        return indices
+        return self.indices_client().get_alias().keys()
 
     def delete_index(self, index_name):
         """Delete an index."""
-        self.indices_client().delete(index_name)
+        self.indices_client().delete(index=index_name)
 
     def get_mapping(self, index_name, doc_type):
         """Return the mapping for the specified index and doc_type."""
         resp = self.indices_client().get_mapping(index=index_name)
-        return resp[index_name]["mappings"][doc_type]["properties"]
+        return resp[index_name]["mappings"]["properties"][doc_type]["properties"]
 
     def refresh(self, index_name=None):
         self.indices_client().refresh(index=index_name or "_all")
 
     def health_check(self):
         with self() as conn:
-            conn.cluster.health(wait_for_status="yellow", request_timeout=5)
+            conn.options(request_timeout=5).cluster.health(wait_for_status="yellow")

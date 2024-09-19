@@ -125,6 +125,11 @@ class SearchBase:
                             "_histogram_interval.%s" % field["name"],
                             data_type="enum",
                             default="day",
+                            # NOTE(krzepka) interval was split into fixed_intervals and calendar_intervals.
+                            # I decided to use fixed_intervalss.
+                            # Fixed_intervals don't support "day" value, so using 1d here.
+                            # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html
+                            default="1d",
                         )
                     )
                 elif field["query_type"] == "integer":

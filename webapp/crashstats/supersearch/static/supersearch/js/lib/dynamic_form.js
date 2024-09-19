@@ -140,7 +140,7 @@
         options = OPERATORS_BOOLEAN;
       } else if (field.valueType === 'flag') {
         options = OPERATORS_EXISTENCE;
-      } else if (field.valueType === 'string') {
+      } else if (field.valueType === 'text') {
         options = OPERATORS_STRING;
       } else {
         // type 'enum' or unknown type
