@@ -595,7 +595,10 @@ class Testcrash_report_to_description:
             """\
             Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
 
-            Reason: ```SIGSEGV /0x00000080```
+            Reason:
+            ```
+            SIGSEGV /0x00000080
+            ```
 
             Top 1 frame:
             ```
@@ -666,7 +669,10 @@ class Testcrash_report_to_description:
             """\
             Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
 
-            Reason: ```SIGSEGV /0x00000080```
+            Reason:
+            ```
+            SIGSEGV /0x00000080
+            ```
 
             Top 1 frame:
             ```
@@ -701,7 +707,10 @@ class Testcrash_report_to_description:
             """\
             Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
 
-            MOZ_CRASH Reason: ```good data```
+            MOZ_CRASH Reason:
+            ```
+            good data
+            ```
 
             Top 1 frame:
             ```
@@ -737,7 +746,10 @@ class Testcrash_report_to_description:
             """\
             Crash report: http://localhost:8000/report/index/2ae0a833-f43d-4d9b-8c13-f99e70240401
 
-            MOZ_CRASH Reason: ```MOZ_CRASH(Quota manager shutdown timed out) (good)```
+            MOZ_CRASH Reason:
+            ```
+            MOZ_CRASH(Quota manager shutdown timed out) (good)
+            ```
 
             Top 1 frame:
             ```

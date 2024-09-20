@@ -134,10 +134,12 @@ def crash_report_to_description(crash_report_url, processed_crash):
     ]
     if processed_crash.get("moz_crash_reason"):
         lines.append("")
-        lines.append(f"MOZ_CRASH Reason: ```{processed_crash['moz_crash_reason']}```")
+        lines.append(
+            f"MOZ_CRASH Reason:\n```\n{processed_crash['moz_crash_reason'].strip()}\n```\n"
+        )
     elif processed_crash.get("reason"):
         lines.append("")
-        lines.append(f"Reason: ```{processed_crash['reason']}```")
+        lines.append(f"Reason:\n```\n{processed_crash['reason'].strip()}\n```\n")
 
     frames = None
     if threads := mini_glom(processed_crash, "json_dump.threads", default=None):
