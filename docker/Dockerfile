@@ -5,7 +5,7 @@
 # https://hub.docker.com/_/python
 # NOTE(willkg): stick with slim-bullseye which matches how we build the
 # stackwalker
-FROM --platform=linux/amd64 python:3.11.10-slim-bullseye@sha256:a0042816c2184e4afa624df09f89bdbb0055744e1e463aef62bd1be641581b4c AS app_amd64
+FROM --platform=linux/amd64 python:3.11.10-slim-bullseye@sha256:21e2cc29feabc9fa1335feb5efd98ebaf323a5963b8670a2212289b1db74cf73 AS app_amd64
 
 # Set up user and group
 ARG groupid=10001
