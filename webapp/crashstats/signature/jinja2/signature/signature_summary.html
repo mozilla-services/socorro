@@ -91,7 +91,7 @@
               <td>{{ version_facet.term }}</td>
               <td>{{ version_facet.count }}</td>
               <td>{{ (100.0 * version_facet.count / product_version_total) | round(1) }}%</td>
-              <td>{{ minimum(version_facet.facets.cardinality_install_time.value, version_facet.count) }}</td>
+              <td>{{ minimum(version_facet.facets.cardinality_install_time[0].value, version_facet.count) }}</td>
             </tr>
           {% endfor %}
         {% endfor %}

@@ -122,7 +122,7 @@ class SignatureStats:
 
     @cached_property
     def num_installs(self):
-        return self.signature["facets"]["cardinality_install_time"]["value"]
+        return self.signature["facets"]["cardinality_install_time"][0]["value"]
 
     @cached_property
     def percent_of_total_crashes_diff(self):

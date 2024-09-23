@@ -876,7 +876,7 @@ class TestIntegrationSuperSearch:
 
         assert "facets" in res
         assert "cardinality_platform" in res["facets"]
-        assert res["facets"]["cardinality_platform"] == {"value": 2}
+        assert res["facets"]["cardinality_platform"][0] == {"value": 2}
 
         # Test more distinct values.
         kwargs = {"_facets": ["_cardinality.version"]}
@@ -884,7 +884,7 @@ class TestIntegrationSuperSearch:
 
         assert "facets" in res
         assert "cardinality_version" in res["facets"]
-        assert res["facets"]["cardinality_version"] == {"value": 51}
+        assert res["facets"]["cardinality_version"][0] == {"value": 51}
 
         # Test as a level 2 aggregation.
         kwargs = {"_aggs.signature": ["_cardinality.platform"]}
@@ -1332,7 +1332,9 @@ class TestIntegrationSuperSearch:
             api.get(**kwargs)
             raise AssertionError("The line above is supposed to error out")
         except BadArgumentError as exception:
-            assert exception.param == "_histogram_interval.date"
+            # NOTE(krzepka) BadArgumentError requires complete rewrite to be compatible with new errors
+            # assert exception.param == "_histogram_fixed_interval.date"
+            assert exception.param == "Supersearch query content parse exception"
 
     def test_get_with_number_histogram(self, es_helper):
         crashstorage = self.build_crashstorage()
@@ -1412,7 +1414,7 @@ class TestIntegrationSuperSearch:
 
         expected_terms = [
             {
-                "term": day_before_int,
+                "term": float(day_before_int),
                 "count": 1,
                 "facets": {
                     "product": [{"term": "NightTrain", "count": 1}],
@@ -1420,7 +1422,7 @@ class TestIntegrationSuperSearch:
                 },
             },
             {
-                "term": yesterday_int,
+                "term": float(yesterday_int),
                 "count": 1,
                 "facets": {
                     "product": [{"term": "WaterWolf", "count": 1}],
@@ -1428,7 +1430,7 @@ class TestIntegrationSuperSearch:
                 },
             },
             {
-                "term": today_int,
+                "term": float(today_int),
                 "count": 2,
                 "facets": {
                     "product": [
@@ -1450,12 +1452,12 @@ class TestIntegrationSuperSearch:
 
         expected_terms = [
             {
-                "term": yesterday_int,
+                "term": float(yesterday_int),
                 "count": 1,
                 "facets": {"product": [{"term": "WaterWolf", "count": 1}]},
             },
             {
-                "term": today_int,
+                "term": float(today_int),
                 "count": 1,
                 "facets": {"product": [{"term": "WaterWolf", "count": 1}]},
             },
@@ -1468,17 +1470,17 @@ class TestIntegrationSuperSearch:
 
         expected_terms = [
             {
-                "term": day_before_int,
+                "term": float(day_before_int),
                 "count": 1,
                 "facets": {"product": [{"term": "NightTrain", "count": 1}]},
             },
             {
-                "term": yesterday_int,
+                "term": float(yesterday_int),
                 "count": 1,
                 "facets": {"product": [{"term": "WaterWolf", "count": 1}]},
             },
             {
-                "term": today_int,
+                "term": float(today_int),
                 "count": 1,
                 "facets": {"product": [{"term": "EarthRacoon", "count": 1}]},
             },

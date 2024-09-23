@@ -169,7 +169,7 @@ class TestESCrashStorage:
         # user_comments field.
         mappings = build_mapping(crashstorage.get_doctype())
         doctype = crashstorage.get_doctype()
-        del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
+        del mappings["properties"][doctype]["properties"]["processed_crash"]["properties"][field]
 
         # Create the index for 4 weeks ago
         crashstorage.create_index(

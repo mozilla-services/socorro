@@ -7,8 +7,8 @@ from contextlib import suppress
 import datetime
 import re
 
-from elasticsearch_1_9_0.exceptions import NotFoundError, RequestError
-from elasticsearch_dsl_0_0_11 import A, F, Q, Search
+from elasticsearch_1_9_0.exceptions import NotFoundError, RequestError, BadRequestError
+from elasticsearch_dsl_0_0_11 import A, Q, Search
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.super_search_fields import get_search_key
@@ -76,6 +76,10 @@ class SuperSearch(SearchBase):
 
     def format_field_names(self, hit):
         """Return hit with field's search_key replaced with name"""
+        if not hit.keys():
+            return {}
+        namespace = list(hit.keys())[0]
+        hit = {f"{namespace}.{key}": item for key, item in hit[namespace].items()}
         new_hit = {}
         for field_name in self.request_columns:
             field = self.all_fields[field_name]
@@ -102,7 +106,7 @@ class SuperSearch(SearchBase):
 
         return hit
 
-    def get_field_name(self, value, full=True):
+    def get_field_name(self, value, full=True, keyword=False):
         try:
             field_ = self.all_fields[value]
         except KeyError as exc:
@@ -116,10 +120,15 @@ class SuperSearch(SearchBase):
 
         field_name = get_search_key(field_)
 
-        if full and field_["has_full_version"]:
-            # If the param has a full version, that means what matters
-            # is the full string, and not its individual terms.
-            field_name += ".full"
+        # NOTE(krzepka) In ElasticSearch 8.X, some queries require using the "keyword" suffix.
+        # This includes aggregation, histograms, sort and cardinality queries.
+        if keyword:
+            field_name += ".keyword"
+        else:
+            if full and field_["has_full_version"]:
+                # If the param has a full version, that means what matters
+                # is the full string, and not its individual terms.
+                field_name += ".full"
 
         return field_name
 
@@ -134,6 +143,8 @@ class SuperSearch(SearchBase):
         def _format(aggregation):
             if "buckets" not in aggregation:
                 # This is a cardinality aggregation, there are no terms.
+                if not isinstance(aggregation, list):
+                    return [aggregation]
                 return aggregation
 
             for i, bucket in enumerate(aggregation["buckets"]):
@@ -160,6 +171,9 @@ class SuperSearch(SearchBase):
 
         for agg in aggs:
             aggs[agg] = _format(aggs[agg])
+        # ES 8.X responds with additional "__orig_class__" key, which would be
+        # treated as an additional aggregation facet, so it gets deleted below.
+        aggs.pop("__orig_class__")
 
         return aggs
 
@@ -267,9 +281,14 @@ class SuperSearch(SearchBase):
                     # to match for analyzed and non-analyzed supersearch fields.
                     if len(param.value) == 1:
                         # Only one value, so we only do a single match
-                        filter_type = "query"
-                        args = Q({"match": {search_key: param.value[0]}}).to_dict()
+                        filter_type = "simple_query_string"
+                        args = {
+                            "query": param.value[0],
+                            "fields": [search_key],
+                            "default_operator": "and"
+                        }
                     else:
+                        # TODO: Not adapted to ES 8.X
                         # Multiple values, so we do multiple matches wrapped in a bool
                         # query where at least one of them should match
                         filter_type = "query"
@@ -287,7 +306,7 @@ class SuperSearch(SearchBase):
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
-                        search_key = f"{search_key}.full"
+                        search_key = f"{search_key}.keyword"
                     filter_value = param.value
                 elif param.operator in operator_range:
                     filter_type = "range"
@@ -300,29 +319,24 @@ class SuperSearch(SearchBase):
                     filter_value = True
                 elif param.operator == "@":
                     filter_type = "regexp"
-                    if field_data["has_full_version"]:
-                        search_key = f"{search_key}.full"
+                    search_key = f"{search_key}.keyword"
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
-                    filter_type = "query"
-
-                    # Wildcard operations are better applied to a non-analyzed
-                    # field (called "full") if there is one.
-                    if field_data["has_full_version"]:
-                        search_key = f"{search_key}.full"
+                    filter_type = "wildcard"
+                    search_key = f"{search_key}.keyword"
 
                     q_args = {}
                     q_args[search_key] = (
                         operator_wildcards[param.operator] % param.value
                     )
                     query = Q("wildcard", **q_args)
-                    args = query.to_dict()
+                    args = query.to_dict()["wildcard"]
 
                 if filter_value is not None:
                     args[search_key] = filter_value
 
                 if args:
-                    new_filter = F(filter_type, **args)
+                    new_filter = Q(filter_type, **args)
                     if param.operator_not:
                         new_filter = ~new_filter
 
@@ -338,7 +352,7 @@ class SuperSearch(SearchBase):
             if sub_filters is not None:
                 filters.append(sub_filters)
 
-        search = search.filter(F("bool", must=filters))
+        search = search.filter(Q("bool", must=filters))
 
         # Restricting returned fields.
         fields = []
@@ -355,7 +369,7 @@ class SuperSearch(SearchBase):
                 field_name = self.get_field_name(value, full=False)
                 fields.append(field_name)
 
-        search = search.fields(fields)
+        search = search.source(fields)
 
         # Sorting.
         sort_fields = []
@@ -374,7 +388,7 @@ class SuperSearch(SearchBase):
                     desc = True
                     value = value[1:]
 
-                field_name = self.get_field_name(value)
+                field_name = self.get_field_name(value, keyword=True)
 
                 if desc:
                     # The underlying library understands that '-' means
@@ -384,6 +398,19 @@ class SuperSearch(SearchBase):
                 sort_fields.append(field_name)
 
         search = search.sort(*sort_fields)
+
+        # NOTE(krzepka) Loop below fixed sorting for unmapped values
+        if sort_fields:
+            for idx, sort_dict in enumerate(search.to_dict()["sort"]):
+                if isinstance(sort_dict, dict):
+                    for key in sort_dict:
+                        sort_dict[key]["unmapped_type"] = "keyword"
+                elif isinstance(sort_dict, str):
+                    search.to_dict()["sort"][idx] = {
+                        sort_dict: {"unmapped_type": "keyword"}
+                    }
+                else:
+                    pass
 
         # Pagination.
         results_to = results_from + results_number
@@ -424,7 +451,7 @@ class SuperSearch(SearchBase):
                 break  # Yay! Results!
 
             except NotFoundError as e:
-                missing_index = re.findall(BAD_INDEX_REGEX, e.error)[0]
+                missing_index = e.body["error"]["resource.id"]
                 if missing_index in indices:
                     del indices[indices.index(missing_index)]
                 else:
@@ -468,6 +495,9 @@ class SuperSearch(SearchBase):
                 # problem, raise a general BadArgumentError
                 if "Failed to parse source" in str(exc):
                     raise BadArgumentError("Malformed supersearch query.") from exc
+
+                if exc.error == "x_content_parse_exception":
+                    raise BadArgumentError("Supersearch query content parse exception") from exc
 
                 # Re-raise the original exception
                 raise
@@ -540,15 +570,23 @@ class SuperSearch(SearchBase):
             and "date_histogram"
             or "histogram"
         )
-        return A(
-            histogram_type, field=self.get_field_name(field), interval=intervals[field]
-        )
+        # NOTE(krzepka) By default ES 8.15 will return empty buckets, which creates issues in tests.
+        # Setting min_doc_count makes ES return only non-empty buckets.
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-histogram-aggregation.html
+        kwargs = {"min_doc_count": 1}
+        # NOTE(krzepka) "The date_histogram aggregation’s interval parameter is no longer valid."
+        # https://www.elastic.co/guide/en/elasticsearch/reference/master/migrating-8.0.html
+        if histogram_type == "date_histogram":
+            kwargs["fixed_interval"] = intervals[field]
+        else:
+            kwargs["interval"] = intervals[field]
+        return A(histogram_type, field=self.get_field_name(field), **kwargs)
 
     def _get_cardinality_agg(self, field):
-        return A("cardinality", field=self.get_field_name(field))
+        return A("cardinality", field=self.get_field_name(field, keyword=True))
 
     def _get_fields_agg(self, field, facets_size):
-        return A("terms", field=self.get_field_name(field), size=facets_size)
+        return A("terms", field=self.get_field_name(field, keyword=True), size=facets_size)
 
     def _add_second_level_aggs(
         self, param, recipient, facets_size, histogram_intervals

@@ -29,13 +29,13 @@ class Test_get_fields_by_item:
             # No storage_mapping
             {"key": {"in_database_name": "key"}},
             # Wrong or missing analyzer
-            {"key": {"in_database_name": "key", "storage_mapping": {"type": "string"}}},
+            {"key": {"in_database_name": "key", "storage_mapping": {"type": "text"}}},
             {
                 "key": {
                     "in_database_name": "key",
                     "storage_mapping": {
                         "analyzer": "semicolon_keywords",
-                        "type": "string",
+                        "type": "text",
                     },
                 }
             },
@@ -48,7 +48,7 @@ class Test_get_fields_by_item:
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"analyzer": "keyword", "type": "text"},
             }
         }
         assert get_fields_by_item(fields, "analyzer", "keyword") == [fields["key"]]
@@ -57,17 +57,17 @@ class Test_get_fields_by_item:
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"analyzer": "keyword", "type": "text"},
             }
         }
-        assert get_fields_by_item(fields, "type", "string") == [fields["key"]]
+        assert get_fields_by_item(fields, "type", "text") == [fields["key"]]
 
     def test_caching(self):
         # Verify caching works
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"analyzer": "keyword", "type": "text"},
             }
         }
         result = get_fields_by_item(fields, "analyzer", "keyword")
@@ -79,7 +79,7 @@ class Test_get_fields_by_item:
         second_fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"analyzer": "keyword", "type": "text"},
             }
         }
         third_result = get_fields_by_item(second_fields, "analyzer", "keyword")
@@ -91,7 +91,7 @@ class Test_build_mapping:
 
     def test_get_mapping(self, es_helper):
         doctype = es_helper.get_doctype()
-        mapping = build_mapping(doctype=doctype, fields=get_fields())
+        mapping = build_mapping(doctype=doctype, fields=get_fields())["properties"]
 
         assert doctype in mapping
         properties = mapping[doctype]["properties"]
@@ -108,7 +108,7 @@ class Test_build_mapping:
         # Those fields have a `storage_mapping`.
         assert processed_crash["release_channel"] == {
             "analyzer": "keyword",
-            "type": "string",
+            "type": "text",
         }
 
         # Test nested objects.
@@ -176,7 +176,7 @@ def test_validate_super_search_fields(name, properties):
         "flag",
         "integer",
         "float",
-        "string",
+        "text",
     )
 
     # The name in the mapping should be the same as the name in properties
@@ -232,11 +232,11 @@ def test_validate_super_search_fields(name, properties):
         ({}, False),
         # object -> False
         ({"type": "object"}, False),
-        # Analyzed string -> False
-        ({"type": "string"}, False),
-        ({"type": "string", "analyzer": "keyword"}, False),
-        # Unanalyzed string -> True
-        ({"type": "string", "index": "not_analyzed"}, True),
+        # Analyzed text -> False
+        ({"type": "text"}, False),
+        ({"type": "text", "analyzer": "keyword"}, False),
+        # Unanalyzed text -> True
+        ({"type": "text", "index": "not_analyzed"}, True),
         # Anything else -> True
         ({"type": "long"}, True),
     ],
@@ -255,9 +255,9 @@ def test_add_doc_values():
             "AsyncShutdownTimeout": {
                 "analyzer": "standard",
                 "index": "analyzed",
-                "type": "string",
+                "type": "text",
             },
-            "full": {"index": "not_analyzed", "type": "string"},
+            "full": {"index": "not_analyzed", "type": "text"},
         },
         "type": "multi_field",
     }
@@ -267,9 +267,9 @@ def test_add_doc_values():
             "AsyncShutdownTimeout": {
                 "analyzer": "standard",
                 "index": "analyzed",
-                "type": "string",
+                "type": "text",
             },
-            "full": {"index": "not_analyzed", "type": "string", "doc_values": True},
+            "full": {"index": "not_analyzed", "type": "text", "doc_values": True},
         },
         "type": "multi_field",
     }

@@ -233,7 +233,7 @@ class LegacyElasticsearchHelper:
 
     def health_check(self):
         with self.conn() as conn:
-            conn.cluster.health(wait_for_status="yellow", request_timeout=5)
+            conn.options(request_timeout=5).cluster.health(wait_for_status="yellow")
 
     def get_url(self):
         """Returns the Elasticsearch url."""
@@ -282,7 +282,7 @@ class LegacyElasticsearchHelper:
 
         with self.conn() as conn:
             search = Search(using=conn, index=index, doc_type=doc_type)
-            search = search.filter("term", **{"processed_crash.uuid": crash_id})
+            search = search.filter("term", **{"processed_crash.uuid.keyword": crash_id})
             results = search.execute().to_dict()
 
             if results["hits"]["hits"]:

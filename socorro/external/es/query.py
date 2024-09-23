@@ -54,18 +54,19 @@ class Query:
         search_args = {}
         if indices:
             search_args["index"] = indices
-            search_args["doc_type"] = self.crashstorage.get_doctype()
 
         connection = self.get_connection()
 
         try:
             results = connection.search(body=json.dumps(params["query"]), **search_args)
-        except elasticsearch.exceptions.NotFoundError as exc:
-            missing_index = re.findall(BAD_INDEX_REGEX, exc.error)[0]
+        except elasticsearch.NotFoundError as exc:
+            missing_index = exc.body["error"]["resource.id"]
             raise ResourceNotFound(
                 f"elasticsearch index {missing_index!r} does not exist"
             ) from exc
-        except elasticsearch.exceptions.TransportError as exc:
+        except elasticsearch.TransportError as exc:
+            raise DatabaseError(exc) from exc
+        except elasticsearch.BadRequestError as exc:
             raise DatabaseError(exc) from exc
 
         return results
