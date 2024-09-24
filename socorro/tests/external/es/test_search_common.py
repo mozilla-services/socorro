@@ -7,7 +7,7 @@ import datetime
 import pytest
 
 from socorro.lib import BadArgumentError, libdatetime
-from socorro.lib.search_common import (
+from socorro.external.es.search_common import (
     SearchBase,
     SearchParam,
     convert_to_type,

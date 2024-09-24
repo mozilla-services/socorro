@@ -9,9 +9,10 @@ import requests_mock
 import pytest
 
 from socorro import settings
+from socorro.external.legacy_es import search_common
 from socorro.external.legacy_es.supersearch import LegacySuperSearch
 from socorro.external.legacy_es.super_search_fields import FIELDS
-from socorro.lib import BadArgumentError, libdatetime, search_common
+from socorro.lib import BadArgumentError, libdatetime
 
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import utc_now
