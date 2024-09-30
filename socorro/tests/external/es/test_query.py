@@ -52,9 +52,8 @@ class TestIntegrationQuery:
 
         query = {
             "query": {
-                "filtered": {
-                    "query": {"match_all": {}},
-                    "filter": {"term": {"product": "earthraccoon"}},
+                "constant_score": {
+                    "filter": {"term": {"processed_crash.product": "earthraccoon"}},
                 }
             }
         }
@@ -80,7 +79,6 @@ class TestIntegrationQuery:
         """Verify that .get() uses the correct indices."""
         crashstorage = self.build_crashstorage()
         api = Query(crashstorage=crashstorage)
-        doc_type = api.crashstorage.get_doctype()
 
         # Mock the connection so we can see the list of indexes it's building
         mocked_connection = mock.MagicMock()
@@ -96,7 +94,6 @@ class TestIntegrationQuery:
         mocked_connection.return_value.search.assert_called_with(
             body='{"query": {}}',
             index=indices,
-            doc_type=doc_type,
         )
 
         # Test all indices.
@@ -111,5 +108,4 @@ class TestIntegrationQuery:
         mocked_connection.return_value.search.assert_called_with(
             body='{"query": {}}',
             index=["socorro_201801", "socorro_200047", "not_an_index"],
-            doc_type=doc_type,
         )

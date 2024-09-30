@@ -11,9 +11,6 @@ from crashstats.supersearch.libsupersearch import (
     SuperSearchStatusModel,
 )
 from socorro import settings as socorro_settings
-from socorro.external.legacy_es import query
-from socorro.external.legacy_es import supersearch
-from socorro.external.legacy_es.super_search_fields import get_source_key
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 
@@ -118,7 +115,7 @@ class SuperSearch(ESSocorroMiddleware):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.LegacySuperSearch(crashstorage=es_crash_dest)
+        return es_crash_dest.build_supersearch()
 
     def _get_extended_params(self):
         # Add histogram fields for all 'date','integer', or 'float' fields.
@@ -227,7 +224,7 @@ class SuperSearchUnredacted(SuperSearch):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return supersearch.LegacySuperSearch(crashstorage=es_crash_dest)
+        return es_crash_dest.build_supersearch()
 
     def get(self, **kwargs):
         # SuperSearch requires that the list of fields be passed to it.
@@ -243,6 +240,7 @@ class SuperSearchUnredacted(SuperSearch):
 
 
 class SuperSearchFields(ESSocorroMiddleware):
+    _es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
     _fields = get_supersearch_fields()
 
     IS_PUBLIC = True
@@ -258,7 +256,7 @@ class SuperSearchFields(ESSocorroMiddleware):
 
     def get_by_source_key(self, key):
         for field in self.get().values():
-            if get_source_key(field) == key:
+            if self._es_crash_dest.get_source_key(field) == key:
                 return field
 
 
@@ -278,4 +276,4 @@ class Query(ESSocorroMiddleware):
 
     def get_implementation(self):
         es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
-        return query.LegacyQuery(crashstorage=es_crash_dest)
+        return es_crash_dest.build_query()

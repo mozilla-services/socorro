@@ -153,13 +153,12 @@ def get_destination_keys(field):
     return None
 
 
-def build_mapping(doctype, fields=None):
+def build_mapping(fields=None):
     """Generates Elasticsearch mapping from the super search fields schema
 
-    :arg str doctype: the doctype to use
     :arg any fields: map of field name -> field value; defaults to FIELDS
 
-    :returns: dict of doctype -> Elasticsearch mapping
+    :returns: Elasticsearch mapping
 
     """
     fields = fields or FIELDS
@@ -169,79 +168,15 @@ def build_mapping(doctype, fields=None):
         if not field.get("storage_mapping"):
             continue
 
-        add_doc_values(field["storage_mapping"])
-
         destination_keys = get_destination_keys(field)
         for destination_key in destination_keys:
             key_parts = destination_key.split(".")
             add_field_to_properties(properties, key_parts, field)
 
     mapping = {
-        doctype: {
-            "_all": {"enabled": False},
-            "_source": {"compress": True},
-            "properties": properties,
-        }
+        "properties": properties,
     }
     return mapping
-
-
-def is_doc_values_friendly(storage_value):
-    """Predicate denoting whether this storage should have doc_values added
-
-    ``doc_values=True`` is a thing we can add to certain storages to reduce the
-    memory they use in Elasticsearch.
-
-    This predicate determines whether we should add it or not for a given
-    storage.
-
-    :arg storage_value: a storage value from super search storages
-
-    :returns: True if ``doc_values=True` should be added; False otherwise
-
-    """
-    storage_type = storage_value.get("type")
-
-    # No clue what type this is--probably false
-    if not storage_type:
-        return False
-
-    # object storages don't work with doc_values=True
-    if storage_type == "object":
-        return False
-
-    # analyzed string storages don't work with doc_values=True
-    if storage_type == "string" and storage_value.get("index") != "not_analyzed":
-        return False
-
-    # Everything is fine! Yay!
-    return True
-
-
-def add_doc_values(value):
-    """Add "doc_values": True to storage mapping of field value
-
-    NOTE(willkg): Elasticsearch 2.0+ does this automatically, so we
-    can nix this when we upgrade.
-
-    Note: This makes changes in-place and recurses on the structure
-    of value.
-
-    :arg value: the storage mapping of a field value
-
-    """
-    if is_doc_values_friendly(value):
-        value["doc_values"] = True
-
-    # Handle subfields
-    if value.get("fields"):
-        for field in value.get("fields", {}).values():
-            add_doc_values(field)
-
-    # Handle objects with nested properties
-    if value.get("properties"):
-        for field in value["properties"].values():
-            add_doc_values(field)
 
 
 # Cache of hashed_args -> list of fields values
@@ -354,7 +289,7 @@ def keyword_field(
         "is_exposed": True,
         "is_returned": True,
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword", "ignore_above": 10_000},
     }
 
 
@@ -490,7 +425,7 @@ FIELDS = {
         "name": "phc_kind",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "phc_base_address": {
         "data_validation_type": "str",
@@ -502,7 +437,7 @@ FIELDS = {
         "name": "phc_base_address",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "phc_usable_size": {
         "data_validation_type": "int",
@@ -526,7 +461,7 @@ FIELDS = {
         "name": "phc_alloc_stack",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "phc_free_stack": {
         "data_validation_type": "str",
@@ -538,7 +473,7 @@ FIELDS = {
         "name": "phc_free_stack",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "abort_message": {
         "data_validation_type": "str",
@@ -551,9 +486,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "accessibility": {
@@ -578,7 +512,7 @@ FIELDS = {
         "name": "accessibility_client",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "accessibility_in_proc_client": {
         "data_validation_type": "str",
@@ -590,7 +524,7 @@ FIELDS = {
         "name": "accessibility_in_proc_client",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "adapter_device_id": {
         "data_validation_type": "str",
@@ -602,7 +536,7 @@ FIELDS = {
         "name": "adapter_device_id",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "adapter_driver_version": {
         "data_validation_type": "str",
@@ -614,7 +548,7 @@ FIELDS = {
         "name": "adapter_driver_version",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "adapter_subsys_id": {
         "data_validation_type": "str",
@@ -626,7 +560,7 @@ FIELDS = {
         "name": "adapter_subsys_id",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "adapter_vendor_id": {
         "data_validation_type": "str",
@@ -638,7 +572,7 @@ FIELDS = {
         "name": "adapter_vendor_id",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "addons": {
         "data_validation_type": "str",
@@ -650,7 +584,7 @@ FIELDS = {
         "name": "addons",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "addons_checked": {
         "data_validation_type": "bool",
@@ -674,7 +608,7 @@ FIELDS = {
         "name": "address",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "android_board": {
         "data_validation_type": "enum",
@@ -686,7 +620,7 @@ FIELDS = {
         "name": "android_board",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "android_brand": {
         "data_validation_type": "enum",
@@ -698,7 +632,7 @@ FIELDS = {
         "name": "android_brand",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "android_cpu_abi": {
         "data_validation_type": "enum",
@@ -710,7 +644,7 @@ FIELDS = {
         "name": "android_cpu_abi",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "android_cpu_abi2": {
         "data_validation_type": "enum",
@@ -722,7 +656,7 @@ FIELDS = {
         "name": "android_cpu_abi2",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "android_device": {
         "data_validation_type": "enum",
@@ -734,7 +668,7 @@ FIELDS = {
         "name": "android_device",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "android_display": {
         "data_validation_type": "enum",
@@ -746,7 +680,7 @@ FIELDS = {
         "name": "android_display",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "android_fingerprint": {
         "data_validation_type": "enum",
@@ -758,7 +692,7 @@ FIELDS = {
         "name": "android_fingerprint",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "android_hardware": {
         "data_validation_type": "enum",
@@ -770,7 +704,7 @@ FIELDS = {
         "name": "android_hardware",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "android_manufacturer": {
         "data_validation_type": "enum",
@@ -782,7 +716,7 @@ FIELDS = {
         "name": "android_manufacturer",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "android_model": {
         "data_validation_type": "str",
@@ -796,9 +730,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "type": "string",
+            "type": "text",
         },
     },
     "android_packagename": keyword_field(name="android_packagename"),
@@ -812,7 +746,7 @@ FIELDS = {
         "name": "android_version",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "app_init_dlls": {
         "data_validation_type": "str",
@@ -824,7 +758,11 @@ FIELDS = {
         "name": "app_init_dlls",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+        "storage_mapping": {
+            "analyzer": "semicolon_keywords",
+            "type": "text",
+            "fielddata": True,
+        },
     },
     "app_notes": {
         "data_validation_type": "str",
@@ -837,9 +775,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "async_shutdown_timeout": {
@@ -854,11 +791,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "analyzer": "standard",
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "available_page_file": {
@@ -920,7 +855,7 @@ FIELDS = {
         "name": "co_marshal_interface_failure",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "collector_notes": {
         "data_validation_type": "str",
@@ -934,9 +869,8 @@ FIELDS = {
         "query_type": "string",
         "source_key": "processed_crash.collector_metadata.collector_notes",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     # FIXME(willkg): We have this indexed as an integer, but the annotation is listed as
@@ -1002,7 +936,7 @@ FIELDS = {
         "name": "cpu_arch",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "cpu_count": {
         "data_validation_type": "int",
@@ -1034,11 +968,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "analyzer": "standard",
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "cpu_microcode_version": {
@@ -1051,7 +983,7 @@ FIELDS = {
         "name": "cpu_microcode_version",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "crash_inconsistencies": keyword_field(
         name="crash_inconsistencies",
@@ -1072,7 +1004,6 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "date",
         "storage_mapping": {
-            "format": "yyyy-MM-dd'T'HH:mm:ssZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZ",
             "type": "date",
         },
     },
@@ -1115,11 +1046,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "type": "string",
-            "index": "analyzed",
-            "analyzer": "standard",
+            "type": "text",
         },
     },
     "em_check_compatibility": {
@@ -1144,7 +1073,7 @@ FIELDS = {
         "name": "gmp_library_path",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "gmp_plugin": {
         "data_validation_type": "bool",
@@ -1169,9 +1098,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "graphics_startup_test": {
@@ -1235,7 +1163,7 @@ FIELDS = {
         "name": "ipc_channel_error",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "ipc_fatal_error_msg": {
         "data_validation_type": "str",
@@ -1248,9 +1176,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "ipc_fatal_error_protocol": {
@@ -1263,7 +1190,7 @@ FIELDS = {
         "name": "ipc_fatal_error_protocol",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "ipc_message_name": {
         "data_validation_type": "str",
@@ -1276,9 +1203,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "ipc_message_size": {
@@ -1303,7 +1229,7 @@ FIELDS = {
         "name": "ipc_shutdown_state",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "ipc_system_error": {
         "data_validation_type": "int",
@@ -1340,9 +1266,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "java_stack_trace_raw": {
@@ -1356,9 +1281,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "js_large_allocation_failure": keyword_field(name="js_large_allocation_failure"),
@@ -1385,9 +1309,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "mac_crash_info": {
@@ -1401,9 +1324,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "mac_available_memory_sysctl": integer_field(name="mac_available_memory_sysctl"),
@@ -1626,7 +1548,7 @@ FIELDS = {
         "name": "minidump_sha256_hash",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "missing_symbols": {
         "data_validation_type": "str",
@@ -1638,7 +1560,11 @@ FIELDS = {
         "name": "missing_symbols",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+        "storage_mapping": {
+            "analyzer": "semicolon_keywords",
+            "type": "text",
+            "fielddata": True,
+        },
     },
     "modules_in_stack": {
         "data_validation_type": "str",
@@ -1650,7 +1576,11 @@ FIELDS = {
         "name": "modules_in_stack",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+        "storage_mapping": {
+            "analyzer": "semicolon_keywords",
+            "type": "text",
+            "fielddata": True,
+        },
     },
     "moz_crash_reason": {
         "data_validation_type": "str",
@@ -1663,9 +1593,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "moz_crash_reason_raw": {
@@ -1679,9 +1608,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "oom_allocation_size": {
@@ -1708,9 +1636,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "type": "string",
+            "type": "text",
         },
     },
     "platform_pretty_version": {
@@ -1724,9 +1652,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "platform_version": {
@@ -1740,9 +1667,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "plugin_filename": {
@@ -1757,10 +1683,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "plugin_name": {
@@ -1775,10 +1700,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "plugin_version": {
@@ -1793,10 +1717,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "possible_bit_flips_max_confidence": integer_field(
@@ -1819,7 +1742,10 @@ FIELDS = {
         "name": "process_type",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {
+            "fielddata": True,  # FIXME(relud): this may be required in more fields?
+            "type": "text",
+        },
     },
     "processor_notes": {
         "data_validation_type": "str",
@@ -1832,9 +1758,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "product": {
@@ -1849,10 +1774,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "index": "analyzed",
-            "type": "string",
+            "type": "text",
         },
     },
     "productid": {
@@ -1865,7 +1789,7 @@ FIELDS = {
         "name": "productid",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "proto_signature": {
         "data_validation_type": "str",
@@ -1878,9 +1802,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "quota_manager_shutdown_timeout": {
@@ -1894,9 +1817,8 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fields": {"full": {"index": "not_analyzed", "type": "string"}},
-            "index": "analyzed",
-            "type": "string",
+            "fields": {"full": {"type": "keyword"}},
+            "type": "text",
         },
     },
     "reason": {
@@ -1911,10 +1833,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "analyzer": "standard",
-            "type": "string",
+            "type": "text",
         },
     },
     "release_channel": {
@@ -1927,7 +1848,7 @@ FIELDS = {
         "name": "release_channel",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "remote_type": {
         "data_validation_type": "enum",
@@ -1939,7 +1860,7 @@ FIELDS = {
         "name": "remote_type",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "report_type": keyword_field(name="report_type"),
     "safe_mode": {
@@ -1964,7 +1885,7 @@ FIELDS = {
         "name": "shutdown_progress",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "shutdown_reason": keyword_field(name="shutdown_reason"),
     "signature": {
@@ -1979,9 +1900,11 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {
+                    "type": "keyword",
+                },
             },
-            "type": "string",
+            "type": "text",
         },
     },
     "stackwalk_version": keyword_field(
@@ -2000,7 +1923,7 @@ FIELDS = {
         "query_type": "bool",
         # NOTE(willkg): startup_crash is used in signature report in some interesting
         # ways so I think we need to have both T and F values in ES
-        "storage_mapping": {"null_value": "False", "type": "boolean"},
+        "storage_mapping": {"null_value": False, "type": "boolean"},
     },
     "startup_time": {
         "data_validation_type": "int",
@@ -2049,7 +1972,11 @@ FIELDS = {
         "name": "topmost_filenames",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+        "storage_mapping": {
+            "analyzer": "semicolon_keywords",
+            "type": "text",
+            "fielddata": True,
+        },
     },
     "total_page_file": {
         "data_validation_type": "int",
@@ -2110,7 +2037,7 @@ FIELDS = {
         "name": "url",
         "namespace": "processed_crash",
         "query_type": "string",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "user_comments": {
         "data_validation_type": "str",
@@ -2124,9 +2051,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "full": {"index": "not_analyzed", "type": "string"},
+                "full": {"type": "keyword"},
             },
-            "type": "string",
+            "type": "text",
         },
     },
     "useragent_locale": {
@@ -2139,7 +2066,11 @@ FIELDS = {
         "name": "useragent_locale",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "semicolon_keywords", "type": "string"},
+        "storage_mapping": {
+            "analyzer": "semicolon_keywords",
+            "type": "text",
+            "fielddata": True,
+        },
     },
     "utility_actors_name": keyword_field(name="utility_actors_name"),
     "utility_process_sandboxing_kind": integer_field(
@@ -2155,7 +2086,7 @@ FIELDS = {
         "name": "uuid",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "vendor": {
         "data_validation_type": "enum",
@@ -2167,7 +2098,7 @@ FIELDS = {
         "name": "vendor",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"type": "string"},
+        "storage_mapping": {"type": "text"},
     },
     "version": {
         "data_validation_type": "enum",
@@ -2179,7 +2110,7 @@ FIELDS = {
         "name": "version",
         "namespace": "processed_crash",
         "query_type": "enum",
-        "storage_mapping": {"analyzer": "keyword", "type": "string"},
+        "storage_mapping": {"type": "keyword"},
     },
     "windows_error_reporting": boolean_field(
         name="windows_error_reporting",

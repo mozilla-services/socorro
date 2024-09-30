@@ -3,13 +3,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-import elasticsearch_1_9_0 as elasticsearch
 import json
-import re
+
+from elasticsearch import NotFoundError, TransportError, BadRequestError
 
 from socorro.lib import DatabaseError, MissingArgumentError, ResourceNotFound
 from socorro.external.es.base import generate_list_of_indexes
-from socorro.external.es.supersearch import BAD_INDEX_REGEX
 from socorro.lib import libdatetime, external_common
 
 
@@ -54,18 +53,22 @@ class Query:
         search_args = {}
         if indices:
             search_args["index"] = indices
-            search_args["doc_type"] = self.crashstorage.get_doctype()
 
         connection = self.get_connection()
 
         try:
             results = connection.search(body=json.dumps(params["query"]), **search_args)
-        except elasticsearch.exceptions.NotFoundError as exc:
-            missing_index = re.findall(BAD_INDEX_REGEX, exc.error)[0]
+            results_body = results.body
+        except NotFoundError as exc:
+            missing_index = exc.body["error"]["resource.id"]
             raise ResourceNotFound(
                 f"elasticsearch index {missing_index!r} does not exist"
             ) from exc
-        except elasticsearch.exceptions.TransportError as exc:
+        except (TransportError, BadRequestError) as exc:
             raise DatabaseError(exc) from exc
 
-        return results
+        # unnest results.hits.total.value to results.hits.total to match legacy behavior
+        if "hits" in results_body:
+            results_body["hits"]["total"] = results_body["hits"]["total"]["value"]
+
+        return results_body

@@ -8,10 +8,8 @@ import json
 import pytest
 
 from socorro.external.es.super_search_fields import (
-    add_doc_values,
     build_mapping,
     FIELDS,
-    is_doc_values_friendly,
     get_fields_by_item,
 )
 
@@ -29,49 +27,49 @@ class Test_get_fields_by_item:
             # No storage_mapping
             {"key": {"in_database_name": "key"}},
             # Wrong or missing analyzer
-            {"key": {"in_database_name": "key", "storage_mapping": {"type": "string"}}},
+            {"key": {"in_database_name": "key", "storage_mapping": {"type": "text"}}},
             {
                 "key": {
                     "in_database_name": "key",
                     "storage_mapping": {
                         "analyzer": "semicolon_keywords",
-                        "type": "string",
+                        "type": "text",
                     },
                 }
             },
         ],
     )
     def test_no_match(self, fields):
-        assert get_fields_by_item(fields, "analyzer", "keyword") == []
+        assert get_fields_by_item(fields, "type", "keyword") == []
 
     def test_match(self):
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"type": "keyword"},
             }
         }
-        assert get_fields_by_item(fields, "analyzer", "keyword") == [fields["key"]]
+        assert get_fields_by_item(fields, "type", "keyword") == [fields["key"]]
 
     def test_match_by_type(self):
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"type": "keyword"},
             }
         }
-        assert get_fields_by_item(fields, "type", "string") == [fields["key"]]
+        assert get_fields_by_item(fields, "type", "keyword") == [fields["key"]]
 
     def test_caching(self):
         # Verify caching works
         fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"type": "keyword"},
             }
         }
-        result = get_fields_by_item(fields, "analyzer", "keyword")
-        second_result = get_fields_by_item(fields, "analyzer", "keyword")
+        result = get_fields_by_item(fields, "type", "keyword")
+        second_result = get_fields_by_item(fields, "type", "keyword")
         assert id(result) == id(second_result)
 
         # This is the same data as fields, but a different dict, so it has a
@@ -79,22 +77,20 @@ class Test_get_fields_by_item:
         second_fields = {
             "key": {
                 "in_database_name": "key",
-                "storage_mapping": {"analyzer": "keyword", "type": "string"},
+                "storage_mapping": {"type": "keyword"},
             }
         }
-        third_result = get_fields_by_item(second_fields, "analyzer", "keyword")
+        third_result = get_fields_by_item(second_fields, "type", "keyword")
         assert id(result) != id(third_result)
 
 
 class Test_build_mapping:
     """Test build_mapping with an elasticsearch database containing fake data"""
 
-    def test_get_mapping(self, es_helper):
-        doctype = es_helper.get_doctype()
-        mapping = build_mapping(doctype=doctype, fields=get_fields())
+    def test_get_mapping(self):
+        mapping = build_mapping(fields=get_fields())
 
-        assert doctype in mapping
-        properties = mapping[doctype]["properties"]
+        properties = mapping["properties"]
 
         print(json.dumps(properties, indent=4, sort_keys=True))
         assert "processed_crash" in properties
@@ -107,8 +103,7 @@ class Test_build_mapping:
 
         # Those fields have a `storage_mapping`.
         assert processed_crash["release_channel"] == {
-            "analyzer": "keyword",
-            "type": "string",
+            "type": "keyword",
         }
 
         # Test nested objects.
@@ -116,7 +111,6 @@ class Test_build_mapping:
             "cpu_count"
         ] == {
             "type": "short",
-            "doc_values": True,
         }
 
 
@@ -223,47 +217,3 @@ def test_validate_super_search_fields(name, properties):
                     f"processed_crash.{properties['name']}",
                 ]
                 assert key in possible_keys
-
-
-@pytest.mark.parametrize(
-    "value, expected",
-    [
-        # No type -> False
-        ({}, False),
-        # object -> False
-        ({"type": "object"}, False),
-        # Analyzed string -> False
-        ({"type": "string"}, False),
-        ({"type": "string", "analyzer": "keyword"}, False),
-        # Unanalyzed string -> True
-        ({"type": "string", "index": "not_analyzed"}, True),
-        # Anything else -> True
-        ({"type": "long"}, True),
-    ],
-)
-def test_is_doc_values_friendly(value, expected):
-    assert is_doc_values_friendly(value) == expected
-
-
-def test_add_doc_values():
-    storage_mapping = {"type": "short"}
-    add_doc_values(storage_mapping)
-    assert storage_mapping == {"type": "short", "doc_values": True}
-
-    storage_mapping = {
-        "fields": {
-            "full": {"index": "not_analyzed", "type": "string"},
-        },
-        "analyzer": "standard",
-        "index": "analyzed",
-        "type": "string",
-    }
-    add_doc_values(storage_mapping)
-    assert storage_mapping == {
-        "fields": {
-            "full": {"index": "not_analyzed", "type": "string", "doc_values": True},
-        },
-        "analyzer": "standard",
-        "index": "analyzed",
-        "type": "string",
-    }
