@@ -236,13 +236,6 @@ def build_document(src, crash_document, fields, all_keys):
         # Fix values so they index correctly
         storage_type = field.get("type", field["storage_mapping"].get("type"))
 
-        if (
-            storage_type == "multi_field"
-            and glom.glom(field, "storage_mapping.fields.full.type", default="")
-            == "string"
-        ):
-            storage_type = "string"
-
         if storage_type == "string":
             analyzer = field.get("analyzer", field["storage_mapping"].get("analyzer"))
             if analyzer == "keyword":
