@@ -34,7 +34,7 @@ class TestIntegrationSuperSearch:
     def build_crashstorage(self):
         return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
-    def test_get_indices(self, es_helper):
+    def test_get_indices(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -65,13 +65,13 @@ class TestIntegrationSuperSearch:
             "testsocorro202100",
         ]
 
-    def test_get(self, es_helper):
+    def test_get(self, legacy_es_helper):
         """Run a very basic test, just to see if things work"""
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -85,7 +85,7 @@ class TestIntegrationSuperSearch:
                 },
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         res = api.get(
             _columns=["date", "build_id", "platform", "signature", "cpu_count"]
@@ -114,7 +114,7 @@ class TestIntegrationSuperSearch:
         # processed_crash.json_dump.system_info.cpu_count -> cpu_count
         assert "cpu_count" in res["hits"][0]
 
-    def test_get_with_bad_results_number(self, es_helper):
+    def test_get_with_bad_results_number(self, legacy_es_helper):
         """Run a very basic test, just to see if things work"""
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
@@ -122,12 +122,12 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_columns=["date"], _results_number=-1)
 
-    def test_get_with_enum_operators(self, es_helper):
+    def test_get_with_enum_operators(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -135,7 +135,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -143,7 +143,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -151,7 +151,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # A term that exists.
         res = api.get(product="WaterWolf")
@@ -180,46 +180,46 @@ class TestIntegrationSuperSearch:
         for hit in res["hits"]:
             assert "that I used" in hit["app_notes"]
 
-    def test_get_with_string_operators(self, es_helper):
+    def test_get_with_string_operators(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "mozilla::js::function",
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "json_Is_Kewl",
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "OhILoveMyBrowser",
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test the "contains" operator.
         res = api.get(signature="~js")
@@ -336,32 +336,32 @@ class TestIntegrationSuperSearch:
         for hit in res["hits"]:
             assert hit["signature"] != "mozilla::js::function"
 
-    def test_get_with_range_operators(self, es_helper):
+    def test_get_with_range_operators(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 2000,
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 2001,
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "build": 1999,
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test the "has terms" operator.
         res = api.get(build_id="2000", _columns=["build_id"])
@@ -408,39 +408,39 @@ class TestIntegrationSuperSearch:
         for hit in res["hits"]:
             assert hit["build_id"] <= 2000
 
-    def test_get_with_bool_operators(self, es_helper):
+    def test_get_with_bool_operators(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
                 "accessibility": True,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
                 "accessibility": False,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
                 "accessibility": True,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             # Missing value means it's neither true nor false
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test the "has terms" operator.
         resp = api.get(accessibility="__true__", _columns=["accessibility"])
@@ -457,12 +457,12 @@ class TestIntegrationSuperSearch:
         assert len(resp["hits"]) == 2
         assert not resp["hits"][0]["accessibility"]
 
-    def test_get_with_combined_operators(self, es_helper):
+    def test_get_with_combined_operators(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -471,7 +471,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "mozilla::js::function",
@@ -480,7 +480,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js<isKewl>",
@@ -489,7 +489,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -498,7 +498,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Search for signatures matching "js" or containing "::"
         res = api.get(signature=["js", "~::"])
@@ -533,12 +533,14 @@ class TestIntegrationSuperSearch:
         signatures = [x["signature"] for x in res["hits"]]
         assert list(sorted(signatures)) == ["mozilla::js::function"]
 
-    def test_get_with_pagination(self, es_helper):
+    def test_get_with_pagination(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         number_of_crashes = 21
         processed_crash = {"signature": "something"}
-        es_helper.index_many_crashes(number_of_crashes, processed_crash=processed_crash)
+        legacy_es_helper.index_many_crashes(
+            number_of_crashes, processed_crash=processed_crash
+        )
 
         kwargs = {"_results_number": "10"}
         res = api.get(**kwargs)
@@ -560,12 +562,12 @@ class TestIntegrationSuperSearch:
         assert res["total"] == number_of_crashes
         assert len(res["hits"]) == 0
 
-    def test_get_with_sorting(self, es_helper):
+    def test_get_with_sorting(self, legacy_es_helper):
         """Test a search with sort returns expected results"""
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -573,7 +575,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "WaterWolf",
@@ -581,7 +583,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "product": "NightTrain",
@@ -589,7 +591,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         res = api.get(_sort="product")
         assert res["total"] > 0
@@ -628,11 +630,11 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_sort="something")
 
-    def test_get_with_facets(self, es_helper):
+    def test_get_with_facets(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -641,7 +643,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -650,7 +652,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -659,7 +661,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -672,7 +674,7 @@ class TestIntegrationSuperSearch:
         # Index a lot of distinct values to test the results limit.
         number_of_crashes = 51
         processed_crash = {"version": "10.%s"}
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -743,7 +745,7 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_facets=["unknownfield"])
 
-    def test_get_with_too_many_facets(self, es_helper):
+    def test_get_with_too_many_facets(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -755,11 +757,11 @@ class TestIntegrationSuperSearch:
         # should not raise an error
         api.get(_facets=["signature"], _facets_size=10000)
 
-    def test_get_with_no_facets(self, es_helper):
+    def test_get_with_no_facets(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -768,7 +770,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -777,7 +779,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -786,7 +788,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -799,7 +801,7 @@ class TestIntegrationSuperSearch:
         # Index a lot of distinct values to test the results limit.
         number_of_crashes = 5
         processed_crash = {"version": "10.%s"}
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -818,11 +820,11 @@ class TestIntegrationSuperSearch:
         assert res["hits"]
         assert len(res["hits"]) == res["total"]
 
-    def test_get_with_cardinality(self, es_helper):
+    def test_get_with_cardinality(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -831,7 +833,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -840,7 +842,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -849,7 +851,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -862,7 +864,7 @@ class TestIntegrationSuperSearch:
         # Index a lot of distinct values.
         number_of_crashes = 51
         processed_crash = {"version": "10.%s"}
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -897,11 +899,11 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_facets=["_cardinality.unknownfield"])
 
-    def test_get_with_sub_aggregations(self, es_helper):
+    def test_get_with_sub_aggregations(self, legacy_es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -911,7 +913,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -921,7 +923,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -931,7 +933,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -948,7 +950,7 @@ class TestIntegrationSuperSearch:
             "version": "10.%s",
             "signature": "crash_me_I_m_famous",
         }
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -1123,14 +1125,14 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(**args)
 
-    def test_get_with_date_histogram(self, es_helper):
+    def test_get_with_date_histogram(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
         yesterday = now - datetime.timedelta(days=1)
         the_day_before = now - datetime.timedelta(days=2)
 
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1139,7 +1141,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1148,7 +1150,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": yesterday,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1157,7 +1159,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": the_day_before,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -1173,7 +1175,7 @@ class TestIntegrationSuperSearch:
             "version": "10.%s",
             "signature": "crash_me_I_m_famous",
         }
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -1314,7 +1316,7 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(**args)
 
-    def test_get_with_date_histogram_with_bad_interval(self, es_helper):
+    def test_get_with_date_histogram_with_bad_interval(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -1332,7 +1334,7 @@ class TestIntegrationSuperSearch:
         except BadArgumentError as exception:
             assert exception.param == "_histogram_interval.date"
 
-    def test_get_with_number_histogram(self, es_helper):
+    def test_get_with_number_histogram(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -1345,7 +1347,7 @@ class TestIntegrationSuperSearch:
         yesterday_int = int(yesterday.strftime(time_str))
         day_before_int = int(the_day_before.strftime(time_str))
 
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1355,7 +1357,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=yesterday),
                 "signature": "js::break_your_browser",
@@ -1365,7 +1367,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": yesterday,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=the_day_before),
                 "signature": "js::break_your_browser",
@@ -1375,7 +1377,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": the_day_before,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "foo(bar)",
@@ -1393,7 +1395,7 @@ class TestIntegrationSuperSearch:
             "signature": "crash_me_I_m_famous",
             "build": today_int,
         }
-        es_helper.index_many_crashes(
+        legacy_es_helper.index_many_crashes(
             number_of_crashes,
             processed_crash=processed_crash,
             loop_field="version",
@@ -1524,11 +1526,11 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(**args)
 
-    def test_get_with_columns(self, es_helper):
+    def test_get_with_columns(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1538,7 +1540,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test several facets
         kwargs = {"_columns": ["signature", "platform"]}
@@ -1555,11 +1557,11 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_columns=["fake_field"])
 
-    def test_get_with_beta_version(self, es_helper):
+    def test_get_with_beta_version(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1568,7 +1570,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1577,7 +1579,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::break_your_browser",
@@ -1586,7 +1588,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test several facets
         kwargs = {"version": ["4.0b"]}
@@ -1597,11 +1599,11 @@ class TestIntegrationSuperSearch:
         for hit in res["hits"]:
             assert "4.0b" in hit["version"]
 
-    def test_get_with_platform(self, es_helper):
+    def test_get_with_platform(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
         now = utc_now()
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "OOM | small | linux",
@@ -1611,7 +1613,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "mozilla::dom::ClientHandle::Control | linux",
@@ -1621,7 +1623,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "js::gc::detail::CellHasStoreBuffer | mac os x",
@@ -1631,7 +1633,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(timestamp=now),
                 "signature": "hmpalert.dll | windows",
@@ -1641,7 +1643,7 @@ class TestIntegrationSuperSearch:
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Test querying a single platform
         resp = api.get(platform=["Linux"])
@@ -1670,11 +1672,11 @@ class TestIntegrationSuperSearch:
             "mozilla::dom::ClientHandle::Control | linux",
         ]
 
-    def test_get_against_nonexistent_index(self, es_helper):
+    def test_get_against_nonexistent_index(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        es_helper.delete_indices()
+        legacy_es_helper.delete_indices()
 
         # it's not moving around over week barriers
         end = libdatetime.utc_now()
@@ -1692,7 +1694,7 @@ class TestIntegrationSuperSearch:
         # this is either 3 or 4 weeks; fun times
         assert len(res["errors"]) in [3, 4]
 
-    def test_get_too_large_date_range(self, es_helper):
+    def test_get_too_large_date_range(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -1701,7 +1703,7 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(**params)
 
-    def test_get_return_query_mode(self, es_helper):
+    def test_get_return_query_mode(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
@@ -1714,30 +1716,30 @@ class TestIntegrationSuperSearch:
         assert "aggs" in query
         assert "size" in query
 
-    def test_get_with_zero(self, es_helper):
+    def test_get_with_zero(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
         res = api.get(_results_number=0)
         assert len(res["hits"]) == 0
 
-    def test_get_with_too_many(self, es_helper):
+    def test_get_with_too_many(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
         with pytest.raises(BadArgumentError):
             api.get(_results_number=1001)
 
-    def test_get_with_bad_regex(self, es_helper):
+    def test_get_with_bad_regex(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
         # A bad regex kicks up a SearchParseException which supersearch converts
         # to a BadArgumentError
         with pytest.raises(BadArgumentError):
-            api.get(signature='@"OOM | ".*" | ".*"()&%<acx><ScRiPt >sruq(9393)</ScRiPt')
+            api.get(signature='@"')
 
-    def test_get_with_failing_shards(self, es_helper):
+    def test_get_with_failing_shards(self, legacy_es_helper):
         # NOTE(willkg): We're asserting on a url which includes the indexes being
         # searched. If the index template includes a date, then the indexes could be in
         # any order, so we don't include date bits and then we're guaranteed for that
@@ -1775,7 +1777,7 @@ class TestIntegrationSuperSearch:
 
                 mock_requests.get(
                     "{url}/{index}/crash_reports/_search".format(
-                        url=es_helper.get_url(),
+                        url=legacy_es_helper.get_url(),
                         index=index_name,
                     ),
                     text=json.dumps(es_results),
@@ -1822,7 +1824,7 @@ class TestIntegrationSuperSearch:
 
                 mock_requests.get(
                     "{url}/{index}/crash_reports/_search".format(
-                        url=es_helper.get_url(),
+                        url=legacy_es_helper.get_url(),
                         index=index_name,
                     ),
                     text=json.dumps(es_results),

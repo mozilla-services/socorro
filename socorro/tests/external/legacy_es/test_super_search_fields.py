@@ -89,8 +89,8 @@ class Test_get_fields_by_item:
 class Test_build_mapping:
     """Test build_mapping with an elasticsearch database containing fake data"""
 
-    def test_get_mapping(self, es_helper):
-        doctype = es_helper.get_doctype()
+    def test_get_mapping(self, legacy_es_helper):
+        doctype = legacy_es_helper.get_doctype()
         mapping = build_mapping(doctype=doctype, fields=get_fields())
 
         assert doctype in mapping
