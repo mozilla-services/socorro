@@ -206,8 +206,8 @@ def is_doc_values_friendly(storage_value):
     if not storage_type:
         return False
 
-    # object, and multi_field storages don't work with doc_values=True
-    if storage_type in ("object", "multi_field"):
+    # object storages don't work with doc_values=True
+    if storage_type == "object":
         return False
 
     # analyzed string storages don't work with doc_values=True
@@ -796,10 +796,9 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "Android_Model": {"type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "type": "string",
         },
     },
     "android_packagename": keyword_field(name="android_packagename"),
@@ -855,14 +854,11 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "AsyncShutdownTimeout": {
-                    "analyzer": "standard",
-                    "index": "analyzed",
-                    "type": "string",
-                },
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "analyzer": "standard",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "available_page_file": {
@@ -1038,14 +1034,11 @@ FIELDS = {
         "query_type": "string",
         "storage_mapping": {
             "fields": {
-                "cpu_info": {
-                    "analyzer": "standard",
-                    "index": "analyzed",
-                    "type": "string",
-                },
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "analyzer": "standard",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "cpu_microcode_version": {
@@ -1120,13 +1113,10 @@ FIELDS = {
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "dumper_error": {
-                    "type": "string",
-                    "index": "analyzed",
-                    "analyzer": "standard",
-                },
             },
-            "type": "multi_field",
+            "type": "string",
+            "index": "analyzed",
+            "analyzer": "standard",
         },
     },
     "em_check_compatibility": {
@@ -1713,14 +1703,11 @@ FIELDS = {
         "name": "platform",
         "namespace": "processed_crash",
         "query_type": "enum",
-        # FIXME(willkg): storage_mapping should either be not_analyzed or analyzed as a
-        # keyword
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "os_name": {"type": "string"},
             },
-            "type": "multi_field",
+            "type": "string",
         },
     },
     "platform_pretty_version": {
@@ -1767,11 +1754,10 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "plugin_filename": {"index": "analyzed", "type": "string"},
-                "PluginFilename": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "plugin_name": {
@@ -1786,11 +1772,10 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "PluginName": {"index": "analyzed", "type": "string"},
-                "plugin_name": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "plugin_version": {
@@ -1805,11 +1790,10 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {
             "fields": {
-                "PluginVersion": {"index": "analyzed", "type": "string"},
-                "plugin_version": {"index": "analyzed", "type": "string"},
                 "full": {"index": "not_analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "possible_bit_flips_max_confidence": integer_field(
@@ -1863,9 +1847,9 @@ FIELDS = {
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "product": {"index": "analyzed", "type": "string"},
             },
-            "type": "multi_field",
+            "index": "analyzed",
+            "type": "string",
         },
     },
     "productid": {
@@ -1925,9 +1909,9 @@ FIELDS = {
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "reason": {"analyzer": "standard", "type": "string"},
             },
-            "type": "multi_field",
+            "analyzer": "standard",
+            "type": "string",
         },
     },
     "release_channel": {
@@ -1993,9 +1977,8 @@ FIELDS = {
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "signature": {"type": "string"},
             },
-            "type": "multi_field",
+            "type": "string",
         },
     },
     "stackwalk_version": keyword_field(
@@ -2139,9 +2122,8 @@ FIELDS = {
         "storage_mapping": {
             "fields": {
                 "full": {"index": "not_analyzed", "type": "string"},
-                "user_comments": {"type": "string"},
             },
-            "type": "multi_field",
+            "type": "string",
         },
     },
     "useragent_locale": {

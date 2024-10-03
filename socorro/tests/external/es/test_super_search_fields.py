@@ -252,24 +252,18 @@ def test_add_doc_values():
 
     storage_mapping = {
         "fields": {
-            "AsyncShutdownTimeout": {
-                "analyzer": "standard",
-                "index": "analyzed",
-                "type": "string",
-            },
             "full": {"index": "not_analyzed", "type": "string"},
         },
-        "type": "multi_field",
+        "analyzer": "standard",
+        "index": "analyzed",
+        "type": "string",
     }
     add_doc_values(storage_mapping)
     assert storage_mapping == {
         "fields": {
-            "AsyncShutdownTimeout": {
-                "analyzer": "standard",
-                "index": "analyzed",
-                "type": "string",
-            },
             "full": {"index": "not_analyzed", "type": "string", "doc_values": True},
         },
-        "type": "multi_field",
+        "analyzer": "standard",
+        "index": "analyzed",
+        "type": "string",
     }
