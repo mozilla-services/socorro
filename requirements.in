@@ -46,7 +46,7 @@ python-decouple==3.8
 PyYAML==6.0.2
 requests==2.32.3
 requests-mock==1.12.1
-ruff==0.6.8
+ruff==0.6.9
 semver==3.0.2
 sentry-sdk==2.8.0
 Sphinx==7.4.7
