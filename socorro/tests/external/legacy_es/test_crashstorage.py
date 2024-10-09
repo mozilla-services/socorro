@@ -17,7 +17,6 @@ from socorro.external.legacy_es.crashstorage import (
     fix_keyword,
     fix_long,
     fix_string,
-    is_valid_key,
 )
 
 from socorro.external.legacy_es.super_search_fields import build_mapping
@@ -78,18 +77,6 @@ REMOVED_VALUE = object()
 
 class FakeException(Exception):
     pass
-
-
-class TestIsValidKey:
-    @pytest.mark.parametrize(
-        "key", ["a", "abc", "ABC", "AbcDef", "Abc_Def", "Abc-def" "Abc-123-def"]
-    )
-    def test_valid_key(self, key):
-        assert is_valid_key(key) is True
-
-    @pytest.mark.parametrize("key", ["", ".", "abc def", "na\xefve"])
-    def test_invalid_key(self, key):
-        assert is_valid_key(key) is False
 
 
 class TestLegacyESCrashStorage:

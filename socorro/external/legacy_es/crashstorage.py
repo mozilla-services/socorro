@@ -47,17 +47,6 @@ MAX_STRING_FIELD_VALUE_SIZE = 32_766
 VALID_KEY = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
-def is_valid_key(key):
-    """Validates an Elasticsearch document key
-
-    :arg string key: the key to validate
-
-    :returns: True if it's valid and False if not
-
-    """
-    return bool(VALID_KEY.match(key))
-
-
 def fix_keyword(value, max_size):
     """Truncates keyword value greater than max_size length in characters
 
