@@ -75,12 +75,12 @@ class SuperSearch(SearchBase):
 
     def format_field_names(self, hit):
         """Return hit with field's search_key replaced with name"""
-        if not hit.keys():
-            return {}
-
         # unnest hit one level and update keys
-        namespace = one(hit)
-        hit = {f"{namespace}.{key}": item for key, item in hit[namespace].items()}
+        hit = {
+            f"{namespace}.{key}": item
+            for namespace in hit
+            for key, item in hit[namespace].items()
+        }
 
         new_hit = {}
         for field_name in self.request_columns:

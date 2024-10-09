@@ -491,7 +491,8 @@ class TestIntegrationSuperSearch:
 
         assert resp["total"] == 2
         assert len(resp["hits"]) == 2
-        assert not resp["hits"][0]["accessibility"]
+        for hit in resp["hits"]:
+            assert not hit["accessibility"]
 
     def test_get_with_combined_operators(self, es_helper):
         now = utc_now()
