@@ -104,7 +104,7 @@ stop: my.env  ## | Stop all service containers.
 
 .PHONY: shell
 shell: my.env .docker-build  ## | Open a shell in the app container.
-	${DC} run --rm app shell
+	${DC} run --rm --entrypoint /bin/bash app
 
 .PHONY: clean
 clean:  ## | Remove all build, test, coverage, and Python artifacts.
@@ -141,7 +141,7 @@ test-ci: my.env .docker-build  ## | Run unit tests in CI.
 
 .PHONY: testshell
 testshell: my.env .docker-build  ## | Open a shell in the test environment.
-	${DC} run --rm test shell
+	${DC} run --rm --entrypoint /bin/bash test
 
 .PHONY: rebuildreqs
 rebuildreqs: .env .docker-build  ## | Rebuild requirements.txt file after requirements.in changes.
