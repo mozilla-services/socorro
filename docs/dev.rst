@@ -432,7 +432,7 @@ Running the webapp tests (make sure you run ``./manage.py collectstatic`` first)
 
    app@socorro:/app$ cd webapp
    app@socorro:/app/webapp$ ./manage.py collectstatic
-   app@socorro:/app/webapp$ ./manage.py test
+   app@socorro:/app/webapp$ pytest
 
 .. Note::
 
