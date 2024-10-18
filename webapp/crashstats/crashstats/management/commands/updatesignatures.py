@@ -14,8 +14,9 @@ from django.utils.dateparse import parse_datetime
 
 from crashstats.crashstats.models import Signature
 from crashstats.supersearch.models import SuperSearch
-from crashstats.supersearch.libsupersearch import SUPERSEARCH_FIELDS
 from socorro.lib.libdatetime import string_to_datetime
+from socorro import settings as socorro_settings
+from socorro.libclass import build_instance_from_settings
 
 
 # Maximum number of results returned for a super search query
@@ -87,7 +88,8 @@ class Command(BaseCommand):
 
         # Do a super search and get the signature, buildid, and date processed for
         # every crash in the range
-        all_fields = SUPERSEARCH_FIELDS
+        es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+        all_fields = es_crash_dest.SUPERSEARCH_FIELDS
         api = SuperSearch()
         self.stdout.write("Looking at %s to %s" % (start_datetime, end_datetime))
 

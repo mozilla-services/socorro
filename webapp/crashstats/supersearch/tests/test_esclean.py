@@ -9,21 +9,24 @@ from django.core.management import call_command
 
 
 class TestEsclean:
-    def test_esclean(self, db, es_helper):
+    def test_esclean(self, db, preferred_es_helper):
         """Test deleting expired indices."""
-        original_indexes = list(sorted(es_helper.get_indices()))
+        original_indexes = list(sorted(preferred_es_helper.get_indices()))
 
         # Create some old indices
-        template = es_helper.get_index_template()
+        template = preferred_es_helper.get_index_template()
 
         old_index1 = datetime.date(2018, 1, 1).strftime(template)
-        es_helper.create_index(old_index1)
+        preferred_es_helper.create_index(old_index1)
         old_index2 = datetime.date(2019, 1, 1).strftime(template)
-        es_helper.create_index(old_index2)
+        preferred_es_helper.create_index(old_index2)
 
-        es_helper.health_check()
+        preferred_es_helper.health_check()
 
-        assert es_helper.get_indices() == [old_index1, old_index2] + original_indexes
+        assert (
+            preferred_es_helper.get_indices()
+            == [old_index1, old_index2] + original_indexes
+        )
 
         out = io.StringIO()
         call_command("esclean", stdout=out)
@@ -33,4 +36,4 @@ class TestEsclean:
             + f"Deleting {old_index2}\n"
         )
 
-        assert es_helper.get_indices() == original_indexes
+        assert preferred_es_helper.get_indices() == original_indexes

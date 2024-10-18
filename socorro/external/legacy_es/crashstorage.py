@@ -16,6 +16,8 @@ import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.legacy_es.connection_context import LegacyConnectionContext
+from socorro.external.legacy_es.query import LegacyQuery
+from socorro.external.legacy_es.supersearch import LegacySuperSearch
 from socorro.external.legacy_es.super_search_fields import (
     build_mapping,
     FIELDS,
@@ -27,6 +29,12 @@ from socorro.external.legacy_es.super_search_fields import (
 from socorro.libmarkus import METRICS, build_prefix
 from socorro.lib.libdatetime import JsonDTEncoder, string_to_datetime, utc_now
 
+
+# Map of processed crash schema permissions to webapp permissions
+PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS = {
+    "public": "",
+    "protected": "crashstats.view_pii",
+}
 
 # Additional custom analyzers for crash report data
 ES_CUSTOM_ANALYZERS = {
@@ -259,8 +267,35 @@ def build_document(src, crash_document, fields, all_keys):
                 glom.assign(crash_document, dest_key, value, missing=dict)
 
 
+def convert_permissions(fields):
+    """Converts processed crash schema / super search permissions to webapp permissions
+
+    :arg fields: super search fields structure to convert permissions of
+
+    :returns: fields with permissions converted
+
+    """
+
+    def _convert(permissions):
+        if not permissions:
+            return permissions
+
+        new_permissions = [
+            PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS[perm] for perm in permissions
+        ]
+        return [perm for perm in new_permissions if perm]
+
+    for val in fields.values():
+        val["permissions_needed"] = _convert(val["permissions_needed"])
+
+    return fields
+
+
 class LegacyESCrashStorage(CrashStorageBase):
     """Indexes documents based on the processed crash to Elasticsearch."""
+
+    # For use in webapp
+    SUPERSEARCH_FIELDS = convert_permissions(FIELDS)
 
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
@@ -305,6 +340,24 @@ class LegacyESCrashStorage(CrashStorageBase):
     def build_client(cls, url, timeout):
         return LegacyConnectionContext(url=url, timeout=timeout)
 
+    def build_query(self):
+        """Return new  instance of LegacyQuery."""
+        return LegacyQuery(crashstorage=self)
+
+    def build_supersearch(self):
+        """Return new instance of LegacySuperSearch."""
+        return LegacySuperSearch(crashstorage=self)
+
+    def build_search(self, **kwargs):
+        """Return new instance of elasticsearch_dsl's Search."""
+        with self.client() as conn:
+            return Search(using=conn, doc_type=self.get_doctype(), **kwargs)
+
+    @staticmethod
+    def get_source_key(field):
+        """Return source key for the field."""
+        return get_source_key(field)
+
     def get_index_template(self):
         """Return template for index names."""
         return self.index
@@ -344,28 +397,26 @@ class LegacyESCrashStorage(CrashStorageBase):
             "mappings": mappings,
         }
 
-    def get_mapping(self, index_name, es_doctype, reraise=False):
-        """Retrieves the mapping for a given index and doctype
+    def get_mapping(self, index_name, reraise=False):
+        """Retrieves the mapping for a given index and the configured doctype
 
         NOTE(willkg): Mappings are cached on the LegacyESCrashStorage instance. If you change
         the indices (like in tests), you should get a new LegacyESCrashStorage instance.
 
         :arg str index_name: the index to retrieve the mapping for
-        :arg str es_doctype: the doctype to retrieve the mapping for
         :arg bool reraise: True if you want this to reraise a NotFoundError; False
             otherwise
 
         :returns: mapping as a dict or None
 
         """
-        cache_key = f"{index_name}::{es_doctype}"
-        mapping = self._mapping_cache.get(cache_key)
+        mapping = self._mapping_cache.get(index_name)
         if mapping is None:
             try:
                 mapping = self.client.get_mapping(
-                    index_name=index_name, doc_type=es_doctype
+                    index_name=index_name, doc_type=self.get_doctype()
                 )
-                self._mapping_cache[cache_key] = mapping
+                self._mapping_cache[index_name] = mapping
             except elasticsearch.exceptions.NotFoundError:
                 if reraise:
                     raise
@@ -447,31 +498,29 @@ class LegacyESCrashStorage(CrashStorageBase):
 
         return keys
 
-    def get_keys_for_mapping(self, index_name, es_doctype):
+    def get_keys_for_mapping(self, index_name):
         """Get the keys in "namespace.key" format for a given mapping
 
         NOTE(willkg): Results are cached on this LegacyESCrashStorage instance.
 
         :arg str index_name: the name of the index
-        :arg str es_doctype: the doctype for the index
 
         :returns: set of "namespace.key" fields
 
         :raise elasticsearch.exceptions.NotFoundError: if the index doesn't exist
 
         """
-        cache_key = f"{index_name}::{es_doctype}"
-        keys = self._keys_for_mapping_cache.get(cache_key)
+        keys = self._keys_for_mapping_cache.get(index_name)
         if keys is None:
-            mapping = self.get_mapping(index_name, es_doctype, reraise=True)
+            mapping = self.get_mapping(index_name, reraise=True)
             keys = parse_mapping(mapping, None)
-            self._keys_for_mapping_cache[cache_key] = keys
+            self._keys_for_mapping_cache[index_name] = keys
         return keys
 
-    def get_keys(self, index_name, es_doctype):
+    def get_keys(self, index_name):
         supersearch_fields_keys = self.get_keys_for_indexable_fields()
         try:
-            mapping_keys = self.get_keys_for_mapping(index_name, es_doctype)
+            mapping_keys = self.get_keys_for_mapping(index_name)
         except NotFoundError:
             mapping_keys = None
         all_valid_keys = supersearch_fields_keys
@@ -490,8 +539,7 @@ class LegacyESCrashStorage(CrashStorageBase):
         index_name = self.get_index_for_date(
             string_to_datetime(processed_crash["date_processed"])
         )
-        es_doctype = self.get_doctype()
-        all_valid_keys = self.get_keys(index_name, es_doctype)
+        all_valid_keys = self.get_keys(index_name)
 
         src = {"processed_crash": copy.deepcopy(processed_crash)}
 
@@ -506,7 +554,6 @@ class LegacyESCrashStorage(CrashStorageBase):
 
         self._submit_crash_to_elasticsearch(
             crash_id=crash_id,
-            es_doctype=es_doctype,
             index_name=index_name,
             crash_document=crash_document,
         )
@@ -526,11 +573,14 @@ class LegacyESCrashStorage(CrashStorageBase):
 
         _capture("crash_document_size", crash_document)
 
-    def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
+    def _index_crash(self, connection, es_index, crash_document, crash_id):
         try:
             start_time = time.time()
             connection.index(
-                index=es_index, doc_type=es_doctype, body=crash_document, id=crash_id
+                index=es_index,
+                doc_type=self.get_doctype(),
+                body=crash_document,
+                id=crash_id,
             )
             index_outcome = "successful"
         except Exception:
@@ -542,9 +592,7 @@ class LegacyESCrashStorage(CrashStorageBase):
                 "index", value=elapsed_time * 1000.0, tags=["outcome:" + index_outcome]
             )
 
-    def _submit_crash_to_elasticsearch(
-        self, crash_id, es_doctype, index_name, crash_document
-    ):
+    def _submit_crash_to_elasticsearch(self, crash_id, index_name, crash_document):
         """Submit a crash report to elasticsearch"""
         # Attempt to create the index; it's OK if it already exists.
 
@@ -558,9 +606,7 @@ class LegacyESCrashStorage(CrashStorageBase):
         for _ in range(5):
             try:
                 with self.client() as conn:
-                    return self._index_crash(
-                        conn, index_name, es_doctype, crash_document, crash_id
-                    )
+                    return self._index_crash(conn, index_name, crash_document, crash_id)
 
             except elasticsearch.exceptions.ConnectionError:
                 # If this is a connection error, sleep a second and then try again

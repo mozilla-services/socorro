@@ -12,6 +12,7 @@ import pytest
 
 from socorro import settings
 from socorro.external.es.crashstorage import (
+    convert_permissions,
     fix_boolean,
     fix_integer,
     fix_keyword,
@@ -20,7 +21,7 @@ from socorro.external.es.crashstorage import (
 )
 
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.libclass import build_instance
+from socorro.libclass import build_instance_from_settings
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
@@ -81,10 +82,10 @@ class FakeException(Exception):
 
 class TestESCrashStorage:
     def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
+        if settings.ELASTICSEARCH_MODE == "LEGACY_ONLY":
+            raise ValueError("cannot test elasticearch 8 in LEGACY_ONLY mode")
+
+        return build_instance_from_settings(settings.ES_STORAGE)
 
     def test_index_crash(self, es_helper):
         """Test indexing a crash document."""
@@ -109,7 +110,7 @@ class TestESCrashStorage:
             "another_invalid_key": "alpha",
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "dom_fission_enabled": "1",
+            "dom_fission_enabled": False,
         }
 
         crashstorage = self.build_crashstorage()
@@ -154,9 +155,8 @@ class TestESCrashStorage:
 
         # We're going to use a mapping from super search fields, bug remove the
         # user_comments field.
-        mappings = build_mapping(crashstorage.get_doctype())
-        doctype = crashstorage.get_doctype()
-        del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
+        mappings = build_mapping()
+        del mappings["properties"]["processed_crash"]["properties"][field]
 
         # Create the index for 4 weeks ago
         crashstorage.create_index(
@@ -284,7 +284,6 @@ class TestESCrashStorage:
             crashstorage._index_crash(
                 connection=mock_connection,
                 es_index=None,
-                es_doctype=None,
                 crash_document=None,
                 crash_id=None,
             )
@@ -294,7 +293,6 @@ class TestESCrashStorage:
                 crashstorage._index_crash(
                     connection=mock_connection,
                     es_index=None,
-                    es_doctype=None,
                     crash_document=None,
                     crash_id=None,
                 )
@@ -369,8 +367,7 @@ class TestESCrashStorage:
                 REMOVED_VALUE,
             ),
             # Booleans are converted
-            # FIXME(willkg): fix_boolean is never called--that's wrong
-            # ("processed_crash.accessibility", "true", True),
+            ("processed_crash.accessibility", "true", True),
         ],
     )
     def test_indexing_bad_data(self, key, value, expected_value, es_helper):
@@ -495,3 +492,34 @@ def test_fix_integer(value, expected):
 def test_fix_long(value, expected):
     new_value = fix_long(value)
     assert new_value == expected
+
+
+def test_convert_permissions():
+    fields = {
+        "build": {
+            "permissions_needed": [],
+        },
+        "product": {
+            "permissions_needed": ["public"],
+        },
+        "version": {
+            "permissions_needed": ["public", "protected"],
+        },
+    }
+
+    expected = {
+        "build": {
+            # No permission -> no required permissions
+            "permissions_needed": [],
+        },
+        "product": {
+            # "public" -> no required permissions
+            "permissions_needed": [],
+        },
+        "version": {
+            # "protected" -> "crashstats.view_pii"
+            "permissions_needed": ["crashstats.view_pii"],
+        },
+    }
+
+    assert convert_permissions(fields) == expected

@@ -64,8 +64,10 @@ django-waffle==2.3.0
 # NOTE(willkg): We stick with LTS releases and the next one is 5.2 (2025).
 django==4.2.16
 
-# NOTE(willkg): Need to keep elasticsearch and elasticsearch-dsl at these versions
-# because they work with the cluster we're using
+# NOTE(relud): Need to keep elasticsearch and elasticsearch-dsl at versions compatible with the
+# cluster we're using
+elasticsearch==8.15.1
+elasticsearch-dsl==8.15.3
 # via docker/set_up_legacy_es_requirements.sh and legacy-es-requirements.txt
 # NOTE(relud): these dependencies are installed separately via legacy-es-requirements.txt and
 # docker/set_up_legacy_es_requirements.sh, relocated, and patched to reference the new location (aka
