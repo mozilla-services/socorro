@@ -1266,9 +1266,9 @@ sphinx==8.0.2 \
     #   sphinxcontrib-jquery
     #   sphinxcontrib-qthelp
     #   sphinxcontrib-serializinghtml
-sphinx-rtd-theme==3.0.0 \
-    --hash=sha256:1ffe1539957775bfa0a7331370de7dc145b6eac705de23365dc55c5d94bb08e7 \
-    --hash=sha256:905d67de03217fd3d76fbbdd992034ac8e77044ef8063a544dda1af74d409e08
+sphinx-rtd-theme==3.0.1 \
+    --hash=sha256:921c0ece75e90633ee876bd7b148cfaad136b481907ad154ac3669b6fc957916 \
+    --hash=sha256:a4c5745d1b06dfcb80b7704fe532eb765b44065a8fad9851e4258c8804140703
     # via -r requirements.in
 sphinxcontrib-applehelp==1.0.7 \
     --hash=sha256:094c4d56209d1734e7d252f6e0b3ccc090bd52ee56807a5d9315b19c122ab15d \
