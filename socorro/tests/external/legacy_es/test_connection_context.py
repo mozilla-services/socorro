@@ -14,14 +14,14 @@ class TestLegacyConnectionContext:
             kwargs=settings.LEGACY_ES_STORAGE["options"],
         )
 
-    def test_create_index(self, es_helper):
+    def test_create_index(self, legacy_es_helper):
         # Delete any existing indices first
-        es_helper.delete_indices()
+        legacy_es_helper.delete_indices()
 
-        es_helper.refresh()
-        es_helper.health_check()
+        legacy_es_helper.refresh()
+        legacy_es_helper.health_check()
 
-        template = es_helper.get_index_template()
+        template = legacy_es_helper.get_index_template()
         now = utc_now()
         index_name = now.strftime(template)
 
@@ -37,10 +37,10 @@ class TestLegacyConnectionContext:
         }
         conn.create_index(index_name=index_name, index_settings=index_settings)
         conn.health_check()
-        assert index_name in list(es_helper.get_indices())
+        assert index_name in list(legacy_es_helper.get_indices())
 
-    def test_delete_index(self, es_helper):
-        template = es_helper.get_index_template()
+    def test_delete_index(self, legacy_es_helper):
+        template = legacy_es_helper.get_index_template()
         now = utc_now()
         index_name = now.strftime(template)
 
@@ -56,8 +56,8 @@ class TestLegacyConnectionContext:
         }
         conn.create_index(index_name=index_name, index_settings=index_settings)
         conn.health_check()
-        assert index_name in list(es_helper.get_indices())
+        assert index_name in list(legacy_es_helper.get_indices())
 
         # Delete the index and assert it's no longer there
         conn.delete_index(index_name)
-        assert index_name not in list(es_helper.get_indices())
+        assert index_name not in list(legacy_es_helper.get_indices())

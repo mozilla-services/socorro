@@ -5,46 +5,8 @@
 from dataclasses import dataclass
 import datetime
 
-import elasticsearch_1_9_0 as elasticsearch
-from elasticsearch_dsl_0_0_11 import Search
-
 from socorro import settings as socorro_settings
-from socorro.external.legacy_es.super_search_fields import FIELDS
 from socorro.libclass import build_instance_from_settings
-
-
-# Map of processed crash schema permissions to webapp permissions
-PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS = {
-    "public": "",
-    "protected": "crashstats.view_pii",
-}
-
-
-def convert_permissions(fields):
-    """Converts processed crash schema / super search permissions to webapp permissions
-
-    :arg fields: super search fields structure to convert permissions of
-
-    :returns: fields with permissions converted
-
-    """
-
-    def _convert(permissions):
-        if not permissions:
-            return permissions
-
-        new_permissions = [
-            PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS[perm] for perm in permissions
-        ]
-        return [perm for perm in new_permissions if perm]
-
-    for val in fields.values():
-        val["permissions_needed"] = _convert(val["permissions_needed"])
-
-    return fields
-
-
-SUPERSEARCH_FIELDS = convert_permissions(FIELDS)
 
 
 @dataclass
@@ -75,12 +37,9 @@ class SuperSearchStatusModel:
         :returns: list of IndexDataItem instances
 
         """
-        conn = self.get_connection()
-        index_client = elasticsearch.client.IndicesClient(conn)
         indices = sorted(self.es_crash_dest.get_indices())
         latest_index = indices[-1]
 
-        doctype = self.es_crash_dest.get_doctype()
         index_template = self.es_crash_dest.get_index_template()
         if index_template.endswith("%Y%W"):
             # Doing strptime on a template that has %W but doesn't have a day-of-week,
@@ -92,7 +51,7 @@ class SuperSearchStatusModel:
 
         index_data = []
         for index_name in indices:
-            count = Search(using=conn, index=index_name, doc_type=doctype).count()
+            count = self.es_crash_dest.build_search(index=index_name).count()
 
             if add_day_of_week:
                 # %W starts on Mondays, so we set the day-of-week to 1 which is
@@ -111,8 +70,7 @@ class SuperSearchStatusModel:
                 )
             )
 
-        mapping = index_client.get_mapping(index=latest_index)
-        mapping_properties = mapping[latest_index]["mappings"][doctype]["properties"]
+        mapping_properties = self.es_crash_dest.get_mapping(latest_index)
 
         return {
             "indices": index_data,

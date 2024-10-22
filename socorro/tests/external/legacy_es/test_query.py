@@ -22,26 +22,26 @@ class TestIntegrationQuery:
     def build_crashstorage(self):
         return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
-    def test_get(self, es_helper):
+    def test_get(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = LegacyQuery(crashstorage=crashstorage)
 
         datestamp = date_to_string(utc_now())
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(),
                 "date_processed": datestamp,
                 "product": "WaterWolf",
             },
         )
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": create_new_ooid(),
                 "date_processed": datestamp,
                 "product": "EarthRaccoon",
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         query = {"query": {"match_all": {}}}
         res = api.get(query=query)
@@ -58,7 +58,7 @@ class TestIntegrationQuery:
         res = api.get(query=query)
         assert res["hits"]["total"] == 1
 
-    def test_get_with_errors(self, es_helper):
+    def test_get_with_errors(self, legacy_es_helper):
         crashstorage = self.build_crashstorage()
         api = LegacyQuery(crashstorage=crashstorage)
 
@@ -73,7 +73,7 @@ class TestIntegrationQuery:
         with pytest.raises(DatabaseError):
             api.get(query={"query": {}})
 
-    def test_get_with_indices(self, es_helper, monkeypatch):
+    def test_get_with_indices(self, legacy_es_helper, monkeypatch):
         """Verify that .get() uses the correct indices."""
         crashstorage = self.build_crashstorage()
         api = LegacyQuery(crashstorage=crashstorage)
