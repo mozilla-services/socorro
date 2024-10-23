@@ -7,7 +7,7 @@ import copy
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
-    SUPERSEARCH_FIELDS,
+    get_supersearch_fields,
     SuperSearchStatusModel,
 )
 from socorro import settings as socorro_settings
@@ -44,13 +44,13 @@ PARAMETERS_LISTING_FIELDS = (
 def get_api_allowlist(include_all_fields=False):
     """Returns an API_ALLOWLIST value based on SUPERSEARCH_FIELDS"""
 
-    all_fields = SUPERSEARCH_FIELDS
+    all_fields = get_supersearch_fields()
     fields = []
     for meta in all_fields.values():
         if (
             meta["name"] not in fields
             and meta["is_returned"]
-            and (include_all_fields or not meta["permissions_needed"])
+            and (include_all_fields or not meta["webapp_permissions_needed"])
         ):
             fields.append(meta["name"])
 
@@ -95,7 +95,7 @@ class SuperSearch(ESSocorroMiddleware):
     API_ALLOWLIST = get_api_allowlist()
 
     def __init__(self):
-        self.all_fields = SUPERSEARCH_FIELDS
+        self.all_fields = get_supersearch_fields()
 
         # These fields contain lists of other fields. Later on, we want to
         # make sure that none of those listed fields are restricted.
@@ -110,7 +110,7 @@ class SuperSearch(ESSocorroMiddleware):
             tuple(
                 (x["name"], list)
                 for x in self.all_fields.values()
-                if x["is_exposed"] and not x["permissions_needed"]
+                if x["is_exposed"] and not x["webapp_permissions_needed"]
             )
             + SUPERSEARCH_META_PARAMS
             + tuple(self.extended_fields)
@@ -124,7 +124,7 @@ class SuperSearch(ESSocorroMiddleware):
         # Add histogram fields for all 'date','integer', or 'float' fields.
         extended_fields = []
         for field in self.all_fields.values():
-            if not field["is_exposed"] or field["permissions_needed"]:
+            if not field["is_exposed"] or field["webapp_permissions_needed"]:
                 continue
 
             extended_fields.append(("_aggs.%s" % field["name"], list))
@@ -158,7 +158,7 @@ class SuperSearch(ESSocorroMiddleware):
             x
             for x in self.all_fields
             if self.all_fields[x]["is_returned"]
-            and not self.all_fields[x]["permissions_needed"]
+            and not self.all_fields[x]["webapp_permissions_needed"]
         }
 
         # Extend that list with the special fields, like `_histogram.*`.
@@ -172,7 +172,7 @@ class SuperSearch(ESSocorroMiddleware):
             if (
                 field_name in self.all_fields
                 and self.all_fields[field_name]["is_returned"]
-                and not self.all_fields[field_name]["permissions_needed"]
+                and not self.all_fields[field_name]["webapp_permissions_needed"]
             ):
                 allowed_fields.add(histogram)
 
@@ -206,7 +206,7 @@ class SuperSearchUnredacted(SuperSearch):
     API_ALLOWLIST = get_api_allowlist(include_all_fields=True)
 
     def __init__(self):
-        self.all_fields = SUPERSEARCH_FIELDS
+        self.all_fields = get_supersearch_fields()
 
         histogram_fields = self._get_extended_params()
 
@@ -220,7 +220,7 @@ class SuperSearchUnredacted(SuperSearch):
 
         permissions = {}
         for field_data in self.all_fields.values():
-            for perm in field_data["permissions_needed"]:
+            for perm in field_data["webapp_permissions_needed"]:
                 permissions[perm] = True
 
         self.API_REQUIRED_PERMISSIONS = tuple(permissions.keys())
@@ -243,7 +243,7 @@ class SuperSearchUnredacted(SuperSearch):
 
 
 class SuperSearchFields(ESSocorroMiddleware):
-    _fields = SUPERSEARCH_FIELDS
+    _fields = get_supersearch_fields()
 
     IS_PUBLIC = True
 

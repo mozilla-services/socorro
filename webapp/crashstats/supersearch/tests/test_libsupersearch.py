@@ -15,7 +15,7 @@ def test_convert_permissions():
             "permissions_needed": ["public"],
         },
         "version": {
-            "permissions_needed": ["public", "protected"],
+            "permissions_needed": ["protected"],
         },
     }
 
@@ -23,14 +23,17 @@ def test_convert_permissions():
         "build": {
             # No permission -> no required permissions
             "permissions_needed": [],
+            "webapp_permissions_needed": [],
         },
         "product": {
             # "public" -> no required permissions
-            "permissions_needed": [],
+            "permissions_needed": ["public"],
+            "webapp_permissions_needed": [],
         },
         "version": {
             # "protected" -> "crashstats.view_pii"
-            "permissions_needed": ["crashstats.view_pii"],
+            "permissions_needed": ["protected"],
+            "webapp_permissions_needed": ["crashstats.view_pii"],
         },
     }
 

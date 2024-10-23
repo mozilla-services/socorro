@@ -262,6 +262,8 @@ def build_document(src, crash_document, fields, all_keys):
 class LegacyESCrashStorage(CrashStorageBase):
     """Indexes documents based on the processed crash to Elasticsearch."""
 
+    SUPERSEARCH_FIELDS = FIELDS
+
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r"field=\"([\w\-.]+)\"")
@@ -438,7 +440,7 @@ class LegacyESCrashStorage(CrashStorageBase):
         keys = self._keys_for_indexable_fields_cache
         if keys is None:
             keys = set()
-            for field in FIELDS.values():
+            for field in self.SUPERSEARCH_FIELDS.values():
                 if not is_indexable(field):
                     continue
 
@@ -499,7 +501,9 @@ class LegacyESCrashStorage(CrashStorageBase):
             "crash_id": crash_id,
             "processed_crash": {},
         }
-        build_document(src, crash_document, fields=FIELDS, all_keys=all_valid_keys)
+        build_document(
+            src, crash_document, fields=self.SUPERSEARCH_FIELDS, all_keys=all_valid_keys
+        )
 
         # Capture crash data size metrics
         self.capture_crash_metrics(crash_document)
