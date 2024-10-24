@@ -9,7 +9,6 @@ import elasticsearch_1_9_0 as elasticsearch
 from elasticsearch_dsl_0_0_11 import Search
 
 from socorro import settings as socorro_settings
-from socorro.external.legacy_es.super_search_fields import FIELDS
 from socorro.libclass import build_instance_from_settings
 
 
@@ -25,7 +24,7 @@ def convert_permissions(fields):
 
     :arg fields: super search fields structure to convert permissions of
 
-    :returns: fields with permissions converted
+    :returns: fields with new "webapp_permissions_needed" value with webapp permissions
 
     """
 
@@ -39,12 +38,15 @@ def convert_permissions(fields):
         return [perm for perm in new_permissions if perm]
 
     for val in fields.values():
-        val["permissions_needed"] = _convert(val["permissions_needed"])
+        if "webapp_permissions_needed" not in val:
+            val["webapp_permissions_needed"] = _convert(val["permissions_needed"])
 
     return fields
 
 
-SUPERSEARCH_FIELDS = convert_permissions(FIELDS)
+def get_supersearch_fields():
+    es_crash_dest = build_instance_from_settings(socorro_settings.ES_STORAGE)
+    return convert_permissions(es_crash_dest.SUPERSEARCH_FIELDS)
 
 
 @dataclass

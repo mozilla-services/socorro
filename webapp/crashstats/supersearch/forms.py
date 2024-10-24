@@ -60,9 +60,9 @@ class SearchForm(forms.Form):
                 del self.all_fields[field_name]
                 continue
 
-            if field_data["permissions_needed"]:
+            if field_data["webapp_permissions_needed"]:
                 user_has_permissions = True
-                for permission in field_data["permissions_needed"]:
+                for permission in field_data["webapp_permissions_needed"]:
                     if not user.has_perm(permission):
                         user_has_permissions = False
                         break
