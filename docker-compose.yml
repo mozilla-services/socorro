@@ -238,7 +238,7 @@ services:
 
   # https://hub.docker.com/_/postgres/
   postgresql:
-    image: postgres:12.7
+    image: postgres:16.4
     ports:
       - "8574:5432"
     environment:
