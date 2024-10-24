@@ -1054,7 +1054,7 @@ FIELDS = {
         "storage_mapping": {"type": "string"},
     },
     "crash_inconsistencies": keyword_field(
-        "crash_inconsistencies",
+        name="crash_inconsistencies",
     ),
     "crashing_thread": integer_field(name="crashing_thread"),
     "crashing_thread_name": keyword_field(
