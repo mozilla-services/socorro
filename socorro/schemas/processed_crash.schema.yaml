@@ -171,6 +171,15 @@ definitions:
               the crash).
             type: ["string", "null"]
             permissions: ["public"]
+          crash_inconsistencies:
+            description: >
+              A list of inconsistencies detected by comparing crash reason/crash
+              address with crashing instruction and memory information.
+            type: ["array", "null"]
+            items:
+              type: string
+              permissions: ["public"]
+            permissions: ["public"]
           crashing_thread:
             description: >
               The thread id of the thread that caused the crash or requested
@@ -2456,6 +2465,15 @@ properties:
   crash_id:
     description: Unique identifier of this crash report.
     type: string
+    permissions: ["public"]
+  crash_inconsistencies:
+    description: >
+      A list of inconsistencies detected by comparing crash reason/crash
+      address with crashing instruction and memory information.
+    type: ["array", "null"]
+    items:
+      type: string
+      permissions: ["public"]
     permissions: ["public"]
   crash_report_keys:
     description: >

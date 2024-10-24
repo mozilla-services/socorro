@@ -78,6 +78,26 @@ class CrashingThreadInfoRule(Rule):
         processed_crash["address"] = address
 
 
+class CrashInconsistenciesRule(Rule):
+    """Copy crash_inconsistencies values if there are any
+
+    Fills in:
+
+    * crash_inconsistencies (list[str]): A list of inconsistencies detected by comparing
+      crash reason/crash address with crashing instruction and memory information
+
+    """
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return processed_crash.get("json_dump", None) is not None
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        crash_info = glom.glom(processed_crash, "json_dump.crash_info", default={})
+
+        crash_inconsistencies = crash_info.get("crash_inconsistencies")
+        processed_crash["crash_inconsistencies"] = crash_inconsistencies
+
+
 class MinidumpSha256HashRule(Rule):
     """Copy sha256 hash of upload_file_minidump value if there is one
 
