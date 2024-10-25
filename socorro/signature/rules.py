@@ -151,8 +151,6 @@ class CSignatureTool:
             if function.endswith(ref):
                 function = function[: -len(ref)].strip()
 
-        # Convert `anonymous namespace' to (anonymous namespace)
-
         # Drop the prefix and return type if there is any if it's not operator
         # overloading--operator overloading syntax doesn't have the things
         # we're dropping here and can look curious, so don't try
@@ -247,6 +245,9 @@ class CSignatureTool:
 
         # If there's a module, use that
         if module:
+            # Remove extra [ and/or ] at beginning or end if present; see Bug 1926077
+            module = module.strip("[]")
+
             return module
 
         # If there are unloaded modules, use the first one

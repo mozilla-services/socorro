@@ -295,6 +295,11 @@ class TestCSignatureTool:
                 ),
                 "(unloaded unmod)",
             ),
+            # no function or line, so uses module; module name has extra bracket(s)
+            (("module]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
+            (("[module]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
+            (("[module", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
+            (("[[[module]]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
         ],
     )
     def test_normalize_frame(self, args, expected):
