@@ -245,11 +245,8 @@ class CSignatureTool:
 
         # If there's a module, use that
         if module:
-            # Remove extra ] at beginning or end if present; see Bug 1926077
-            if module.startswith("["):
-                module = module[1:]
-            if module.endswith("]"):
-                module = module[:-1]
+            # Remove extra [ and/or ] at beginning or end if present; see Bug 1926077
+            module = module.strip("[]")
 
             return module
 

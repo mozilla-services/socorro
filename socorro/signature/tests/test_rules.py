@@ -299,6 +299,7 @@ class TestCSignatureTool:
             (("module]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
             (("[module]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
             (("[module", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
+            (("[[[module]]", "", "\\a\\b\\c\\source", "", "0xfff"), "module"),
         ],
     )
     def test_normalize_frame(self, args, expected):
