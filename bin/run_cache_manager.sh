@@ -15,4 +15,4 @@ set -euo pipefail
 export PROCESS_NAME=cache_manager
 
 # Run the processor
-python socorro/processor/cache_manager.py
+exec python socorro/processor/cache_manager.py

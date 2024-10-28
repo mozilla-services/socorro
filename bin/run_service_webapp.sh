@@ -29,10 +29,10 @@ if [ "${1:-}" == "--dev" ]; then
     echo "Running webapp in local dev environment."
     echo "Connect with your browser using: http://localhost:8000/ "
     echo "******************************************************************"
-    cd /app/webapp/ && ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
+    cd /app/webapp/ && exec ${CMDPREFIX} python manage.py runserver 0.0.0.0:8000
 
 else
-    ${CMDPREFIX} gunicorn \
+    exec ${CMDPREFIX} gunicorn \
         --pythonpath /app/webapp/ \
         --timeout "${GUNICORN_TIMEOUT}" \
         --workers="${GUNICORN_WORKERS}" \
