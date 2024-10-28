@@ -10,7 +10,7 @@ django-npm==1.0.0
 django-pipeline==3.1.0
 django-ratelimit==4.1.0
 djangorestframework==3.15.2
-dj-database-url==2.2.0
+dj-database-url==2.3.0
 dockerflow==2024.4.2
 enforce-typing==1.0.0.post1
 everett==3.3.0
