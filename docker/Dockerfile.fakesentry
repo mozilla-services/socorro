@@ -8,7 +8,7 @@ WORKDIR /app/
 RUN groupadd -r kent && useradd --no-log-init -r -g kent kent
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl tini && \
+    apt-get install -y --no-install-recommends curl && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -21,5 +21,5 @@ RUN pip install -U 'pip>=20' && \
 
 USER kent
 
-ENTRYPOINT ["tini", "--", "/usr/local/bin/kent-server"]
+ENTRYPOINT ["/usr/local/bin/kent-server"]
 CMD ["run"]

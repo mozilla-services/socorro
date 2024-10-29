@@ -151,6 +151,7 @@ services:
     ports:
       - "8090:8090"
     command: run --host 0.0.0.0 --port 8090
+    stop_signal: SIGINT
 
   # https://hub.docker.com/r/mozilla/oidc-testprovider
   oidcprovider:
@@ -160,6 +161,9 @@ services:
     image: local/socorro_oidcprovider
     ports:
       - "8080:8080"
+    # The next line can be removed if this PR is included in the image we use:
+    # https://github.com/mozilla/docker-test-mozilla-django-oidc/pull/84
+    stop_signal: SIGKILL
 
   # -----------------------------
   # External services
@@ -204,6 +208,7 @@ services:
       - docker/config/local_dev.env
       - my.env
     command: ["symbolsserver"]
+    stop_signal: SIGINT
     ports:
       - "8070:8070"
     volumes:
@@ -261,6 +266,7 @@ services:
       - --host-port=0.0.0.0:${PUBSUB_PORT:-5010}
     ports:
       - 5010:5010
+    stop_signal: SIGINT
 
   # https://hub.docker.com/_/memcached/
   memcached:

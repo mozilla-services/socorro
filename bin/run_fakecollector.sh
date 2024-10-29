@@ -16,4 +16,4 @@ set -euxo pipefail
 
 PORT=8000
 
-python fakecollector/collector.py --port=${PORT}
+exec python fakecollector/collector.py --port=${PORT}

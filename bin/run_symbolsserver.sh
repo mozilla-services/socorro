@@ -22,4 +22,4 @@ then
 fi
 
 echo "Running local symbols server at ${SYMBOLS_PATH} ..."
-python -m http.server --directory "${SYMBOLS_PATH}" --bind 0.0.0.0 "${PORT}"
+exec python -m http.server --directory "${SYMBOLS_PATH}" --bind 0.0.0.0 "${PORT}"

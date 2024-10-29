@@ -29,28 +29,28 @@ shift
 
 case ${SERVICE} in
 processor)  ## Run processor service
-    /app/bin/run_service_processor.sh "$@"
+    exec /app/bin/run_service_processor.sh "$@"
     ;;
 crontabber)  ## Run crontabber service
-    /app/bin/run_service_crontabber.sh "$@"
+    exec /app/bin/run_service_crontabber.sh "$@"
     ;;
 webapp)  ## Run webapp service
-    /app/bin/run_service_webapp.sh "$@"
+    exec /app/bin/run_service_webapp.sh "$@"
     ;;
 stage_submitter)  ## Runs the stage submitter
-    /app/bin/run_service_stage_submitter.sh
+    exec /app/bin/run_service_stage_submitter.sh
     ;;
 fakecollector)  ## Runs a local fake collector
-    /app/bin/run_fakecollector.sh
+    exec /app/bin/run_fakecollector.sh
     ;;
 symbolsserver)  ## Runs a local symbols server
-    /app/bin/run_symbolsserver.sh
+    exec /app/bin/run_symbolsserver.sh
     ;;
 shell)  ## Open a shell or run something else
     if [ -z "$*" ]; then
-        bash
+        exec bash
     else
-        "$@"
+        exec "$@"
     fi
     ;;
 *)

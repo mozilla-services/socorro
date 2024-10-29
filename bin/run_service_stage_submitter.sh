@@ -15,4 +15,4 @@ set -euo pipefail
 export PROCESS_NAME=stage_submitter
 
 # Run the stage_submitter
-python socorro/stage_submitter/submitter.py
+exec python socorro/stage_submitter/submitter.py

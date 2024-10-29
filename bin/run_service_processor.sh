@@ -18,7 +18,7 @@ set -euo pipefail
 PROCESSOR_WORKERS=${PROCESSOR_WORKERS:-"1"}
 
 # Run honcho with PROCESSOR_WORKERS number of processor worker processes
-honcho \
+exec honcho \
     --procfile /app/processor/Procfile \
     --app-root /app \
     --no-prefix \

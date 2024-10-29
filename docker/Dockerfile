@@ -62,4 +62,4 @@ RUN cd /app/webapp/ && TOOL_ENV=True python manage.py collectstatic --noinput
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.
-ENTRYPOINT ["/usr/bin/tini", "--", "/app/bin/entrypoint.sh"]
+ENTRYPOINT ["/app/bin/entrypoint.sh"]

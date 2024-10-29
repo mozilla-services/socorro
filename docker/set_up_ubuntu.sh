@@ -26,9 +26,6 @@ PACKAGES_TO_INSTALL=(
     # For scripts
     git
 
-    # For running services
-    tini
-
     # For nodejs and npm
     curl
 
