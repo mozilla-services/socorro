@@ -646,6 +646,23 @@ pick up changes:
    $ make devcontainer
 
 
+Upgrading to a new Python version
+=================================
+
+To upgrade Python to a new minor or major version, you need to change the version in
+these files:
+
+* ``.devcontainer/Dockerfile``
+* ``.github/dependabot.yml``
+* ``.readthedocs.yaml``
+* ``docker/Dockerfile``
+* ``docker/Dockerfile.fakesentry``
+* ``docker/set_up_legacy_es_requirements.sh``
+* ``pyproject.toml``
+* ``socorro/tests/processor/test_processor_app.py``
+* ``webapp/crashstats/crashstats/tests/test_sentry.py``
+
+
 Processing crashes
 ==================
 
