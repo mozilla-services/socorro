@@ -27,7 +27,6 @@ import time
 
 from fillmore.libsentry import set_up_sentry
 from fillmore.scrubber import Scrubber, SCRUB_RULES_DEFAULT
-import psutil
 import sentry_sdk
 from sentry_sdk.integrations.atexit import AtexitIntegration
 from sentry_sdk.integrations.dedupe import DedupeIntegration
@@ -275,72 +274,12 @@ class ProcessorApp:
         manager_settings.update(
             {
                 "job_source_iterator": self.source_iterator,
-                "heartbeat_func": self.heartbeat,
                 "task_func": self.transform,
             }
         )
         self.task_manager = build_instance(
             class_path=manager_class, kwargs=manager_settings
         )
-
-    def heartbeat(self):
-        """Runs once a second from the main thread.
-
-        Note: If this raises an exception, it could kill the process or put it in a
-        weird state.
-
-        """
-        try:
-            processes_by_type = {}
-            processes_by_status = {}
-            open_files = 0
-            for proc in psutil.process_iter(["cmdline", "status", "open_files"]):
-                try:
-                    # NOTE(willkg): This is all intertwined with exactly how we run the
-                    # processor in a Docker container. If we ever make changes to that, this
-                    # will change, too. However, even if we never update this, seeing
-                    # "zombie" and "orphaned" as process statuses or seeing lots of
-                    # processes as a type will be really fishy and suggestive that evil is a
-                    # foot.
-                    cmdline = proc.cmdline() or ["unknown"]
-
-                    if cmdline[0] in ["/bin/sh", "/bin/bash"]:
-                        proc_type = "shell"
-                    elif cmdline[0] in ["python", "/usr/local/bin/python"]:
-                        proc_type = "python"
-                    elif "stackwalk" in cmdline[0]:
-                        proc_type = "stackwalker"
-                    else:
-                        proc_type = "other"
-
-                    open_files_count = len(proc.open_files())
-                    proc_status = proc.status()
-
-                except psutil.Error:
-                    # For any psutil error, we want to track that we saw a process, but
-                    # the details don't matter
-                    proc_type = "unknown"
-                    proc_status = "unknown"
-                    open_files_count = 0
-
-                processes_by_type[proc_type] = processes_by_type.get(proc_type, 0) + 1
-                processes_by_status[proc_status] = (
-                    processes_by_status.get(proc_status, 0) + 1
-                )
-                open_files += open_files_count
-
-            METRICS.gauge("processor.open_files", open_files)
-            for proc_type, val in processes_by_type.items():
-                METRICS.gauge(
-                    "processor.processes_by_type", val, tags=[f"proctype:{proc_type}"]
-                )
-            for status, val in processes_by_status.items():
-                METRICS.gauge(
-                    "processor.processes_by_status", val, tags=[f"procstatus:{status}"]
-                )
-
-        except Exception as exc:
-            sentry_sdk.capture_exception(exc)
 
     def close(self):
         """Clean up the processor on shutdown."""

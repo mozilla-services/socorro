@@ -9,8 +9,6 @@ import time
 
 LOGGER = logging.getLogger(__name__)
 
-HEARTBEAT_INTERVAL = 60
-
 
 def default_task_func(a_param):
     """Default task function.
@@ -19,16 +17,6 @@ def default_task_func(a_param):
     to demonstrate the api and not really for any other purpose.
 
     """
-
-
-def default_heartbeat():
-    """Runs once a second from the main thread.
-
-    Note: If this raises an exception, it could kill the process or put it in a
-    weird state.
-
-    """
-    LOGGER.info("THUMP")
 
 
 def default_iterator():
@@ -76,7 +64,6 @@ class TaskManager:
         idle_delay=7,
         quit_on_empty_queue=False,
         job_source_iterator=default_iterator,
-        heartbeat_func=default_heartbeat,
         task_func=default_task_func,
     ):
         """
@@ -88,14 +75,12 @@ class TaskManager:
             instantiated with a config object can be iterated. The iterator must
             yield a tuple consisting of a function's tuple of args and, optionally,
             a mapping of kwargs. Ex:  (('a', 17), {'x': 23})
-        :arg heartbeat_func: a function to run every second
         :arg task_func: a function that will accept the args and kwargs yielded
             by the job_source_iterator
         """
         self.idle_delay = idle_delay
         self.quit_on_empty_queue = quit_on_empty_queue
         self.job_source_iterator = job_source_iterator
-        self.heartbeat_func = heartbeat_func
         self.task_func = task_func
 
         self._pid = os.getpid()
@@ -109,7 +94,7 @@ class TaskManager:
         job_source_iterator can be one of a few things:
 
         * a class that can be instantiated and iterated over
-        * a function that returns an interator
+        * a function that returns an iterator
         * an actual iterator/generator
         * an iterable collection
 
@@ -124,7 +109,7 @@ class TaskManager:
     def _responsive_sleep(self, seconds, wait_log_interval=0, wait_reason=""):
         """Responsive sleep that checks for quit flag
 
-        When there is litte work to do, the queuing thread sleeps a lot. It can't sleep
+        When there is little work to do, the queuing thread sleeps a lot. It can't sleep
         for too long without checking for the quit flag and/or logging about why it is
         sleeping.
 
@@ -132,7 +117,7 @@ class TaskManager:
         :arg wait_log_interval: while sleeping, it is helpful if the thread
             periodically announces itself so that we know that it is still alive.
             This number is the time in seconds between log entries.
-        :arg wait_reason: the is for the explaination of why the thread is
+        :arg wait_reason: the is for the explanation of why the thread is
             sleeping. This is likely to be a message like: 'there is no work to do'.
 
         This was also partially motivated by old versions' of Python inability to
@@ -146,14 +131,10 @@ class TaskManager:
 
     def blocking_start(self):
         """This function starts the task manager running to do tasks."""
-        next_heartbeat = time.time() + HEARTBEAT_INTERVAL
         self.logger.debug("threadless start")
         try:
             # May never exhaust
             for job_params in self._get_iterator():
-                if time.time() > next_heartbeat:
-                    self.heartbeat_func()
-                    next_heartbeat = time.time() + HEARTBEAT_INTERVAL
                 self.logger.debug("received %r", job_params)
                 if job_params is None:
                     if self.quit_on_empty_queue:
