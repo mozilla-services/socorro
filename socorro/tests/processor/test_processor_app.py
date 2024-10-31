@@ -176,6 +176,10 @@ TRANSFORM_GET_ERROR = {
             "span_id": ANY,
             "trace_id": ANY,
         },
+        "processor": {
+            "crash_id": ANY,
+            "ruleset": "default",
+        },
     },
     "environment": "production",
     "event_id": ANY,
@@ -234,7 +238,6 @@ TRANSFORM_GET_ERROR = {
             }
         ]
     },
-    "extra": {"crash_id": "930b08ba-e425-49bf-adbd-7c9172220721", "ruleset": "default"},
     "level": "error",
     "modules": ANY,
     "platform": "python",

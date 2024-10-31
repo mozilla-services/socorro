@@ -333,11 +333,11 @@ class SubmitterApp:
 
     def process(self, crash):
         with METRICS.timer("submitter.process"):
-            with sentry_sdk.push_scope() as scope:
+            with sentry_sdk.new_scope() as scope:
                 crash_id = crash.crash_id
                 self.logger.debug(f"processing {crash}")
 
-                scope.set_extra("crash_id", crash)
+                scope.set_context("submitter", {"crash_id": crash_id})
 
                 # sample and determine destinations
                 destinations = []

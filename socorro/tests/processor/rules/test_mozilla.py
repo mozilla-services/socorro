@@ -2054,7 +2054,7 @@ class TestSignatureGeneratorRule:
         # doesn't configure Sentry the way the processor does so we shouldn't test
         # whether things are scrubbed correctly
         with sentry_helper.init() as sentry_client:
-            # Override the regular SigntureGenerator with one with a BadRule
+            # Override the regular SignatureGenerator with one with a BadRule
             # in the pipeline
             rule.generator = SignatureGenerator(
                 ruleset=[BadRule], error_handler=rule._error_handler
@@ -2073,10 +2073,11 @@ class TestSignatureGeneratorRule:
             assert status.notes == ["BadRule: Rule failed: Cough"]
 
             (event,) = sentry_client.envelope_payloads
-            # NOTE(willkg): Some of the extra bits come from the processor app and since
-            # we're testing SignatureGenerator in isolation, those don't get added to
-            # the sentry scope
-            assert event["extra"] == {"signature_rule": "BadRule", "sys.argv": mock.ANY}
+
+            # Assert that the rule that threw an error is captured in the context.
+            assert event["contexts"]["signature_generator"] == {
+                "signature_rule": "BadRule"
+            }
             assert event["exception"]["values"][0]["type"] == "Exception"
 
 
