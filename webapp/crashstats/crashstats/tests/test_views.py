@@ -1230,6 +1230,34 @@ class Test_report_index:
         assert response.status_code == 404
         assert "Crash Report Not Found" in smart_str(response.content)
 
+    def test_raw_crash_malformed(self, client, db, storage_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+
+        # If the BuildID is None, that will cause the reducer to raise an
+        # InvalidDocumentError when someone who doesn't have protected data access
+        # tries to view it. Bug #1901997.
+        raw_crash["BuildID"] = None
+
+        bucket = storage_helper.get_crashstorage_bucket()
+        raw_key = build_keys("raw_crash", crash_id)[0]
+        storage_helper.upload(
+            bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
+        )
+
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+        processed_key = build_keys("processed_crash", crash_id)[0]
+        storage_helper.upload(
+            bucket_name=bucket,
+            key=processed_key,
+            data=dict_to_str(processed_crash).encode("utf-8"),
+        )
+
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
+
+        assert response.status_code == 500
+        assert "Crash Report Malformed" in smart_str(response.content)
+
     def test_processed_crash_not_found(self, client, db, storage_helper, queue_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()
 
