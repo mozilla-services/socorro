@@ -24,6 +24,7 @@ from crashstats.crashstats import forms, models, utils
 from crashstats.crashstats.decorators import track_view, pass_default_context
 from crashstats.supersearch.models import SuperSearchFields
 from socorro.external.crashstorage_base import CrashIDNotFound
+from socorro.lib.libsocorrodataschema import InvalidDocumentError
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
 
@@ -109,6 +110,19 @@ def report_index(request, crash_id, default_context=None):
     raw_api.api_user = request.user
     try:
         context["raw"] = raw_api.get(crash_id=crash_id)
+    except InvalidDocumentError:
+        # If the user does not have protected data access, then the document is
+        # redacted. However, if it's invalid because the world is a terrible place and
+        # things working right is not the norm, then we want to display a "This crash
+        # report is broken in some way. Please report a bug." message instead
+        # of throwing an HTTP 500 error. We definitely can't gloss over this because
+        # the brokenness prevents the document from being redacted correctly.
+        return render(
+            request,
+            "crashstats/report_index_malformed_raw_crash.html",
+            context,
+            status=500,
+        )
     except CrashIDNotFound:
         # If the raw crash can't be found, we can't do much.
         return render(
