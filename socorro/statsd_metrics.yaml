@@ -144,30 +144,6 @@ socorro.processor.minidumpstackwalk.run:
     * ``outcome``: either ``success`` or ``fail``
     * ``exitcode``: the exit code of the minidump stackwalk process
 
-socorro.processor.open_files:
-  type: "gauge"
-  description: |
-    Gauge of currently open files for all processes running in the container.
-
-socorro.processor.processes_by_type:
-  type: "gauge"
-  description: |
-    Gauge of processes by type.
-
-    Tags:
-
-    * ``proctype``: one of ``shell``, ``python``, ``stackwalker``, or ``other``
-
-socorro.processor.processes_by_status:
-  type: "gauge"
-  description: |
-    Gauge of processes by process status.
-
-    Tags:
-
-    * ``procstatus``: one of ``running``, ``sleeping``, or other process
-      statuses.
-
 socorro.processor.process_crash:
   type: "timing"
   description: |

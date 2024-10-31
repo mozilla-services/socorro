@@ -66,21 +66,6 @@ class TestProcessorApp:
         assert next(queue) is None
         assert next(queue) == ((3,), {})
 
-    def test_heartbeat(self, sentry_helper):
-        """Basic test to make sure it runs, captures metrics, and doesn't error out"""
-        with sentry_helper.reuse() as sentry_client:
-            with MetricsMock() as metricsmock:
-                app = ProcessorApp()
-                app.heartbeat()
-
-                # Assert it emitted some metrics
-                metricsmock.assert_gauge("socorro.processor.open_files")
-                metricsmock.assert_gauge("socorro.processor.processes_by_type")
-                metricsmock.assert_gauge("socorro.processor.processes_by_status")
-
-                # Assert it didn't throw an exception
-                assert len(sentry_client.envelopes) == 0
-
     def test_transform_success(self, processor_settings):
         app = ProcessorApp()
         app._set_up_source_and_destination()
