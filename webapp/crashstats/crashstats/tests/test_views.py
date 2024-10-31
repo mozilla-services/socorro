@@ -11,6 +11,7 @@ from unittest import mock
 import requests_mock
 import pyquery
 from markus.testing import MetricsMock
+from requests.exceptions import RetryError
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -357,6 +358,22 @@ class Test_buginfo:
         # expect to be able to find this in the cache now
         cache_key = "buginfo:987"
         assert cache.get(cache_key) == struct["bugs"][0]
+
+    def test_buginfo_retry_error(self, client):
+        with requests_mock.Mocker(real_http=False) as mock_requests:
+            mock_requests.get(
+                (
+                    "http://bugzilla.example.com/rest/bug?"
+                    + "id=1901998&include_fields=summary,status,id,resolution"
+                ),
+                exc=RetryError,
+            )
+
+            url = reverse("crashstats:buginfo")
+            response = client.get(url, {"bug_ids": "1901998"})
+            assert response.status_code == 500
+            json_response = json.loads(response.content)
+            assert json_response == {"error": "Max retries exceeded with Bugzilla."}
 
 
 class Test_quick_search:
