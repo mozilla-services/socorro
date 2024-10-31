@@ -1041,8 +1041,8 @@ class SignatureGeneratorRule(Rule):
 
     def _error_handler(self, crash_data, exc_info, extra):
         """Captures errors from signature generation"""
-        with sentry_sdk.push_scope() as scope:
-            scope.set_extra("signature_rule", extra["rule"])
+        with sentry_sdk.new_scope() as scope:
+            scope.set_context("signature_generator", {"signature_rule": extra["rule"]})
             sentry_sdk.capture_exception(exc_info)
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):

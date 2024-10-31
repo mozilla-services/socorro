@@ -130,9 +130,14 @@ class ProcessorApp:
             with METRICS.timer(
                 "processor.process_crash", tags=[f"ruleset:{ruleset_name}"]
             ):
-                with sentry_sdk.push_scope() as scope:
-                    scope.set_extra("crash_id", crash_id)
-                    scope.set_extra("ruleset", ruleset_name)
+                with sentry_sdk.new_scope() as scope:
+                    scope.set_context(
+                        "processor",
+                        {
+                            "crash_id": crash_id,
+                            "ruleset": ruleset_name,
+                        },
+                    )
 
                     # Create temporary directory context
                     with tempfile.TemporaryDirectory(dir=self.temporary_path) as tmpdir:

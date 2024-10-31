@@ -87,8 +87,8 @@ class Pipeline:
 
         # Apply rules; if a rule fails, capture the error and continue onward
         for rule in ruleset:
-            with sentry_sdk.push_scope() as scope:
-                scope.set_extra("rule", rule.name)
+            with sentry_sdk.new_scope() as scope:
+                scope.set_context("processor_pipeline", {"rule": rule.name})
 
                 try:
                     rule.act(
