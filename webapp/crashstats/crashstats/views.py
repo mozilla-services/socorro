@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 import glom
+from requests.exceptions import RetryError
 
 from django import http
 from django.conf import settings
@@ -332,8 +333,10 @@ def buginfo(request, signatures=None):
     bug_ids = form.cleaned_data["bug_ids"]
 
     bzapi = models.BugzillaBugInfo()
-    result = bzapi.get(bug_ids)
-    return result
+    try:
+        return bzapi.get(bug_ids)
+    except RetryError:
+        return {"error": "Max retries exceeded with Bugzilla."}, 500
 
 
 @pass_default_context
