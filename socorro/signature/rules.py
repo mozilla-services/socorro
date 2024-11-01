@@ -918,6 +918,20 @@ class AbortSignature(Rule):
         return True
 
 
+class SigPrintableCharsOnly(Rule):
+    """Remove non-printable characters from signature."""
+
+    def action(self, crash_data, result):
+        original_sig = result.signature
+        sig = "".join(
+            [c for c in original_sig.strip() if c.isascii() and c.isprintable()]
+        )
+        if sig != original_sig:
+            result.set_signature(self.name, sig)
+            result.info(self.name, "unprintable characters removed")
+        return True
+
+
 class SigFixWhitespace(Rule):
     """Fix whitespace in signatures.
 
