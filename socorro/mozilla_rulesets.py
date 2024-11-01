@@ -68,11 +68,10 @@ DEFAULT_RULESET = [
     CollectorMetadataRule(),
     # fix ModuleSignatureInfo if it needs fixing
     ConvertModuleSignatureInfoRule(),
-    # rules to change the internals of the raw crash
-    FenixVersionRewriteRule(),
-    ESRVersionRewrite(),
     # rules to transform a raw crash into a processed crash
     CopyFromRawCrashRule(schema=get_schema("processed_crash.schema.yaml")),
+    FenixVersionRewriteRule(),
+    ESRVersionRewrite(),
     SubmittedFromRule(),
     IdentifierRule(),
     MinidumpSha256HashRule(),

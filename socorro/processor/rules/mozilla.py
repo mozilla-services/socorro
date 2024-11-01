@@ -571,23 +571,25 @@ class FenixVersionRewriteRule(Rule):
     """
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        is_nightly = (raw_crash.get("Version") or "").startswith("Nightly ")
-        return raw_crash.get("ProductName") == "Fenix" and is_nightly
+        is_nightly = (processed_crash.get("version") or "").startswith("Nightly ")
+        return processed_crash.get("product_name") == "Fenix" and is_nightly
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        status.add_note("Changed version from %r to 0.0a1" % raw_crash.get("Version"))
-        raw_crash["Version"] = "0.0a1"
+        if "version" in processed_crash:
+            version = processed_crash["version"]
+            status.add_note(f"Changed version from {version!r} to 0.0a1")
+            processed_crash["version"] = "0.0a1"
 
 
 class ESRVersionRewrite(Rule):
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return raw_crash.get("ReleaseChannel", "") == "esr"
+        return processed_crash.get("release_channel", "") == "esr"
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        try:
-            raw_crash["Version"] += "esr"
-        except KeyError:
-            status.add_note('"Version" missing from esr release raw_crash')
+        if "version" in processed_crash:
+            processed_crash["version"] = processed_crash["version"] + "esr"
+        else:
+            status.add_note("'version' missing from esr release processed_crash")
 
 
 class TopMostFilesRule(Rule):
