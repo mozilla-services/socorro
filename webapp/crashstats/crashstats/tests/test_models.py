@@ -369,6 +369,24 @@ class TestMiddlewareModels(DjangoTestCase):
             api.get("123456789")
 
     @mock.patch("requests.Session")
+    def test_bugzilla_api_no_bugs(self, rsession):
+        model = models.BugzillaBugInfo
+
+        api = model()
+
+        def mocked_get(url, **options):
+            # NOTE(willkg): Bugzilla sometimes returns an HTTP 200 with a JSON payload
+            # that has no "bugs" key. We don't know what is in it, but we do know it has
+            # no "bugs".
+            return Response({"otherkey": "othervalue"})
+
+        rsession().get.side_effect = mocked_get
+        with pytest.raises(models.BugzillaRestHTTPUnexpectedError) as excinfo:
+            api.get("123456789")
+
+        assert 'payload: \'{"otherkey": "othervalue"}\'' in str(excinfo.value)
+
+    @mock.patch("requests.Session")
     def test_massive_querystring_caching(self, rsession):
         # doesn't actually matter so much what API model we use
         # see https://bugzilla.mozilla.org/show_bug.cgi?id=803696

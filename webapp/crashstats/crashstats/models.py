@@ -1033,12 +1033,25 @@ class BugzillaBugInfo(SocorroCommon):
             )
             response = session.get(url, headers=headers)
             if response.status_code != 200:
-                raise BugzillaRestHTTPUnexpectedError(response.status_code)
+                raise BugzillaRestHTTPUnexpectedError(
+                    f"status code: {response.status_code}"
+                )
 
-            for each in response.json()["bugs"]:
+            data = response.json()
+            if "bugs" not in data:
+                # We know the payload is JSON, but we don't know what shape it is--could
+                # be an array or an object. We know it doesn't have sensitive data in
+                # it, so let's dump to a string and truncate that to 100 characters.
+                payload_data = response.content[:100]
+                raise BugzillaRestHTTPUnexpectedError(
+                    f"status code: {response.status_code}, payload: {payload_data!r}"
+                )
+
+            for each in data["bugs"]:
                 cache_key = self.make_cache_key(each["id"])
                 cache.set(cache_key, each, self.BUG_CACHE_SECONDS)
                 results.append(each)
+
         return {"bugs": results}
 
     post = None
