@@ -16,4 +16,10 @@ class TopCrashersForm(BaseForm):
     _facets_size = forms.IntegerField(required=False)
     _tcbs_mode = forms.CharField(required=False)
     _range_type = forms.CharField(required=False)
-    _report_type = forms.CharField(required=False)
+
+    # NOTE(willkg): _report_type choices must match the TopCrashers form options in the
+    # jinja2 template
+    _report_type = forms.ChoiceField(
+        choices=[("any", "any"), ("hang", "hang"), ("crash", "crash")],
+        required=False,
+    )
