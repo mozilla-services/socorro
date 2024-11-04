@@ -321,9 +321,9 @@ face==20.1.1 \
     --hash=sha256:7d59ca5ba341316e58cf72c6aff85cca2541cf5056c4af45cb63af9a814bed3e \
     --hash=sha256:ca3a1d8b8b6aa8e61d62a300e9ee24e09c062aceda549e9a640128e4fa0f4559
     # via glom
-fillmore==2.0.1 \
-    --hash=sha256:28c1c47063d116909009e4b31f40098702ce1944df7793e8f47642c7c39a78cf \
-    --hash=sha256:a1f194416133b32656bb9918225cd1599359042eb7c63f7c4842ff0b312017ed
+fillmore==2.1.0 \
+    --hash=sha256:251ed9154ba7f20f5825e4d757db0ad7b1642e72bda7657fe39fe39031cd2092 \
+    --hash=sha256:29873e6f7fae15b32ddd01eff7a8418f26ab33c731f3b99a6a07a4c4c8c3625f
     # via -r requirements.in
 freezegun==1.5.1 \
     --hash=sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9 \
