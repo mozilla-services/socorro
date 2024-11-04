@@ -14,7 +14,7 @@ dj-database-url==2.3.0
 dockerflow==2024.4.2
 enforce-typing==1.0.0.post1
 everett==3.4.0
-fillmore==2.0.1
+fillmore==2.1.0
 freezegun==1.5.1
 glom==24.11.0
 google-cloud-pubsub==2.26.1
