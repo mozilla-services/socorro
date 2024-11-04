@@ -79,8 +79,7 @@ def get_fields(user):
     :returns: a list of dicts with "id" and "text" keys
 
     """
-    print(repr(user), user)
-    fields = sorted(
+    return sorted(
         x["name"]
         for x in SuperSearchFields().get().values()
         if x["is_exposed"]
@@ -88,8 +87,6 @@ def get_fields(user):
         and user.has_perms(x["webapp_permissions_needed"])
         and x["name"] != "signature"  # exclude the signature field
     )
-
-    return [{"id": field, "text": field.replace("_", " ")} for field in fields]
 
 
 @track_view
@@ -106,7 +103,9 @@ def signature_report(request, params, default_context=None):
     context["signature"] = signature
 
     fields = get_fields(request.user)
-    context["fields"] = fields
+    context["fields"] = [
+        {"id": field, "text": field.replace("_", " ")} for field in fields
+    ]
 
     columns = request.GET.getlist("_columns")
     columns = [x for x in columns if x in fields]
