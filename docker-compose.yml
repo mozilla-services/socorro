@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile
+      dockerfile: docker/Dockerfile
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
@@ -145,8 +145,7 @@ services:
   # https://github.com/willkg/kent
   fakesentry:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile.fakesentry
+      context: docker/images/fakesentry
     image: local/socorro_fakesentry
     ports:
       - "8090:8090"
@@ -156,8 +155,7 @@ services:
   # https://hub.docker.com/r/mozilla/oidc-testprovider
   oidcprovider:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile.oidcprovider
+      context: docker/images/oidcprovider
     image: local/socorro_oidcprovider
     ports:
       - "8080:8080"
@@ -278,7 +276,7 @@ services:
   # Fake GCP GCS server for local development and testing
   gcs-emulator:
     build:
-      dockerfile: ./docker/Dockerfile.gcs-emulator
+      context: docker/images/gcs-emulator
     image: local/socorro_gcs_emulator
     command: -port 8001 -scheme http
     ports:
