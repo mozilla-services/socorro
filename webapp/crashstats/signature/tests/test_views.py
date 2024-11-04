@@ -9,10 +9,12 @@ from urllib.parse import quote
 
 import pyquery
 
+from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats import models
+from crashstats.signature.views import get_fields
 from socorro.lib.libdatetime import date_to_string, utc_now
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
@@ -661,3 +663,16 @@ class TestViews:
             < content.find("Related Crash Signatures")
             < content.find("Bugs for <code>OOM | small</code>")
         )
+
+    def test_get_fields(self, db, user_helper):
+        # Create anonymous user and get fields
+        user = AnonymousUser()
+        fields = get_fields(user)
+        len_public_fields = len(fields)
+        assert len(fields) > 0
+
+        # Create user with protected data access, get fields, and make sure there are
+        # more of them than if the user didn't have protected data access
+        user = user_helper.create_protected_user()
+        fields = get_fields(user)
+        assert len(fields) > len_public_fields

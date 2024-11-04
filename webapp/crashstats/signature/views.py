@@ -71,6 +71,27 @@ def pass_validated_params(view):
     return inner
 
 
+def get_fields(user):
+    """Retrieve super search fields this user has access to
+
+    :arg user: a Django User instance
+
+    :returns: a list of dicts with "id" and "text" keys
+
+    """
+    print(repr(user), user)
+    fields = sorted(
+        x["name"]
+        for x in SuperSearchFields().get().values()
+        if x["is_exposed"]
+        and x["is_returned"]
+        and user.has_perms(x["webapp_permissions_needed"])
+        and x["name"] != "signature"  # exclude the signature field
+    )
+
+    return [{"id": field, "text": field.replace("_", " ")} for field in fields]
+
+
 @track_view
 @csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
 @pass_validated_params
@@ -84,17 +105,8 @@ def signature_report(request, params, default_context=None):
 
     context["signature"] = signature
 
-    fields = sorted(
-        x["name"]
-        for x in SuperSearchFields().get().values()
-        if x["is_exposed"]
-        and x["is_returned"]
-        and request.user.has_perms(x["permissions_needed"])
-        and x["name"] != "signature"  # exclude the signature field
-    )
-    context["fields"] = [
-        {"id": field, "text": field.replace("_", " ")} for field in fields
-    ]
+    fields = get_fields(request.user)
+    context["fields"] = fields
 
     columns = request.GET.getlist("_columns")
     columns = [x for x in columns if x in fields]
