@@ -101,7 +101,7 @@ class Test_build_mapping:
         assert "os_name" in processed_crash
         assert "platform" not in processed_crash
 
-        # Those fields have a `storage_mapping`.
+        # Test a field that has a storage_mapping.
         assert processed_crash["release_channel"] == {
             "type": "keyword",
         }

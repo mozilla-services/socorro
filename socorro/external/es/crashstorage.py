@@ -250,8 +250,6 @@ def build_document(src, crash_document, fields, all_keys):
 
         elif storage_type == "boolean":
             value = fix_boolean(value)
-            if value is None:
-                continue
 
         for dest_key in get_destination_keys(field):
             if dest_key in all_keys:
@@ -315,7 +313,7 @@ class ESCrashStorage(CrashStorageBase):
     def build_search(self, **kwargs):
         """Return new instance of elasticsearch_dsl's Search."""
         with self.client() as conn:
-            return Search(using=conn, doc_type=self.get_doctype(), **kwargs)
+            return Search(using=conn, **kwargs)
 
     @staticmethod
     def get_source_key(field):

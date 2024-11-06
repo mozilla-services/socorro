@@ -7,6 +7,7 @@ import json
 import http.server
 import threading
 from contextlib import contextmanager
+from copy import deepcopy
 
 import pytest
 
@@ -1227,14 +1228,11 @@ class TestIntegrationSuperSearch:
         assert "histogram_date" in res["facets"]
 
         def dt_to_midnight(date):
-            return date.replace(hour=0, minute=0, second=0, microsecond=0)
+            return f"{date.replace(hour=0, minute=0, second=0, microsecond=0):%FT%H:%M:%SZ}"
 
-        # NOTE(relud) this used to use .isoformat() but with elasticsearch 8 dates are
-        # returned with millisecond precision and indicate time zone with Z instead of
-        # +00:00, so we have to carefully format the dates here.
-        today_str = f"{dt_to_midnight(now):%FT%H:%M:%S.000Z}"
-        yesterday_str = f"{dt_to_midnight(yesterday):%FT%H:%M:%S.000Z}"
-        day_before_str = f"{dt_to_midnight(the_day_before):%FT%H:%M:%S.000Z}"
+        today_str = dt_to_midnight(now)
+        yesterday_str = dt_to_midnight(yesterday)
+        day_before_str = dt_to_midnight(the_day_before)
 
         expected_terms = [
             {
@@ -1784,7 +1782,27 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(signature=r'@"')
 
-    def test_get_with_failing_shards(self):
+    def test_get_with_failing_shards(self, es_helper):
+        # Generate a shard failure response via bad regex, like test_get_with_bad_regex
+        # above. Modify this response to avoid BadArgumentError and test generic shard
+        # failure.
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "test.dll",
+                "date_processed": now,
+            },
+        )
+        bad_regex_query = api.get(signature=r'@"', _return_query=True)
+        search = crashstorage.build_search(index=bad_regex_query["indices"])
+        search = search.filter(bad_regex_query["query"]["query"])
+        search = search.source(bad_regex_query["query"]["_source"])
+        bad_regex_results = search.execute().to_dict()
+
+        # Use a mock es server to return custom results
         ip, port = "127.0.0.1", 9999
         with settings.override(
             **{
@@ -1796,33 +1814,16 @@ class TestIntegrationSuperSearch:
             api = SuperSearchWithFields(crashstorage=crashstorage)
 
             # Test with one failing shard.
-            es_results = {
-                "hits": {
-                    "hits": [],
-                    "total": {"value": 0, "relation": "eq"},
-                    "max_score": None,
-                },
-                "timed_out": False,
-                "took": 194,
-                "_shards": {
-                    "successful": 9,
-                    "failed": 1,
-                    "total": 10,
-                    "failures": [
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": {
-                                "type": "fake_exception",
-                                "reason": "foo bar gone bad",
-                            },
-                            "shard": 3,
-                        }
-                    ],
-                },
-            }
+            mock_results = deepcopy(bad_regex_results)
+            mock_results["_shards"]["failures"][0]["index"] = "fake_index"
+            mock_results["_shards"]["failures"][0]["reason"]["reason"] = (
+                "foo bar gone bad"
+            )
+            mock_results["_shards"]["failures"][0]["reason"]["caused_by"]["type"] = (
+                "foo_bar_exception"
+            )
 
-            with mock_es_server(ip, port, es_results):
+            with mock_es_server(ip, port, mock_results):
                 res = api.get()
 
             assert "errors" in res
@@ -1831,51 +1832,31 @@ class TestIntegrationSuperSearch:
             assert res["errors"] == errors_exp
 
             # Test with several failures.
-            es_results = {
-                "hits": {
-                    "hits": [],
-                    "total": {"value": 0, "relation": "eq"},
-                    "max_score": None,
-                },
-                "timed_out": False,
-                "took": 194,
-                "_shards": {
-                    "successful": 9,
-                    "failed": 3,
-                    "total": 10,
-                    "failures": [
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": {
-                                "type": "fake_exception",
-                                "reason": "foo bar gone bad",
-                            },
-                            "shard": 2,
-                        },
-                        {
-                            "status": 500,
-                            "index": "fake_index",
-                            "reason": {
-                                "type": "fake_exception",
-                                "reason": "foo bar gone bad",
-                            },
-                            "shard": 3,
-                        },
-                        {
-                            "status": 500,
-                            "index": "other_index",
-                            "reason": {
-                                "type": "fake_exception",
-                                "reason": "foo bar gone bad",
-                            },
-                            "shard": 1,
-                        },
-                    ],
-                },
-            }
+            mock_results = deepcopy(bad_regex_results)
+            mock_results["_shards"]["failed"] += 1
+            mock_results["_shards"]["successful"] -= 1
+            mock_results["_shards"]["failures"][0]["index"] = "fake_index"
+            mock_results["_shards"]["failures"][0]["reason"]["reason"] = (
+                "foo bar gone bad"
+            )
+            mock_results["_shards"]["failures"][0]["reason"]["caused_by"]["type"] = (
+                "foo_bar_exception"
+            )
+            # add failure on different shard
+            mock_results["_shards"]["failures"].append(
+                deepcopy(mock_results["_shards"]["failures"][0])
+            )
+            mock_results["_shards"]["failures"][-1]["shard"] += 1
+            mock_results["_shards"]["failures"][-1]["shard"] %= mock_results["_shards"][
+                "total"
+            ]
+            # add failure on different index
+            mock_results["_shards"]["failures"].append(
+                deepcopy(mock_results["_shards"]["failures"][0])
+            )
+            mock_results["_shards"]["failures"][-1]["index"] = "other_index"
 
-            with mock_es_server(ip, port, es_results):
+            with mock_es_server(ip, port, mock_results):
                 res = api.get()
 
             assert "errors" in res

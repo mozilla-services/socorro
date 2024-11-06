@@ -109,7 +109,7 @@ class TestESCrashStorage:
             "another_invalid_key": "alpha",
             "date_processed": date_to_string(utc_now()),
             "uuid": "936ce666-ff3b-4c7a-9674-367fe2120408",
-            "dom_fission_enabled": False,
+            "dom_fission_enabled": "1",
         }
 
         crashstorage = self.build_crashstorage()

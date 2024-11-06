@@ -282,7 +282,7 @@ class ElasticsearchHelper:
 
         with self.conn() as conn:
             search = Search(using=conn, index=index)
-            search = search.filter("term", **{"processed_crash.uuid": crash_id})
+            search = search.filter({"term": {"processed_crash.uuid": crash_id}})
             results = search.execute().to_dict()
 
             if results["hits"]["hits"]:

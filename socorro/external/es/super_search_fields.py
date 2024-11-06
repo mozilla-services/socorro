@@ -289,7 +289,7 @@ def keyword_field(
         "is_exposed": True,
         "is_returned": True,
         "query_type": "string",
-        "storage_mapping": {"type": "keyword", "ignore_above": 10_000},
+        "storage_mapping": {"type": "keyword"},
     }
 
 
@@ -1004,6 +1004,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "date",
         "storage_mapping": {
+            "format": "yyyy-MM-dd'T'HH:mm:ssZZZZZ||yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ",
             "type": "date",
         },
     },
@@ -1743,8 +1744,7 @@ FIELDS = {
         "namespace": "processed_crash",
         "query_type": "string",
         "storage_mapping": {
-            "fielddata": True,  # FIXME(relud): this may be required in more fields?
-            "type": "text",
+            "type": "keyword",
         },
     },
     "processor_notes": {

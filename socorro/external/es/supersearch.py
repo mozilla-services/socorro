@@ -142,11 +142,11 @@ class SuperSearch(SearchBase):
                 return aggregation
 
             for i, bucket in enumerate(aggregation["buckets"]):
-                if "key_as_string" in bucket:
+                if bucket["key"] in (True, False):
+                    # Restore es 1.4 format for boolean terms as string
+                    term = "T" if bucket["key"] else "F"
+                elif "key_as_string" in bucket:
                     term = bucket["key_as_string"]
-                    if term in ("true", "false"):
-                        # Restore es 1.4 format for boolean terms as string
-                        term = term[:1].upper()
                 else:
                     term = bucket["key"]
 
@@ -270,7 +270,7 @@ class SuperSearch(SearchBase):
                 operator_range = {">": "gt", "<": "lt", ">=": "gte", "<=": "lte"}
 
                 args = {}
-                filter_type = "term"
+                query_name = "term"
                 filter_value = None
 
                 if not param.operator:
@@ -279,70 +279,61 @@ class SuperSearch(SearchBase):
                     # to match for analyzed and non-analyzed supersearch fields.
                     if len(param.value) == 1:
                         # Only one value, so we only do a single match
-                        filter_type = "match"
-                        args = Q({"match": {search_key: param.value[0]}}).to_dict()[
-                            "match"
-                        ]
+                        query_name = "match"
+                        args = {search_key: param.value[0]}
                     else:
                         # Multiple values, so we do multiple matches wrapped in a bool
                         # query where at least one of them should match
-                        filter_type = "bool"
-                        args = Q(
-                            {
-                                "bool": {
-                                    "should": [
-                                        {"match": {search_key: param_value}}
-                                        for param_value in param.value
-                                    ],
-                                    "minimum_should_match": 1,
-                                }
-                            }
-                        ).to_dict()["bool"]
+                        query_name = "bool"
+                        args = {
+                            "should": [
+                                {"match": {search_key: param_value}}
+                                for param_value in param.value
+                            ],
+                            "minimum_should_match": 1,
+                        }
                 elif param.operator == "=":
                     # is exactly
                     if field_data["has_full_version"]:
                         search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_range:
-                    filter_type = "range"
+                    query_name = "range"
                     filter_value = {operator_range[param.operator]: param.value}
                 elif param.operator == "__null__":
-                    filter_type = "bool"
+                    query_name = "bool"
                     args["must_not"] = [Q("exists", field=search_key)]
                 elif param.operator == "__true__":
-                    filter_type = "term"
+                    query_name = "term"
                     filter_value = True
                 elif param.operator == "@":
-                    filter_type = "regexp"
+                    query_name = "regexp"
                     if field_data["has_full_version"]:
                         search_key = f"{search_key}.full"
                     filter_value = param.value
                 elif param.operator in operator_wildcards:
-                    filter_type = "wildcard"
+                    query_name = "wildcard"
 
                     # Wildcard operations are better applied to a non-analyzed
                     # field (called "full") if there is one.
                     if field_data["has_full_version"]:
                         search_key = f"{search_key}.full"
 
-                    q_args = {}
-                    q_args[search_key] = (
-                        operator_wildcards[param.operator] % param.value
-                    )
-                    query = Q("wildcard", **q_args)
-                    args = query.to_dict()["wildcard"]
+                    args = {
+                        search_key: (operator_wildcards[param.operator] % param.value)
+                    }
 
                 if filter_value is not None:
                     args[search_key] = filter_value
 
                 if args:
-                    new_filter = Q(filter_type, **args)
+                    new_filter = Q(query_name, **args)
                     if param.operator_not:
                         new_filter = ~new_filter
 
                     if sub_filters is None:
                         sub_filters = new_filter
-                    elif filter_type == "range":
+                    elif query_name == "range":
                         sub_filters &= new_filter
                     else:
                         sub_filters |= new_filter
@@ -569,8 +560,8 @@ class SuperSearch(SearchBase):
         # Setting min_doc_count makes ES return only non-empty buckets.
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-histogram-aggregation.html
         kwargs = {"min_doc_count": 1}
-        # NOTE(krzepka) "The date_histogram aggregation’s interval parameter is no longer valid."
-        # https://www.elastic.co/guide/en/elasticsearch/reference/master/migrating-8.0.html
+        # NOTE(relud) We want to use "calendar_interval" for date_histogram and
+        # "interval" for everything else.
         if histogram_type == "date_histogram":
             kwargs["calendar_interval"] = intervals[field]
         else:
