@@ -264,7 +264,7 @@ class ESCrashStorage(CrashStorageBase):
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r"field=\"([\w\-.]+)\"")
-    field_name_number_error_re = re.compile(r"\[failed to parse \[([\w\-.]+)]]")
+    field_name_number_error_re = re.compile(r"failed to parse field \[([\w\-.]+)]")
     field_name_unknown_property_error_re = field_name_number_error_re
 
     def __init__(
@@ -561,43 +561,57 @@ class ESCrashStorage(CrashStorageBase):
                 with self.client() as conn:
                     return self._index_crash(conn, index_name, crash_document, crash_id)
 
-            except elasticsearch.exceptions.ConnectionError:
+            except elasticsearch.ConnectionError:
                 # If this is a connection error, sleep a second and then try again
                 time.sleep(1.0)
 
-            except elasticsearch.exceptions.TransportError as e:
-                # If this is a TransportError, we try to figure out what the error
+            except elasticsearch.BadRequestError as e:
+                # If this is a BadRequestError, we try to figure out what the error
                 # is and fix the document and try again
                 field_name = None
 
-                # TODO(relud) clean this up
+                error = e.body["error"]
 
-                if "MaxBytesLengthExceededException" in e.error:
+                if (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "illegal_argument_exception"
+                    and error["reason"].startswith(
+                        "Document contains at least one immense term"
+                    )
+                ):
                     # This is caused by a string that is way too long for
-                    # Elasticsearch.
-                    matches = self.field_name_string_error_re.findall(e.error)
+                    # Elasticsearch, specifically 32_766 bytes when UTF8 encoded.
+                    matches = self.field_name_string_error_re.findall(error["reason"])
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr(
                             "indexerror", tags=["error:maxbyteslengthexceeded"]
                         )
 
-                elif "NumberFormatException" in e.error:
+                elif (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "number_format_exception"
+                ):
                     # This is caused by a number that is either too big for
                     # Elasticsearch or just not a number.
-                    matches = self.field_name_number_error_re.findall(e.error)
+                    matches = self.field_name_number_error_re.findall(error["reason"])
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr(
                             "indexerror", tags=["error:numberformatexception"]
                         )
 
-                elif "unknown property" in e.error:
+                elif (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "illegal_argument_exception"
+                ):
                     # This is caused by field values that are nested for a field where a
                     # previously indexed value was a string. For example, the processor
                     # first indexes ModuleSignatureInfo value as a string, then tries to
                     # index ModuleSignatureInfo as a nested dict.
-                    matches = self.field_name_unknown_property_error_re.findall(e.error)
+                    matches = self.field_name_unknown_property_error_re.findall(
+                        error["reason"]
+                    )
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr("indexerror", tags=["error:unknownproperty"])
