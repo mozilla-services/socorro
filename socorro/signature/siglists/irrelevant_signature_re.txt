@@ -86,6 +86,7 @@ __GI
 gkrust_shared::oom_hook::hook
 g_log
 _g_log_abort
+g_malloc
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
