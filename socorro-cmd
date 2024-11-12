@@ -103,8 +103,6 @@ COMMANDS = [
             "db": import_path("socorro.scripts.db.db_group"),
             "es": import_path("es_cli.main"),
             "legacy_es": import_path("legacy_es_cli.main"),
-            "pubsub": import_path("pubsub_cli.main"),
-            "gcs": import_path("gcs_cli.main"),
         },
     ),
     Group(
