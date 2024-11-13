@@ -49,8 +49,7 @@ To run the stage submitter and fake collector, do:
 
 ::
 
-  $ make runservices
-  $ make runsubmitter
+  $ just run-submitter
 
 After doing this, you can enter a Socorro container shell and use
 ``bin/process_crash.sh`` to pull down crash data, put it into storage, and
@@ -58,7 +57,7 @@ publish the crash id to the standard queue.
 
 ::
 
-  $ make shell
+  $ just shell
   app@socorro:/app$ ./bin/process_crash.sh a206b51a-5955-4704-be1f-cf1ac0240514
 
 

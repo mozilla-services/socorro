@@ -60,7 +60,7 @@ Checklist
 
       Local dev environment:
 
-      1. "make shell"
+      1. "just shell"
       2. "cd webapp/"
       3. "./manage.py showmigrations"
 
