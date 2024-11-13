@@ -12,6 +12,7 @@ services:
     depends_on:
       - fakesentry
       - statsd
+      - gcs-emulator
       - pubsub
       - postgresql
       - legacy-elasticsearch

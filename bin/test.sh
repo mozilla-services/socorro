@@ -27,18 +27,20 @@ PYTHON="$(which python)"
 
 echo ">>> wait for services to be ready"
 
-urlwait "${DATABASE_URL}"
-urlwait "${LEGACY_ELASTICSEARCH_URL}"
-urlwait "http://${PUBSUB_EMULATOR_HOST}" 10
-urlwait "${STORAGE_EMULATOR_HOST}/storage/v1/b" 10
-python ./bin/waitfor.py --verbose --codes=200,404 "${SENTRY_DSN}"
+waitfor --verbose --conn-only "${DATABASE_URL}"
+waitfor --verbose "${LEGACY_ELASTICSEARCH_URL}"
+waitfor --verbose "http://${PUBSUB_EMULATOR_HOST}"
+waitfor --verbose "${STORAGE_EMULATOR_HOST}/storage/v1/b"
+waitfor --verbose --codes={200,404} "${SENTRY_DSN}"
 # wait for this last because it's slow to start
-urlwait "${ELASTICSEARCH_URL}" 30
+waitfor --verbose --timeout=30 "${ELASTICSEARCH_URL}"
 
 echo ">>> build queue things and db things"
 
 # Clear Pub/Sub for tests
-./socorro-cmd pubsub delete-all
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_STANDARD_TOPIC_NAME"
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_PRIORITY_TOPIC_NAME"
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_REPROCESSING_TOPIC_NAME"
 
 # Set up socorro_test db
 ./socorro-cmd db drop || true

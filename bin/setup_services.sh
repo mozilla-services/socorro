@@ -18,10 +18,10 @@ set -euo pipefail
 /app/bin/setup_postgres.sh
 
 # Delete and create local GCS buckets
-/app/socorro-cmd gcs delete "${CRASHSTORAGE_GCS_BUCKET}"
-/app/socorro-cmd gcs create "${CRASHSTORAGE_GCS_BUCKET}"
-/app/socorro-cmd gcs delete "${TELEMETRY_GCS_BUCKET}"
-/app/socorro-cmd gcs create "${TELEMETRY_GCS_BUCKET}"
+gcs-cli delete "${CRASHSTORAGE_GCS_BUCKET}"
+gcs-cli create "${CRASHSTORAGE_GCS_BUCKET}"
+gcs-cli delete "${TELEMETRY_GCS_BUCKET}"
+gcs-cli create "${TELEMETRY_GCS_BUCKET}"
 
 # Delete and create Elasticsearch indices
 /app/socorro-cmd legacy_es delete
@@ -33,8 +33,16 @@ if [ "${ELASTICSEARCH_MODE^^}" == "PREFER_NEW" ]; then
 fi
 
 # Delete and create Pub/Sub queues
-/app/socorro-cmd pubsub delete-all
-/app/socorro-cmd pubsub create-all
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_STANDARD_TOPIC_NAME"
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_PRIORITY_TOPIC_NAME"
+pubsub-cli delete-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_REPROCESSING_TOPIC_NAME"
+
+pubsub-cli create-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_STANDARD_TOPIC_NAME"
+pubsub-cli create-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_PRIORITY_TOPIC_NAME"
+pubsub-cli create-topic "$PUBSUB_PROJECT_ID" "$PUBSUB_REPROCESSING_TOPIC_NAME"
+pubsub-cli create-subscription "$PUBSUB_PROJECT_ID" "$PUBSUB_STANDARD_TOPIC_NAME" "$PUBSUB_STANDARD_SUBSCRIPTION_NAME"
+pubsub-cli create-subscription "$PUBSUB_PROJECT_ID" "$PUBSUB_PRIORITY_TOPIC_NAME" "$PUBSUB_PRIORITY_SUBSCRIPTION_NAME"
+pubsub-cli create-subscription "$PUBSUB_PROJECT_ID" "$PUBSUB_REPROCESSING_TOPIC_NAME" "$PUBSUB_REPROCESSING_SUBSCRIPTION_NAME"
 
 # Initialize the cronrun bookkeeping for all configured jobs to success
 /app/webapp/manage.py cronmarksuccess all
