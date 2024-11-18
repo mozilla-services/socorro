@@ -73,7 +73,7 @@ You can see Elasticsearch common options by passing ``--help`` to the
 processor app and looking at the ``resource.elasticsearch`` options like
 this::
 
-  $ make shell
+  $ just shell
   app@socorro:/app$ python ./socorro/processor/processor_app.py \
       --destination.crashstorage_class=socorro.external.es.crashstorage.ESCrashStorage \
       --help

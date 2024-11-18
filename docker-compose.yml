@@ -1,14 +1,24 @@
 ---
+# Sets the base name for containers and networks for docker-compose to
+# "socorro_". This is normally set by the name of this directory, but
+# if you clone the repository with a different directory name, then
+# you end up with a different project name and then everything is hosed.
+# Setting it here fixes that.
+name: socorro
+
 services:
   # Socorro app image
   app:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      args:
+        userid: ${USE_UID:-10001}
+        groupid: ${USE_GID:-10001}
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -17,30 +27,11 @@ services:
       - postgresql
       - legacy-elasticsearch
       - elasticsearch
-    volumes:
-      - .:/app
 
   # For development
 
   # For running tests
   test:
-    image: local/socorro_app
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/test.env
-    depends_on:
-      - fakesentry
-      - statsd
-      - gcs-emulator
-      - pubsub
-      - postgresql
-      - legacy-elasticsearch
-      - elasticsearch
-    volumes:
-      - .:/app
-
-  # For running tests in CI
-  test-ci:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
@@ -65,7 +56,7 @@ services:
     env_file:
       - docker/config/local_dev.env
       - docker/config/test.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -81,7 +72,7 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -91,14 +82,12 @@ services:
       - elasticsearch
       - symbolsserver
     command: ["processor"]
-    volumes:
-      - .:/app
 
   crontabber:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -106,14 +95,12 @@ services:
       - legacy-elasticsearch
       - elasticsearch
     command: ["crontabber"]
-    volumes:
-      - .:/app
 
   webapp:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -127,21 +114,17 @@ services:
     command: ["webapp", "--dev"]
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
 
   stage_submitter:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - gcs-emulator
       - pubsub
     command: ["stage_submitter"]
-    volumes:
-      - .:/app
 
   # https://github.com/willkg/kent
   fakesentry:
@@ -178,7 +161,7 @@ services:
     image: mozilla/socorro_collector:latest
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - gcs-emulator
       - pubsub
@@ -187,31 +170,25 @@ services:
       - 8000
     ports:
       - "8888:8000"
-    volumes:
-      - .:/socorro
 
   fakecollector:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     command: ["fakecollector"]
     ports:
       - "9000:8000"
-    volumes:
-      - .:/app
 
   symbolsserver:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     command: ["symbolsserver"]
     stop_signal: SIGINT
     ports:
       - "8070:8070"
-    volumes:
-      - .:/app
 
   # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:

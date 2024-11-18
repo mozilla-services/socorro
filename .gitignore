@@ -24,8 +24,7 @@ symbols/
 .docker-build*
 .devcontainer-build
 .cache/
-docker-compose.override.yml
-my.env
+.env
 
 # docs things
 docs/_build/

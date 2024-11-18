@@ -15,7 +15,7 @@ development environment.
 Setup quickstart
 ================
 
-1. Install required software: Docker, make, and git.
+1. Install required software: Docker, just, and git.
 
    **Linux**:
 
@@ -26,17 +26,17 @@ Setup quickstart
        Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
        will install Docker.
 
-       Use `homebrew <https://brew.sh>`_ to install make and git:
+       Use `homebrew <https://brew.sh>`_ to install just and git:
 
        .. code-block:: shell
 
-          $ brew install make git
+          $ brew install just git
 
    **Other**:
 
        Install `Docker <https://docs.docker.com/engine/installation/>`_.
 
-       Install `make <https://www.gnu.org/software/make/>`_.
+       Install `just <https://github.com/casey/just?tab=readme-ov-file#installation>`_.
 
        Install `git <https://git-scm.com/>`_.
 
@@ -52,14 +52,14 @@ Setup quickstart
 
    .. code-block:: shell
 
-      $ make my.env
+      $ just _env
 
-   Then edit the file and set the ``SOCORRO_UID`` and ``SOCORRO_GID``
+   Then edit the file and set the ``USE_UID`` and ``USE_GID``
    variables. These will get used when creating the app user in the base
    image.
 
-   If you ever want different values, change them in ``my.env`` and re-run
-   ``make build``.
+   If you ever want different values, change them in ``.env`` and re-run
+   ``just build``.
 
 4. Build Docker images for Socorro services.
 
@@ -67,23 +67,17 @@ Setup quickstart
 
    .. code-block:: shell
 
-      $ make build
+      $ just build
 
    That will build the app Docker image required for development.
 
 5. Initialize Postgres, Elasticsearch, Pub/Sub, S3, and SQS.
 
-   Then you need to set up services. To do that, run:
+   To do that, run:
 
    .. code-block:: shell
 
-      $ make runservices
-
-   This starts service containers. Then run:
-
-   .. code-block:: shell
-
-      $ make setup
+      $ just setup
 
    This creates the Postgres database and sets up tables, stored procedures,
    integrity rules, types, and a bunch of other things. It also adds a bunch of
@@ -107,7 +101,7 @@ Setup quickstart
 
    .. code-block:: shell
 
-      $ make updatedata
+      $ just update-data
 
 
 At this point, you should have a basic functional Socorro development
@@ -115,7 +109,7 @@ environment that has no crash data in it.
 
 .. Note::
 
-   You can run ``make setup`` and ``make updatedata`` any time you want to
+   You can run ``just setup`` and ``just update-data`` any time you want to
    throw out all state and re-initialize services.
 
 .. Seealso::
@@ -245,7 +239,7 @@ To lint the code:
 
 .. code-block:: shell
 
-   $ make lint
+   $ just lint
 
 If you hit issues, use ``# noqa``.
 
@@ -253,7 +247,7 @@ To run the reformatter:
 
 .. code-block:: shell
 
-   $ make lintfix
+   $ just lint --fix
 
 We're using:
 
@@ -304,7 +298,7 @@ Do this:
 
 .. code-block:: shell
 
-   $ make shell
+   $ just shell
    app@socorro:/app$ cd webapp
    app@socorro:/app/webapp$ ./manage.py makemigration --name "BUGID_desc" APP
 
@@ -334,7 +328,7 @@ For example, to add ``foobar`` version 5:
 
    .. code-block:: shell
 
-      $ make rebuildreqs
+      $ just rebuild-reqs
 
    to apply the updates to ``requirements.txt``
 
@@ -342,7 +336,7 @@ For example, to add ``foobar`` version 5:
 
    .. code-block:: shell
 
-      $ make build
+      $ just build
 
 If there are problems, it'll tell you.
 
@@ -351,7 +345,7 @@ dependencies. To do this, run:
 
 .. code-block:: shell
 
-   $ make updatereqs
+   $ just rebuild-reqs --update
 
 
 JavaScript Dependencies
@@ -371,7 +365,7 @@ Then rebuild your docker environment:
 
 .. code-block:: shell
 
-   $ make build
+   $ just build
 
 If there are problems, it'll tell you.
 
@@ -387,7 +381,7 @@ To build the docs, run this:
 
 .. code-block:: shell
 
-   $ make docs
+   $ just docs
 
 
 Testing
@@ -406,7 +400,7 @@ To run the tests, do:
 
 .. code-block:: shell
 
-   $ make test
+   $ just test
 
 That runs the ``/app/bin/test.sh`` script in the test container using test
 configuration.
@@ -416,7 +410,7 @@ test container:
 
 .. code-block:: shell
 
-   $ make testshell
+   $ just test-shell
 
 Then you can run pytest on the Socorro tests or the webapp tests.
 
@@ -499,7 +493,7 @@ build new images:
 
 .. code-block:: shell
 
-   $ make build
+   $ just build
 
 
 If there were changes to the database tables, stored procedures, types,
@@ -508,8 +502,8 @@ state and re-initialize services:
 
 .. code-block:: shell
 
-   $ make setup
-   $ make updatedata
+   $ just setup
+   $ just update-data
 
 
 Wiping crash storage and state
@@ -520,8 +514,8 @@ data, and reset the state of the system, run:
 
 .. code-block:: shell
 
-   $ make setup
-   $ make updatedata
+   $ just setup
+   $ just update-data
 
 
 Updating release data
@@ -534,7 +528,7 @@ Run:
 
 .. code-block:: shell
 
-   $ make updatedata
+   $ just update-data
 
 
 .. _gettingstarted-chapter-configuration:
@@ -623,7 +617,7 @@ first run:
 
 .. code-block:: shell
 
-   $ make devcontainerbuild
+   $ just build devcontainer
 
 Additionally on mac there is the potential that running git from inside any
 container that mounts the current directory to `/app`, such as the development
@@ -643,7 +637,7 @@ pick up changes:
 
 .. code-block:: shell
 
-   $ make devcontainer
+   $ just run devcontainer
 
 
 Upgrading to a new Python version
@@ -679,7 +673,7 @@ All helper scripts run in the shell in the container:
 
 .. code-block::
 
-   $ make shell
+   $ just shell
 
 Some of the scripts require downloading production data from
 `crash-stats.mozilla.org <https://crash-stats.mozilla.org>`_, and it is
@@ -713,7 +707,7 @@ Add the API token value to your ``my.env`` file::
 
    SOCORRO_API_TOKEN=apitokenhere
 
-The API token is used by the download scripts (run inside ``$ make shell``),
+The API token is used by the download scripts (run inside ``$ just shell``),
 but not directly by the processor.
 
 
@@ -739,7 +733,7 @@ You can also use it with ``fetch_crashids``:
 
    app@socorro:/app$ socorro-cmd fetch_crashids --num=1 | bin/process_crashes.sh
 
-Run the processor and webapp with ``make run`` to process the crash reports.
+Run the processor and webapp with ``just run`` to process the crash reports.
 
 If you find this doesn't meet your needs, you can write a shell script using
 the commands and scripts that ``process_crashes.sh`` uses. They are described
@@ -888,7 +882,7 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
   # Set SOCORRO_API_TOKEN in my.env
   # Start bash in the socorro container
-  $ make shell
+  $ just shell
 
   # Generate a file of crashids--one per line
   app@socorro:/app$ socorro-cmd fetch_crashids > crashids.txt
@@ -955,6 +949,6 @@ For example::
 
     PGPASSWORD=postgres psql -h localhost -p 8574 -U postgres --no-password socorro
 
-You can also connect with ``make``::
+You can also connect with ``just``::
 
-    make psql
+    just psql

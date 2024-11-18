@@ -40,7 +40,7 @@ manage.py cronrun helper commands
 
 All commands are accessed in a shell in the app container. For example::
 
-    $ make shell
+    $ just shell
     app@socorro:/app$ webapp/manage.py cronrun --help
 
 **cronrun**
