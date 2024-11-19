@@ -208,7 +208,9 @@ services:
 
   # https://www.elastic.co/guide/en/elasticsearch/reference/8.14/docker.html
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    build:
+      context: docker/images/elasticsearch
+    image: local/socorro_elasticsearch
     mem_limit: 1g
     command:
       - bin/elasticsearch
@@ -219,7 +221,9 @@ services:
 
   # https://hub.docker.com/_/postgres/
   postgresql:
-    image: postgres:16.4
+    build:
+      context: docker/images/postgres
+    image: local/socorro_postgres
     ports:
       - "8574:5432"
     environment:
@@ -231,8 +235,9 @@ services:
   # https://cloud.google.com/sdk/docs/downloads-docker
   # official pubsub emulator
   pubsub:
-    # also available as google/cloud-sdk:<version>-emulators
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:463.0.0-emulators
+    build:
+      context: docker/images/pubsub-emulator
+    image: local/socorro_pubsub_emulator
     command:
       - gcloud
       - beta
@@ -246,7 +251,9 @@ services:
 
   # https://hub.docker.com/_/memcached/
   memcached:
-    image: memcached:1.5.1
+    build:
+      context: docker/images/memcached
+    image: local/socorro_memcached
     ports:
       - "11211:11211"
 
