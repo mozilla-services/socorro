@@ -1,4 +1,1 @@
-FROM fsouza/fake-gcs-server:1.50.2@sha256:23996047676fe5312001b828d800670519181c57a5943c2270e7421f3ab3f477
-
-# add curl for use in healthcheck
-RUN apk add --no-cache curl
+FROM us-docker.pkg.dev/moz-fx-cavendish-prod/cavendish-prod/gcs-emulator:v2024.11.19-1@sha256:a02a86372ffe26c9f07cb55bf2d1551935389f0469d7e7dd0b69580879a00731
