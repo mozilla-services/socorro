@@ -27,13 +27,7 @@ PYTHON="$(which python)"
 
 echo ">>> wait for services to be ready"
 
-waitfor --verbose --conn-only "${DATABASE_URL}"
-waitfor --verbose "${LEGACY_ELASTICSEARCH_URL}"
-waitfor --verbose "http://${PUBSUB_EMULATOR_HOST}"
-waitfor --verbose "${STORAGE_EMULATOR_HOST}/storage/v1/b"
-waitfor --verbose --codes={200,404} "${SENTRY_DSN}"
-# wait for this last because it's slow to start
-waitfor --verbose --timeout=30 "${ELASTICSEARCH_URL}"
+./bin/waitfor_services.sh
 
 echo ">>> build queue things and db things"
 

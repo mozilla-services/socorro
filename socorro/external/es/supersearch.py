@@ -142,7 +142,7 @@ class SuperSearch(SearchBase):
                 return aggregation
 
             for i, bucket in enumerate(aggregation["buckets"]):
-                if bucket["key"] in (True, False):
+                if isinstance(bucket["key"], bool):
                     # Restore es 1.4 format for boolean terms as string
                     term = "T" if bucket["key"] else "F"
                 elif "key_as_string" in bucket:
