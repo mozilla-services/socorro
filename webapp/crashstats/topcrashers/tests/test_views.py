@@ -135,7 +135,6 @@ class TestTopCrasherViews:
                 "os_name": "Linux",
                 "process_type": "parent",
                 "report_type": "crash",
-                "uptime": 500,
             }
             data.update(params)
             return data
@@ -149,6 +148,7 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="1.0",
                     startup_crash=True,
+                    uptime=1,
                 )
             )
 
@@ -160,6 +160,7 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="2.0",
                     startup_crash=startup_crash,
+                    uptime=1 if startup_crash else 500,
                 )
             )
 
@@ -170,6 +171,7 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="3.0",
                     startup_crash=False,
+                    uptime=500,
                 )
             )
 
@@ -179,6 +181,10 @@ class TestTopCrasherViews:
 
         startup_crash_msg = 'title="Startup Crash"'
         potential_startup_crash_msg = 'title="Potential Startup Crash"'
+        potential_startup_window_crash_msg = (
+            'title="Potential Startup Crash, more than half of the crashes happened '
+            'during the first minute after launch"'
+        )
 
         # Request Firefox 1.0 where crash data is startup_crash=True
         url = reverse("topcrashers:topcrashers")
@@ -186,6 +192,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg in smart_str(response.content)
         assert potential_startup_crash_msg not in smart_str(response.content)
+        assert potential_startup_window_crash_msg in smart_str(response.content)
 
         # Request Firefox 2.0 where most crash data is startup_crash=True
         url = reverse("topcrashers:topcrashers")
@@ -193,6 +200,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg not in smart_str(response.content)
         assert potential_startup_crash_msg in smart_str(response.content)
+        assert potential_startup_window_crash_msg in smart_str(response.content)
 
         # Request Firefox 3.0 where crash data is startup_crash=False
         url = reverse("topcrashers:topcrashers")
@@ -200,6 +208,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg not in smart_str(response.content)
         assert potential_startup_crash_msg not in smart_str(response.content)
+        assert potential_startup_window_crash_msg not in smart_str(response.content)
 
     def test_product_sans_featured_version(self, client, db, preferred_es_helper):
         # Index a bunch of version=1.0 data so we have an active version
