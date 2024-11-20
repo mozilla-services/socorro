@@ -36,6 +36,9 @@ RULE_ERROR_EVENT = {
             "span_id": ANY,
             "trace_id": ANY,
         },
+        "processor_pipeline": {
+            "rule": "socorro.tests.processor.test_pipeline.BadRule",
+        },
     },
     "environment": "production",
     "event_id": ANY,
@@ -85,9 +88,6 @@ RULE_ERROR_EVENT = {
                 "value": "'pii'",
             }
         ]
-    },
-    "extra": {
-        "rule": "socorro.tests.processor.test_pipeline.BadRule",
     },
     "level": "error",
     "modules": ANY,

@@ -92,7 +92,7 @@
 
         <p class="description">
           Use this parameter to get a large number of results instead of setting
-          an arbitraty big <code>_results_number</code> value. Run queries in a
+          an arbitrary big <code>_results_number</code> value. Run queries in a
           loop, incrementing this by the value of <code>_results_number</code>,
           and concatenate the content of the <code>hits</code> key.
         </p>
@@ -146,7 +146,7 @@
           run an aggregation on <code>field_1</code>, then for each bucket of
           that aggregation, it will aggregate on <code>field_2</code>, and then
           for each bucket of that sub-aggregation, it will aggregate on
-          <code>field_3</code>. Theoratically, we could have any number of
+          <code>field_3</code>. Theoretically, we could have any number of
           levels of aggregations, but in practice we only allow all "level 1"
           aggregations, and a few "level 2" and "level 3".
         </p>
@@ -300,6 +300,9 @@
               {% endfor %}
             </p>
 
+            {# NOTE(willkg): we use permissions_needed so it matches the
+            protected crash schema rather than the webapp permissions which
+            users won't understand #}
             {% if filter.permissions_needed %}
               <p class="permissions">{{ filter.permissions_needed | join(', ') }}</p>
             {% endif %}

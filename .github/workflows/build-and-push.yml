@@ -18,7 +18,10 @@ jobs:
       contents: read
       deployments: write
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      # Disable docker compose volume mounts in docker-compose.override.yml
+      COMPOSE_FILE: docker-compose.yml
     steps:
       - uses: actions/checkout@v4
       - name: Get info
@@ -36,20 +39,21 @@ jobs:
           "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > version.json
       - name: Output version.json
         run: cat version.json
+      - name: Install just
+        run: sudo apt-get update && sudo apt-get install -y just
       - name: Build Docker images
         run: |
-          make build
+          just build
           docker compose images
       - name: Verify requirements.txt contains correct dependencies
         run: |
-          docker run --rm local/socorro_app shell ./bin/verify_reqs.sh
+          just verify-reqs
       - name: Run lint check
         run: |
-          docker run --rm local/socorro_app shell ./bin/lint.sh
+          just lint
       - name: Run tests
         run: |
-          make my.env
-          docker compose run --rm test-ci shell ./bin/test.sh
+          just test
 
       - name: Set Docker image tag to "latest" for updates of the main branch
         if: github.ref == 'refs/heads/main'

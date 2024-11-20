@@ -1718,6 +1718,30 @@ class TestAbortSignature:
         assert result.signature == "Abort | unknown | hello"
 
 
+class TestSigPrintableCharsOnly:
+    @pytest.mark.parametrize(
+        "signature, expected",
+        [
+            ("everything | fine", "everything | fine"),
+            # Non-printable null character
+            ("libxul.so\x00 | frame2", "libxul.so | frame2"),
+            # Non-ascii emoji
+            ("libxul.so\U0001f600 | frame2", "libxul.so | frame2"),
+        ],
+    )
+    def test_whitespace_fixing(self, signature, expected):
+        rule = rules.SigPrintableCharsOnly()
+        result = generator.Result()
+        result.signature = signature
+        action_result = rule.action({}, result)
+        assert action_result is True
+        assert result.signature == expected
+        if signature != expected:
+            assert result.notes == [
+                "SigPrintableCharsOnly: unprintable characters removed"
+            ]
+
+
 class TestSigFixWhitespace:
     @pytest.mark.parametrize(
         "signature, expected",

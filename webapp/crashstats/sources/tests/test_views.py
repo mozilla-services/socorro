@@ -67,6 +67,14 @@ def test_highlight_url(client, requests_mock):
     assert response["content-security-policy"]
 
 
+def test_highlight_bad_url(client, requests_mock):
+    url = reverse("sources:highlight_url")
+
+    # Invalid url is treated as a 404
+    response = client.get(url, {"url": "http://example.com[@a.xxx.org/?"})
+    assert response.status_code == 404
+
+
 def test_highlight_line(client, requests_mock):
     requests_mock.get(
         f"https://{HOST}/200.h",

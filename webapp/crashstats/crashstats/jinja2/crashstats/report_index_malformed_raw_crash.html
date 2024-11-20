@@ -1,0 +1,22 @@
+{% extends "crashstats_base.html" %}
+
+{% block content %}
+  <div id="mainbody">
+    <div class="page-heading">
+      <h2>Crash Report Malformed</h2>
+    </div>
+    <div class="panel">
+      <div class="body">
+        <p>
+          The crash report you requested is malformed in some way such that it
+          cannot be shown.
+        </p>
+        <p>
+          If you need to see this crash report, please
+          <a href="https://bugzilla.mozilla.org/enter_bug.cgi?{{ make_query_string(product='Socorro', component='Webapp', bug_file_loc=request.build_absolute_uri()) }}">submit a bug</a>
+          describing what happened, and please include the URL for this page.
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

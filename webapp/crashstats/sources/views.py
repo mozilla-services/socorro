@@ -53,7 +53,12 @@ def highlight_url(request):
     if not url:
         return HttpResponseBadRequest("No url specified.")
 
-    parsed = urlsplit(url)
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        # If the value can't be parsed as a url, then treat it as if the document
+        # doesn't exist. Bug #1902001.
+        return HttpResponseNotFound("Document at URL does not exist.")
 
     # We will only pull urls from allowed hosts
     if parsed.netloc not in ALLOWED_SOURCE_HOSTS:

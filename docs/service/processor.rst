@@ -52,7 +52,7 @@ processor configuration.
 
 To use tools and also ease debugging in the container, you can run a shell::
 
-  $ make shell
+  $ just shell
 
 Then you can start and stop the processor and tweak files and all that jazz.
 

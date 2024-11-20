@@ -17,7 +17,6 @@ import threading
 import time
 
 from socorro.lib.task_manager import (
-    default_heartbeat,
     default_iterator,
     default_task_func,
     TaskManager,
@@ -25,8 +24,6 @@ from socorro.lib.task_manager import (
 
 
 STOP_TOKEN = (None, None)
-
-HEARTBEAT_INTERVAL = 60
 
 
 class ThreadedTaskManager(TaskManager):
@@ -39,7 +36,6 @@ class ThreadedTaskManager(TaskManager):
         number_of_threads=4,
         maximum_queue_size=8,
         job_source_iterator=default_iterator,
-        heartbeat_func=default_heartbeat,
         task_func=default_task_func,
     ):
         """
@@ -54,7 +50,6 @@ class ThreadedTaskManager(TaskManager):
             instantiated with a config object can be iterated. The iterator must
             yield a tuple consisting of a function's tuple of args and, optionally,
             a mapping of kwargs. Ex:  (('a', 17), {'x': 23})
-        :arg heartbeat_func: a function to run every second
         :arg task_func: a function that will accept the args and kwargs yielded
             by the job_source_iterator
         """
@@ -71,7 +66,6 @@ class ThreadedTaskManager(TaskManager):
             idle_delay=idle_delay,
             quit_on_empty_queue=quit_on_empty_queue,
             job_source_iterator=job_source_iterator,
-            heartbeat_func=heartbeat_func,
             task_func=task_func,
         )
         self.thread_list = []  # the thread object storage
@@ -107,12 +101,8 @@ class ThreadedTaskManager(TaskManager):
         if self.queueing_thread is None:
             return
 
-        next_heartbeat = time.time() + HEARTBEAT_INTERVAL
         self.logger.debug("waiting to join queueing_thread")
         while True:
-            if time.time() > next_heartbeat:
-                self.heartbeat_func()
-                next_heartbeat = time.time() + HEARTBEAT_INTERVAL
             try:
                 self.queueing_thread.join(1.0)
                 if not self.queueing_thread.is_alive():
@@ -149,7 +139,7 @@ class ThreadedTaskManager(TaskManager):
         :arg wait_log_interval: While sleeping, it is helpful if the thread periodically
             announces itself so that we know that it is still alive. This number is the
             time in seconds between log entries.
-        :arg wait_reason: The is for the explaination of why the thread is sleeping.
+        :arg wait_reason: The is for the explanation of why the thread is sleeping.
             This is likely to be a message like: 'there is no work to do'.
 
         """

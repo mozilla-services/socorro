@@ -9,6 +9,7 @@ import os
 from google.cloud.pubsub_v1 import PublisherClient, SubscriberClient
 from google.cloud.pubsub_v1.types import BatchSettings, PublisherOptions
 from more_itertools import chunked
+import sentry_sdk
 
 from socorro.external.crashqueue_base import CrashQueueBase
 
@@ -260,15 +261,14 @@ class PubSubCrashQueue(CrashQueueBase):
             for i, future in enumerate(futures):
                 try:
                     future.result()
-                except Exception:
+                except Exception as exc:
+                    sentry_sdk.capture_exception(exc)
                     logger.exception(
-                        "Crashid failed to publish: %s %s",
+                        "crashid failed to publish: %s %s",
                         queue,
                         batch[i],
                     )
-                    failed.append(batch[i])
+                    failed.append((repr(exc), batch[i]))
 
         if failed:
-            raise CrashIdsFailedToPublish(
-                f"Crashids failed to publish: {','.join(failed)}"
-            )
+            raise CrashIdsFailedToPublish(f"Crashids failed to publish: {failed!r}")

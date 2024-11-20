@@ -1273,12 +1273,12 @@ class TestFenixVersionRewriteRule:
         ],
     )
     def test_predicate(self, tmp_path, product, version, expected):
-        raw_crash = {
-            "ProductName": product,
-            "Version": version,
-        }
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "product_name": product,
+            "version": version,
+        }
         status = Status()
 
         rule = FenixVersionRewriteRule()
@@ -1286,67 +1286,66 @@ class TestFenixVersionRewriteRule:
         assert ret == expected
 
     def test_act(self, tmp_path):
-        raw_crash = {
-            "ProductName": "Fenix",
-            "Version": "Nightly 200315 05:05",
-        }
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "product_name": "Fenix",
+            "version": "Nightly 200315 05:05",
+        }
         status = Status()
 
         rule = FenixVersionRewriteRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-        assert raw_crash["Version"] == "0.0a1"
+        assert processed_crash["version"] == "0.0a1"
         assert status.notes == ["Changed version from 'Nightly 200315 05:05' to 0.0a1"]
 
 
 class TestESRVersionRewrite:
     def test_everything_we_hoped_for(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["ReleaseChannel"] = "esr"
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "release_channel": "esr",
+            "version": "120.0",
+        }
         status = Status()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert raw_crash["Version"] == "12.0esr"
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
+        assert raw_crash == {}
+        assert processed_crash["version"] == "120.0esr"
 
     def test_this_is_not_the_crash_you_are_looking_for(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["ReleaseChannel"] = "not_esr"
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "release_channel": "release",
+            "version": "120.0",
+        }
         status = Status()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert raw_crash["Version"] == "12.0"
+        assert raw_crash == {}
+        assert processed_crash["version"] == "120.0"
 
-        # processed_crash should be unchanged
-        assert processed_crash == {}
-
-    def test_this_is_really_broken(self, tmp_path):
-        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
-        raw_crash["ReleaseChannel"] = "esr"
-        del raw_crash["Version"]
+    def test_no_version(self, tmp_path):
+        raw_crash = {}
         dumps = {}
-        processed_crash = {}
+        processed_crash = {
+            "release_channel": "esr",
+            # no "version"
+        }
         status = Status()
 
         rule = ESRVersionRewrite()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
 
-        assert "Version" not in raw_crash
-        assert status.notes == ['"Version" missing from esr release raw_crash']
-
-        # processed_crash should be unchanged
-        assert processed_crash == {}
+        assert raw_crash == {}
+        assert "version" not in processed_crash
+        assert status.notes == ["'version' missing from esr release processed_crash"]
 
 
 class TestTopMostFilesRule:
@@ -2054,7 +2053,7 @@ class TestSignatureGeneratorRule:
         # doesn't configure Sentry the way the processor does so we shouldn't test
         # whether things are scrubbed correctly
         with sentry_helper.init() as sentry_client:
-            # Override the regular SigntureGenerator with one with a BadRule
+            # Override the regular SignatureGenerator with one with a BadRule
             # in the pipeline
             rule.generator = SignatureGenerator(
                 ruleset=[BadRule], error_handler=rule._error_handler
@@ -2073,10 +2072,11 @@ class TestSignatureGeneratorRule:
             assert status.notes == ["BadRule: Rule failed: Cough"]
 
             (event,) = sentry_client.envelope_payloads
-            # NOTE(willkg): Some of the extra bits come from the processor app and since
-            # we're testing SignatureGenerator in isolation, those don't get added to
-            # the sentry scope
-            assert event["extra"] == {"signature_rule": "BadRule", "sys.argv": mock.ANY}
+
+            # Assert that the rule that threw an error is captured in the context.
+            assert event["contexts"]["signature_generator"] == {
+                "signature_rule": "BadRule"
+            }
             assert event["exception"]["values"][0]["type"] == "Exception"
 
 

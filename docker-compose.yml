@@ -1,32 +1,24 @@
 ---
+# Sets the base name for containers and networks for docker-compose to
+# "socorro_". This is normally set by the name of this directory, but
+# if you clone the repository with a different directory name, then
+# you end up with a different project name and then everything is hosed.
+# Setting it here fixes that.
+name: socorro
+
 services:
   # Socorro app image
   app:
     build:
       context: .
-      dockerfile: ./docker/Dockerfile
+      dockerfile: docker/Dockerfile
+      args:
+        userid: ${USE_UID:-10001}
+        groupid: ${USE_GID:-10001}
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
-    depends_on:
-      - fakesentry
-      - statsd
-      - pubsub
-      - postgresql
-      - legacy-elasticsearch
-      - elasticsearch
-    volumes:
-      - .:/app
-
-  # For development
-
-  # For running tests
-  test:
-    image: local/socorro_app
-    env_file:
-      - docker/config/local_dev.env
-      - docker/config/test.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -35,11 +27,11 @@ services:
       - postgresql
       - legacy-elasticsearch
       - elasticsearch
-    volumes:
-      - .:/app
 
-  # For running tests in CI
-  test-ci:
+  # For development
+
+  # For running tests
+  test:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
@@ -64,7 +56,7 @@ services:
     env_file:
       - docker/config/local_dev.env
       - docker/config/test.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -80,7 +72,7 @@ services:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -90,14 +82,12 @@ services:
       - elasticsearch
       - symbolsserver
     command: ["processor"]
-    volumes:
-      - .:/app
 
   crontabber:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -105,14 +95,12 @@ services:
       - legacy-elasticsearch
       - elasticsearch
     command: ["crontabber"]
-    volumes:
-      - .:/app
 
   webapp:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - statsd
@@ -126,27 +114,22 @@ services:
     command: ["webapp", "--dev"]
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
 
   stage_submitter:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - fakesentry
       - gcs-emulator
       - pubsub
     command: ["stage_submitter"]
-    volumes:
-      - .:/app
 
   # https://github.com/willkg/kent
   fakesentry:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile.fakesentry
+      context: docker/images/fakesentry
     image: local/socorro_fakesentry
     ports:
       - "8090:8090"
@@ -156,8 +139,7 @@ services:
   # https://hub.docker.com/r/mozilla/oidc-testprovider
   oidcprovider:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile.oidcprovider
+      context: docker/images/oidcprovider
     image: local/socorro_oidcprovider
     ports:
       - "8080:8080"
@@ -179,7 +161,7 @@ services:
     image: mozilla/socorro_collector:latest
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     depends_on:
       - gcs-emulator
       - pubsub
@@ -188,31 +170,25 @@ services:
       - 8000
     ports:
       - "8888:8000"
-    volumes:
-      - .:/socorro
 
   fakecollector:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     command: ["fakecollector"]
     ports:
       - "9000:8000"
-    volumes:
-      - .:/app
 
   symbolsserver:
     image: local/socorro_app
     env_file:
       - docker/config/local_dev.env
-      - my.env
+      - .env
     command: ["symbolsserver"]
     stop_signal: SIGINT
     ports:
       - "8070:8070"
-    volumes:
-      - .:/app
 
   # https://hub.docker.com/r/hopsoft/graphite-statsd/
   statsd:
@@ -232,7 +208,9 @@ services:
 
   # https://www.elastic.co/guide/en/elasticsearch/reference/8.15/docker.html
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+    build:
+      context: docker/images/elasticsearch
+    image: local/socorro_elasticsearch
     mem_limit: 1g
     command:
       - bin/elasticsearch
@@ -243,7 +221,9 @@ services:
 
   # https://hub.docker.com/_/postgres/
   postgresql:
-    image: postgres:16.4
+    build:
+      context: docker/images/postgres
+    image: local/socorro_postgres
     ports:
       - "8574:5432"
     environment:
@@ -255,8 +235,9 @@ services:
   # https://cloud.google.com/sdk/docs/downloads-docker
   # official pubsub emulator
   pubsub:
-    # also available as google/cloud-sdk:<version>-emulators
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:463.0.0-emulators
+    build:
+      context: docker/images/pubsub-emulator
+    image: local/socorro_pubsub_emulator
     command:
       - gcloud
       - beta
@@ -270,7 +251,9 @@ services:
 
   # https://hub.docker.com/_/memcached/
   memcached:
-    image: memcached:1.5.1
+    build:
+      context: docker/images/memcached
+    image: local/socorro_memcached
     ports:
       - "11211:11211"
 
@@ -278,7 +261,7 @@ services:
   # Fake GCP GCS server for local development and testing
   gcs-emulator:
     build:
-      dockerfile: ./docker/Dockerfile.gcs-emulator
+      context: docker/images/gcs-emulator
     image: local/socorro_gcs_emulator
     command: -port 8001 -scheme http
     ports:

@@ -18,6 +18,7 @@ from .rules import (
     SignatureIPCMessageName,
     SignatureRunWatchDog,
     SignatureShutdownTimeout,
+    SigPrintableCharsOnly,
     SigTruncate,
     StackOverflowSignature,
     StackwalkerErrorSignatureRule,
@@ -37,6 +38,7 @@ DEFAULT_RULESET = [
     StackOverflowSignature,
     HungProcess,
     # NOTE(willkg): These should always come last and in this order
+    SigPrintableCharsOnly,
     SigFixWhitespace,
     SigTruncate,
 ]

@@ -29,7 +29,7 @@ In ``my.env``, set ``SOCORRO_REPROCESS_API_TOKEN`` to the token value.
 
 For example, this reprocesses a single crash::
 
-    $ make shell
+    $ just shell
     app@socorro:app$ socorro-cmd reprocess c2815fd1-e87b-45e9-9630-765060180110
 
 When reprocessing many crashes, it is useful to collect crashids and then
@@ -39,12 +39,12 @@ failure.
 
 This reprocesses 100 crashes with a specified signature::
 
-    $ make shell
+    $ just shell
     app@socorro:app$ socorro-cmd fetch_crashids --signature="some | signature" > crashids
     app@socorro:app$ cat crashids | socorro-cmd reprocess
 
 For more complex crash sets, pass a search URL to generate the list::
 
-    $ make shell
+    $ just shell
     app@socorro:app$ socorro-cmd fetch_crashids --num=all --url="https://crash-stats.mozilla.org/search/?product=Sample&date=%3E%3D2019-05-07T22%3A00%3A00.000Z&date=%3C2019-05-07T23%3A00%3A00.000Z" > crashids
     app@socorro:app$ cat crashids | socorro-cmd reprocess

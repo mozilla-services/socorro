@@ -8,7 +8,9 @@ updates:
     open-pull-requests-limit: 10
 
   - package-ecosystem: "docker"
-    directory: "/docker"
+    directories:
+      - "/docker"
+      - "/docker/images/*"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10

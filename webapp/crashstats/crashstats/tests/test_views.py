@@ -11,6 +11,7 @@ from unittest import mock
 import requests_mock
 import pyquery
 from markus.testing import MetricsMock
+from requests.exceptions import RetryError
 
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -357,6 +358,22 @@ class Test_buginfo:
         # expect to be able to find this in the cache now
         cache_key = "buginfo:987"
         assert cache.get(cache_key) == struct["bugs"][0]
+
+    def test_buginfo_retry_error(self, client):
+        with requests_mock.Mocker(real_http=False) as mock_requests:
+            mock_requests.get(
+                (
+                    "http://bugzilla.example.com/rest/bug?"
+                    + "id=1901998&include_fields=summary,status,id,resolution"
+                ),
+                exc=RetryError,
+            )
+
+            url = reverse("crashstats:buginfo")
+            response = client.get(url, {"bug_ids": "1901998"})
+            assert response.status_code == 500
+            json_response = json.loads(response.content)
+            assert json_response == {"error": "Max retries exceeded with Bugzilla."}
 
 
 class Test_quick_search:
@@ -1212,6 +1229,34 @@ class Test_report_index:
 
         assert response.status_code == 404
         assert "Crash Report Not Found" in smart_str(response.content)
+
+    def test_raw_crash_malformed(self, client, db, storage_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+
+        # If the BuildID is None, that will cause the reducer to raise an
+        # InvalidDocumentError when someone who doesn't have protected data access
+        # tries to view it. Bug #1901997.
+        raw_crash["BuildID"] = None
+
+        bucket = storage_helper.get_crashstorage_bucket()
+        raw_key = build_keys("raw_crash", crash_id)[0]
+        storage_helper.upload(
+            bucket_name=bucket, key=raw_key, data=dict_to_str(raw_crash).encode("utf-8")
+        )
+
+        validate_instance(processed_crash, PROCESSED_CRASH_SCHEMA)
+        processed_key = build_keys("processed_crash", crash_id)[0]
+        storage_helper.upload(
+            bucket_name=bucket,
+            key=processed_key,
+            data=dict_to_str(processed_crash).encode("utf-8"),
+        )
+
+        url = reverse("crashstats:report_index", args=[crash_id])
+        response = client.get(url)
+
+        assert response.status_code == 500
+        assert "Crash Report Malformed" in smart_str(response.content)
 
     def test_processed_crash_not_found(self, client, db, storage_helper, queue_helper):
         crash_id, raw_crash, processed_crash = build_crash_data()

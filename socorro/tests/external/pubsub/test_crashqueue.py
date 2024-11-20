@@ -8,9 +8,11 @@ import time
 
 import pytest
 
+from socorro import settings
+from socorro.external.pubsub.crashqueue import CrashIdsFailedToPublish
 from socorro.libclass import build_instance_from_settings
 from socorro.lib.libooid import create_new_ooid
-from socorro import settings
+
 
 # Amount of time to sleep between publish and pull so messages are available
 PUBSUB_DELAY_PULL = 0.5
@@ -108,3 +110,30 @@ class TestPubSubCrashQueue:
 
         published_crash_ids = pubsub_helper.get_published_crashids(queue)
         assert set(published_crash_ids) == {crash_id_1, crash_id_2, crash_id_3}
+
+    def test_publish_with_error(self, pubsub_helper, sentry_helper):
+        queue = "reprocessing"
+        crash_id = create_new_ooid()
+
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
+
+        # Run teardown_queues in the helper so there's no queue. That will cause an
+        # error to get thrown by PubSub.
+        pubsub_helper.teardown_queues()
+
+        with sentry_helper.init() as sentry_client:
+            try:
+                crashqueue.publish(queue, [crash_id])
+            except CrashIdsFailedToPublish as exc:
+                print(exc)
+
+            # wait for published messages to become available before pulling
+            time.sleep(PUBSUB_DELAY_PULL)
+
+            (envelope,) = sentry_client.envelope_payloads
+            errors = [
+                f"{error['type']} {error['value']}"
+                for error in envelope["exception"]["values"]
+            ]
+
+            assert "NotFound Topic not found" in errors

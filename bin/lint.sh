@@ -16,11 +16,18 @@ FILES="socorro-cmd docker socorro webapp bin"
 PYTHON_VERSION=$(python --version)
 
 
-if [[ "${1:-}" == "--fix" ]]; then
+if [[ "${1:-}" == "--help" ]]; then
+    echo "Usage: $0 [OPTIONS]"
+    echo
+    echo "  Lint code"
+    echo
+    echo "Options:"
+    echo "  --help  Show this message and exit."
+    echo "  --fix   Reformat code."
+elif [[ "${1:-}" == "--fix" ]]; then
     echo ">>> ruff fix (${PYTHON_VERSION})"
     ruff format $FILES
     ruff check --fix $FILES
-
 else
     echo ">>> ruff (${PYTHON_VERSION})"
     ruff check $FILES
@@ -28,13 +35,13 @@ else
 
     echo ">>> license check (${PYTHON_VERSION})"
     if [[ -d ".git" ]]; then
-        # If the .git directory exists, we can let license-check.py do
+        # If the .git directory exists, we can let license-check do
         # git ls-files.
-        python bin/license-check.py
+        license-check
     else
         # The .git directory doesn't exist, so run it on all the Python
         # files in the tree.
-        python bin/license-check.py .
+        license-check .
     fi
 
     echo ">>> eslint (js)"
