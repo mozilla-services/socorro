@@ -1,0 +1,85 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+/* Nav */
+nav {
+  display: inline;
+}
+nav .options {
+  display: inline;
+  margin-left: 1em;
+  font-size: 1.1em;
+  vertical-align: 4px;
+}
+nav .options li {
+  display: inline;
+  list-style: none;
+}
+nav .options li a {
+  color: #002275;
+  padding: 0.3em 0.7em;
+  text-decoration: none;
+  white-space: nowrap;
+  -webkit-border-radius: 0.3em;
+  -moz-border-radius: 0.3em;
+  border-radius: 0.3em;
+}
+nav .options li a:hover {
+  background-color: #f2f6f9;
+}
+nav .options li a.selected,
+nav .options li a.button {
+  background-color: #0060df;
+  color: #ffffff;
+}
+.version-nav {
+  font-size: 12px;
+  background: transparent repeat-x left top;
+  position: relative;
+  background-color: #0060df;
+  color: #f2f6f9;
+  padding: 0.5em 1rem;
+  line-height: 32px;
+}
+.version-nav a,
+.version-nav a:link,
+.version-nav a:hover,
+.version-nav a:active,
+.version-nav a:visited {
+  color: #f2f6f9;
+}
+.version-nav .filter {
+  display: inline;
+}
+.version-nav .filter li {
+  display: inline;
+  padding: 0;
+}
+.version-nav .filter li:last-child {
+  border-left: 1px solid #0a84ff;
+  margin-left: 0.5em;
+  padding-left: 0.8em;
+}
+.version-nav .filter optgroup {
+  border-top: 1px solid #d7d7db;
+  padding: 0.5em 0;
+}
+.version-nav .filter optgroup:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.version-nav .filter optgroup:last-child {
+  padding-bottom: 0;
+}
+.version-nav .filter option {
+  padding-left: 0;
+}
+.version-nav .quick-nav-title {
+  display: inline-block;
+  margin-right: 1em;
+}
+.version-nav .nav-links {
+  display: inline;
+  float: right;
+}

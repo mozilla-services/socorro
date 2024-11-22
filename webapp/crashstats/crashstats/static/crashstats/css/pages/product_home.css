@@ -1,0 +1,33 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+/* Product / Version dashboards */
+div.release_channel {
+  float: left;
+  margin: 1em 0;
+  width: 24%;
+  min-width: 160px;
+}
+div.release_channel li {
+  padding: 0 0 12px 0;
+  font-size: 14px;
+  /* 14px or 1.1(r)em */
+}
+div.release_channel li a {
+  color: #002275;
+  text-decoration: none;
+}
+div.release_channel li a:hover,
+div.release_channel li a:active {
+  color: #0060df;
+}
+div.release_channel li.focused a,
+div.release_channel li.focused a:link,
+div.release_channel li.focused a:hover,
+div.release_channel li.focused a:active {
+  color: #0060df;
+}
+.border_right {
+  border-right: 1px dashed rgba(12, 12, 13, 0.2);
+}

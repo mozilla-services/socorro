@@ -1,0 +1,147 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+#topcrashers h1 {
+  font-size: 2em;
+  font-weight: normal;
+  clear: both;
+}
+#topcrashers table {
+  margin: 0.3em 0 0.5em;
+  border: 1px solid #d7d7db;
+  width: 95%;
+}
+#topcrashers th {
+  background: url("/static/img/slate/white-grad.png") repeat-x scroll bottom left #ffffff;
+  padding: 0.1em 0.5em;
+}
+#topcrashers td {
+  padding: 0.5em;
+}
+#topcrashers .sig {
+  overflow: hidden;
+  white-space: nowrap;
+}
+#topcrashers .count {
+  text-align: center;
+}
+.signature-icons {
+  float: right;
+}
+/* duration and os selectors on top crashers */
+.tc-selector-heading {
+  margin-right: 0.7em;
+  font-weight: bold;
+}
+.tc-filters-block + ul {
+  clear: both;
+}
+.tc-filter {
+  float: left;
+  margin: 0.3em 1em 1em 0;
+  padding: 0;
+}
+.tc-filter a:link,
+.tc-filter a:visited {
+  display: inline-block;
+  background-color: #d7d7db;
+  color: #4a4a4f;
+  margin-right: 0.2em;
+  padding: 0.3em;
+  min-width: 65px;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 6px;
+}
+.tc-filter a:hover {
+  background-color: #0060df;
+  color: #ffffff;
+}
+.tc-filter a.selected {
+  background-color: #0060df;
+  color: #ffffff;
+}
+.tc-filter li {
+  display: inline;
+}
+.tc-duration-days a:link,
+.tc-result-count a:link,
+.tc-duration-days a:visited,
+.tc-result-count a:visited {
+  min-width: 30px;
+}
+#buildid-graph {
+  width: 600px;
+  height: 200px;
+}
+/* top crashers no results */
+.no-results {
+  clear: both;
+  padding: 1em;
+  display: block;
+  margin: 0 auto 1em;
+  text-align: center;
+  width: 50%;
+  -webkit-box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
+  -moz-box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
+  box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
+}
+.no-results time {
+  font-weight: 900;
+}
+.hide {
+  display: none;
+}
+.startup {
+  margin-right: 1px;
+}
+#signature-list {
+  clear: both;
+}
+#signature-list button {
+  float: right;
+}
+#signature-list td {
+  width: 4%;
+}
+#signature-list td.signature-column {
+  width: 32%;
+}
+.signature-popup {
+  background-color: #ffffff;
+  border: solid 1px #AAA;
+  width: auto;
+}
+.signature-preview {
+  float: left;
+  display: block;
+  width: 420px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.moving-up,
+.moving-down {
+  position: absolute;
+  left: 6px;
+  display: inline-block;
+  color: #ffffff;
+  margin-top: -8px;
+  padding: 1.4em 0.5em 0.5em;
+  width: 26px;
+  text-align: center;
+  -webkit-border-radius: 6px 0 0 6px;
+  -moz-border-radius: 6px 0 0 6px;
+  border-radius: 6px 0 0 6px;
+}
+.moving-up {
+  background: #d70022 url("../../img/up_arrow.png") 9px 4px no-repeat;
+}
+.moving-down {
+  background: #12bc00 url("../../img/down_arrow.png") 9px 4px no-repeat;
+}
+.label {
+  background-color: #ff9c9c;
+  border-radius: 4px;
+  padding: 2px 4px;
+}

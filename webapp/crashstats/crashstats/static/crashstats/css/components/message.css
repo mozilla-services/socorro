@@ -1,0 +1,38 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+/* Status Messages */
+div#message {
+  margin: 1em;
+}
+.message,
+.info {
+  margin: 1.5% 2% 0;
+  padding: 1em;
+  width: 96%;
+  -webkit-border-radius: 0.25em;
+  -moz-border-radius: 0.25em;
+  border-radius: 0.25em;
+}
+.info {
+  background-color: #45a1ff;
+  border: 1px solid #002275;
+}
+.message.error {
+  background-color: #ff9c9c;
+  border: 1px solid #d70022;
+}
+.message.success {
+  background-color: #12bc00;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+}
+.message.warning {
+  background-color: #ff9c9c;
+  border: 1px solid #ff9400;
+}
+.message h2 {
+  margin: 0.5em 0;
+  font-size: 1.2em;
+}

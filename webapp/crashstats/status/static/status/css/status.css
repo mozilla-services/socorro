@@ -1,0 +1,53 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Photon Colors Less Variables v3.0.1 */
+.status-message {
+  position: relative;
+  background-color: #d7d7db;
+  border: none;
+  color: #ffffff;
+  font-size: 1.1em;
+  padding: 1em 3.5rem;
+  line-height: 1.5em;
+}
+.status-message span {
+  font-style: italic;
+}
+.status-message:before {
+  padding: 4px 4px 0 0;
+  vertical-align: middle;
+  position: absolute;
+  left: 1rem;
+}
+.status-message.severity-info {
+  background-color: #ededf0;
+  color: #0c0c0d;
+}
+.status-message.severity-info a {
+  color: #0a84ff;
+}
+.status-message.severity-info:before {
+  content: url("/static/img/3rdparty/silk/information.png");
+}
+.status-message.severity-warning {
+  background-color: #ffe900;
+  color: #3e2800;
+}
+.status-message.severity-warning a {
+  color: #0a84ff;
+}
+.status-message.severity-warning:before {
+  content: url("/static/img/3rdparty/silk/error.png");
+}
+.status-message.severity-critical {
+  background-color: #d70022;
+}
+.status-message.severity-critical,
+.status-message.severity-critical a {
+  color: #ffffff;
+}
+.status-message.severity-critical:before {
+  content: url("/static/img/3rdparty/silk/exclamation.png");
+}

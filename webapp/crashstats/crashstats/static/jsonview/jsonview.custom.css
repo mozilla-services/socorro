@@ -1,0 +1,36 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+.json-document {
+  background-color: #0f1126;
+  color: #fcb35f;
+  font-family: monospace;
+  font-size: 1.1em;
+  white-space: pre-wrap;
+}
+.json-document a,
+.json-document a:hover,
+.json-document a:visited,
+.json-document .json-toggle,
+.json-document .json-dict {
+  color: #fcb35f;
+}
+.json-document .json-literal {
+  color: #45a1ff;
+}
+.json-document .json-string {
+  color: #12bc00;
+  white-space: pre-wrap;
+}
+.json-document ol,
+.json-document ul {
+  list-style: none;
+  margin: 0 0 0 2em;
+  padding: 0;
+}
+.json-document ol li,
+.json-document ul li {
+  list-style: none;
+  position: relative;
+}

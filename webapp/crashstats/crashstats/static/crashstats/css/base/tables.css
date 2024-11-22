@@ -1,0 +1,75 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+table {
+  /* standard table styles for data tables */
+}
+table thead tr,
+table tbody tr {
+  z-index: 50;
+}
+table thead tr th,
+table tbody tr th {
+  border: 1px solid #0f1126;
+}
+table thead tr td,
+table tbody tr td {
+  border: solid 1px #b1b1b3;
+}
+table th {
+  font-weight: bold;
+  padding: 0 0.25em;
+}
+table th a.expand {
+  display: inline;
+  font-size: smaller;
+}
+table.data-table,
+table.zebra {
+  width: 100%;
+}
+table.data-table tr:nth-child(even),
+table.zebra tr:nth-child(even) {
+  background-color: rgba(12, 12, 13, 0.1);
+}
+table.data-table tr:nth-child(odd),
+table.zebra tr:nth-child(odd) {
+  background-color: rgba(12, 12, 13, 0.025);
+}
+table.data-table tr:hover,
+table.zebra tr:hover {
+  background-color: #d7d7db;
+}
+table th {
+  background-color: rgba(12, 12, 13, 0.2);
+}
+table th,
+table td {
+  padding: 0.5em;
+}
+table tbody {
+  background-color: #ffffff;
+}
+table tbody tr.truncated-frame {
+  background-color: #fcb35f;
+}
+table tbody tr.truncated-frame a {
+  color: #4a4a4f;
+}
+table tbody tr.missingsymbols,
+table tbody tr.missingsymbols:hover,
+table tbody tr.missingsymbols td {
+  background-color: #d70022;
+  color: #ffffff;
+  border-top: 2px solid #ffffff;
+}
+table.hardwrapped td {
+  overflow-wrap: anywhere;
+}
+.tablesorter {
+  margin: 0 !important;
+}
+.tablesorter thead {
+  font-size: 0.9rem;
+}

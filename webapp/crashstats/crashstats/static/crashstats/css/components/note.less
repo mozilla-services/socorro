@@ -1,3 +1,4 @@
+@import "@{root-path}/base/variables.less";
 .note {
     &.float-right {
         float: right;
@@ -16,7 +17,7 @@
     }
 
     &::before {
-        content: url('../../img/3rdparty/silk/information.png') ' Note';
+        content: url("@{image-path}/3rdparty/silk/information.png") ' Note';
         display: block;
         background-color: @primary;
         color: @white;
