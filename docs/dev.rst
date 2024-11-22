@@ -880,6 +880,9 @@ Let's process crashes for Firefox from yesterday. We'd do this:
 
 .. code-block:: shell
 
+  # Set up dev environment resources
+  $ just setup
+
   # Set SOCORRO_API_TOKEN in my.env
   # Start bash in the socorro container
   $ just shell
@@ -891,19 +894,11 @@ Let's process crashes for Firefox from yesterday. We'd do this:
   # "crashdata" directory on the host
   app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
 
-  # Create a dev-bucket in localstack s3
-  app@socorro:/app$ bin/socorro_aws_s3.sh mb s3://dev-bucket/
+  # Copy that data from the host into the gcs emulator
+  app@socorro:/app$ gcs-cli upload ./crashdata gs://dev-bucket/
 
-  # Copy that data from the host into the localstack s3 container
-  app@socorro:/app$ bin/socorro_aws_s3.sh sync ./crashdata s3://dev-bucket/
-
-  # if using CLOUD_PROVIDER=AWS (default)
-  # Add all the crash ids to the sqs queue
-  app@socorro:/app$ cat crashids.txt | socorro-cmd sqs publish local-dev-standard
-
-  # or if using CLOUD_PROVIDER=GCP
   # Add all the crash ids to the pubsub topic
-  app@socorro:/app$ cat crashids.txt | socorro-cmd pubsub publish test local-standard-topic
+  app@socorro:/app$ cat crashids.txt | pubsub-cli publish test local-standard-topic
 
   # Then exit the container
   app@socorro:/app$ exit
