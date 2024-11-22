@@ -71,12 +71,12 @@ if [[ "${PAUSE}" == "1" ]]; then
 fi
 
 # Make the bucket and sync contents
-./socorro-cmd gcs create "${CRASHSTORAGE_GCS_BUCKET}"
-./socorro-cmd gcs upload "${DATADIR}" "${CRASHSTORAGE_GCS_BUCKET}"
-./socorro-cmd gcs list_objects "${CRASHSTORAGE_GCS_BUCKET}"
+gcs-cli create "${CRASHSTORAGE_GCS_BUCKET}"
+gcs-cli upload "${DATADIR}" "${CRASHSTORAGE_GCS_BUCKET}"
+gcs-cli list-objects "${CRASHSTORAGE_GCS_BUCKET}"
 
 # Add crash ids to queue
-./socorro-cmd pubsub publish "${PUBSUB_PROJECT_ID}" "${PUBSUB_STANDARD_TOPIC_NAME}" $@
+pubsub-cli publish "${PUBSUB_PROJECT_ID}" "${PUBSUB_STANDARD_TOPIC_NAME}" $@
 
 # Print urls to make it easier to look at them
 for crashid in "$@"
