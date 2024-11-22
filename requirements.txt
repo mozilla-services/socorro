@@ -243,9 +243,9 @@ cssselect==1.2.0 \
     --hash=sha256:666b19839cfaddb9ce9d36bfe4c969132c647b92fc9088c4e23f786b30f1b3dc \
     --hash=sha256:da1885f0c10b60c03ed5eccbb6b68d6eff248d91976fcde348f395d54c9fd35e
     # via pyquery
-datadog==0.50.1 \
-    --hash=sha256:579d4db54bd6ef918c5250217edb15b80b7b11582b8e24fce43702768c3f2e2d \
-    --hash=sha256:eb101abee34fe6c1121558fd5ea48f592eb661604abb7914c4f693d8ad25a515
+datadog==0.50.2 \
+    --hash=sha256:17725774bf2bb0a48f1d096d92707492c187f24ae08960af0b0c2fa97958fd51 \
+    --hash=sha256:f3297858564b624efbd9ce43e4ea1c2c21e1f0477ab6d446060b536a1d9e431e
     # via
     #   -r requirements.in
     #   markus
