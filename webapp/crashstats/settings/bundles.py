@@ -57,7 +57,7 @@ PIPELINE_CSS = {
         "output_filename": "css/fontawesome.min.css",
     },
     "search": {
-        "source_filenames": ("supersearch/css/search.less",),
+        "source_filenames": ("supersearch/css/search.css",),
         "output_filename": "css/search.min.css",
     },
     "select2": {
@@ -77,11 +77,11 @@ PIPELINE_CSS = {
         "output_filename": "css/jquery-ui.min.css",
     },
     "accordion": {
-        "source_filenames": ("crashstats/css/components/accordion.less",),
+        "source_filenames": ("crashstats/css/components/accordion.css",),
         "output_filename": "css/accordion.min.css",
     },
     "bugzilla": {
-        "source_filenames": ("crashstats/css/components/bugzilla.less",),
+        "source_filenames": ("crashstats/css/components/bugzilla.css",),
         "output_filename": "css/bugzilla.min.css",
     },
     "metricsgraphics": {
@@ -92,50 +92,50 @@ PIPELINE_CSS = {
         "output_filename": "css/metricsgraphics.min.css",
     },
     "crashstats_base": {
-        "source_filenames": ("crashstats/css/base.less", "status/css/status.less"),
+        "source_filenames": ("crashstats/css/base.css", "status/css/status.css"),
         "output_filename": "css/crashstats-base.min.css",
     },
     "api_documentation": {
-        "source_filenames": ("api/css/documentation.less",),
+        "source_filenames": ("api/css/documentation.css",),
         "output_filename": "css/api-documentation.min.css",
     },
     "documentation": {
-        "source_filenames": ("documentation/css/documentation.less",),
+        "source_filenames": ("documentation/css/documentation.css",),
         "output_filename": "css/documentation.min.css",
     },
     "jsonview": {
-        "source_filenames": ("jsonview/jsonview.custom.less",),
+        "source_filenames": ("jsonview/jsonview.custom.css",),
         "output_filename": "css/jsonview.min.css",
     },
     "report_index": {
         "source_filenames": (
-            "crashstats/css/pages/report_index.less",
-            "crashstats/css/components/tree.less",
+            "crashstats/css/pages/report_index.css",
+            "crashstats/css/components/tree.css",
         ),
         "output_filename": "css/report-index.min.css",
     },
     "report_pending": {
-        "source_filenames": ("crashstats/css/pages/report_pending.less",),
+        "source_filenames": ("crashstats/css/pages/report_pending.css",),
         "output_filename": "css/report-pending.min.css",
     },
     "product_home": {
-        "source_filenames": ("crashstats/css/pages/product_home.less",),
+        "source_filenames": ("crashstats/css/pages/product_home.css",),
         "output_filename": "css/product-home.min.css",
     },
     "profile": {
-        "source_filenames": ("profile/css/profile.less",),
+        "source_filenames": ("profile/css/profile.css",),
         "output_filename": "css/profile.min.css",
     },
     "signature_report": {
-        "source_filenames": ("signature/css/signature_report.less",),
+        "source_filenames": ("signature/css/signature_report.css",),
         "output_filename": "css/signature-report.min.css",
     },
     "tokens": {
-        "source_filenames": ("tokens/css/home.less",),
+        "source_filenames": ("tokens/css/home.css",),
         "output_filename": "css/tokens.min.css",
     },
     "topcrashers": {
-        "source_filenames": ("topcrashers/css/topcrashers.less",),
+        "source_filenames": ("topcrashers/css/topcrashers.css",),
         "output_filename": "css/topcrashers.min.css",
     },
     "tablesorter": {

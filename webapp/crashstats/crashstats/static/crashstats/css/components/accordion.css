@@ -1,0 +1,71 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+.accordion {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.accordion h3 {
+  color: #ffffff;
+  margin: 0;
+}
+.accordion a {
+  display: block;
+  background-color: #d7d7db;
+  color: #0f1126;
+  padding: 0.5rem;
+  border: 1px solid #4a4a4f;
+  text-decoration: none;
+}
+.accordion a:focus,
+.accordion a:active {
+  background-color: #d7d7db;
+  color: #0f1126;
+  border: 1px solid #4a4a4f;
+  outline: none;
+}
+.accordion p {
+  margin: 0;
+  padding: 0.5rem;
+}
+.accordion .content-pane {
+  background-color: #ffffff;
+  color: #0f1126;
+  border: 1px solid #4a4a4f;
+  border-top: 0;
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.accordion .content-pane h3 {
+  color: #4a4a4f;
+  padding: 0.5rem 1rem;
+}
+.accordion .content-pane h4 {
+  padding: 0.5rem 1rem 0 0.5rem;
+  font-size: 1.2rem;
+}
+.accordion .show {
+  height: auto;
+  opacity: 1;
+}
+.accordion [data-icon]:before {
+  float: right;
+  font-family: 'icons';
+  /* ensure inherited styles does not override the font style here. */
+  font-style: normal;
+  content: attr(data-icon);
+  -webkit-transform: rotate(0);
+  -moz-transform: rotate(0);
+  transform: rotate(0);
+  /* @see http://css-tricks.com/examples/IconFont/ */
+  speak: none;
+}
+.accordion [aria-expanded="true"] [data-icon]:before {
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}

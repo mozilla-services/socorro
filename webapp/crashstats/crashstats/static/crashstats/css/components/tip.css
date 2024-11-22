@@ -1,0 +1,27 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+/* Tip text */
+.tip {
+  padding: 0.8em;
+  margin: 1em 0;
+  font-size: 1.1em;
+  background-color: #ededf0;
+  color: #0c0c0d;
+}
+.tip::before {
+  content: "Tip! ";
+  font-weight: bold;
+}
+.tip-note {
+  padding: 0.5em 0.8em;
+  margin: 0.5em 0;
+  font-size: 1.1em;
+  background-color: #ededf0;
+  color: #0c0c0d;
+}
+.tip-note::before {
+  content: "Note! ";
+  font-weight: bold;
+}

@@ -1,0 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* Photon Colors Less Variables v3.0.1 */
+/* Django forms in general */
+ul.errorlist li {
+  color: #d70022;
+}
+input[type="submit"],
+input[type="button"],
+button {
+  background-color: #0060df;
+  padding: 0.8em;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+input[type="submit"],
+input[type="button"],
+button,
+input[type="submit"] a,
+input[type="button"] a,
+button a {
+  color: #ffffff;
+  text-decoration: none;
+}
+input[type="submit"]:hover,
+input[type="button"]:hover,
+button:hover,
+input[type="submit"]:focus,
+input[type="button"]:focus,
+button:focus {
+  background: #003eaa;
+}
+input[type="submit"]:active,
+input[type="button"]:active,
+button:active {
+  background: #002275;
+}
