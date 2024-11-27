@@ -202,19 +202,30 @@ def report_index(request, crash_id, default_context=None):
         )
         context["report"]["mac_crash_info"] = mac_crash_info
 
-    all_public_raw_keys = raw_api.public_keys()
-    context["public_raw_keys"] = [x for x in context["raw"] if x in all_public_raw_keys]
+    all_public_annotations = raw_api.public_keys()
+    context["public_annotations"] = [
+        x for x in context["raw"] if x in all_public_annotations
+    ]
+
     if request.user.has_perm("crashstats.view_pii"):
         # If the user can see PII or this is their crash report, include everything
-        context["protected_raw_keys"] = [
-            x for x in context["raw"] if x not in all_public_raw_keys
+        context["protected_annotations"] = [
+            x for x in context["raw"] if x not in all_public_annotations
         ]
     else:
-        context["protected_raw_keys"] = []
+        context["protected_annotations"] = []
 
-    # Sort keys case-insensitively
-    context["public_raw_keys"].sort(key=lambda s: s.lower())
-    context["protected_raw_keys"].sort(key=lambda s: s.lower())
+    # Set of fields added to the raw crash by the collector that are not annotations
+    context["fields_from_collector"] = {
+        "metadata",
+        "uuid",
+        "submitted_timestamp",
+        "version",
+    }
+
+    # Sort annotation keys case-insensitively
+    context["public_annotations"].sort(key=lambda s: s.lower())
+    context["protected_annotations"].sort(key=lambda s: s.lower())
 
     data_urls = []
     if request.user.has_perm("crashstats.view_pii"):

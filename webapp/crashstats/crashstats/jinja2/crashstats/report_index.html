@@ -909,17 +909,19 @@
             </div>
             <table class="record data-table hardwrapped">
               <tbody>
-                {% for key in public_raw_keys %}
-                  <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                    <th class="w-2/12" scope="row">
-                      {% if key %}
-                        {{ key }}
-                      {% else %}
-                        <i>empty key</i>
-                      {% endif %}
-                    </th>
-                    <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
-                  </tr>
+                {% for key in public_annotations %}
+                  {% if key not in fields_from_collector %}
+                    <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
+                      <th class="w-2/12" scope="row">
+                        {% if key %}
+                          {{ key }}
+                        {% else %}
+                          <i>empty key</i>
+                        {% endif %}
+                      </th>
+                      <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
+                    </tr>
+                  {% endif %}
                 {% endfor %}
               </tbody>
             </table>
@@ -936,17 +938,19 @@
               </div>
               <table class="record data-table hardwrapped">
                 <tbody>
-                  {% for key in protected_raw_keys %}
-                    <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
-                      <th class="w-2/12" scope="row">
-                        {% if key %}
-                          {{ key }}
-                        {% else %}
-                          <i>empty key</i>
-                        {% endif %}
-                      </th>
-                      <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
-                    </tr>
+                  {% for key in protected_annotations %}
+                    {% if key not in fields_from_collector %}
+                      <tr title="{{ fields_desc.get(make_raw_crash_key(key), empty_desc) }}">
+                        <th class="w-2/12" scope="row">
+                          {% if key %}
+                            {{ key }}
+                          {% else %}
+                            <i>empty key</i>
+                          {% endif %}
+                        </th>
+                        <td class="w-10/12"><pre>{{ raw[key] }}</pre></td>
+                      </tr>
+                    {% endif %}
                   {% endfor %}
                 </tbody>
               </table>
@@ -1204,6 +1208,10 @@
                     <td>{{ raw.submitted_timestamp | human_readable_iso_date }} UTC</td>
                   </tr>
                   <tr>
+                    <th scope="row">version</th>
+                    <td>{{ raw.version }}</td>
+                  </tr>
+                  <tr>
                     <th scope="row">Throttleable</th>
                     <td>{{ raw.Throttleable|default("--") }}</td>
                   </tr>
@@ -1273,7 +1281,7 @@
                             {% if report and report.stackwalk_version %}
                               {{ report.stackwalk_version }}
                             {% endif %}
-                            {# FIXME(willkg): this is the old locaion; remove in December 2022 #}
+                            {# FIXME(willkg): this is the old location; remove in December 2022 #}
                             {% if report and report.json_dump and report.json_dump.stackwalk_version %}
                               {{ report.json_dump.stackwalk_version }}
                             {% endif %}
