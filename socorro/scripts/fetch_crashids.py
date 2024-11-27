@@ -108,7 +108,7 @@ def fetch_crashids(host, params, num_results):
             MAX_PAGE,
             # The number of results Super Search can return to us that is hasn't returned so far
             total - crashids_count,
-            # The numver of results we want that we haven't gotten, yet
+            # The number of results we want that we haven't gotten, yet
             num_results - crashids_count,
         )
 
@@ -137,8 +137,8 @@ def main(argv=None):
         "--date",
         default="",
         help=(
-            'date to pull crash ids from as YYYY-MM-DD, "thisweek", "yesterday", '
-            + '"today", or "now"; defaults to "yesterday"'
+            'date to pull crash ids from as YYYY-MM-DD, "thismonth", "thisweek", '
+            + '"yesterday", "today", or "now"; defaults to "yesterday"'
         ),
     )
     parser.add_argument(
@@ -199,6 +199,10 @@ def main(argv=None):
             startdate = startdate.strftime("%Y-%m-%dT%H:%M:%S.000Z")
             enddate = enddate.strftime("%Y-%m-%dT%H:%M:%S.000Z")
             params["_sort"] = "-date"
+
+        elif datestamp == "thismonth":
+            startdate = utc_now() - datetime.timedelta(days=30)
+            enddate = utc_now() + datetime.timedelta(days=1)
 
         elif datestamp == "thisweek":
             startdate = utc_now() - datetime.timedelta(days=7)
