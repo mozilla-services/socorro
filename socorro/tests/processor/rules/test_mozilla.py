@@ -308,6 +308,15 @@ class TestCopyFromRawCrashRule:
         assert processed_crash == {copy_item.key: "some string"}
         assert status.notes == []
 
+        raw_crash = {copy_item.annotation: "some string with spaces\r\n   "}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash == {copy_item.key: "some string with spaces"}
+        assert status.notes == []
+
     def test_object(self, tmp_path):
         rule = CopyFromRawCrashRule(schema=SCHEMA_WITH_ALL_TYPES)
         copy_item = self.get_copy_item(rule, "ComplexStructure")

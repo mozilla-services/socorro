@@ -158,7 +158,14 @@ class CopyFromRawCrashRule(Rule):
                     status.add_note(f"{annotation} has a non-float value")
 
             elif copy_item.type_ == "string":
-                processed_crash[copy_item.key] = value
+                # NOTE(willkg): In 1906021, I noticed that Android_CPU_ABI2 has
+                # whitespace at the end. I looked at all the string values and I
+                # couldn't see any cases where whitespace at the end of a string value
+                # was meaningful, so we strip the whitespace at the end now. If we need
+                # it, we could add a "transform" field to the schema to dictate which
+                # transforms to apply after extracting the value. That would be nice for
+                # splitting on "," and other things, too.
+                processed_crash[copy_item.key] = value.rstrip()
 
             elif copy_item.type_ == "object":
                 # If it's a string, then assume it's json-encoded and decode it
