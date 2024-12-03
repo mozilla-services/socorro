@@ -8,14 +8,16 @@ import json
 import re
 import time
 
-import elasticsearch_1_9_0 as elasticsearch
-from elasticsearch_1_9_0.exceptions import NotFoundError
-from elasticsearch_dsl_0_0_11 import Search
+import elasticsearch
+from elasticsearch.exceptions import NotFoundError
+from elasticsearch_dsl import Search
 import glom
 import markus
 
 from socorro.external.crashstorage_base import CrashStorageBase
 from socorro.external.es.connection_context import ConnectionContext
+from socorro.external.es.query import Query
+from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import (
     build_mapping,
     FIELDS,
@@ -225,12 +227,11 @@ def build_document(src, crash_document, fields, all_keys):
         # Fix values so they index correctly
         storage_type = field.get("type", field["storage_mapping"].get("type"))
 
-        if storage_type == "string":
-            analyzer = field.get("analyzer", field["storage_mapping"].get("analyzer"))
-            if analyzer == "keyword":
-                value = fix_keyword(value, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE)
-            else:
-                value = fix_string(value, max_size=MAX_STRING_FIELD_VALUE_SIZE)
+        if storage_type == "keyword":
+            value = fix_keyword(value, max_size=MAX_KEYWORD_FIELD_VALUE_SIZE)
+
+        elif storage_type == "text":
+            value = fix_string(value, max_size=MAX_STRING_FIELD_VALUE_SIZE)
 
         elif storage_type == "integer":
             value = fix_integer(value)
@@ -247,6 +248,9 @@ def build_document(src, crash_document, fields, all_keys):
             if value is None:
                 continue
 
+        elif storage_type == "boolean":
+            value = fix_boolean(value)
+
         for dest_key in get_destination_keys(field):
             if dest_key in all_keys:
                 glom.assign(crash_document, dest_key, value, missing=dict)
@@ -260,7 +264,7 @@ class ESCrashStorage(CrashStorageBase):
     # These regex will catch field names from Elasticsearch exceptions. They
     # have been tested with Elasticsearch 1.4.
     field_name_string_error_re = re.compile(r"field=\"([\w\-.]+)\"")
-    field_name_number_error_re = re.compile(r"\[failed to parse \[([\w\-.]+)]]")
+    field_name_number_error_re = re.compile(r"failed to parse field \[([\w\-.]+)]")
     field_name_unknown_property_error_re = field_name_number_error_re
 
     def __init__(
@@ -269,7 +273,6 @@ class ESCrashStorage(CrashStorageBase):
         index="socorro%Y%W",
         index_regex=r"^socorro[0-9]{6}$",
         retention_policy=26,
-        doctype="crash_reports",
         metrics_prefix="processor.es",
         timeout=30,
         shards_per_index=10,
@@ -288,7 +291,6 @@ class ESCrashStorage(CrashStorageBase):
         self.index = index
         self.index_regex = index_regex
         self.retention_policy = retention_policy
-        self.doctype = doctype
         self.shards_per_index = shards_per_index
 
         # Cached answers for things that don't change
@@ -299,6 +301,24 @@ class ESCrashStorage(CrashStorageBase):
     @classmethod
     def build_client(cls, url, timeout):
         return ConnectionContext(url=url, timeout=timeout)
+
+    def build_query(self):
+        """Return new instance of Query."""
+        return Query(crashstorage=self)
+
+    def build_supersearch(self):
+        """Return new instance of SuperSearch."""
+        return SuperSearch(crashstorage=self)
+
+    def build_search(self, **kwargs):
+        """Return new instance of elasticsearch_dsl's Search."""
+        with self.client() as conn:
+            return Search(using=conn, **kwargs)
+
+    @staticmethod
+    def get_source_key(field):
+        """Return source key for the field."""
+        return get_source_key(field)
 
     def get_index_template(self):
         """Return template for index names."""
@@ -318,10 +338,6 @@ class ESCrashStorage(CrashStorageBase):
         template = self.get_index_template()
         return date.strftime(template)
 
-    def get_doctype(self):
-        """Return doctype."""
-        return self.doctype
-
     def get_retention_policy(self):
         """Return retention policy in weeks."""
         return self.retention_policy
@@ -339,28 +355,24 @@ class ESCrashStorage(CrashStorageBase):
             "mappings": mappings,
         }
 
-    def get_mapping(self, index_name, es_doctype, reraise=False):
-        """Retrieves the mapping for a given index and doctype
+    def get_mapping(self, index_name, reraise=False):
+        """Retrieves the mapping for a given index
 
         NOTE(willkg): Mappings are cached on the ESCrashStorage instance. If you change
         the indices (like in tests), you should get a new ESCrashStorage instance.
 
         :arg str index_name: the index to retrieve the mapping for
-        :arg str es_doctype: the doctype to retrieve the mapping for
         :arg bool reraise: True if you want this to reraise a NotFoundError; False
             otherwise
 
         :returns: mapping as a dict or None
 
         """
-        cache_key = f"{index_name}::{es_doctype}"
-        mapping = self._mapping_cache.get(cache_key)
+        mapping = self._mapping_cache.get(index_name)
         if mapping is None:
             try:
-                mapping = self.client.get_mapping(
-                    index_name=index_name, doc_type=es_doctype
-                )
-                self._mapping_cache[cache_key] = mapping
+                mapping = self.client.get_mapping(index_name=index_name)
+                self._mapping_cache[index_name] = mapping
             except elasticsearch.exceptions.NotFoundError:
                 if reraise:
                     raise
@@ -370,13 +382,13 @@ class ESCrashStorage(CrashStorageBase):
         """Create an index that will receive crash reports.
 
         :arg index_name: the name of the index to create
-        :arg mappings: dict of doctype->ES mapping
+        :arg mappings: ES mapping
 
         :returns: True if the index was created, False if it already existed
 
         """
         if mappings is None:
-            mappings = build_mapping(doctype=self.get_doctype())
+            mappings = build_mapping()
 
         index_settings = self.get_socorro_index_settings(mappings)
 
@@ -442,31 +454,29 @@ class ESCrashStorage(CrashStorageBase):
 
         return keys
 
-    def get_keys_for_mapping(self, index_name, es_doctype):
+    def get_keys_for_mapping(self, index_name):
         """Get the keys in "namespace.key" format for a given mapping
 
         NOTE(willkg): Results are cached on this ESCrashStorage instance.
 
         :arg str index_name: the name of the index
-        :arg str es_doctype: the doctype for the index
 
         :returns: set of "namespace.key" fields
 
         :raise elasticsearch.exceptions.NotFoundError: if the index doesn't exist
 
         """
-        cache_key = f"{index_name}::{es_doctype}"
-        keys = self._keys_for_mapping_cache.get(cache_key)
+        keys = self._keys_for_mapping_cache.get(index_name)
         if keys is None:
-            mapping = self.get_mapping(index_name, es_doctype, reraise=True)
+            mapping = self.get_mapping(index_name, reraise=True)
             keys = parse_mapping(mapping, None)
-            self._keys_for_mapping_cache[cache_key] = keys
+            self._keys_for_mapping_cache[index_name] = keys
         return keys
 
-    def get_keys(self, index_name, es_doctype):
+    def get_keys(self, index_name):
         supersearch_fields_keys = self.get_keys_for_indexable_fields()
         try:
-            mapping_keys = self.get_keys_for_mapping(index_name, es_doctype)
+            mapping_keys = self.get_keys_for_mapping(index_name)
         except NotFoundError:
             mapping_keys = None
         all_valid_keys = supersearch_fields_keys
@@ -485,8 +495,7 @@ class ESCrashStorage(CrashStorageBase):
         index_name = self.get_index_for_date(
             string_to_datetime(processed_crash["date_processed"])
         )
-        es_doctype = self.get_doctype()
-        all_valid_keys = self.get_keys(index_name, es_doctype)
+        all_valid_keys = self.get_keys(index_name)
 
         src = {"processed_crash": copy.deepcopy(processed_crash)}
 
@@ -503,7 +512,6 @@ class ESCrashStorage(CrashStorageBase):
 
         self._submit_crash_to_elasticsearch(
             crash_id=crash_id,
-            es_doctype=es_doctype,
             index_name=index_name,
             crash_document=crash_document,
         )
@@ -523,12 +531,10 @@ class ESCrashStorage(CrashStorageBase):
 
         _capture("crash_document_size", crash_document)
 
-    def _index_crash(self, connection, es_index, es_doctype, crash_document, crash_id):
+    def _index_crash(self, connection, es_index, crash_document, crash_id):
         try:
             start_time = time.time()
-            connection.index(
-                index=es_index, doc_type=es_doctype, body=crash_document, id=crash_id
-            )
+            connection.index(index=es_index, body=crash_document, id=crash_id)
             index_outcome = "successful"
         except Exception:
             index_outcome = "failed"
@@ -539,9 +545,7 @@ class ESCrashStorage(CrashStorageBase):
                 "index", value=elapsed_time * 1000.0, tags=["outcome:" + index_outcome]
             )
 
-    def _submit_crash_to_elasticsearch(
-        self, crash_id, es_doctype, index_name, crash_document
-    ):
+    def _submit_crash_to_elasticsearch(self, crash_id, index_name, crash_document):
         """Submit a crash report to elasticsearch"""
         # Attempt to create the index; it's OK if it already exists.
 
@@ -555,45 +559,59 @@ class ESCrashStorage(CrashStorageBase):
         for _ in range(5):
             try:
                 with self.client() as conn:
-                    return self._index_crash(
-                        conn, index_name, es_doctype, crash_document, crash_id
-                    )
+                    return self._index_crash(conn, index_name, crash_document, crash_id)
 
-            except elasticsearch.exceptions.ConnectionError:
+            except elasticsearch.ConnectionError:
                 # If this is a connection error, sleep a second and then try again
                 time.sleep(1.0)
 
-            except elasticsearch.exceptions.TransportError as e:
-                # If this is a TransportError, we try to figure out what the error
+            except elasticsearch.BadRequestError as e:
+                # If this is a BadRequestError, we try to figure out what the error
                 # is and fix the document and try again
                 field_name = None
 
-                if "MaxBytesLengthExceededException" in e.error:
+                error = e.body["error"]
+
+                if (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "illegal_argument_exception"
+                    and error["reason"].startswith(
+                        "Document contains at least one immense term"
+                    )
+                ):
                     # This is caused by a string that is way too long for
-                    # Elasticsearch.
-                    matches = self.field_name_string_error_re.findall(e.error)
+                    # Elasticsearch, specifically 32_766 bytes when UTF8 encoded.
+                    matches = self.field_name_string_error_re.findall(error["reason"])
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr(
                             "indexerror", tags=["error:maxbyteslengthexceeded"]
                         )
 
-                elif "NumberFormatException" in e.error:
+                elif (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "number_format_exception"
+                ):
                     # This is caused by a number that is either too big for
                     # Elasticsearch or just not a number.
-                    matches = self.field_name_number_error_re.findall(e.error)
+                    matches = self.field_name_number_error_re.findall(error["reason"])
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr(
                             "indexerror", tags=["error:numberformatexception"]
                         )
 
-                elif "unknown property" in e.error:
+                elif (
+                    error["type"] == "document_parsing_exception"
+                    and error["caused_by"]["type"] == "illegal_argument_exception"
+                ):
                     # This is caused by field values that are nested for a field where a
                     # previously indexed value was a string. For example, the processor
                     # first indexes ModuleSignatureInfo value as a string, then tries to
                     # index ModuleSignatureInfo as a nested dict.
-                    matches = self.field_name_unknown_property_error_re.findall(e.error)
+                    matches = self.field_name_unknown_property_error_re.findall(
+                        error["reason"]
+                    )
                     if matches:
                         field_name = matches[0]
                         self.metrics.incr("indexerror", tags=["error:unknownproperty"])
@@ -634,7 +652,7 @@ class ESCrashStorage(CrashStorageBase):
                 else:
                     crash_document["removed_fields"] = field_name
 
-            except elasticsearch.exceptions.ElasticsearchException as exc:
+            except elasticsearch.ApiError as exc:
                 self.logger.critical(
                     "Submission to Elasticsearch failed for %s (%s)",
                     crash_id,
@@ -648,7 +666,7 @@ class ESCrashStorage(CrashStorageBase):
         contents = []
         with self.client() as conn:
             try:
-                search = Search(using=conn, doc_type=self.get_doctype())
+                search = Search(using=conn)
                 search = search.filter("term", **{"processed_crash.uuid": crash_id})
                 results = search.execute().to_dict()
                 hits = results["hits"]["hits"]
@@ -661,15 +679,13 @@ class ESCrashStorage(CrashStorageBase):
     def delete_crash(self, crash_id):
         with self.client() as conn:
             try:
-                search = Search(using=conn, doc_type=self.get_doctype())
+                search = Search(using=conn)
                 search = search.filter("term", **{"processed_crash.uuid": crash_id})
                 results = search.execute().to_dict()
                 hits = results["hits"]["hits"]
                 if hits:
                     hit = hits[0]
-                    conn.delete(
-                        index=hit["_index"], doc_type=hit["_type"], id=hit["_id"]
-                    )
+                    conn.delete(index=hit["_index"], id=hit["_id"])
                     self.client.refresh()
             except Exception:
                 self.logger.exception(f"ERROR: es: when deleting {crash_id}")

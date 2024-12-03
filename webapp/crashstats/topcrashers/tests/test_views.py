@@ -16,7 +16,7 @@ from socorro.lib.libooid import create_new_ooid
 
 
 class TestTopCrasherViews:
-    def test_topcrashers_bug_data(self, client, db, es_helper):
+    def test_topcrashers_bug_data(self, client, db, preferred_es_helper):
         signature = "FakeSignature1"
 
         BugAssociation.objects.create(bug_id=22222, signature=signature)
@@ -43,8 +43,8 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         # Test Bugzilla data is rendered
         url = reverse("topcrashers:topcrashers")
@@ -57,7 +57,7 @@ class TestTopCrasherViews:
         # Verify bugs are sorted by bug id descending
         assert bug_ids == ["33333", "22222"]
 
-    def test_topcrashers_first_appearance(self, client, db, es_helper):
+    def test_topcrashers_first_appearance(self, client, db, preferred_es_helper):
         signature = "FakeSignature1"
 
         Signature.objects.create(
@@ -89,8 +89,8 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         # Check the first appearance date is there
         url = reverse("topcrashers:topcrashers")
@@ -98,13 +98,13 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert "2021-01-01 12:23:34" in smart_str(response.content)
 
-    def test_topcrashers_multiple_version(self, client, db, es_helper):
+    def test_topcrashers_multiple_version(self, client, db, preferred_es_helper):
         # Test that querying several versions do not raise an error
         url = reverse("topcrashers:topcrashers")
         response = client.get(url, {"product": "Firefox", "version": ["1.0", "2.0"]})
         assert response.status_code == 200
 
-    def test_topcrashers_result_count(self, client, db, es_helper):
+    def test_topcrashers_result_count(self, client, db, preferred_es_helper):
         url = reverse("topcrashers:topcrashers")
 
         # Test default results count is 50
@@ -123,7 +123,7 @@ class TestTopCrasherViews:
         selected_count = doc('.tc-result-count a[class="selected"]')
         assert selected_count.text() == "100"
 
-    def test_topcrashers_startup_crash(self, client, db, es_helper):
+    def test_topcrashers_startup_crash(self, client, db, preferred_es_helper):
         def build_crash_data(**params):
             crash_id = create_new_ooid()
             data = {
@@ -135,7 +135,6 @@ class TestTopCrasherViews:
                 "os_name": "Linux",
                 "process_type": "parent",
                 "report_type": "crash",
-                "uptime": 500,
             }
             data.update(params)
             return data
@@ -149,6 +148,7 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="1.0",
                     startup_crash=True,
+                    uptime=1,
                 )
             )
 
@@ -160,6 +160,7 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="2.0",
                     startup_crash=startup_crash,
+                    uptime=1 if startup_crash else 500,
                 )
             )
 
@@ -170,15 +171,20 @@ class TestTopCrasherViews:
                     product="Firefox",
                     version="3.0",
                     startup_crash=False,
+                    uptime=500,
                 )
             )
 
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         startup_crash_msg = 'title="Startup Crash"'
         potential_startup_crash_msg = 'title="Potential Startup Crash"'
+        potential_startup_window_crash_msg = (
+            'title="Potential Startup Crash, more than half of the crashes happened '
+            'during the first minute after launch"'
+        )
 
         # Request Firefox 1.0 where crash data is startup_crash=True
         url = reverse("topcrashers:topcrashers")
@@ -186,6 +192,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg in smart_str(response.content)
         assert potential_startup_crash_msg not in smart_str(response.content)
+        assert potential_startup_window_crash_msg in smart_str(response.content)
 
         # Request Firefox 2.0 where most crash data is startup_crash=True
         url = reverse("topcrashers:topcrashers")
@@ -193,6 +200,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg not in smart_str(response.content)
         assert potential_startup_crash_msg in smart_str(response.content)
+        assert potential_startup_window_crash_msg in smart_str(response.content)
 
         # Request Firefox 3.0 where crash data is startup_crash=False
         url = reverse("topcrashers:topcrashers")
@@ -200,8 +208,9 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert startup_crash_msg not in smart_str(response.content)
         assert potential_startup_crash_msg not in smart_str(response.content)
+        assert potential_startup_window_crash_msg not in smart_str(response.content)
 
-    def test_product_sans_featured_version(self, client, db, es_helper):
+    def test_product_sans_featured_version(self, client, db, preferred_es_helper):
         # Index a bunch of version=1.0 data so we have an active version
         crash_data = []
         # Use yesterday so featured versions picks up the crash reports
@@ -225,8 +234,8 @@ class TestTopCrasherViews:
             )
 
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         # Redirects to the most recent featured version
         url = reverse("topcrashers:topcrashers")
@@ -240,7 +249,7 @@ class TestTopCrasherViews:
         response = client.get(url, {"product": "Firefox", "version": "9.5"})
         assert response.status_code == 200
 
-    def test_topcrashers_reporttype(self, client, db, es_helper):
+    def test_topcrashers_reporttype(self, client, db, preferred_es_helper):
         crashsignature = "FakeCrashSignature1"
         hangsignature = "shutdownhang | foo"
 
@@ -265,7 +274,7 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
 
         for _ in range(5):
             crash_data.append(
@@ -285,8 +294,8 @@ class TestTopCrasherViews:
                 }
             )
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         url = reverse("topcrashers:topcrashers")
 
@@ -324,7 +333,7 @@ class TestTopCrasherViews:
         assert crashsignature in smart_str(response.content)
         assert hangsignature in smart_str(response.content)
 
-    def test_400_by_bad_days(self, client, db, es_helper):
+    def test_400_by_bad_days(self, client, db, preferred_es_helper):
         url = reverse("topcrashers:topcrashers")
         response = client.get(
             url, {"product": "Firefox", "version": "0.1", "days": "xxxxxx"}
@@ -333,25 +342,25 @@ class TestTopCrasherViews:
         assert "not a number" in smart_str(response.content)
         assert response["Content-Type"] == "text/html; charset=utf-8"
 
-    def test_400_by_bad_facets_size(self, client, db, es_helper):
+    def test_400_by_bad_facets_size(self, client, db, preferred_es_helper):
         url = reverse("topcrashers:topcrashers")
         response = client.get(url, {"product": "Firefox", "_facets_size": "notanumber"})
         assert response.status_code == 400
         assert "Enter a whole number" in smart_str(response.content)
         assert response["Content-Type"] == "text/html; charset=utf-8"
 
-    def test_with_unsupported_product(self, client, db, es_helper):
+    def test_with_unsupported_product(self, client, db, preferred_es_helper):
         # SnowLion is not in the mocked Products list
         url = reverse("topcrashers:topcrashers")
         response = client.get(url, {"product": "SnowLion", "version": "0.1"})
         assert response.status_code == 404
 
-    def test_without_any_signatures(self, client, db, es_helper):
+    def test_without_any_signatures(self, client, db, preferred_es_helper):
         url = reverse("topcrashers:topcrashers")
         response = client.get(url, {"product": "Firefox", "version": "19.0"})
         assert response.status_code == 200
 
-    def test_modes(self, client, db, es_helper):
+    def test_modes(self, client, db, preferred_es_helper):
         now = datetime.datetime.utcnow().replace(microsecond=0)
         today = now.replace(hour=0, minute=0, second=0)
 
@@ -375,7 +384,7 @@ class TestTopCrasherViews:
             assert today in smart_str(response.content)
             assert now not in smart_str(response.content)
 
-    def test_by_build(self, client, db, es_helper):
+    def test_by_build(self, client, db, preferred_es_helper):
         url = reverse("topcrashers:topcrashers")
         response = client.get(
             url,

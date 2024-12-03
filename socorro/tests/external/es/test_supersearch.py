@@ -4,8 +4,11 @@
 
 import datetime
 import json
+import http.server
+import threading
+from contextlib import contextmanager
+from copy import deepcopy
 
-import requests_mock
 import pytest
 
 from socorro import settings
@@ -17,6 +20,30 @@ from socorro.lib import BadArgumentError, libdatetime
 from socorro.libclass import build_instance
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
+
+
+@contextmanager
+def mock_es_server(ip, port, post_response):
+    class MockHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+        """mock request handler"""
+
+        def do_POST(self):  # pylint: disable=invalid-name
+            """Handle GET requests"""
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("X-Elastic-Product", "Elasticsearch")
+            self.end_headers()
+            self.wfile.write(json.dumps(post_response).encode("utf-8"))
+
+    server = http.server.ThreadingHTTPServer((ip, port), MockHTTPRequestHandler)
+    with server:
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.daemon = True
+        server_thread.start()
+        try:
+            yield
+        finally:
+            server.shutdown()
 
 
 class SuperSearchWithFields(SuperSearch):
@@ -89,9 +116,14 @@ class TestIntegrationSuperSearch:
             },
         )
         es_helper.refresh()
-
         res = api.get(
-            _columns=["date", "build_id", "platform", "signature", "cpu_count"]
+            _columns=[
+                "date",
+                "build_id",
+                "platform",
+                "signature",
+                "cpu_count",
+            ]
         )
 
         assert "hits" in res
@@ -103,10 +135,12 @@ class TestIntegrationSuperSearch:
         assert res["hits"][0]["signature"] == "js::break_your_browser"
 
         assert list(res["facets"].keys()) == ["signature"]
-        assert res["facets"]["signature"][0] == {
-            "term": "js::break_your_browser",
-            "count": 1,
-        }
+        assert res["facets"]["signature"] == [
+            {
+                "term": "js::break_your_browser",
+                "count": 1,
+            }
+        ]
 
         # Test fields are being renamed.
         assert "date" in res["hits"][0]  # date_processed -> date
@@ -458,7 +492,8 @@ class TestIntegrationSuperSearch:
 
         assert resp["total"] == 2
         assert len(resp["hits"]) == 2
-        assert not resp["hits"][0]["accessibility"]
+        for hit in resp["hits"]:
+            assert not hit["accessibility"]
 
     def test_get_with_combined_operators(self, es_helper):
         now = utc_now()
@@ -1193,11 +1228,11 @@ class TestIntegrationSuperSearch:
         assert "histogram_date" in res["facets"]
 
         def dt_to_midnight(date):
-            return date.replace(hour=0, minute=0, second=0, microsecond=0)
+            return f"{date.replace(hour=0, minute=0, second=0, microsecond=0):%FT%H:%M:%SZ}"
 
-        today_str = dt_to_midnight(now).isoformat()
-        yesterday_str = dt_to_midnight(yesterday).isoformat()
-        day_before_str = dt_to_midnight(the_day_before).isoformat()
+        today_str = dt_to_midnight(now)
+        yesterday_str = dt_to_midnight(yesterday)
+        day_before_str = dt_to_midnight(the_day_before)
 
         expected_terms = [
             {
@@ -1327,13 +1362,9 @@ class TestIntegrationSuperSearch:
             "_histogram_interval.date": "xdays",  # Note! It's just wrong
         }
 
-        # Not using assert_raises here so we can do a check on the exception
-        # object when it does raise.
-        try:
+        with pytest.raises(BadArgumentError) as exc_info:
             api.get(**kwargs)
-            raise AssertionError("The line above is supposed to error out")
-        except BadArgumentError as exception:
-            assert exception.param == "_histogram_interval.date"
+        assert exc_info._excinfo[1].param == "_histogram_interval.date"
 
     def test_get_with_number_histogram(self, es_helper):
         crashstorage = self.build_crashstorage()
@@ -1735,107 +1766,103 @@ class TestIntegrationSuperSearch:
         crashstorage = self.build_crashstorage()
         api = SuperSearchWithFields(crashstorage=crashstorage)
 
-        # A bad regex kicks up a SearchParseException which supersearch converts
+        # regex is lazy-evaluated, so there has to be a crash matched by everything but
+        # the regex to produce a failure
+        now = utc_now()
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "test.dll",
+                "date_processed": now,
+            },
+        )
+
+        # A bad regex kicks up a shard failure which supersearch converts
         # to a BadArgumentError
         with pytest.raises(BadArgumentError):
-            api.get(signature='@"OOM | ".*" | ".*"()&%<acx><ScRiPt >sruq(9393)</ScRiPt')
+            api.get(signature=r'@"')
 
     def test_get_with_failing_shards(self, es_helper):
-        # NOTE(willkg): We're asserting on a url which includes the indexes being
-        # searched. If the index template includes a date, then the indexes could be in
-        # any order, so we don't include date bits and then we're guaranteed for that
-        # part of the url to be stable for mocking.
-        index_name = "testsocorro_module"
+        # Generate a shard failure response via bad regex, like test_get_with_bad_regex
+        # above. Modify this response to avoid BadArgumentError and test generic shard
+        # failure.
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+        now = utc_now()
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": "test.dll",
+                "date_processed": now,
+            },
+        )
+        bad_regex_query = api.get(signature=r'@"', _return_query=True)
+        search = crashstorage.build_search(index=bad_regex_query["indices"])
+        search = search.filter(bad_regex_query["query"]["query"])
+        search = search.source(bad_regex_query["query"]["_source"])
+        bad_regex_results = search.execute().to_dict()
+
+        # Use a mock es server to return custom results
+        ip, port = "127.0.0.1", 9999
         with settings.override(
             **{
-                "ES_STORAGE.options.index": index_name,
-                "ES_STORAGE.options.index_regex": f"^{index_name}$",
+                # point ES_STORAGE at fake es server location
+                "ES_STORAGE.options.url": f"http://{ip}:{port}",
             }
         ):
             crashstorage = self.build_crashstorage()
             api = SuperSearchWithFields(crashstorage=crashstorage)
 
-            with requests_mock.Mocker(real_http=False) as mock_requests:
-                # Test with one failing shard.
-                es_results = {
-                    "hits": {"hits": [], "total": 0, "max_score": None},
-                    "timed_out": False,
-                    "took": 194,
-                    "_shards": {
-                        "successful": 9,
-                        "failed": 1,
-                        "total": 10,
-                        "failures": [
-                            {
-                                "status": 500,
-                                "index": "fake_index",
-                                "reason": "foo bar gone bad",
-                                "shard": 3,
-                            }
-                        ],
-                    },
-                }
+            # Test with one failing shard.
+            mock_results = deepcopy(bad_regex_results)
+            mock_results["_shards"]["failures"][0]["index"] = "fake_index"
+            mock_results["_shards"]["failures"][0]["reason"]["reason"] = (
+                "foo bar gone bad"
+            )
+            mock_results["_shards"]["failures"][0]["reason"]["caused_by"]["type"] = (
+                "foo_bar_exception"
+            )
 
-                mock_requests.get(
-                    "{url}/{index}/crash_reports/_search".format(
-                        url=es_helper.get_url(),
-                        index=index_name,
-                    ),
-                    text=json.dumps(es_results),
-                )
-
+            with mock_es_server(ip, port, mock_results):
                 res = api.get()
 
-                errors_exp = [
-                    {"type": "shards", "index": "fake_index", "shards_count": 1}
-                ]
-                assert res["errors"] == errors_exp
+            assert "errors" in res
 
-                # Test with several failures.
-                es_results = {
-                    "hits": {"hits": [], "total": 0, "max_score": None},
-                    "timed_out": False,
-                    "took": 194,
-                    "_shards": {
-                        "successful": 9,
-                        "failed": 3,
-                        "total": 10,
-                        "failures": [
-                            {
-                                "status": 500,
-                                "index": "fake_index",
-                                "reason": "foo bar gone bad",
-                                "shard": 2,
-                            },
-                            {
-                                "status": 500,
-                                "index": "fake_index",
-                                "reason": "foo bar gone bad",
-                                "shard": 3,
-                            },
-                            {
-                                "status": 500,
-                                "index": "other_index",
-                                "reason": "foo bar gone bad",
-                                "shard": 1,
-                            },
-                        ],
-                    },
-                }
+            errors_exp = [{"type": "shards", "index": "fake_index", "shards_count": 1}]
+            assert res["errors"] == errors_exp
 
-                mock_requests.get(
-                    "{url}/{index}/crash_reports/_search".format(
-                        url=es_helper.get_url(),
-                        index=index_name,
-                    ),
-                    text=json.dumps(es_results),
-                )
+            # Test with several failures.
+            mock_results = deepcopy(bad_regex_results)
+            mock_results["_shards"]["failed"] += 1
+            mock_results["_shards"]["successful"] -= 1
+            mock_results["_shards"]["failures"][0]["index"] = "fake_index"
+            mock_results["_shards"]["failures"][0]["reason"]["reason"] = (
+                "foo bar gone bad"
+            )
+            mock_results["_shards"]["failures"][0]["reason"]["caused_by"]["type"] = (
+                "foo_bar_exception"
+            )
+            # add failure on different shard
+            mock_results["_shards"]["failures"].append(
+                deepcopy(mock_results["_shards"]["failures"][0])
+            )
+            mock_results["_shards"]["failures"][-1]["shard"] += 1
+            mock_results["_shards"]["failures"][-1]["shard"] %= mock_results["_shards"][
+                "total"
+            ]
+            # add failure on different index
+            mock_results["_shards"]["failures"].append(
+                deepcopy(mock_results["_shards"]["failures"][0])
+            )
+            mock_results["_shards"]["failures"][-1]["index"] = "other_index"
 
+            with mock_es_server(ip, port, mock_results):
                 res = api.get()
-                assert "errors" in res
 
-                errors_exp = [
-                    {"type": "shards", "index": "fake_index", "shards_count": 2},
-                    {"type": "shards", "index": "other_index", "shards_count": 1},
-                ]
-                assert res["errors"] == errors_exp
+            assert "errors" in res
+
+            errors_exp = [
+                {"type": "shards", "index": "fake_index", "shards_count": 2},
+                {"type": "shards", "index": "other_index", "shards_count": 1},
+            ]
+            assert res["errors"] == errors_exp

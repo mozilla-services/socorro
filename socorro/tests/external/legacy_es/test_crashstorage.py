@@ -83,7 +83,7 @@ class TestLegacyESCrashStorage:
     def build_crashstorage(self):
         return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
-    def test_index_crash(self, es_helper):
+    def test_index_crash(self, legacy_es_helper):
         """Test indexing a crash document."""
         processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
         processed_crash["date_processed"] = date_to_string(utc_now())
@@ -94,13 +94,13 @@ class TestLegacyESCrashStorage:
             processed_crash=processed_crash,
         )
 
-        with es_helper.conn() as conn:
+        with legacy_es_helper.conn() as conn:
             assert conn.get(
                 index=crashstorage.get_index_for_date(utc_now()),
                 id=SAMPLE_PROCESSED_CRASH["uuid"],
             )
 
-    def test_index_crash_indexable_keys(self, es_helper):
+    def test_index_crash_indexable_keys(self, legacy_es_helper):
         """Test indexing ONLY indexes valid, known keys."""
         processed_crash = {
             "another_invalid_key": "alpha",
@@ -115,7 +115,7 @@ class TestLegacyESCrashStorage:
             processed_crash=processed_crash,
         )
 
-        with es_helper.conn() as conn:
+        with legacy_es_helper.conn() as conn:
             doc = conn.get(
                 index=crashstorage.get_index_for_date(utc_now()),
                 id=processed_crash["uuid"],
@@ -130,7 +130,7 @@ class TestLegacyESCrashStorage:
             "uuid",
         ]
 
-    def test_index_crash_mapping_keys(self, es_helper):
+    def test_index_crash_mapping_keys(self, legacy_es_helper):
         """Test indexing a crash that has keys not in the mapping
 
         Indexing a crash that has keys that aren't in the mapping for the index
@@ -138,7 +138,7 @@ class TestLegacyESCrashStorage:
 
         """
         # Delete all the indices so we have a fresh start
-        es_helper.delete_indices()
+        legacy_es_helper.delete_indices()
 
         # The test harness creates an index for this week and last week. So let's create
         # one for 4 weeks ago.
@@ -187,11 +187,11 @@ class TestLegacyESCrashStorage:
             processed_crash=processed_crash,
         )
 
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Retrieve the document from this week and verify it has the user_comments
         # field
-        with es_helper.conn() as conn:
+        with legacy_es_helper.conn() as conn:
             doc = conn.get(
                 index=crashstorage.get_index_for_date(now),
                 id=now_uuid,
@@ -200,14 +200,14 @@ class TestLegacyESCrashStorage:
 
         # Retrieve the document from four weeks ago and verify it doesn't have the
         # user_comments field
-        with es_helper.conn() as conn:
+        with legacy_es_helper.conn() as conn:
             doc = conn.get(
                 index=crashstorage.get_index_for_date(four_weeks_ago),
                 id=old_uuid,
             )
             assert field not in doc["_source"]["processed_crash"]
 
-    def test_catalog_crash(self, es_helper):
+    def test_catalog_crash(self, legacy_es_helper):
         crash_id = create_new_ooid()
         processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
         processed_crash["date_processed"] = date_to_string(utc_now())
@@ -218,12 +218,12 @@ class TestLegacyESCrashStorage:
             raw_crash={},
             processed_crash=processed_crash,
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         data = crashstorage.catalog_crash(crash_id=crash_id)
         assert data == ["es_processed_crash"]
 
-    def test_delete_crash(self, es_helper):
+    def test_delete_crash(self, legacy_es_helper):
         """Test deleting a crash document."""
         crash_id = create_new_ooid()
         processed_crash = deepcopy(SAMPLE_PROCESSED_CRASH)
@@ -235,20 +235,20 @@ class TestLegacyESCrashStorage:
             raw_crash={},
             processed_crash=processed_crash,
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         # Verify the crash is in the index
-        data = es_helper.get_crash_data(crash_id=crash_id)
+        data = legacy_es_helper.get_crash_data(crash_id=crash_id)
         assert data is not None
 
         # Delete the crash and refresh cluster
         crashstorage.delete_crash(crash_id=crash_id)
 
         # Verify crash data is gone
-        data = es_helper.get_crash_data(crash_id=crash_id)
+        data = legacy_es_helper.get_crash_data(crash_id=crash_id)
         assert data is None
 
-    def test_delete_crash_doesnt_exist(self, es_helper):
+    def test_delete_crash_doesnt_exist(self, legacy_es_helper):
         """Test deleting a crash document."""
         crash_id = create_new_ooid()
 
@@ -272,7 +272,7 @@ class TestLegacyESCrashStorage:
 
             mm.assert_histogram("socorro.processor.es.crash_document_size", value=169)
 
-    def test_index_data_capture(self, es_helper):
+    def test_index_data_capture(self, legacy_es_helper):
         """Verify we capture index data in ES crashstorage"""
         crashstorage = self.build_crashstorage()
         mock_connection = mock.Mock()
@@ -281,7 +281,6 @@ class TestLegacyESCrashStorage:
             crashstorage._index_crash(
                 connection=mock_connection,
                 es_index=None,
-                es_doctype=None,
                 crash_document=None,
                 crash_id=None,
             )
@@ -291,7 +290,6 @@ class TestLegacyESCrashStorage:
                 crashstorage._index_crash(
                     connection=mock_connection,
                     es_index=None,
-                    es_doctype=None,
                     crash_document=None,
                     crash_id=None,
                 )
@@ -305,11 +303,11 @@ class TestLegacyESCrashStorage:
                 tags=["outcome:failed", AnyTagValue("host")],
             )
 
-    def test_delete_expired_indices(self, es_helper):
+    def test_delete_expired_indices(self, legacy_es_helper):
         # Delete any existing indices first
-        es_helper.delete_indices()
-        es_helper.refresh()
-        es_helper.health_check()
+        legacy_es_helper.delete_indices()
+        legacy_es_helper.refresh()
+        legacy_es_helper.health_check()
 
         # Create an index > retention_policy
         crashstorage = self.build_crashstorage()
@@ -321,14 +319,17 @@ class TestLegacyESCrashStorage:
 
         crashstorage.create_index(current_index_name)
         crashstorage.create_index(old_index_name)
-        es_helper.health_check()
-        assert list(es_helper.get_indices()) == [old_index_name, current_index_name]
+        legacy_es_helper.health_check()
+        assert list(legacy_es_helper.get_indices()) == [
+            old_index_name,
+            current_index_name,
+        ]
 
         # Delete all expired indices and verify old one is gone and new one is still
         # there
         crashstorage.delete_expired_indices()
-        es_helper.health_check()
-        assert list(es_helper.get_indices()) == [current_index_name]
+        legacy_es_helper.health_check()
+        assert list(legacy_es_helper.get_indices()) == [current_index_name]
 
     # NOTE(willkg): This is dependent on supersearch fields. As we adjust
     # supersearch fields, we may need to update this test.
@@ -370,7 +371,7 @@ class TestLegacyESCrashStorage:
             # ("processed_crash.accessibility", "true", True),
         ],
     )
-    def test_indexing_bad_data(self, key, value, expected_value, es_helper):
+    def test_indexing_bad_data(self, key, value, expected_value, legacy_es_helper):
         crash_id = create_new_ooid()
         processed_crash = {
             "date_processed": date_from_ooid(crash_id),
@@ -390,9 +391,9 @@ class TestLegacyESCrashStorage:
             raw_crash={},
             processed_crash=processed_crash,
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
-        doc = es_helper.get_crash_data(crash_id)
+        doc = legacy_es_helper.get_crash_data(crash_id)
         assert glom.glom(doc, key, default=REMOVED_VALUE) == expected_value
 
     # FIXME(willkg): write tests for index error handling; this is tricky because

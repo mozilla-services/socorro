@@ -20,8 +20,8 @@ from socorro.external.es.crashstorage import (
 )
 
 from socorro.external.es.super_search_fields import build_mapping
-from socorro.libclass import build_instance
-from socorro.lib.libdatetime import date_to_string, utc_now
+from socorro.libclass import build_instance_from_settings
+from socorro.lib.libdatetime import date_to_string, string_to_datetime, utc_now
 from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
@@ -81,10 +81,10 @@ class FakeException(Exception):
 
 class TestESCrashStorage:
     def build_crashstorage(self):
-        return build_instance(
-            class_path="socorro.external.es.crashstorage.ESCrashStorage",
-            kwargs=settings.ES_STORAGE["options"],
-        )
+        if settings.ELASTICSEARCH_MODE == "LEGACY_ONLY":
+            raise ValueError("cannot test elasticearch 8 in LEGACY_ONLY mode")
+
+        return build_instance_from_settings(settings.ES_STORAGE)
 
     def test_index_crash(self, es_helper):
         """Test indexing a crash document."""
@@ -154,9 +154,8 @@ class TestESCrashStorage:
 
         # We're going to use a mapping from super search fields, bug remove the
         # user_comments field.
-        mappings = build_mapping(crashstorage.get_doctype())
-        doctype = crashstorage.get_doctype()
-        del mappings[doctype]["properties"]["processed_crash"]["properties"][field]
+        mappings = build_mapping()
+        del mappings["properties"]["processed_crash"]["properties"][field]
 
         # Create the index for 4 weeks ago
         crashstorage.create_index(
@@ -284,7 +283,6 @@ class TestESCrashStorage:
             crashstorage._index_crash(
                 connection=mock_connection,
                 es_index=None,
-                es_doctype=None,
                 crash_document=None,
                 crash_id=None,
             )
@@ -294,7 +292,6 @@ class TestESCrashStorage:
                 crashstorage._index_crash(
                     connection=mock_connection,
                     es_index=None,
-                    es_doctype=None,
                     crash_document=None,
                     crash_id=None,
                 )
@@ -369,8 +366,7 @@ class TestESCrashStorage:
                 REMOVED_VALUE,
             ),
             # Booleans are converted
-            # FIXME(willkg): fix_boolean is never called--that's wrong
-            # ("processed_crash.accessibility", "true", True),
+            ("processed_crash.accessibility", "true", True),
         ],
     )
     def test_indexing_bad_data(self, key, value, expected_value, es_helper):
@@ -398,9 +394,50 @@ class TestESCrashStorage:
         doc = es_helper.get_crash_data(crash_id)
         assert glom.glom(doc, key, default=REMOVED_VALUE) == expected_value
 
-    # FIXME(willkg): write tests for index error handling; this is tricky because
-    # when we have index error handling, we write code to fix the error, so it's
-    # hard to test the error situation
+    @pytest.mark.parametrize(
+        "key, value",
+        [
+            pytest.param(
+                "processed_crash.mac_available_memory_sysctl",
+                "not a number",
+                id="number_format_exception",
+            ),
+            pytest.param(
+                "processed_crash.user_comments",
+                "a" * 32_767,  # max string lengthis 32_766 bytes
+                id="max_bytes_length_exceeded",
+            ),
+            pytest.param(
+                "processed_crash.user_comments", {"foo": "bar"}, id="unknown_property"
+            ),
+        ],
+    )
+    def test_invalid_fields_removed(self, key, value, es_helper):
+        # create crash document
+        crash_id = create_new_ooid()
+        doc = {
+            "crash_id": crash_id,
+            "processed_crash": {
+                "date_processed": date_from_ooid(crash_id),
+                "uuid": crash_id,
+            },
+        }
+        glom.assign(doc, key, value, missing=dict)
+
+        # Save the crash data and then fetch it and verify the value is removed
+        crashstorage = self.build_crashstorage()
+        index_name = crashstorage.get_index_for_date(
+            string_to_datetime(doc["processed_crash"]["date_processed"])
+        )
+        crashstorage._submit_crash_to_elasticsearch(
+            crash_id=crash_id,
+            index_name=index_name,
+            crash_document=doc,
+        )
+        es_helper.refresh()
+
+        doc = es_helper.get_crash_data(crash_id)
+        assert glom.glom(doc, key, default=REMOVED_VALUE) == REMOVED_VALUE
 
 
 @pytest.mark.parametrize(

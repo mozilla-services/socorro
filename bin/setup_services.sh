@@ -13,6 +13,9 @@
 
 set -euo pipefail
 
+# wait for dev services to start up
+./bin/waitfor_services.sh
+
 # Drop and re-create the breakpad database with tables, stored procedures,
 # types, indexes, and keys; also bulk-loads static data for some lookup tables
 /app/bin/setup_postgres.sh

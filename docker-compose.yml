@@ -206,7 +206,7 @@ services:
     ports:
       - "9200:9200"
 
-  # https://www.elastic.co/guide/en/elasticsearch/reference/8.14/docker.html
+  # https://www.elastic.co/guide/en/elasticsearch/reference/8.16/docker.html
   elasticsearch:
     build:
       context: docker/images/elasticsearch

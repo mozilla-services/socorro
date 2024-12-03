@@ -16,7 +16,7 @@ class TestIntegrationAnalyzers:
     def build_crashstorage(self):
         return build_instance_from_settings(settings.LEGACY_ES_STORAGE)
 
-    def test_semicolon_keywords(self, es_helper):
+    def test_semicolon_keywords(self, legacy_es_helper):
         """Test the analyzer called `semicolon_keywords`.
 
         That analyzer creates tokens (terms) by splitting the input on
@@ -30,7 +30,7 @@ class TestIntegrationAnalyzers:
         crash_id_2 = create_new_ooid()
 
         value1 = "/path/to/dll;;foo;C:\\bar\\boo"
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": crash_id_1,
                 "app_init_dlls": value1,
@@ -38,14 +38,14 @@ class TestIntegrationAnalyzers:
             },
         )
         value2 = "/path/to/dll;D:\\bar\\boo"
-        es_helper.index_crash(
+        legacy_es_helper.index_crash(
             processed_crash={
                 "uuid": crash_id_2,
                 "app_init_dlls": value2,
                 "date_processed": now,
             },
         )
-        es_helper.refresh()
+        legacy_es_helper.refresh()
 
         res = api.get(
             app_init_dlls="/path/to/dll", _facets=["app_init_dlls"], _fields=FIELDS

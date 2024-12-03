@@ -33,14 +33,14 @@ def get_date_range(crash_id=None, date=None):
 
 
 class TestViews:
-    def test_signature_report(self, client, db, es_helper):
+    def test_signature_report(self, client, db, preferred_es_helper):
         url = reverse("signature:signature_report")
         response = client.get(url, {"signature": TEST_SIGNATURE})
         assert response.status_code == 200
         assert TEST_SIGNATURE in smart_str(response.content)
         assert "Loading" in smart_str(response.content)
 
-    def test_signature_reports(self, client, db, es_helper):
+    def test_signature_reports(self, client, db, preferred_es_helper):
         def build_crash_data(crash_id, **params):
             data = {
                 "date_processed": date_to_string(date_from_ooid(crash_id)),
@@ -71,8 +71,8 @@ class TestViews:
         crash4 = build_crash_data(crash4_id, build=None)
 
         for crash_data in [crash1, crash2, crash3, crash4]:
-            es_helper.index_crash(processed_crash=crash_data, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=crash_data, refresh=False)
+        preferred_es_helper.refresh()
 
         start_date, end_date = get_date_range(crash1_id)
         crash1_date_processed = date_from_ooid(crash1_id).strftime("%Y-%m-%d %H:%M:%S")
@@ -130,7 +130,7 @@ class TestViews:
         assert crash1["version"] not in smart_str(response.content)
         assert crash1_date_processed not in smart_str(response.content)
 
-    def test_missing_parameters(self, client, db, es_helper):
+    def test_missing_parameters(self, client, db, preferred_es_helper):
         url = reverse("signature:signature_reports")
 
         # Test missing parameter.
@@ -140,7 +140,7 @@ class TestViews:
         response = client.get(url, {"signature": ""})
         assert response.status_code == 400
 
-    def test_parameter_parsing(self, client, db, es_helper):
+    def test_parameter_parsing(self, client, db, preferred_es_helper):
         calls = []
 
         def mocked_supersearch_get(**params):
@@ -183,7 +183,7 @@ class TestViews:
             assert "$thanks" in params["reason"]
             assert "Exception" in params["java_stack_trace"]
 
-    def test_signature_reports_pagination(self, client, db, es_helper):
+    def test_signature_reports_pagination(self, client, db, preferred_es_helper):
         """Test that the pagination of results works as expected"""
 
         def build_crash_data(i):
@@ -207,10 +207,10 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            es_helper.index_crash(processed_crash=data, refresh=False)
+            preferred_es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
-        es_helper.refresh()
+        preferred_es_helper.refresh()
 
         start_date, end_date = get_date_range(crash_ids[0])
         url = reverse("signature:signature_reports")
@@ -256,7 +256,7 @@ class TestViews:
         response = client.get(url, {"signature": TEST_SIGNATURE, "page": "-1"})
         assert response.status_code == 200
 
-    def test_signature_aggregation(self, client, db, es_helper):
+    def test_signature_aggregation(self, client, db, preferred_es_helper):
         def build_crash_data(i, products):
             # Make crash ids unique with the first 6 characters being i
             crash_id = create_new_ooid()
@@ -282,10 +282,10 @@ class TestViews:
         crash_ids = []
         for i in range(len(products)):
             data = build_crash_data(i, products)
-            es_helper.index_crash(processed_crash=data, refresh=False)
+            preferred_es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
-        es_helper.refresh()
+        preferred_es_helper.refresh()
 
         # Aggregate on platform--there's no data, so no results.
         url = reverse("signature:signature_aggregation", args=("platform",))
@@ -303,7 +303,7 @@ class TestViews:
         assert "Fenix" in smart_str(response.content)
         assert "Thunderbird" in smart_str(response.content)
 
-    def test_signature_graphs(self, client, db, es_helper):
+    def test_signature_graphs(self, client, db, preferred_es_helper):
         def build_crash_data(i, days, product):
             date = utc_now() - datetime.timedelta(days=days)
             crash_id = create_new_ooid(date)
@@ -336,10 +336,10 @@ class TestViews:
         crash_ids = []
         for i, item in enumerate(test_data):
             data = build_crash_data(i, days=item[0], product=item[1])
-            es_helper.index_crash(processed_crash=data, refresh=False)
+            preferred_es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
-        es_helper.refresh()
+        preferred_es_helper.refresh()
 
         # Graph platform which has no data
         url = reverse("signature:signature_graphs", args=("platform",))
@@ -371,7 +371,9 @@ class TestViews:
         assert "term_counts" in struct
         assert len(struct["term_counts"]) == 3
 
-    def test_signature_comments_permissions(self, client, db, es_helper, user_helper):
+    def test_signature_comments_permissions(
+        self, client, db, preferred_es_helper, user_helper
+    ):
         """Verify comments are not viewable without view_pii."""
         url = reverse("signature:signature_comments")
 
@@ -385,7 +387,7 @@ class TestViews:
         response = client.get(url, {"signature": "whatever"})
         assert response.status_code == 200
 
-    def test_signature_comments(self, client, db, es_helper, user_helper):
+    def test_signature_comments(self, client, db, preferred_es_helper, user_helper):
         def build_crash_data(crash_id, **params):
             data = {
                 "date_processed": date_to_string(date_from_ooid(crash_id)),
@@ -424,8 +426,8 @@ class TestViews:
         )
 
         for crash_data in [crash1, crash2, crash3, crash4]:
-            es_helper.index_crash(processed_crash=crash_data, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=crash_data, refresh=False)
+        preferred_es_helper.refresh()
 
         url = reverse("signature:signature_comments")
         user = user_helper.create_protected_user()
@@ -439,7 +441,9 @@ class TestViews:
         assert "product is awesome" in smart_str(response.content)
         assert "it crashed" in smart_str(response.content)
 
-    def test_signature_comments_pagination(self, client, db, es_helper, user_helper):
+    def test_signature_comments_pagination(
+        self, client, db, preferred_es_helper, user_helper
+    ):
         """Test that the pagination of comments works as expected"""
 
         def build_crash_data(i):
@@ -464,10 +468,10 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            es_helper.index_crash(processed_crash=data, refresh=False)
+            preferred_es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
-        es_helper.refresh()
+        preferred_es_helper.refresh()
 
         user = user_helper.create_protected_user()
         client.force_login(user)
@@ -516,7 +520,7 @@ class TestViews:
         assert crash_ids[0] in smart_str(response.content)
         assert "===0===" in smart_str(response.content)
 
-    def test_signature_summary(self, client, db, es_helper):
+    def test_signature_summary(self, client, db, preferred_es_helper):
         models.GraphicsDevice.objects.create(
             vendor_hex="0x0086",
             adapter_hex="0x1234",
@@ -588,8 +592,8 @@ class TestViews:
             ),
         ]
         for item in crash_data:
-            es_helper.index_crash(processed_crash=item, refresh=False)
-        es_helper.refresh()
+            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
+        preferred_es_helper.refresh()
 
         start_date, end_date = get_date_range(date=utc_now())
 
@@ -635,7 +639,7 @@ class TestViews:
         assert "arm64-v8a" in smart_str(response.content)
         assert "Jerry" in smart_str(response.content)
 
-    def test_signature_bugzilla(self, client, db, es_helper):
+    def test_signature_bugzilla(self, client, db, preferred_es_helper):
         models.BugAssociation.objects.create(bug_id=111111, signature="Something")
         models.BugAssociation.objects.create(bug_id=111111, signature="OOM | small")
         models.BugAssociation.objects.create(bug_id=123456789, signature="Something")
