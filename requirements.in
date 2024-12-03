@@ -2,7 +2,7 @@ attrs==24.2.0
 boltons==24.1.0
 click==8.1.7
 contextlib2==21.6.0
-datadog==0.50.1
+datadog==0.50.2
 django-cors-headers==4.6.0
 django_csp==3.8
 django-jinja==2.11.0
@@ -46,7 +46,7 @@ python-decouple==3.8
 PyYAML==6.0.2
 requests==2.32.3
 requests-mock==1.12.1
-ruff==0.7.4
+ruff==0.8.0
 semver==3.0.2
 sentry-sdk==2.17.0
 Sphinx==8.1.3

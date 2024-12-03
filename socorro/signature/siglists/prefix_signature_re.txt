@@ -102,8 +102,8 @@ memset
 MessageLoop::PostTask_Helper
 MessageLoop::PostTask
 moz_malloc_size_of
-mozilla::CheckCheckedUnsafePtrs<T>::Check
 mozilla::CheckedInt
+mozilla::CrashOnDanglingCheckedUnsafePtr::NotifyCheckFailure
 mozilla::detail::InvalidArrayIndex_CRASH
 mozilla::detail::nsTStringRepr<T>::
 mozilla::Variant<T>::

@@ -86,6 +86,7 @@ __GI
 gkrust_shared::oom_hook::hook
 g_log
 _g_log_abort
+g_malloc
 google_breakpad::CrashGenerationClient::RequestDumpForException
 google_breakpad::ExceptionHandler::SignalHandler
 google_breakpad::ExceptionHandler::WriteMinidumpWithException
@@ -135,6 +136,8 @@ mozcrt19\.dll
 mozilla::AlignedBuffer<T>::Data
 mozilla::ArrayIterator<T>
 mozilla::Atomic<T>
+mozilla::CheckCheckedUnsafePtrs<T>::Check
+mozilla::CheckingPolicyAccess::NotifyCheckFailure
 mozilla::detail::Atomic
 mozilla::detail::BaseAutoLock
 mozilla::detail::BaseMonitorAutoLock
@@ -144,6 +147,7 @@ mozilla::detail::IntrinsicMemoryOps
 mozilla::detail::MemoryOperations
 mozilla::detail::MutexImpl
 mozilla::detail::RunnableMethodImpl<T>::RunnableMethodImpl
+mozilla::detail::SupportCheckedUnsafePtrImpl<T>
 mozilla::detail::ThreadLocalNativeStorage<T>::get
 mozilla::detail::ThreadLocal<T>::get
 mozilla::detail::VariantImplementation<T>::
@@ -180,6 +184,7 @@ mozilla::SegmentedVector<T>::SegmentImpl<T>::
 mozilla::Span<T>
 mozilla::StringBuffer::AddRef
 mozilla::StringBuffer::Release
+mozilla::SupportsCheckedUnsafePtr<T>::~SupportsCheckedUnsafePtr
 mozilla::TaskController::GetRunnableForMTTask
 mozilla::TaskQueue::
 mozilla::ThreadEventQueue
