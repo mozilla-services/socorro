@@ -9,7 +9,7 @@
 }
 html {
   background: #ffffff;
-  color: #0f1126;
+  color: var(--black);
 }
 body,
 div,
@@ -110,5 +110,5 @@ select {
   font-size: 100%;
 }
 legend {
-  color: #0f1126;
+  color: var(--black);
 }

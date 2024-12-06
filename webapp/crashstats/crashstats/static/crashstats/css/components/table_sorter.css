@@ -3,19 +3,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* Photon Colors Less Variables v3.0.1 */
 table.tablesorter th {
-  background-color: rgba(12, 12, 13, 0.2);
-  border: solid 1px #b1b1b3;
+  background-color: var(--alpha-grey2);
+  border: solid 1px var(--grey);
 }
+
 table.tablesorter tbody tr.odd {
-  background-color: #f2f6f9;
+  background-color: var(--off-white);
 }
+
 table.tablesorter tbody td {
   padding: 7px 0.5em 8px 0.5em;
   background-color: transparent;
 }
+
 table.tablesorter tbody tr td.in1 {
   padding-left: 15px;
 }
+
 table.tablesorter tbody tr td.in2 {
   padding-left: 30px;
 }

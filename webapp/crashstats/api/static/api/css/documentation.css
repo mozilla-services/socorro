@@ -20,7 +20,7 @@ a.expand-list {
   padding: 3px;
 }
 input.error {
-  border: 2px solid #d70022;
+  border: 2px solid var(--red);
 }
 /* things that are hidden by default */
 div.test-drive,
@@ -31,7 +31,7 @@ img.loading-ajax,
   display: none;
 }
 .status-error {
-  color: #d70022;
+  color: var(--red);
   font-weight: bold;
 }
 p.helptext {
@@ -52,7 +52,7 @@ form.testdrive td ul li {
 }
 .deprecation-warning {
   font-weight: bold;
-  color: #ff9400;
+  color: var(--orange);
 }
 p.deprecation-warning {
   text-transform: uppercase;

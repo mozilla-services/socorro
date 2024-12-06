@@ -23,10 +23,10 @@
   margin-left: 0.5em;
 }
 .bugreporter {
-  background-color: #f2f6f9;
+  background-color: var(--off-white);
   margin-top: 1em;
   padding: 0 0.4em;
-  border: 1px solid #d7d7db;
+  border: 1px solid var(--light-grey);
   -webkit-border-radius: 6px;
   -moz-border-radius: 6px;
   border-radius: 6px;
@@ -63,17 +63,17 @@
 .sig-search {
   background: transparent url("/static/img/icons/external.png") left top no-repeat;
   display: inline-block;
-  color: #4a4a4f;
+  color: var(--dark-grey);
   margin-left: 0.5em;
   padding-left: 17px;
-  font-size: 12px;
+  font-size: var(--base-font-size);
   font-weight: bold;
 }
 .sig-overview:link,
 .sig-overview:visited,
 .sig-search:link,
 .sig-search:visited {
-  color: #0f1126;
+  color: var(--black);
   text-decoration: none;
 }
 /**
@@ -84,7 +84,7 @@
   display: inline-block;
   position: absolute;
   left: -6px;
-  background-color: #d70022;
+  background-color: var(--red);
   color: #ffffff;
   margin-top: -6px;
   padding: 0.5rem 0.5rem 0.2rem;

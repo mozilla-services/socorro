@@ -3,24 +3,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* Photon Colors Less Variables v3.0.1 */
 .note {
-  background-color: #f2f6f9;
-  border: 1px solid #0060df;
+  background-color: var(--off-white);
+  border: 1px solid var(--primary);
   border-radius: 4px;
   margin: 0 0 10px 10px;
 }
+
 .note.float-right {
   float: right;
   min-width: 300px;
   width: 30%;
 }
+
 .note p {
   padding: 10px 10px;
   margin: 0;
 }
+
 .note::before {
   content: url("/static/img/3rdparty/silk/information.png") ' Note';
   display: block;
-  background-color: #0060df;
+  background-color: var(--primary);
   color: #ffffff;
   font-weight: bold;
   padding: 4px 10px;

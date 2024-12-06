@@ -20,10 +20,10 @@ div.admin ul li:before {
   content: "\00BB \0020";
 }
 div.admin div.add_item {
-  background-color: #d7d7db;
+  background-color: var(--light-grey);
   margin-top: 10px;
   padding: 5px;
-  border: 2px solid #4a4a4f;
+  border: 2px solid var(--dark-grey);
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
@@ -32,7 +32,7 @@ div.admin form.span {
   margin-right: 10px;
 }
 div.admin th {
-  background-color: #d7d7db;
+  background-color: var(--light-grey);
   padding: 3px;
   font-size: 105%;
 }

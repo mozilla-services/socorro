@@ -7,51 +7,60 @@
   padding: 0;
   list-style: none;
 }
+
 .accordion h3 {
   color: #ffffff;
   margin: 0;
 }
+
 .accordion a {
   display: block;
-  background-color: #d7d7db;
-  color: #0f1126;
+  background-color: var(--light-grey);
+  color: var(--black);
   padding: 0.5rem;
-  border: 1px solid #4a4a4f;
+  border: 1px solid var(--dark-grey);
   text-decoration: none;
 }
+
 .accordion a:focus,
 .accordion a:active {
-  background-color: #d7d7db;
-  color: #0f1126;
-  border: 1px solid #4a4a4f;
+  background-color: var(--light-grey);
+  color: var(--black);
+  border: 1px solid var(--dark-grey);
   outline: none;
 }
+
 .accordion p {
   margin: 0;
   padding: 0.5rem;
 }
+
 .accordion .content-pane {
   background-color: #ffffff;
-  color: #0f1126;
-  border: 1px solid #4a4a4f;
+  color: var(--black);
+  border: 1px solid var(--dark-grey);
   border-top: 0;
   overflow: hidden;
   height: 0;
   opacity: 0;
   transition: opacity 0.5s;
 }
+
 .accordion .content-pane h3 {
-  color: #4a4a4f;
+  color: var(--dark-grey);
   padding: 0.5rem 1rem;
 }
+
 .accordion .content-pane h4 {
   padding: 0.5rem 1rem 0 0.5rem;
   font-size: 1.2rem;
 }
+
 .accordion .show {
   height: auto;
   opacity: 1;
 }
+
 .accordion [data-icon]:before {
   float: right;
   font-family: 'icons';
@@ -64,6 +73,7 @@
   /* @see http://css-tricks.com/examples/IconFont/ */
   speak: none;
 }
+
 .accordion [aria-expanded="true"] [data-icon]:before {
   -webkit-transform: rotate(-90deg);
   -moz-transform: rotate(-90deg);

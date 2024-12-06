@@ -6,6 +6,7 @@
 div#message {
   margin: 1em;
 }
+
 .message,
 .info {
   margin: 1.5% 2% 0;
@@ -15,23 +16,28 @@ div#message {
   -moz-border-radius: 0.25em;
   border-radius: 0.25em;
 }
+
 .info {
-  background-color: #45a1ff;
-  border: 1px solid #002275;
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-dark);
 }
+
 .message.error {
-  background-color: #ff9c9c;
-  border: 1px solid #d70022;
+  background-color: var(--pink);
+  border: 1px solid var(--red);
 }
+
 .message.success {
-  background-color: #12bc00;
+  background-color: var(--green);
   border: 1px solid #ffffff;
   color: #ffffff;
 }
+
 .message.warning {
-  background-color: #ff9c9c;
-  border: 1px solid #ff9400;
+  background-color: var(--pink);
+  border: 1px solid var(--orange);
 }
+
 .message h2 {
   margin: 0.5em 0;
   font-size: 1.2em;

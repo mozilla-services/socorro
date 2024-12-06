@@ -6,7 +6,7 @@
   float: right;
 }
 #sumo-link a {
-  background-color: #0060df;
+  background-color: var(--primary);
   padding: 0.8em;
   border: none;
   border-radius: 2px;
@@ -25,5 +25,5 @@
   background: #003eaa;
 }
 #sumo-link a:active {
-  background: #002275;
+  background: var(--primary-dark);
 }

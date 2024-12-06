@@ -3,23 +3,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* Photon Colors Less Variables v3.0.1 */
 .panel {
-  color: #0f1126;
-  -webkit-box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
-  -moz-box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
-  box-shadow: 0px 1px 4px 0 rgba(12, 12, 13, 0.1);
+  color: var(--black);
+  -webkit-box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
+  -moz-box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
+  box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
 }
+
 .content .panel {
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
   box-shadow: none;
 }
+
 .panel header.title,
 .panel div.title {
-  background: rgba(12, 12, 13, 0.1) repeat-x left top;
+  background: var(--alpha-grey1) repeat-x left top;
   display: flex;
-  font-size: 12px;
+  font-size: var(--base-font-size);
   padding: 1em;
 }
+
 .panel header.title h2,
 .panel div.title h2 {
   display: block;
@@ -29,108 +32,135 @@
   margin: 0;
   flex-grow: 1;
 }
+
 .panel header.title .choices,
 .panel div.title .choices {
-  border-left-color: #b1b1b3;
+  border-left-color: var(--grey);
   vertical-align: 1px;
 }
+
 .panel header.title a,
 .panel div.title a {
-  color: #0f1126;
+  color: var(--black);
 }
+
 .panel header.title a:hover,
 .panel div.title a:hover,
 .panel header.title a:focus,
 .panel div.title a:focus {
-  background: #d7d7db;
+  background: var(--light-grey);
 }
+
 .panel header.title a.selected,
 .panel div.title a.selected {
-  background-color: #0a84ff;
+  background-color: var(--primary-medium);
   color: #ffffff;
 }
+
 .panel .body {
   background: #ffffff;
   padding: 1em;
   min-height: 4em;
 }
+
 .panel .table {
   font-size: 10px;
   border-collapse: collapse;
-  border: 1px solid #b1b1b3;
+  border: 1px solid var(--grey);
   border-top: 0;
   width: 100%;
 }
+
 .panel .table td,
 .panel .table th {
   padding: 0.5em 0.5em;
   vertical-align: top;
 }
+
 .panel .table .numalign {
   text-align: right;
 }
+
 .panel .table .spanalign {
   text-align: center;
 }
+
 .panel .table .trend-up {
-  color: #d70022;
+  color: var(--red);
 }
+
 .panel .table .trend-down {
-  color: #12bc00;
+  color: var(--green);
 }
+
 .panel .table thead tr {
-  background: rgba(12, 12, 13, 0.1);
+  background: var(--alpha-grey1);
 }
+
 .panel .table thead th {
-  border: 1px solid #b1b1b3;
+  border: 1px solid var(--grey);
   border-top: 0;
   font-weight: bold;
 }
+
 .panel .table thead th.sortable {
   padding-right: 17px;
 }
+
 .panel .table thead th.sortable:hover {
   cursor: pointer;
 }
+
 .panel .table tbody {
   background-color: #ffffff;
 }
+
 .panel .table tbody tr td:first-child,
 .panel .table tbody tr th:first-child {
   border-left: 0;
 }
+
 .panel .table tbody tr:nth-child(even) {
   background: #ffffff;
 }
+
 .panel .table tbody tr:hover {
-  background: #f2f6f9;
+  background: var(--off-white);
 }
+
 .panel .table tbody td,
 .panel .table tbody th {
-  border-left: 1px dotted #f2f6f9;
-  border-top: 1px solid #f2f6f9;
+  border-left: 1px dotted var(--off-white);
+  border-top: 1px solid var(--off-white);
 }
+
 .panel .table tbody tr:first-child td,
 .panel .table tbody tr:first-child th {
   border-top: 0;
 }
+
 .panel .table tbody td.separated,
 .panel .table tbody th.separated {
-  border-left: 1px solid #b1b1b3;
+  border-left: 1px solid var(--grey);
 }
+
 .panel .table tbody th {
   font-weight: bold;
 }
+
 .panel .table td.count span {
   display: block;
   font-size: 8px;
 }
+
 .panel .table td.count-high {
-  color: #d70022;
+  color: var(--red);
 }
+
 .panel .table td.count-none {
-  color: #4a4a4f;
+  color: var(--dark-grey);
 }
+
 .panel .table.expand-counts .counts-collapsed,
 .panel .table.expand-counts .counts-expanded {
   display: none;
