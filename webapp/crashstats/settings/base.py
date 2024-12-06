@@ -461,10 +461,6 @@ STATICFILES_FINDERS = [
 PIPELINE = {
     "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
-    "LESS_BINARY": _config("LESS_BINARY", default=path("node_modules/.bin/lessc")),
-    "LESS_ARGUMENTS": (
-        "--global-var=\"root-path='" + STATIC_ROOT + "/crashstats/css/'\""
-    ),
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": _config(
         "UGLIFYJS_BINARY", default=path("node_modules/.bin/uglifyjs")
@@ -476,7 +472,6 @@ PIPELINE = {
     # because possibly much code has been built with the assumption that
     # things will be made available globally.
     "DISABLE_WRAPPER": True,
-    "COMPILERS": ("pipeline.compilers.less.LessCompiler",),
     # The pipeline.jinja2.PipelineExtension extension doesn't support
     # automatically rendering any potentional compilation errors into
     # the rendered HTML, so just let it raise plain python exceptions.

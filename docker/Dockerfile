@@ -46,7 +46,6 @@ RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
-    LESS_BINARY=/webapp-frontend-deps/node_modules/.bin/lessc \
     UGLIFYJS_BINARY=/webapp-frontend-deps/node_modules/.bin/uglifyjs \
     CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
     NPM_ROOT_PATH=/webapp-frontend-deps/ \

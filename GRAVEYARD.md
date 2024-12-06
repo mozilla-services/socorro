@@ -11,6 +11,10 @@ This document records interesting code that we've deleted for the sake of discov
 `bin/load_processed_crashes_into_es.py` which was used to backfill elasticsearch from crash storage
 when migrating to Google Cloud Platform.
 
+* [Removal PR](https://github.com/mozilla-services/socorro/pull/6814)
+
+`webapp/less_to_css.sh` which converts LESS files to CSS, with associated NPM script `"convert:less": "sh less_to_css.sh"`
+
 ## S3 and SQS support
 
 * [Removal PR](https://github.com/mozilla-services/socorro/pull/6669)
