@@ -14,7 +14,6 @@
     "eslint-config-prettier": "6.15.0",
     "eslint-plugin-prettier": "3.1.4",
     "graceful-fs": "4.2.4",
-    "less": "3.12.2",
     "prettier": "2.1.2",
     "uglify-js": "3.11.5"
   },
@@ -34,8 +33,5 @@
     "qs": "6.9.4",
     "Select2": "github:select2/select2#3.5.4",
     "tablesorter": "2.31.3"
-  },
-  "scripts": {
-    "convert:less": "sh less_to_css.sh"
   }
 }
