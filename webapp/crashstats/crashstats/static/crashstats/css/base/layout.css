@@ -1,0 +1,249 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+html {
+  background: var(--off-white);
+  color: var(--dark-grey);
+  font-family: var(--base-font);
+  font-size: var(--base-font-size);
+  line-height: var(--base-line-height);
+  margin: 0;
+  padding: 0;
+}
+
+html.production {
+  margin: 0;
+}
+
+html.production body>h1 {
+  display: none;
+}
+
+html.production .page-heading {
+  margin: 1em 1em 1em;
+  display: flex;
+  align-items: center;
+}
+
+html.production .page-heading h2 {
+  flex: auto;
+  font-size: 1.6em;
+  margin: 0;
+}
+
+html.production .page-heading nav {
+  flex: initial;
+  flex-shrink: 0;
+}
+
+html.production .panel {
+  margin: 1em;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.page-header {
+  position: relative;
+  min-height: 64px;
+  height: 64px;
+  background-color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+}
+
+.page-header>* {
+  margin: 0 0.5em;
+}
+
+.page-header>*:first-child {
+  margin-left: 0;
+}
+
+.page-header>*:last-child {
+  margin-right: 0;
+}
+
+.page-header .title {
+  flex: 1;
+  border: none;
+  color: #ffffff;
+  display: block;
+  text-decoration: none;
+  font-size: 2em;
+  font-weight: 200;
+  height: 100%;
+  letter-spacing: 0.03em;
+  padding-left: 0.5em;
+  line-height: 64px;
+}
+
+.page-header #simple_search {
+  flex: 0 0 auto;
+}
+
+.page-header #simple_search label {
+  color: #ffffff;
+}
+
+.page-header #simple_search input {
+  background: #ffffff url("/static/img/2.0/search.png") no-repeat 5px center;
+  border: none;
+  width: 212px;
+  padding: 3px 4px 4px 28px;
+  font-size: var(--base-font-size);
+  color: var(--dark-grey);
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  border-radius: 2px;
+}
+
+.page-header #simple_search input:-moz-placeholder {
+  color: var(--light-grey);
+}
+
+.page-header .user-info {
+  flex: 0 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.page-header .user-info .signup-link {
+  color: var(--off-white);
+  padding: 0 1em;
+}
+
+.page-header .user-info .login-link {
+  color: var(--off-white);
+  padding: 0 1em;
+}
+
+.page-header .user-info .user-info-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  height: 100%;
+  position: relative;
+  padding: 0 1em;
+}
+
+.page-header .user-info .user-info-button .user-email {
+  margin-right: 0.5em;
+}
+
+.page-header .user-info .user-info-button:hover {
+  background: var(--primary);
+}
+
+.page-header .user-info .user-info-button:active {
+  background: var(--primary-medium);
+}
+
+.page-header .user-info .user-info-menu {
+  -webkit-box-shadow: 0px 1px 4px 0 var(--grey);
+  -moz-box-shadow: 0px 1px 4px 0 var(--grey);
+  box-shadow: 0px 1px 4px 0 var(--grey);
+  display: none;
+  position: absolute;
+  right: 0.5em;
+  top: 100%;
+  background: #ffffff;
+  border: 1px solid var(--grey);
+  padding: 0.5em;
+  min-width: 100px;
+  z-index: 1;
+}
+
+.page-header .user-info .user-info-menu a {
+  font-size: var(--base-font-size);
+}
+
+.page-header .user-info .user-info-menu a:link,
+.page-header .user-info .user-info-menu a:hover,
+.page-header .user-info .user-info-menu a:active,
+.page-header .user-info .user-info-menu a:visited {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.page-header .user-info .user-info-menu a:hover {
+  text-decoration: underline;
+}
+
+.protected-info {
+  align-items: center;
+  margin: 1em 1em 1em;
+}
+
+.threecol {
+  overflow: auto;
+}
+
+.threecol .col {
+  float: left;
+  width: 33%;
+  border-left: 1px dotted var(--light-grey);
+}
+
+.threecol .col .col-inner {
+  padding: 0 20px;
+}
+
+.threecol .col h3 {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.threecol .col:first-child {
+  border-left: 0;
+}
+
+.threecol .col:first-child .col-inner {
+  padding-left: 10px;
+}
+
+.product-grid {
+  -webkit-box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
+  -moz-box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
+  box-shadow: 0px 1px 4px 0 var(--alpha-grey1);
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.product-grid .product {
+  background: #fff;
+  border: 1px gray solid;
+  border-radius: 5px;
+  flex: 1 0 220px;
+  height: 170px;
+  margin: 20px;
+  text-align: center;
+}
+
+.product-grid .product .product-name {
+  margin-top: 55px;
+}
+
+.product-grid .product .product-name a {
+  color: var(--primary);
+  font-size: 22px;
+  text-decoration: none;
+}
+
+.product-grid .product .product-name a:hover {
+  text-decoration: underline;
+}
+
+.product-grid .product .product-description {
+  color: var(--dark-grey);
+}

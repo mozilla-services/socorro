@@ -1,0 +1,41 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+.json-document {
+  background-color: var(--black);
+  color: var(--jsonview-prop);
+  font-family: monospace;
+  font-size: 1.1em;
+  white-space: pre-wrap;
+}
+
+.json-document a,
+.json-document a:hover,
+.json-document a:visited,
+.json-document .json-toggle,
+.json-document .json-dict {
+  color: var(--jsonview-prop);
+}
+
+.json-document .json-literal {
+  color: var(--primary-light);
+}
+
+.json-document .json-string {
+  color: var(--green);
+  white-space: pre-wrap;
+}
+
+.json-document ol,
+.json-document ul {
+  list-style: none;
+  margin: 0 0 0 2em;
+  padding: 0;
+}
+
+.json-document ol li,
+.json-document ul li {
+  list-style: none;
+  position: relative;
+}
