@@ -5,7 +5,7 @@
 /* Photon Colors Less Variables v3.0.1 */
 .status-message {
   position: relative;
-  background-color: #d7d7db;
+  background-color: var(--light-grey);
   border: none;
   color: #ffffff;
   font-size: 1.1em;
@@ -26,7 +26,7 @@
   color: #0c0c0d;
 }
 .status-message.severity-info a {
-  color: #0a84ff;
+  color: var(--primary-medium);
 }
 .status-message.severity-info:before {
   content: url("/static/img/3rdparty/silk/information.png");
@@ -36,13 +36,13 @@
   color: #3e2800;
 }
 .status-message.severity-warning a {
-  color: #0a84ff;
+  color: var(--primary-medium);
 }
 .status-message.severity-warning:before {
   content: url("/static/img/3rdparty/silk/error.png");
 }
 .status-message.severity-critical {
-  background-color: #d70022;
+  background-color: var(--red);
 }
 .status-message.severity-critical,
 .status-message.severity-critical a {

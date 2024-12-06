@@ -14,7 +14,7 @@ th.bugzilla_numbers {
   background-color: #ffffff;
   margin-top: 1em;
   padding: 1em 1.5em;
-  border: solid 1px #d7d7db;
+  border: solid 1px var(--light-grey);
   min-width: 300px;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;

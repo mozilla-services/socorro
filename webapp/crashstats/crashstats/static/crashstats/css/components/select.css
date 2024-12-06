@@ -7,8 +7,8 @@ select {
   -webkit-appearance: none;
   cursor: pointer;
   border: none;
-  background: #d7d7db;
-  color: #0f1126;
+  background: var(--light-grey);
+  color: var(--black);
   padding: 0.2em 2em 0.2em 0.2em;
   margin: 0;
   border-radius: 2px;
@@ -17,15 +17,19 @@ select {
   background-size: 8px;
   background-repeat: no-repeat;
 }
+
 select:hover {
-  background-color: #b1b1b3;
+  background-color: var(--grey);
 }
+
 select:active {
   background-color: #737373;
 }
+
 select:focus {
   background-color: #ffffff;
 }
+
 select optgroup,
 select option {
   background-color: #ffffff;

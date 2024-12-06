@@ -4,7 +4,7 @@
 /* Photon Colors Less Variables v3.0.1 */
 div.pending {
   background-color: #ffffff;
-  color: #4a4a4f;
+  color: var(--dark-grey);
   margin: 20px auto;
   padding: 10px;
   border: 4px solid #999;
@@ -15,7 +15,7 @@ div.pending {
   border-radius: 25px;
 }
 div.pending p {
-  font-size: 12px;
+  font-size: var(--base-font-size);
 }
 div.pending img {
   margin: 10px 0;

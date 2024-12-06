@@ -4,12 +4,12 @@
 /* Photon Colors Less Variables v3.0.1 */
 /* Django forms in general */
 ul.errorlist li {
-  color: #d70022;
+  color: var(--red);
 }
 input[type="submit"],
 input[type="button"],
 button {
-  background-color: #0060df;
+  background-color: var(--primary);
   padding: 0.8em;
   border: none;
   border-radius: 2px;
@@ -35,5 +35,5 @@ button:focus {
 input[type="submit"]:active,
 input[type="button"]:active,
 button:active {
-  background: #002275;
+  background: var(--primary-dark);
 }

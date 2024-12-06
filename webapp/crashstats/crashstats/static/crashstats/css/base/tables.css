@@ -11,11 +11,11 @@ table tbody tr {
 }
 table thead tr th,
 table tbody tr th {
-  border: 1px solid #0f1126;
+  border: 1px solid var(--black);
 }
 table thead tr td,
 table tbody tr td {
-  border: solid 1px #b1b1b3;
+  border: solid 1px var(--grey);
 }
 table th {
   font-weight: bold;
@@ -31,7 +31,7 @@ table.zebra {
 }
 table.data-table tr:nth-child(even),
 table.zebra tr:nth-child(even) {
-  background-color: rgba(12, 12, 13, 0.1);
+  background-color: var(--alpha-grey1);
 }
 table.data-table tr:nth-child(odd),
 table.zebra tr:nth-child(odd) {
@@ -39,10 +39,10 @@ table.zebra tr:nth-child(odd) {
 }
 table.data-table tr:hover,
 table.zebra tr:hover {
-  background-color: #d7d7db;
+  background-color: var(--light-grey);
 }
 table th {
-  background-color: rgba(12, 12, 13, 0.2);
+  background-color: var(--alpha-grey2);
 }
 table th,
 table td {
@@ -52,15 +52,15 @@ table tbody {
   background-color: #ffffff;
 }
 table tbody tr.truncated-frame {
-  background-color: #fcb35f;
+  background-color: var(--jsonview-prop);
 }
 table tbody tr.truncated-frame a {
-  color: #4a4a4f;
+  color: var(--dark-grey);
 }
 table tbody tr.missingsymbols,
 table tbody tr.missingsymbols:hover,
 table tbody tr.missingsymbols td {
-  background-color: #d70022;
+  background-color: var(--red);
   color: #ffffff;
   border-top: 2px solid #ffffff;
 }

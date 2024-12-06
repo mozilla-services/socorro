@@ -3,46 +3,56 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* Photon Colors Less Variables v3.0.1 */
 .errorlist {
-  color: #d70022;
+  color: var(--red);
 }
+
 textarea {
   height: 60px;
   width: 400px;
 }
+
 code,
 pre {
-  background-color: #d7d7db;
-  border: 1px solid #b1b1b3;
+  background-color: var(--light-grey);
+  border: 1px solid var(--grey);
 }
+
 p.code code {
   font-size: 1.5em;
   padding: 6px;
 }
+
 p.example code,
 pre.example {
   font-size: 1.2em;
   padding: 4px;
 }
+
 pre {
   line-height: 1.3em;
 }
+
 p.code .rest-hidden {
   display: none;
 }
+
 div.token {
-  border-bottom: 1px solid #b1b1b3;
+  border-bottom: 1px solid var(--grey);
   padding: 25px 5px;
 }
+
 table.meta-data th {
   vertical-align: top;
 }
+
 table.meta-data th,
 table.meta-data td {
   padding: 2px 6px;
   border: 0;
 }
+
 .is-expired {
-  color: #d70022;
+  color: var(--red);
   font-weight: bold;
   font-size: 110%;
   margin: 5px;

@@ -92,7 +92,7 @@ PIPELINE_CSS = {
         "output_filename": "css/metricsgraphics.min.css",
     },
     "crashstats_base": {
-        "source_filenames": ("crashstats/css/base.css", "status/css/status.css"),
+        "source_filenames": ("crashstats/css/base/variables.css", "crashstats/css/base.css", "status/css/status.css"),
         "output_filename": "css/crashstats-base.min.css",
     },
     "api_documentation": {

@@ -15,19 +15,19 @@ div.release_channel li {
   /* 14px or 1.1(r)em */
 }
 div.release_channel li a {
-  color: #002275;
+  color: var(--primary-dark);
   text-decoration: none;
 }
 div.release_channel li a:hover,
 div.release_channel li a:active {
-  color: #0060df;
+  color: var(--primary);
 }
 div.release_channel li.focused a,
 div.release_channel li.focused a:link,
 div.release_channel li.focused a:hover,
 div.release_channel li.focused a:active {
-  color: #0060df;
+  color: var(--primary);
 }
 .border_right {
-  border-right: 1px dashed rgba(12, 12, 13, 0.2);
+  border-right: 1px dashed var(--alpha-grey2);
 }
