@@ -286,9 +286,9 @@ django-jinja==2.11.0 \
 django-npm==1.0.0 \
     --hash=sha256:2e6bba65e728fa18b9db3c8dc0d4490b70cb7f43bacf60eb3654d7dcb6424272
     # via -r requirements.in
-django-pipeline==3.1.0 \
-    --hash=sha256:36470aeced4889694b899a995bcd2eda512f45b61ac68d50adc5863c8bad5ee4 \
-    --hash=sha256:aa973adeb480762f9d795818140da32e0348b7cd85a90b316205b8e966f986b7
+django-pipeline==4.0.0 \
+    --hash=sha256:0ab1190d9dc64e2f7b72be3f7b023c06aca7cc1cc61e7dc9f0343838e29bbc88 \
+    --hash=sha256:90e50c15387a6e051ee1a6ce2aaca333823ccfb23695028790f74412bde7d7db
     # via -r requirements.in
 django-ratelimit==4.1.0 \
     --hash=sha256:555943b283045b917ad59f196829530d63be2a39adb72788d985b90c81ba808b \
@@ -1357,7 +1357,9 @@ werkzeug==3.1.3 \
 wheel==0.41.3 \
     --hash=sha256:488609bc63a29322326e05560731bf7bfea8e48ad646e1f5e40d366607de0942 \
     --hash=sha256:4d4987ce51a49370ea65c0bfd2234e8ce80a12780820d9dc462597a6e60d0841
-    # via pip-tools
+    # via
+    #   django-pipeline
+    #   pip-tools
 whitenoise==6.8.2 \
     --hash=sha256:486bd7267a375fa9650b136daaec156ac572971acc8bf99add90817a530dd1d4 \
     --hash=sha256:df12dce147a043d1956d81d288c6f0044147c6d2ab9726e5772ac50fb45d2280
