@@ -1041,8 +1041,8 @@ class BugzillaBugInfo(SocorroCommon):
             if "bugs" not in data:
                 # We know the payload is JSON, but we don't know what shape it is--could
                 # be an array or an object. We know it doesn't have sensitive data in
-                # it, so let's dump to a string and truncate that to 100 characters.
-                payload_data = response.content[:100]
+                # it, so let's dump to a string and truncate that to 200 characters.
+                payload_data = response.content[:200]
                 raise BugzillaRestHTTPUnexpectedError(
                     f"status code: {response.status_code}, payload: {payload_data!r}"
                 )
