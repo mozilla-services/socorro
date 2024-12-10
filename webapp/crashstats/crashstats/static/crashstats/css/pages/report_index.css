@@ -1,0 +1,97 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+#details th,
+#metadata th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#breadcrumbs th,
+#breadcrumbs td {
+  vertical-align: top;
+}
+.humanized {
+  padding-left: 3px;
+  color: #6f6f6f;
+  font-size: 11px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+#sumo-link a {
+  margin-left: 0.5em;
+}
+.bugreporter {
+  background-color: var(--off-white);
+  margin-top: 1em;
+  padding: 0 0.4em;
+  border: 1px solid var(--light-grey);
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+}
+#report-index {
+  clear: right;
+}
+#report-index h2,
+#report-index h3 {
+  margin: 10px 0;
+}
+#allthreads.hidden {
+  display: none;
+}
+#frames {
+  margin-top: 1em;
+}
+#report-header {
+  font-size: 150%;
+  position: relative;
+  width: 39em;
+  z-index: 1;
+}
+.record {
+  line-height: 1.5em;
+}
+.record th {
+  text-align: right;
+}
+.record pre {
+  white-space: pre-wrap;
+}
+.sig-overview,
+.sig-search {
+  background: transparent url("/static/img/icons/external.png") left top no-repeat;
+  display: inline-block;
+  color: var(--dark-grey);
+  margin-left: 0.5em;
+  padding-left: 17px;
+  font-size: var(--base-font-size);
+  font-weight: bold;
+}
+.sig-overview:link,
+.sig-overview:visited,
+.sig-search:link,
+.sig-search:visited {
+  color: var(--black);
+  text-decoration: none;
+}
+/**
+ * Adds a little flyout to the left of a row in
+ * order to draw attention or display a notice.
+ */
+.row-notice {
+  display: inline-block;
+  position: absolute;
+  left: -6px;
+  background-color: var(--red);
+  color: #ffffff;
+  margin-top: -6px;
+  padding: 0.5rem 0.5rem 0.2rem;
+  border-radius: 6px 0 0 6px;
+  width: 26px;
+  font-size: 1.6rem;
+  line-height: 125%;
+  font-weight: bold;
+  text-align: center;
+}

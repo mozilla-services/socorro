@@ -1,0 +1,231 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+.page-heading p time {
+  font-weight: bold;
+}
+
+#panels-nav {
+  display: block;
+  margin: 20px 0 0 20px;
+}
+
+#panels-nav .tabs li {
+  display: inline-block;
+}
+
+#panels-nav .tabs li a:link,
+#panels-nav .tabs li a:visited {
+  display: inline-block;
+  background-color: var(--alpha-grey2);
+  border: none;
+  color: var(--dark-grey);
+  font-size: 1.1em;
+  padding: 0.3em 0.8em;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 8px 8px 0 0;
+}
+
+#panels-nav .tabs li a:hover {
+  background-color: var(--grey);
+}
+
+#panels-nav .tabs li a.selected {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+/* By default, hide all panels except the loading one and panels inside a panel. */
+.panel {
+  display: none;
+}
+
+.panel .panel,
+#loading-panel {
+  display: block;
+}
+
+#mainbody .tab-panel {
+  margin-top: 0;
+  position: relative;
+}
+
+#mainbody .tab-panel>header {
+  display: none;
+}
+
+.display-toggle-filters {
+  float: right;
+  font-style: normal;
+  font-weight: bold;
+}
+
+.display-toggle-filters:before {
+  content: url('../../img/3rdparty/silk/arrow_bottom.png');
+  display: inline-block;
+  height: 16px;
+  padding: 5px;
+  vertical-align: middle;
+  width: 16px;
+}
+
+.display-toggle-filters.show:before {
+  content: url('../../img/3rdparty/silk/resultset_next.png');
+}
+
+#search-params-fieldset {
+  width: 100%;
+}
+
+th.crash-id {
+  min-width: 235px;
+}
+
+a.crash-id {
+  font-family: monospace;
+}
+
+.controls {
+  text-align: center;
+  position: relative;
+}
+
+.controls button {
+  cursor: pointer;
+  margin-left: 1em;
+  padding: 0.7em 1em;
+  vertical-align: middle;
+}
+
+.controls hr {
+  background-color: var(--light-grey);
+  border-color: var(--light-grey);
+  color: var(--light-grey);
+  margin-top: 15px;
+  width: 60%;
+}
+
+.reports-panel .controls input {
+  width: 800px;
+}
+
+section.aggregations-panel>.body>.content.loaded,
+section.summary-panel>.body>.content.loaded {
+  column-count: 2;
+}
+
+section.aggregations-panel .panel,
+section.summary-panel .panel {
+  display: inline-block;
+  vertical-align: top;
+  width: 95%;
+  margin-left: 2.4%;
+  margin-right: 2.4%;
+}
+
+section.aggregations-panel .controls .loader,
+section.summary-panel .controls .loader {
+  background-image: url('../../img/ajax-loader16x16.gif');
+  display: inline-block;
+  height: 16px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16px;
+}
+
+section.aggregations-panel .controls .fields-list,
+section.summary-panel .controls .fields-list {
+  width: 30%;
+}
+
+section.aggregations-panel .crash-type-indicators-panel,
+section.summary-panel .crash-type-indicators-panel {
+  background-color: var(--alpha-grey1);
+  padding: 15px;
+}
+
+section.aggregations-panel .crash-type-indicators-panel.startup-crash-warning,
+section.summary-panel .crash-type-indicators-panel.startup-crash-warning {
+  background-color: #ffe900;
+}
+
+section.aggregations-panel .crash-type-indicators-panel .crash-type-indicator-container,
+section.summary-panel .crash-type-indicators-panel .crash-type-indicator-container {
+  align-items: center;
+  display: flex;
+}
+
+section.aggregations-panel .crash-type-indicators-panel .crash-type-indicator-container img,
+section.summary-panel .crash-type-indicators-panel .crash-type-indicator-container img {
+  margin-right: 5px;
+}
+
+section.summary-panel .panel header {
+  cursor: pointer;
+}
+
+section.summary-panel .panel .content {
+  display: none;
+}
+
+section.graphs-panel .controls .fields-list {
+  width: 30%;
+}
+
+section.graphs-panel .legend {
+  width: 100%;
+  text-align: center;
+}
+
+section.correlations-panel .controls .products-list,
+section.correlations-panel .controls .channels-list {
+  width: 15%;
+}
+
+section.correlations-panel .controls .products-list {
+  margin-right: 5em;
+}
+
+section.correlations-panel .controls label {
+  margin-right: 0.2em;
+}
+
+.tab-inner-panel .options {
+  display: block;
+  height: 16px;
+  text-indent: -9999px;
+  width: 16px;
+}
+
+.tab-inner-panel .options.delete {
+  background-image: url('/static/img/3rdparty/silk/cross.png');
+  position: relative;
+  top: 1px;
+}
+
+.tab-inner-panel .options.show {
+  background-image: url('/static/img/3rdparty/silk/resultset_previous.png');
+}
+
+.tab-inner-panel .options.hide {
+  background-image: url('/static/img/3rdparty/silk/arrow_bottom.png');
+}
+
+.tab-inner-panel .options:hover {
+  cursor: pointer;
+}
+
+.tab-inner-panel .body {
+  margin: 1em 0 0;
+  padding: 0;
+}
+
+.bugzilla-panel .bug_ids_expanded_list {
+  border: none;
+  display: block;
+  position: inherit;
+  width: 100%;
+}

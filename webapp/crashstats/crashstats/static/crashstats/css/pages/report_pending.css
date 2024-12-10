@@ -1,0 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+div.pending {
+  background-color: #ffffff;
+  color: var(--dark-grey);
+  margin: 20px auto;
+  padding: 10px;
+  border: 4px solid #999;
+  width: 400px;
+  text-align: center;
+  -webkit-border-radius: 25px;
+  -moz-border-radius: 25px;
+  border-radius: 25px;
+}
+div.pending p {
+  font-size: var(--base-font-size);
+}
+div.pending img {
+  margin: 10px 0;
+}
