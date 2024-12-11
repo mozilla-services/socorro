@@ -1,0 +1,24 @@
+div.page-section {
+  display: inline-block;
+  vertical-align: top;
+  width: 46%;
+}
+.page-section + .page-section {
+  float: right;
+}
+.panel .body:after {
+  clear: both;
+  content: "";
+  display: table;
+}
+.panel .body .links.left {
+  float: left;
+}
+.panel .body .links.right {
+  float: right;
+}
+.panel .body .links li {
+  display: inline-block;
+  font-size: 1.1em;
+  margin: 10px;
+}

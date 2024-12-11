@@ -1,0 +1,249 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+#search-form {
+  background: var(--light-grey);
+  margin-top: 1em;
+  padding: 2em;
+  /* By default hide all elements of the search form until it is fully loaded. */
+}
+
+#search-form form {
+  display: none;
+}
+
+#search-form .form-controls {
+  float: right;
+}
+
+#search-form .form-controls button {
+  cursor: pointer;
+  padding: 6px 15px;
+  font-size: 1.2em;
+}
+
+#search-form .form-controls button:before {
+  padding-right: 8px;
+  vertical-align: middle;
+}
+
+#search-form .form-controls #search-button:before {
+  content: url("/static/img/3rdparty/silk/magnifier.png");
+}
+
+#search-form .form-controls .new-line:before {
+  content: url("/static/img/3rdparty/silk/application_form_add.png");
+}
+
+#search-form .form-controls .customize:before {
+  content: url("/static/img/3rdparty/silk/wrench.png");
+}
+
+#search-form #simple-search,
+#search-form .date-filters {
+  text-align: center;
+  justify-content: space-between;
+}
+
+#search-form #simple-search>div,
+#search-form .date-filters>div {
+  width: 24%;
+  display: inline-block;
+}
+
+#search-form #simple-search>div label,
+#search-form .date-filters>div label {
+  display: block;
+  font-weight: bold;
+}
+
+#search-form .date-filters {
+  float: left;
+  margin: 0;
+  padding-bottom: 0px;
+  width: 49.33%;
+}
+
+#search-form .date-filters>div {
+  width: 48.66%;
+}
+
+#search-form .date-shortcuts {
+  clear: left;
+  font-style: italic;
+  margin: 0 0 inherit 0;
+  text-align: center;
+  width: 49.33%;
+}
+
+#search-form .date-shortcuts a {
+  color: var(--dark-grey);
+}
+
+#search-form .date-shortcuts a.selected {
+  text-decoration: none;
+}
+
+#search-form fieldset {
+  padding: 10px 0;
+  width: 100%;
+}
+
+#search-form fieldset .select2-container {
+  margin-right: 10px;
+}
+
+#search-form select {
+  margin: 20px;
+  width: 20em;
+}
+
+#search-form .value {
+  width: 30em;
+}
+
+#search-form .dynamic-line-delete {
+  float: left;
+  display: inline-block;
+  margin: 5px 10px 0 0;
+  vertical-align: middle;
+  background-image: url("/static/img/3rdparty/silk/delete.png");
+  height: 16px;
+  width: 16px;
+  text-indent: -9999px;
+}
+
+#search-form #advanced-search fieldset fieldset {
+  border-top: 1px solid var(--light-grey);
+}
+
+#search-form fieldset.options h4 {
+  cursor: pointer;
+}
+
+#search-form fieldset.options h4 span {
+  color: var(--dark-grey);
+  text-transform: uppercase;
+  font-size: 0.7em;
+  font-weight: bold;
+}
+
+#search-form fieldset.options h4 .hide {
+  display: none;
+}
+
+#search-form fieldset.options h4+div {
+  display: none;
+}
+
+#search-form fieldset.options label {
+  display: inline-block;
+  min-width: 100px;
+}
+
+#search-form fieldset.options input[name=_facets],
+#search-form fieldset.options input[name=_sort],
+#search-form fieldset.options input[name=_columns_fake] {
+  display: inline;
+  width: 500px;
+}
+
+#search-form fieldset.options input[name=search_indices] {
+  display: inline;
+  width: 80%;
+}
+
+#search-form fieldset.options div.public-api-url {
+  margin: 10px 0;
+}
+
+#search-form fieldset.options input[name=_public_api_url] {
+  padding: 5px 8px;
+  width: 100%;
+}
+
+#search-form textarea {
+  height: 300px;
+  width: 600px;
+}
+
+#search_results table caption {
+  font-size: 1.7rem;
+  margin: 0 0 1em 0;
+}
+
+#search_results .external-link {
+  background: transparent url("/static/img/icons/external.png") left top no-repeat;
+  display: inline-block;
+  padding-left: 17px;
+}
+
+#search_results .term {
+  background: transparent url("/static/img/icons/add.png") left top no-repeat;
+  display: inline-block;
+  padding-left: 13px;
+}
+
+#search_results th.crash-id {
+  width: 235px;
+}
+
+#search_results a.crash-id {
+  font-family: monospace;
+}
+
+#search_results .error li {
+  color: var(--black);
+  font-weight: bold;
+  list-style: inside none disc;
+}
+
+#search_results .error li li {
+  font-weight: normal;
+  list-style: inside none circle;
+  margin-left: 20px;
+}
+
+.facet .column-narrow {
+  width: 10%;
+}
+
+.facet .facet-term {
+  width: 50%;
+}
+
+.loader {
+  background-image: url("/static/img/ajax-loader.gif");
+  height: 19px;
+  margin: auto;
+  width: 220px;
+}
+
+/* Custom Query styles */
+.custom-search #editor {
+  border: 1px solid lightgray;
+  height: 400px;
+  margin: 0;
+  width: 100%;
+}
+
+.custom-search fieldset.options input#search_indices {
+  width: 100%;
+}
+
+.custom-search .json-results {
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", "source-code-pro", monospace;
+  font-size: var(--base-font-size);
+  height: 500px;
+  width: 100%;
+}
+
+.custom-search code {
+  background-color: var(--off-white);
+  border: 1px solid var(--light-grey);
+  border-radius: 3px;
+  margin: 0 2px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}

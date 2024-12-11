@@ -1,0 +1,35 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:root {
+  /* colors */
+  --primary-light: #45a1ff;
+  --primary-medium: #0a84ff;
+  --primary: #0060df;
+  --primary-dark: #002275;
+
+  --off-white: #f2f6f9;
+  --black: #0f1126;
+
+  --blue: var(--primary);
+  --red: #d70022;
+  --orange: #ff9400;
+  --green: #12bc00;
+  --purple: #8000d7;
+  --pink: #ff9c9c;
+
+  --alpha-grey1: rgba(12, 12, 13, 0.1);
+  --alpha-grey2: rgba(12, 12, 13, 0.2);
+
+  --light-grey: #d7d7db;
+  --grey: #b1b1b3;
+  --dark-grey: #4a4a4f;
+
+  --jsonview-prop: #fcb35f;
+
+  /* fonts/headings */
+  --base-font: Helvetica, Arial, sans-serif;
+  --base-font-size: 12px;
+  --base-line-height: 1.7;
+}

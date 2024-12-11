@@ -1,0 +1,44 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+/* Status Messages */
+div#message {
+  margin: 1em;
+}
+
+.message,
+.info {
+  margin: 1.5% 2% 0;
+  padding: 1em;
+  width: 96%;
+  -webkit-border-radius: 0.25em;
+  -moz-border-radius: 0.25em;
+  border-radius: 0.25em;
+}
+
+.info {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-dark);
+}
+
+.message.error {
+  background-color: var(--pink);
+  border: 1px solid var(--red);
+}
+
+.message.success {
+  background-color: var(--green);
+  border: 1px solid #ffffff;
+  color: #ffffff;
+}
+
+.message.warning {
+  background-color: var(--pink);
+  border: 1px solid var(--orange);
+}
+
+.message h2 {
+  margin: 0.5em 0;
+  font-size: 1.2em;
+}

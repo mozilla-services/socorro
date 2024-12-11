@@ -1,0 +1,53 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+.page-footer {
+  background: var(--light-grey);
+  color: var(--dark-grey);
+  border-top: 1px solid var(--grey);
+  margin: 40px 0 0 0;
+  padding: 10px 20px;
+}
+
+.page-footer a:link,
+.page-footer a:hover,
+.page-footer a:active,
+.page-footer a:visited {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.page-footer a:hover {
+  text-decoration: underline;
+}
+
+.page-footer .nav {
+  background: url("/static/img/3.0/mozilla.gif") no-repeat scroll 0% -1px transparent;
+  background-size: 102px auto;
+  float: left;
+  padding-left: 109px;
+}
+
+.page-footer ul,
+.page-footer .login {
+  display: inline;
+}
+
+.page-footer li {
+  display: inline;
+  padding: 0 0.5em;
+  border-left: 1px solid var(--grey);
+  list-style: none;
+}
+
+.page-footer li:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.page-footer .login {
+  float: right;
+  line-height: 18px;
+  padding-top: 2px;
+}

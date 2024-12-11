@@ -1,0 +1,36 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+select {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  border: none;
+  background: var(--light-grey);
+  color: var(--black);
+  padding: 0.2em 2em 0.2em 0.2em;
+  margin: 0;
+  border-radius: 2px;
+  background-image: url("/static/img/3.0/caret.svg");
+  background-position: calc(100% - 7px) calc(50% + 1px);
+  background-size: 8px;
+  background-repeat: no-repeat;
+}
+
+select:hover {
+  background-color: var(--grey);
+}
+
+select:active {
+  background-color: #737373;
+}
+
+select:focus {
+  background-color: #ffffff;
+}
+
+select optgroup,
+select option {
+  background-color: #ffffff;
+}

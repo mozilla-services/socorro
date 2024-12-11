@@ -1,0 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ 
+table.tablesorter th {
+  background-color: var(--alpha-grey2);
+  border: solid 1px var(--grey);
+}
+
+table.tablesorter tbody tr.odd {
+  background-color: var(--off-white);
+}
+
+table.tablesorter tbody td {
+  padding: 7px 0.5em 8px 0.5em;
+  background-color: transparent;
+}
+
+table.tablesorter tbody tr td.in1 {
+  padding-left: 15px;
+}
+
+table.tablesorter tbody tr td.in2 {
+  padding-left: 30px;
+}
