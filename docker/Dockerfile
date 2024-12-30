@@ -7,7 +7,7 @@
 # stackwalker
 # NOTE(smarnach): To upgrade Python to a new minor or major version, see
 # https://socorro.readthedocs.io/en/latest/dev.html#upgrading-to-a-new-python-version
-FROM --platform=linux/amd64 python:3.11.11-slim-bullseye@sha256:e32fb39f8ca1bc1736579469c6f175d2dfff2bb9170865d706d5da461b708bb6 AS app_amd64
+FROM --platform=linux/amd64 python:3.11.11-slim-bullseye@sha256:9d6c8e7c36da7e7a77af6b503877fe0dece3aa239be502ecb62f3ac266ce6011 AS app_amd64
 
 # Set up user and group
 ARG groupid=10001
