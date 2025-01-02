@@ -492,11 +492,14 @@ class TestCustomQuery:
         # Assert the available indices are there
         template = preferred_es_helper.get_index_template()
         now = utc_now()
-        indices = [
-            (now - datetime.timedelta(days=7)).strftime(template),
-            now.strftime(template),
-        ]
-        assert ",".join(indices) in smart_str(response.content)
+        indices = set()
+        # NOTE(willkg): we have to build the list of indices this way because
+        # the index name is based on the week number and this handles the
+        # end-of-year/beginning-of-year case correctly.
+        for i in range(7):
+            indices.add((now - datetime.timedelta(days=i)).strftime(template))
+        index_value = ",".join(sorted(indices))
+        assert index_value in smart_str(response.content)
 
     def test_search_query(self, client, db, preferred_es_helper, user_helper):
         user = user_helper.create_protected_plus_user()
