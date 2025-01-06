@@ -30,6 +30,7 @@ core::mem::drop
 core::mem::replace
 core::ops::function::FnOnce::call_once<T>
 core::option::Option<T>
+core::option::unwrap_failed
 core::panicking::
 core::ptr::write
 core::ptr::mut_ptr
