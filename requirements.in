@@ -80,4 +80,4 @@ urllib3>=1.8, <2.0 # via elasticsearch==1.9.0
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
-obs-common==2024.12.06
+obs-common==2025.1.2.post3
