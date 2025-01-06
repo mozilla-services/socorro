@@ -496,7 +496,7 @@ class TestCustomQuery:
         # NOTE(willkg): we have to build the list of indices this way because
         # the index name is based on the week number and this handles the
         # end-of-year/beginning-of-year case correctly.
-        for i in range(7):
+        for i in range(8):
             indices.add((now - datetime.timedelta(days=i)).strftime(template))
         index_value = ",".join(sorted(indices))
         assert index_value in smart_str(response.content)
