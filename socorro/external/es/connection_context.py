@@ -40,7 +40,7 @@ class ConnectionContext:
         return Elasticsearch(
             hosts=self.url,
             request_timeout=timeout,
-            verify_certs=True,
+            verify_certs=False,
         )
 
     def indices_client(self, name=None):
