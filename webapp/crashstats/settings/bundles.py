@@ -52,10 +52,6 @@ NPM_FILE_PATTERNS = {
 #
 
 PIPELINE_CSS = {
-    "fontawesome": {
-        "source_filenames": ("@fortawesome/fontawesome-free/css/all.min.css",),
-        "output_filename": "css/fontawesome.min.css",
-    },
     "search": {
         "source_filenames": ("supersearch/css/search.css",),
         "output_filename": "css/search.min.css",
@@ -90,14 +86,6 @@ PIPELINE_CSS = {
             "crashstats/css/lib/metricsgraphics_custom.css",
         ),
         "output_filename": "css/metricsgraphics.min.css",
-    },
-    "crashstats_base": {
-        "source_filenames": (
-            "crashstats/css/base/variables.css",
-            "crashstats/css/base.css",
-            "status/css/status.css",
-        ),
-        "output_filename": "css/crashstats-base.min.css",
     },
     "api_documentation": {
         "source_filenames": ("api/css/documentation.css",),
