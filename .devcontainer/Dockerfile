@@ -37,7 +37,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     UGLIFYJS_BINARY=/webapp-frontend-deps/node_modules/.bin/uglifyjs \
-    CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
     NPM_ROOT_PATH=/webapp-frontend-deps/ \
     NODE_PATH=/webapp-frontend-deps/node_modules/
 

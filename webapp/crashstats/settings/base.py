@@ -459,15 +459,12 @@ STATICFILES_FINDERS = [
 ]
 
 PIPELINE = {
-    "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": _config(
         "UGLIFYJS_BINARY", default=path("node_modules/.bin/uglifyjs")
     ),
     "UGLIFYJS_ARGUMENTS": "--mangle",
-    "CSS_COMPRESSOR": "pipeline.compressors.cssmin.CSSMinCompressor",
-    "CSSMIN_BINARY": _config("CSSMIN_BINARY", default=path("node_modules/.bin/cssmin")),
     # Don't wrap javascript code in... `(...code...)();`
     # because possibly much code has been built with the assumption that
     # things will be made available globally.

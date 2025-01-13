@@ -6,10 +6,12 @@
     "type": "git",
     "url": "git://github.com/mozilla-services/socorro.git"
   },
+  "type": "module",
   "author": "Mozilla",
   "license": "MPL-2.0",
   "devDependencies": {
     "cssmin": "0.4.3",
+    "esbuild": "0.24.2",
     "eslint": "8.57.1",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-prettier": "5.2.3",
@@ -18,7 +20,6 @@
     "uglify-js": "3.11.5"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "5.15.1",
     "ace-builds": "1.4.12",
     "d3": "5.1.0",
     "filesize": "6.1.0",
@@ -33,5 +34,12 @@
     "qs": "6.9.4",
     "Select2": "github:select2/select2#3.5.4",
     "tablesorter": "2.31.3"
+  },
+  "scripts": {
+    "build": "rm -rf static/* && node esbuild && npm run build:old && npm run copy:images",
+    "build:old": "TOOL_ENV=True ./manage.py collectstatic --noinput",
+    "copy:images": "mkdir -p static/img/ && cp -r crashstats/crashstats/static/img/ static/img/",
+    "prestart": "npm run build",
+    "start": "DEBUG=False bash ../bin/run_service_webapp.sh"
   }
 }
