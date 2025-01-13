@@ -28,7 +28,7 @@ RUN /tmp/set_up_stackwalker.sh && \
 
 # Install frontend JS deps
 COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
-RUN cd /webapp-frontend-deps/ && npm install
+RUN cd /webapp-frontend-deps/ && npm ci
 
 COPY --chown=app:app requirements.txt /app/
 RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
@@ -38,7 +38,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     UGLIFYJS_BINARY=/webapp-frontend-deps/node_modules/.bin/uglifyjs \
-    CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
     NPM_ROOT_PATH=/webapp-frontend-deps/ \
     NODE_PATH=/webapp-frontend-deps/node_modules/
 
@@ -48,9 +47,7 @@ USER app
 # Copy everything over
 COPY --chown=app:app . /app/
 
-# Run collectstatic in container which puts files in the default place for
-# static files
-RUN cd /app/webapp/ && TOOL_ENV=True python manage.py collectstatic --noinput
+RUN cd /app/webapp/ && npm run build
 
 # Set entrypoint for this image. The entrypoint script takes a service
 # to run as the first argument. See the script for available arguments.
