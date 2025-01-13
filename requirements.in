@@ -17,7 +17,7 @@ everett==3.4.0
 fillmore==2.1.0
 freezegun==1.5.1
 glom==24.11.0
-google-cloud-pubsub==2.27.1
+google-cloud-pubsub==2.27.2
 google-cloud-storage==2.19.0
 gunicorn==23.0.0
 honcho==2.0.0
