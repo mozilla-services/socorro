@@ -214,7 +214,7 @@ def validate_and_test(ctx, crashdir):
     )
     click.echo("")
     for i, path in enumerate(processed_crash_list):
-        click.echo(f"Working on {path} ({i+1}/{total_processed_crash_list})...")
+        click.echo(f"Working on {path} ({i + 1}/{total_processed_crash_list})...")
         processed_crash = json.loads((datapath / path).read_text())
 
         # Log the keys

@@ -369,8 +369,7 @@ class Downloader:
             version_links = [
                 link
                 for link in version_links
-                if
-                (
+                if (
                     # "63.0b7-candidates/" -> 63
                     int(link["text"].split(".")[0]) >= major_version_minus_4
                     or "esr" in link["text"]

@@ -414,18 +414,14 @@ class TestHumanizers:
         html = show_filesize(10000)
         assert isinstance(html, SafeText)
         expected = (
-            "10,000 bytes "
-            '<span class="humanized" title="10,000 bytes">'
-            "(10 KB)</span>"
+            '10,000 bytes <span class="humanized" title="10,000 bytes">(10 KB)</span>'
         )
         assert html == expected
 
         html = show_filesize("10000")
         assert isinstance(html, SafeText)
         expected = (
-            "10,000 bytes "
-            '<span class="humanized" title="10,000 bytes">'
-            "(10 KB)</span>"
+            '10,000 bytes <span class="humanized" title="10,000 bytes">(10 KB)</span>'
         )
         assert html == expected
 

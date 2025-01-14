@@ -80,7 +80,7 @@ class TestMakeSuperuserCommand:
         assert [g.name for g in neverheardof.groups.all()] == ["Hackers"]
 
     @mock.patch(
-        "crashstats.authentication.management.commands.makesuperuser." "get_input",
+        "crashstats.authentication.management.commands.makesuperuser.get_input",
         return_value="BOB@mozilla.com ",
     )
     def test_with_raw_input(self, mocked_raw_input, db):
@@ -97,7 +97,7 @@ class TestMakeSuperuserCommand:
         assert [g.name for g in bob.groups.all()] == ["Hackers"]
 
     @mock.patch(
-        "crashstats.authentication.management.commands.makesuperuser." "get_input",
+        "crashstats.authentication.management.commands.makesuperuser.get_input",
         return_value="\n",
     )
     def test_with_raw_input_but_empty(self, mocked_raw_input, db):
