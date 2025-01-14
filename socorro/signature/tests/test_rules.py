@@ -570,8 +570,7 @@ class TestJavaSignatureTool:
     def test_no_description(self):
         j = rules.JavaSignatureTool()
         java_stack_trace = (
-            "   SomeJavaException\n"
-            "at org.mozilla.lars.myInvention(larsFile.java:1234)"
+            "   SomeJavaException\nat org.mozilla.lars.myInvention(larsFile.java:1234)"
         )
         sig, notes, debug_notes = j.generate(java_stack_trace, delimiter=": ")
         e = "SomeJavaException: at org.mozilla.lars.myInvention(larsFile.java)"
@@ -1852,7 +1851,7 @@ class TestSignatureWatchDogRule:
         assert sgr.action(crash_data, result) is True
 
         # Verify the signature has been re-generated based on thread 0.
-        expected = "shutdownhang | MsgWaitForMultipleObjects | " "F_1152915508_____"
+        expected = "shutdownhang | MsgWaitForMultipleObjects | F_1152915508_____"
         assert result.signature == expected
         assert result.notes == []
 

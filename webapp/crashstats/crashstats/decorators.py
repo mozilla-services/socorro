@@ -59,10 +59,10 @@ def check_days_parameter(possible_days, default=_marker):
                 except ValueError:
                     return HttpResponseBadRequest("'days' not a number")
                 if days not in possible_days:
-                    return HttpResponseBadRequest("'days' not a recognized " "number")
+                    return HttpResponseBadRequest("'days' not a recognized number")
             else:
                 if default is _marker:
-                    return HttpResponseBadRequest("'days' missing from " "request")
+                    return HttpResponseBadRequest("'days' missing from request")
                 days = default
             kwargs.update({"days": days, "possible_days": possible_days})
             return view(request, *args, **kwargs)

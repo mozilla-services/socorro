@@ -285,9 +285,7 @@ def signature_graphs(request, params, field):
     # Make sure the field we want to aggregate on is allowed.
     if field not in allowed_fields:
         return http.HttpResponseBadRequest(
-            "<ul><li>"
-            'You are not allowed to group by the "%s" field'
-            "</li></ul>" % field
+            '<ul><li>You are not allowed to group by the "%s" field</li></ul>' % field
         )
 
     current_query = request.GET.copy()

@@ -168,7 +168,7 @@ def test_parenthesized_msg():
         None,
         "",
         # Line without a tab in STACK stage
-        ("Exception: msg\n" "\tat org.File.function(File.java:100)\n" "badline"),
+        ("Exception: msg\n\tat org.File.function(File.java:100)\nbadline"),
     ],
 )
 def test_malformed(text):

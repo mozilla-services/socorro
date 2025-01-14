@@ -97,6 +97,6 @@ def main(argv=None):
         fp.write("\n")
 
         for i, rule in enumerate(rules):
-            li = f"{i+1}. "
+            li = f"{i + 1}. "
             fp.write("%s%s\n" % (li, indent(get_doc(rule), " " * len(li))))
             fp.write("\n")

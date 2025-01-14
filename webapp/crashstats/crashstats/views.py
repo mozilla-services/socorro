@@ -54,7 +54,7 @@ def ratelimit_blocked(request, exception):
 
 def robots_txt(request):
     return http.HttpResponse(
-        "User-agent: *\n" "%s: /" % ("Allow" if settings.ENGAGE_ROBOTS else "Disallow"),
+        "User-agent: *\n%s: /" % ("Allow" if settings.ENGAGE_ROBOTS else "Disallow"),
         content_type="text/plain",
     )
 
