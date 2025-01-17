@@ -159,6 +159,22 @@ class TestIntegrationSuperSearch:
         with pytest.raises(BadArgumentError):
             api.get(_columns=["date"], _results_number=-1)
 
+    def test_get_with_bad_results_offset(self, es_helper):
+        """_results_offset + _results_number be <= 10,000"""
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        api.get(
+            _results_offset=10_000 - 50,
+            _results_number=50,
+        )
+
+        with pytest.raises(BadArgumentError):
+            api.get(
+                _results_offset=10_000,
+                _results_number=50,
+            )
+
     def test_get_with_enum_operators(self, es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()

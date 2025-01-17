@@ -392,6 +392,13 @@ class SuperSearch(SearchBase):
 
         # Pagination.
         results_to = results_from + results_number
+        if results_to > 10_000:
+            # In ES 8+ index.max_result_window defaults to 10,000
+            # https://www.elastic.co/guide/en/elasticsearch/reference/8.17/index-modules.html
+            raise BadArgumentError(
+                "_results_offset",
+                msg="_results_offset + _results_number cannot be greater than 10,000",
+            )
         search = search[results_from:results_to]
 
         # Create facets.
