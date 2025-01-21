@@ -27,6 +27,11 @@ services:
       - postgresql
       - legacy-elasticsearch
       - elasticsearch
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   # For development
 
@@ -44,6 +49,11 @@ services:
       - postgresql
       - legacy-elasticsearch
       - elasticsearch
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   devcontainer:
     build:
@@ -82,6 +92,11 @@ services:
       - elasticsearch
       - symbolsserver
     command: ["processor"]
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   crontabber:
     image: local/socorro_app
@@ -95,6 +110,11 @@ services:
       - legacy-elasticsearch
       - elasticsearch
     command: ["crontabber"]
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   webapp:
     image: local/socorro_app
@@ -114,6 +134,11 @@ services:
     command: ["webapp", "--dev"]
     ports:
       - "8000:8000"
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   stage_submitter:
     image: local/socorro_app
@@ -125,6 +150,11 @@ services:
       - gcs-emulator
       - pubsub
     command: ["stage_submitter"]
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
 
   # https://github.com/willkg/kent
   fakesentry:

@@ -14,7 +14,7 @@ _env:
 
 # Build docker images
 build *args: _env
-    docker compose build --progress plain {{args}}
+    docker compose --progress plain build {{args}}
 
 # Set up Postgres, Elasticsearch, local Pub/Sub, and local GCS services.
 setup: _env
@@ -25,8 +25,8 @@ update-data: _env
     docker compose run --rm app shell /app/bin/update_data.sh
 
 # Run services, defaults to socorro and fakesentry for debugging
-run *args='--attach=processor --attach=webapp --attach=fakesentry processor webapp': _env
-    docker compose up {{args}}
+run *args='--attach=processor --attach=webapp --attach=fakesentry processor webapp': _env build
+    docker compose up --watch {{args}}
 
 # Run stage submitter and fake collector
 run-submitter *args='--attach=stage_submitter --attach=fakecollector': _env
