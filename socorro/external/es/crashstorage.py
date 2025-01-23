@@ -276,10 +276,11 @@ class ESCrashStorage(CrashStorageBase):
         metrics_prefix="processor.es",
         timeout=30,
         shards_per_index=10,
+        ca_certs=None,
     ):
         super().__init__()
 
-        self.client = self.build_client(url=url, timeout=timeout)
+        self.client = self.build_client(url=url, timeout=timeout, ca_certs=ca_certs)
 
         # Create a MetricsInterface that includes the base prefix plus the prefix passed
         # into __init__
@@ -299,8 +300,8 @@ class ESCrashStorage(CrashStorageBase):
         self._mapping_cache = {}
 
     @classmethod
-    def build_client(cls, url, timeout):
-        return ConnectionContext(url=url, timeout=timeout)
+    def build_client(cls, url, timeout, ca_certs=None):
+        return ConnectionContext(url=url, timeout=timeout, ca_certs=ca_certs)
 
     def build_query(self):
         """Return new instance of Query."""
