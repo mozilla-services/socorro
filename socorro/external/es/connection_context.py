@@ -18,14 +18,17 @@ class ConnectionContext:
         self,
         url="http://localhost:9200",
         timeout=30,
+        ca_certs=None,
         **kwargs,
     ):
         """
         :arg url: the url to the elasticsearch instances
         :arg timeout: the time in seconds before a query to elasticsearch fails
+        :arg ca_certs: path to a certs.pem file for verifying self-issued certs
         """
         self.url = url
         self.timeout = timeout
+        self.ca_certs = ca_certs
 
     def connection(self, name=None, timeout=None):
         """Returns an instance of elasticsearch-py's Elasticsearch class as
@@ -40,7 +43,8 @@ class ConnectionContext:
         return Elasticsearch(
             hosts=self.url,
             request_timeout=timeout,
-            verify_certs=False,
+            verify_certs=True,
+            ca_certs=self.ca_certs,
         )
 
     def indices_client(self, name=None):

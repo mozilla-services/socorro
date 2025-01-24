@@ -234,6 +234,15 @@ elif ELASTICSEARCH_MODE == "PREFER_NEW":
                 "ELASTICSEARCH_URL",
                 doc="Elasticsearch url.",
             ),
+            "ca_certs": _config(
+                "ELASTICSEARCH_CA_CERTS",
+                default="",
+                parser=or_none(str),
+                doc=(
+                    "Path to a certs.pem file to verify certs for Elasticsearch "
+                    "clusters that use self-issued certificates."
+                ),
+            ),
         },
     }
 
