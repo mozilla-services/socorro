@@ -238,6 +238,7 @@ strstr
 syscall
 SysFreeString
 TlsGetValue
+TppRaiseInvalidParameter
 __ulock_wait
 __unlink
 unlink
