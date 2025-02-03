@@ -1,5 +1,5 @@
 attrs==25.1.0
-boltons==24.1.0
+boltons==25.0.0
 click==8.1.8
 contextlib2==21.6.0
 datadog==0.50.2
