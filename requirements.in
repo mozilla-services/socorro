@@ -2,7 +2,7 @@ attrs==25.1.0
 boltons==25.0.0
 click==8.1.8
 contextlib2==21.6.0
-datadog==0.50.2
+datadog==0.51.0
 django-cors-headers==4.6.0
 django_csp==3.8
 django-jinja==2.11.0
