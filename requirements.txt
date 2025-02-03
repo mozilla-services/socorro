@@ -832,8 +832,8 @@ oauth2client==4.1.3 \
     --hash=sha256:b8a81cc5d60e2d364f0b1b98f958dbd472887acaf1a5b05e21c28c31a2d6d3ac \
     --hash=sha256:d486741e451287f69568a4d26d70d9acd73a2bbfa275746c535b4209891cccc6
     # via -r requirements.in
-obs-common==2025.1.9 \
-    --hash=sha256:e5e9f6396e5166f709effc72651cef9e162546f5bb700f7c682ebca2ac72e17c
+obs-common==2025.2.1.post2 \
+    --hash=sha256:fc91431941d540fc1abd3114fc721c9574484e6fd036110125f2b1a34fb8a142
     # via -r requirements.in
 opentelemetry-api==1.27.0 \
     --hash=sha256:953d5871815e7c30c81b56d910c707588000fff7a3ca1c73e6531911d53065e7 \
