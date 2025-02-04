@@ -1,0 +1,40 @@
+name: Manually trigger a deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: The Docker image tag to deploy
+        type: string
+        default: latest
+        required: true
+      ref:
+        description: The Git ref to deploy
+        type: string
+        default: refs/heads/main
+        required: true
+      environment:
+        description: The environment to deploy to
+        type: choice
+        default: stage
+        required: true
+        options:
+          - stage
+          - prod
+
+jobs:
+  build:
+    permissions:
+      deployments: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create GitHub deployment
+      run: |
+        gh api "repos/${{ github.repository }}/deployments" \
+            -f environment="${{ inputs.environment }}" \
+            -f ref="${{ inputs.ref }}" \
+            -F auto_merge=false \
+            -F required_contexts[] \
+            -F payload[image_tag]="${{ inputs.image_tag }}"
+      env:
+        GH_TOKEN: ${{ github.token }}
