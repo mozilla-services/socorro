@@ -868,6 +868,8 @@ class TestIntegrationSuperSearch:
         }
         res = api.get(**kwargs)
         assert res["facets"] == {}
+        # check that empty facets are converted to dict
+        assert isinstance(res["facets"], dict)
         # hits should still work as normal
         assert res["hits"]
         assert len(res["hits"]) == res["total"]
