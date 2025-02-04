@@ -236,7 +236,13 @@ def generate_field_doc(dataset, field):
             search_field_query_type = super_search_field["query_type"]
             # FIXME(willkg): we're only doing this for public fields, but we could do
             # this for whatever fields the user can see
-            if field_data["permissions"] == ["public"]:
+            if field_data["permissions"] == ["public"] and (
+                # text fields only get example data if they have a full version or
+                # include fielddata, like for semicolon_keywords fields.
+                super_search_field["has_full_version"]
+                or super_search_field["storage_mapping"]["type"] != "text"
+                or super_search_field["storage_mapping"].get("fielddata", False)
+            ):
                 example_data = get_indexed_example_data(field)
 
     # For annotations, add the list of products that have emitted this annotation

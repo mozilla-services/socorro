@@ -78,16 +78,15 @@
                     {% for item in example_data %}
                       <div class="field-example"><code>{{ item|string|truncate(100, killwords=True, end="...") }}</code></div>
                     {% endfor %}
+                  {% elif "protected" in permissions %}
+                    <i>This field is not public. No examples will be shown.</i>
                   {% else %}
-                    {% if "protected" in permissions %}
-                      <i>This field is not public. No examples will be shown.</i>
-                    {% else %}
-                      <i>
-                        No examples available. Either this field is new and has
-                        no data or this field is rarely emitted and has no data
-                        this week.
-                      </i>
-                    {% endif %}
+                    <i>
+                      No examples available. Either this field is new and has
+                      no data or this field is rarely emitted and has no data
+                      this week or this field is not configured to allow it to
+                      be used for aggregations in Elasticsearch.
+                    </i>
                   {% endif %}
                 </td>
               </tr>
