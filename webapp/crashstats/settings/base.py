@@ -16,7 +16,7 @@ import dj_database_url
 
 # NOTE(willkg): Need this on a separate line so we can ignore the unused import
 from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
-from crashstats.settings.bundles import PIPELINE_CSS, PIPELINE_JS
+from crashstats.settings.bundles import PIPELINE_JS
 
 _config = ConfigManager.basic_config()
 
@@ -459,6 +459,7 @@ STATICFILES_FINDERS = [
 ]
 
 PIPELINE = {
+    # 'PIPELINE_ENABLED': False,
     "JAVASCRIPT": PIPELINE_JS,
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": _config(
