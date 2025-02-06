@@ -2,11 +2,9 @@
 // # License, v. 2.0. If a copy of the MPL was not distributed with this
 // # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import esbuild from 'esbuild'
+import esbuild from 'esbuild';
 
-const entryPoints = [
-  'crashstats/crashstats/static/crashstats/css/crashstats-base.css',
-]
+const entryPoints = ['crashstats/crashstats/static/crashstats/css/crashstats-base.css'];
 
 await esbuild.build({
   bundle: true,
@@ -20,4 +18,4 @@ await esbuild.build({
   sourcemap: true,
   splitting: false,
   treeShaking: true,
-})
+});

@@ -36,10 +36,11 @@ RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
-    UGLIFYJS_BINARY=/webapp-frontend-deps/node_modules/.bin/uglifyjs \
-    NPM_ROOT_PATH=/webapp-frontend-deps/ \
-    NODE_PATH=/webapp-frontend-deps/node_modules/
+    UGLIFYJS_BINARY=/app/webapp/node_modules/.bin/uglifyjs \
+    NPM_ROOT_PATH=/app/webapp/ \
+    NODE_PATH=/app/webapp/node_modules/
 
 # Install frontend JS deps
-COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
-RUN cd /webapp-frontend-deps/ && npm install
+COPY --chown=app:app ./webapp/package*.json /app/webapp/
+RUN cd /app/webapp/ && npm ci
+
