@@ -1,0 +1,23 @@
+{
+  "env": {
+      "browser": true,
+      "jquery": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+  },
+  "globals": {
+    "moment": "readonly",
+    "Qs": "readonly"
+  },
+  "rules": {
+    "no-unused-vars":"warn",
+    "linebreak-style":["error", "unix"],
+    "no-console":"warn",
+    "max-len":"off" // Use prettier default line length
+  }
+}
+
+// TODO: "extends": plugin:prettier/recommended
