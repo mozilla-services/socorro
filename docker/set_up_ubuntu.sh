@@ -37,9 +37,14 @@ PACKAGES_TO_INSTALL=(
 apt-get install -y "${PACKAGES_TO_INSTALL[@]}"
 
 # Install nodejs and npm from Nodesource's 14.x branch
-curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-echo 'deb https://deb.nodesource.com/node_18.x buster main' > /etc/apt/sources.list.d/nodesource.list
-echo 'deb-src https://deb.nodesource.com/node_18.x buster main' >> /etc/apt/sources.list.d/nodesource.list
+curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x bookworm main' > /etc/apt/sources.list.d/nodesource.list
+# Give Nodesource packages priority over the packages included in the Debian distribution
+cat > /etc/apt/preferences.d/nodesource <<EOF
+Package: nodejs
+Pin: origin deb.nodesource.com
+Pin-Priority: 600
+EOF
 apt-get update
 apt-get install -y nodejs
 

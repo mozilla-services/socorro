@@ -3,11 +3,9 @@
 # =========================================================================
 
 # https://hub.docker.com/_/python
-# NOTE(willkg): stick with slim-bullseye which matches how we build the
-# stackwalker
 # NOTE(smarnach): To upgrade Python to a new minor or major version, see
 # https://socorro.readthedocs.io/en/latest/dev.html#upgrading-to-a-new-python-version
-FROM --platform=linux/amd64 python:3.11.11-slim-bullseye@sha256:0b646b5876b055bb20095864557b6773625385136de57e39ac6bc08588c0fe50 AS app_amd64
+FROM --platform=linux/amd64 python:3.11.11-slim-bookworm@sha256:42420f737ba91d509fc60d5ed65ed0492678a90c561e1fa08786ae8ba8b52eda AS app_amd64
 
 # Set up user and group
 ARG groupid=10001
