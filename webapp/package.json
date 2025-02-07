@@ -10,7 +10,7 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "cssmin": "0.4.3",
-    "eslint": "7.13.0",
+    "eslint": "^8.57.1",
     "eslint-config-prettier": "6.15.0",
     "eslint-plugin-prettier": "3.1.4",
     "graceful-fs": "4.2.4",
