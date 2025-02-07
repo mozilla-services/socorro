@@ -7,6 +7,7 @@ import datetime
 import json
 import re
 import time
+from math import isnan, isinf
 
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -190,6 +191,27 @@ def fix_long(value):
     return value
 
 
+def fix_float(value):
+    """Fix float value so it doesn't exceed Elasticsearch maximums
+
+    :param value: the value to fix
+
+    :returns: fixed value
+
+    """
+    if not isinstance(value, float):
+        try:
+            value = float(value)
+        except ValueError:
+            # If the value isn't valid, remove it
+            return None
+
+    if isnan(value) or isinf(value):
+        # If the value isn't within bounds, remove it
+        return None
+    return value
+
+
 def fix_datetime(value):
     """Fix datetime value to index correctly
 
@@ -240,6 +262,11 @@ def build_document(src, crash_document, fields, all_keys):
 
         elif storage_type == "long":
             value = fix_long(value)
+            if value is None:
+                continue
+
+        elif storage_type == "float":
+            value = fix_float(value)
             if value is None:
                 continue
 
