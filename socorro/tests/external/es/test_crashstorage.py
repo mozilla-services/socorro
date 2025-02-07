@@ -17,6 +17,7 @@ from socorro.external.es.crashstorage import (
     fix_keyword,
     fix_long,
     fix_string,
+    fix_float,
 )
 
 from socorro.external.es.super_search_fields import build_mapping
@@ -531,4 +532,22 @@ def test_fix_integer(value, expected):
 )
 def test_fix_long(value, expected):
     new_value = fix_long(value)
+    assert new_value == expected
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # Field is valid
+        (0, 0),
+        # Field is a string and valid, gets converted to int
+        ("0", 0),
+        # Field is out of bounds, gets removed
+        (float("-inf"), None),
+        (float("inf"), None),
+        (float("nan"), None),
+    ],
+)
+def test_fix_float(value, expected):
+    new_value = fix_float(value)
     assert new_value == expected
