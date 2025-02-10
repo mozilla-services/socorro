@@ -13,11 +13,11 @@ import pytest
 from socorro import settings
 from socorro.external.es.crashstorage import (
     fix_boolean,
+    fix_double,
     fix_integer,
     fix_keyword,
     fix_long,
     fix_string,
-    fix_float,
 )
 
 from socorro.external.es.super_search_fields import build_mapping
@@ -368,6 +368,22 @@ class TestESCrashStorage:
             ),
             # Booleans are converted
             ("processed_crash.accessibility", "true", True),
+            # Infinity and NaN floats are removed
+            (
+                "processed_crash.uptime_ts",
+                float("inf"),
+                REMOVED_VALUE,
+            ),
+            (
+                "processed_crash.uptime_ts",
+                float("-inf"),
+                REMOVED_VALUE,
+            ),
+            (
+                "processed_crash.uptime_ts",
+                float("nan"),
+                REMOVED_VALUE,
+            ),
         ],
     )
     def test_indexing_bad_data(self, key, value, expected_value, es_helper):
@@ -548,6 +564,6 @@ def test_fix_long(value, expected):
         (float("nan"), None),
     ],
 )
-def test_fix_float(value, expected):
-    new_value = fix_float(value)
+def test_fix_double(value, expected):
+    new_value = fix_double(value)
     assert new_value == expected

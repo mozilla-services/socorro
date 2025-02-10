@@ -13,6 +13,7 @@ import pytest
 from socorro import settings
 from socorro.external.legacy_es.crashstorage import (
     fix_boolean,
+    fix_double,
     fix_integer,
     fix_keyword,
     fix_long,
@@ -369,6 +370,22 @@ class TestLegacyESCrashStorage:
             # Booleans are converted
             # FIXME(willkg): fix_boolean is never called--that's wrong
             # ("processed_crash.accessibility", "true", True),
+            # Infinity and NaN floats are removed
+            (
+                "processed_crash.uptime_ts",
+                float("inf"),
+                REMOVED_VALUE,
+            ),
+            (
+                "processed_crash.uptime_ts",
+                float("-inf"),
+                REMOVED_VALUE,
+            ),
+            (
+                "processed_crash.uptime_ts",
+                float("nan"),
+                REMOVED_VALUE,
+            ),
         ],
     )
     def test_indexing_bad_data(self, key, value, expected_value, legacy_es_helper):
@@ -492,4 +509,22 @@ def test_fix_integer(value, expected):
 )
 def test_fix_long(value, expected):
     new_value = fix_long(value)
+    assert new_value == expected
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # Field is valid
+        (0, 0),
+        # Field is a string and valid, gets converted to int
+        ("0", 0),
+        # Field is out of bounds, gets removed
+        (float("-inf"), None),
+        (float("inf"), None),
+        (float("nan"), None),
+    ],
+)
+def test_fix_double(value, expected):
+    new_value = fix_double(value)
     assert new_value == expected

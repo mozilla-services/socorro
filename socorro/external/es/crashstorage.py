@@ -191,8 +191,8 @@ def fix_long(value):
     return value
 
 
-def fix_float(value):
-    """Fix float value so it doesn't exceed Elasticsearch maximums
+def fix_double(value):
+    """Fix double value so it doesn't encode invalid json
 
     :param value: the value to fix
 
@@ -265,8 +265,8 @@ def build_document(src, crash_document, fields, all_keys):
             if value is None:
                 continue
 
-        elif storage_type == "float":
-            value = fix_float(value)
+        elif storage_type == "double":
+            value = fix_double(value)
             if value is None:
                 continue
 
