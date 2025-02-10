@@ -3,7 +3,7 @@
       "browser": true,
       "jquery": true
   },
-  "extends": "eslint:recommended",
+  "extends": ["plugin:prettier/recommended", "eslint:recommended"],
   "parserOptions": {
       "ecmaVersion": 2022,
       "sourceType": "module"
@@ -19,5 +19,3 @@
     "max-len":"off" // Use prettier default line length
   }
 }
-
-// TODO: "extends": plugin:prettier/recommended
