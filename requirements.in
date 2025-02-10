@@ -39,7 +39,7 @@ pygments==2.19.1
 pymemcache==4.0.0
 pyquery==2.0.1
 pytest==8.3.4
-pytest-django==4.9.0
+pytest-django==4.10.0
 pytest-env==1.1.5
 python-decouple==3.8
 PyYAML==6.0.2
