@@ -14,8 +14,6 @@
   },
   "rules": {
     "no-unused-vars":"warn",
-    "linebreak-style":["error", "unix"],
-    "no-console":"warn",
-    "max-len":"off" // Use prettier default line length
+    "no-console":"warn"
   }
 }
