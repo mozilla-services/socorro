@@ -1,0 +1,19 @@
+{
+  "env": {
+      "browser": true,
+      "jquery": true
+  },
+  "extends": ["plugin:prettier/recommended", "eslint:recommended"],
+  "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+  },
+  "globals": {
+    "moment": "readonly",
+    "Qs": "readonly"
+  },
+  "rules": {
+    "no-unused-vars":"warn",
+    "no-console":"warn"
+  }
+}
