@@ -73,11 +73,6 @@ def cmd_permadelete(ctx, crashidsfile):
 
     crashstorage = build_instance_from_settings(settings.STORAGE)
     es_crashstorage = build_instance_from_settings(settings.ES_STORAGE)
-    legacy_es_crashstorage = None
-    if settings.ELASTICSEARCH_MODE == "PREFER_NEW":
-        legacy_es_crashstorage = build_instance_from_settings(
-            settings.LEGACY_ES_STORAGE
-        )
 
     crashids = crashid_generator(crashidsfile)
 
@@ -87,11 +82,6 @@ def cmd_permadelete(ctx, crashidsfile):
 
         data = crashstorage.catalog_crash(crash_id=crashid)
         data.extend(es_crashstorage.catalog_crash(crash_id=crashid))
-        if legacy_es_crashstorage:
-            data.extend(
-                f"legacy_{v}"
-                for v in legacy_es_crashstorage.catalog_crash(crash_id=crashid)
-            )
         click.echo(f">>> before: {data}")
 
         # Delete from storage
@@ -99,17 +89,9 @@ def cmd_permadelete(ctx, crashidsfile):
         crashstorage.delete_crash(crashid)
         click.echo(">>> Deleting from Elasticsearch ...")
         es_crashstorage.delete_crash(crashid)
-        if legacy_es_crashstorage:
-            click.echo(">>> Deleting from legacy Elasticsearch ...")
-            legacy_es_crashstorage.delete_crash(crashid)
 
         data = crashstorage.catalog_crash(crash_id=crashid)
         data.extend(es_crashstorage.catalog_crash(crash_id=crashid))
-        if legacy_es_crashstorage:
-            data.extend(
-                f"legacy_{v}"
-                for v in legacy_es_crashstorage.catalog_crash(crash_id=crashid)
-            )
         click.echo(f">>> after: {data}")
 
         end_time = datetime.datetime.now()

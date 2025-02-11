@@ -76,8 +76,6 @@ test *args:
 # Build requirements.txt file after requirements.in changes.
 rebuild-reqs *args: _env
     docker compose run --rm --no-deps app shell pip-compile --generate-hashes --strip-extras {{args}}
-    docker compose run --rm --no-deps app shell pip-compile --generate-hashes \
-        --unsafe-package=python-dateutil --unsafe-package=six --unsafe-package=urllib3 legacy-es-requirements.in
 
 # Verify that the requirements file is built by the version of Python that runs in the container.
 verify-reqs: _env

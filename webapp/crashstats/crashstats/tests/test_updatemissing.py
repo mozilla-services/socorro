@@ -27,14 +27,14 @@ class TestUpdateMissing:
             data=b"test",
         )
 
-    def create_processed_crash_in_es(self, preferred_es_helper, crash_id):
+    def create_processed_crash_in_es(self, es_helper, crash_id):
         crash_date = date_from_ooid(crash_id)
         processed_crash = {
             "uuid": crash_id,
             "signature": "OOM | Small",
             "date_processed": crash_date,
         }
-        preferred_es_helper.index_crash(processed_crash=processed_crash)
+        es_helper.index_crash(processed_crash=processed_crash)
 
     def test_past_missing_still_missing(self, capsys, db):
         # Create a MissingProcessedCrash row, but don't put the processed crash in the
@@ -51,7 +51,7 @@ class TestUpdateMissing:
         assert mpe.is_processed is False
 
     def test_past_missing_no_longer_missing(
-        self, capsys, db, preferred_es_helper, storage_helper
+        self, capsys, db, es_helper, storage_helper
     ):
         # Create a MissingProcessedCrash row and put the processed crash in the
         # bucket. After check_past_missing() runs, the MissingProcessedCrash should
@@ -67,7 +67,7 @@ class TestUpdateMissing:
         self.create_processed_crash_in_storage(
             storage_helper, bucket_name=bucket, crash_id=crash_id
         )
-        self.create_processed_crash_in_es(preferred_es_helper, crash_id)
+        self.create_processed_crash_in_es(es_helper, crash_id)
 
         cmd = Command()
         cmd.check_past_missing()

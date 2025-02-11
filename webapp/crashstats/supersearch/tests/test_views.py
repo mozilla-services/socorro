@@ -22,7 +22,7 @@ from socorro.lib.libooid import create_new_ooid, date_from_ooid
 
 
 class TestViews:
-    def test_search_metrics(self, client, db, preferred_es_helper):
+    def test_search_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search")
 
         with MetricsMock() as metrics_mock:
@@ -39,7 +39,7 @@ class TestViews:
             "status:200",
         }.issubset(records[0].tags)
 
-    def test_search(self, client, db, preferred_es_helper):
+    def test_search(self, client, db, es_helper):
         url = reverse("supersearch:search")
 
         response = client.get(url)
@@ -50,7 +50,7 @@ class TestViews:
         for field in settings.SIMPLE_SEARCH_FIELDS:
             assert field.capitalize().replace("_", " ") in smart_str(response.content)
 
-    def test_search_fields(self, client, db, preferred_es_helper, user_helper):
+    def test_search_fields(self, client, db, es_helper, user_helper):
         url = reverse("supersearch:search_fields")
         response = client.get(url)
         assert response.status_code == 200
@@ -72,7 +72,7 @@ class TestViews:
         data = json.loads(response.content)
         assert "user_comments" in data
 
-    def test_search_fields_metrics(self, client, db, preferred_es_helper):
+    def test_search_fields_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search_fields")
         with MetricsMock() as metrics_mock:
             response = client.get(url)
@@ -88,7 +88,7 @@ class TestViews:
             "status:200",
         }.issubset(records[0].tags)
 
-    def test_search_results(self, client, db, preferred_es_helper):
+    def test_search_results(self, client, db, es_helper):
         BugAssociation.objects.create(
             bug_id=123456, signature="nsASDOMWindowEnumerator::GetNext()"
         )
@@ -138,8 +138,8 @@ class TestViews:
             ),
         ]
         for item in crash_data:
-            preferred_es_helper.index_crash(processed_crash=item, refresh=False)
-        preferred_es_helper.refresh()
+            es_helper.index_crash(processed_crash=item, refresh=False)
+        es_helper.refresh()
 
         url = reverse("supersearch:search_results")
         response = client.get(url, {"product": "Firefox"})
@@ -211,9 +211,7 @@ class TestViews:
         assert crash_data[4]["version"] not in smart_str(response.content)
         # FIXME(willkg): date is hard to test because it changes forms when indexing
 
-    def test_search_results_missing_parameter_values(
-        self, client, db, preferred_es_helper
-    ):
+    def test_search_results_missing_parameter_values(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         # Test missing parameters don't raise an exception.
         response = client.get(
@@ -221,7 +219,7 @@ class TestViews:
         )
         assert response.status_code == 200
 
-    def test_search_results_metrics(self, client, db, preferred_es_helper):
+    def test_search_results_metrics(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         with MetricsMock() as metrics_mock:
             response = client.get(url, {"product": "Firefox"})
@@ -237,7 +235,7 @@ class TestViews:
             "status:200",
         }.issubset(records[0].tags)
 
-    def test_search_results_ratelimited(self, client, db, preferred_es_helper):
+    def test_search_results_ratelimited(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         limit = int(re.findall(r"(\d+)", settings.RATELIMIT_SUPERSEARCH)[0])
         params = {"product": "Firefox"}
@@ -251,7 +249,7 @@ class TestViews:
         assert smart_str(response.content) == "Too Many Requests"
         assert response["content-type"] == "text/plain"
 
-    def test_search_results_badargumenterror(self, client, db, preferred_es_helper):
+    def test_search_results_badargumenterror(self, client, db, es_helper):
         url = reverse("supersearch:search_results")
         params = {"product": "<script>"}
         response = client.get(url, params, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
@@ -260,12 +258,10 @@ class TestViews:
         assert "<script>" not in smart_str(response.content)
         assert "&lt;script&gt;" in smart_str(response.content)
 
-    def test_search_results_permissions(
-        self, client, db, preferred_es_helper, user_helper
-    ):
+    def test_search_results_permissions(self, client, db, es_helper, user_helper):
         """Test that users with protected data access can see all fields."""
         crash_id = create_new_ooid()
-        preferred_es_helper.index_crash(
+        es_helper.index_crash(
             processed_crash={
                 "uuid": crash_id,
                 "date_processed": utc_now(),
@@ -339,7 +335,7 @@ class TestViews:
         assert "Gmp library path" not in smart_str(response.content)
         assert "widevinecdm" not in smart_str(response.content)
 
-    def test_search_results_parameters(self, client, db, preferred_es_helper):
+    def test_search_results_parameters(self, client, db, es_helper):
         """Verify all expected parameters are in the url."""
         calls = []
 
@@ -380,7 +376,7 @@ class TestViews:
             assert "$thanks" in params["reason"]
             assert "Exception" in params["java_stack_trace"]
 
-    def test_search_results_pagination(self, client, db, preferred_es_helper):
+    def test_search_results_pagination(self, client, db, es_helper):
         """Test that the pagination of results works as expected."""
 
         def build_crash_data(i):
@@ -404,10 +400,10 @@ class TestViews:
         crash_ids = []
         for i in range(140):
             data = build_crash_data(i)
-            preferred_es_helper.index_crash(processed_crash=data, refresh=False)
+            es_helper.index_crash(processed_crash=data, refresh=False)
             crash_ids.append(data["uuid"])
 
-        preferred_es_helper.refresh()
+        es_helper.refresh()
 
         url = reverse("supersearch:search_results")
 
@@ -443,9 +439,7 @@ class TestViews:
 
 
 class TestCustomQuery:
-    def test_search_custom_permission(
-        self, client, db, preferred_es_helper, user_helper
-    ):
+    def test_search_custom_permission(self, client, db, es_helper, user_helper):
         url = reverse("supersearch:search_custom")
         response = client.get(url)
         assert response.status_code == 302
@@ -457,7 +451,7 @@ class TestCustomQuery:
         assert response.status_code == 200
         assert "Run a search to get some results" in smart_str(response.content)
 
-    def test_search_custom_metrics(self, client, db, preferred_es_helper, user_helper):
+    def test_search_custom_metrics(self, client, db, es_helper, user_helper):
         user = user_helper.create_protected_plus_user()
         client.force_login(user)
 
@@ -476,10 +470,8 @@ class TestCustomQuery:
             "status:200",
         }.issubset(records[0].tags)
 
-    def test_search_custom_parameters(
-        self, client, db, preferred_es_helper, user_helper
-    ):
-        preferred_es_helper.health_check()
+    def test_search_custom_parameters(self, client, db, es_helper, user_helper):
+        es_helper.health_check()
         user = user_helper.create_protected_plus_user()
         client.force_login(user)
 
@@ -490,7 +482,7 @@ class TestCustomQuery:
         # Assert the query is in the editor
         assert "{&#34;query&#34;:" in smart_str(response.content)
         # Assert the available indices are there
-        template = preferred_es_helper.get_index_template()
+        template = es_helper.get_index_template()
         now = utc_now()
         indices = set()
         # NOTE(willkg): we have to build the list of indices this way because
@@ -501,7 +493,7 @@ class TestCustomQuery:
         index_value = ",".join(sorted(indices))
         assert index_value in smart_str(response.content)
 
-    def test_search_query(self, client, db, preferred_es_helper, user_helper):
+    def test_search_query(self, client, db, es_helper, user_helper):
         user = user_helper.create_protected_plus_user()
         client.force_login(user)
 
@@ -514,7 +506,7 @@ class TestCustomQuery:
         # There's nothing indexed, so no results
         assert content["hits"] == {"hits": [], "max_score": None, "total": 0}
 
-    def test_search_query_failure(self, client, db, preferred_es_helper, user_helper):
+    def test_search_query_failure(self, client, db, es_helper, user_helper):
         user = user_helper.create_protected_plus_user()
         client.force_login(user)
 

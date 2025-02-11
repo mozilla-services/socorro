@@ -289,7 +289,7 @@ class ESCrashStorage(CrashStorageBase):
     SUPERSEARCH_FIELDS = FIELDS
 
     # These regex will catch field names from Elasticsearch exceptions. They
-    # have been tested with Elasticsearch 1.4.
+    # have been tested with Elasticsearch 8.17.
     field_name_string_error_re = re.compile(r"field=\"([\w\-.]+)\"")
     field_name_number_error_re = re.compile(r"failed to parse field \[([\w\-.]+)]")
     field_name_unknown_property_error_re = field_name_number_error_re
