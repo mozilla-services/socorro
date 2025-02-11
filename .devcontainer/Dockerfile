@@ -31,17 +31,6 @@ RUN /tmp/set_up_stackwalker.sh && \
 COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
 RUN cd /webapp-frontend-deps/ && npm install
 
-# NOTE(relud): these dependencies are installed separately, relocated, and patched to reference the
-# new location (aka shaded), so that they can be installed at the same time as newer versions
-COPY --chown=app:app legacy-es-requirements.txt /app/
-RUN pip install -U 'pip==24.0' && \
-    pip install --no-cache-dir --no-deps -r legacy-es-requirements.txt && \
-    cd /usr/local/lib/python3.11/site-packages/ && \
-    mv elasticsearch elasticsearch_1_9_0 && \
-    mv elasticsearch_dsl elasticsearch_dsl_0_0_11 && \
-    cd elasticsearch_dsl_0_0_11/ && \
-    sed 's/^from elasticsearch/from elasticsearch_1_9_0/' -i connections.py search.py serializer.py
-
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --no-deps -r requirements.txt && \

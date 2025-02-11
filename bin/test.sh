@@ -19,7 +19,6 @@ echo ">>> set up environment"
 DATABASE_URL="${DATABASE_URL:-}"
 SENTRY_DSN="${SENTRY_DSN:-}"
 ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-}"
-LEGACY_ELASTICSEARCH_URL="${LEGACY_ELASTICSEARCH_URL:-}"
 
 export PYTHONPATH=/app/:$PYTHONPATH
 PYTEST="$(which pytest)"
@@ -47,14 +46,10 @@ popd
 echo ">>> run tests"
 
 # Run socorro tests
-# ignore tests because elasticsearch 8 tests cannot be run with LEGACY_ONLY
-ELASTICSEARCH_MODE=LEGACY_ONLY "${PYTEST}" --ignore=socorro/tests/external/es/
-# ignore tests because elasticsearch 8 supersearch is not implemented yet
-ELASTICSEARCH_MODE=PREFER_NEW "${PYTEST}"
+"${PYTEST}"
 
 # Collect static and then run pytest in the webapp
 pushd webapp
 ${PYTHON} manage.py collectstatic --noinput
-ELASTICSEARCH_MODE=LEGACY_ONLY "${PYTEST}"
-ELASTICSEARCH_MODE=PREFER_NEW "${PYTEST}"
+"${PYTEST}"
 popd

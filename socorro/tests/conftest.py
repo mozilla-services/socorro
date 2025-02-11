@@ -14,7 +14,6 @@ import uuid
 import sys
 
 from elasticsearch_dsl import Search
-from elasticsearch_dsl_0_0_11 import Search as LegacySearch
 from google.api_core.exceptions import AlreadyExists, NotFound
 from google.auth.credentials import AnonymousCredentials
 from google.cloud import storage
@@ -196,9 +195,6 @@ class ElasticsearchHelper:
     """
 
     def __init__(self):
-        if settings.ELASTICSEARCH_MODE == "LEGACY_ONLY":
-            raise ValueError("cannot test elasticearch 8 in LEGACY_ONLY mode")
-
         self._crashstorage = build_instance_from_settings(settings.ES_STORAGE)
         self.conn = self._crashstorage.client
 
@@ -289,138 +285,6 @@ class ElasticsearchHelper:
                 return results["hits"]["hits"][0]["_source"]
 
 
-class LegacyElasticsearchHelper:
-    """Legacy Elasticsearch helper class.
-
-    When used in a context, this will clean up any indexes created.
-
-    """
-
-    def __init__(self):
-        self._crashstorage = build_instance_from_settings(settings.LEGACY_ES_STORAGE)
-        self.conn = self._crashstorage.client
-
-    def get_index_template(self):
-        return self._crashstorage.get_index_template()
-
-    def get_doctype(self):
-        return self._crashstorage.get_doctype()
-
-    def create_index(self, index_name):
-        print(f"ElasticsearchHelper: creating index: {index_name}")
-        self._crashstorage.create_index(index_name)
-
-    def create_indices(self):
-        # Create all the indexes for the last couple of weeks; we have to do it this way
-        # to handle split indexes over the new year
-        template = self._crashstorage.index
-        to_create = set()
-
-        for i in range(14):
-            index_name = (utc_now() - datetime.timedelta(days=i)).strftime(template)
-            to_create.add(index_name)
-
-        for index_name in to_create:
-            print(f"ElasticsearchHelper: creating index: {index_name}")
-            self._crashstorage.create_index(index_name)
-
-        self.health_check()
-
-    def delete_indices(self):
-        for index in self._crashstorage.get_indices():
-            self._crashstorage.delete_index(index)
-
-    def get_indices(self):
-        return self._crashstorage.get_indices()
-
-    def health_check(self):
-        with self.conn() as conn:
-            conn.cluster.health(wait_for_status="yellow", request_timeout=5)
-
-    def get_url(self):
-        """Returns the Elasticsearch url."""
-        return settings.LEGACY_ES_STORAGE["options"]["url"]
-
-    def refresh(self):
-        self.conn.refresh()
-
-    def index_crash(self, processed_crash, refresh=True):
-        """Index a single crash and refresh"""
-        self._crashstorage.save_processed_crash(
-            raw_crash={},
-            processed_crash=processed_crash,
-        )
-
-        if refresh:
-            self.refresh()
-
-    def index_many_crashes(self, number, processed_crash=None, loop_field=None):
-        """Index multiple crashes and refresh at the end"""
-        processed_crash = processed_crash or {}
-
-        crash_ids = []
-        for i in range(number):
-            processed_copy = processed_crash.copy()
-            processed_copy["uuid"] = create_new_ooid()
-            processed_copy["date_processed"] = date_from_ooid(processed_copy["uuid"])
-            if loop_field is not None:
-                processed_copy[loop_field] = processed_crash[loop_field] % i
-
-            self.index_crash(processed_crash=processed_copy, refresh=False)
-
-        self.refresh()
-        return crash_ids
-
-    def get_crash_data(self, crash_id):
-        """Get source in index for given crash_id
-
-        :arg crash_id: the crash id to fetch the source for
-
-        :returns: source as a Python dict or None if it doesn't exist
-
-        """
-        index = self._crashstorage.get_index_for_date(date_from_ooid(crash_id))
-        doc_type = self._crashstorage.get_doctype()
-
-        with self.conn() as conn:
-            search = LegacySearch(using=conn, index=index, doc_type=doc_type)
-            search = search.filter("term", **{"processed_crash.uuid": crash_id})
-            results = search.execute().to_dict()
-
-            if results["hits"]["hits"]:
-                return results["hits"]["hits"][0]["_source"]
-
-
-@pytest.fixture
-def legacy_es_helper():
-    """Returns a legacy Elasticsearch helper for tests.
-
-    Provides:
-
-    * ``get_doctype()``
-    * ``get_url()``
-    * ``create_indices()``
-    * ``delete_indices()``
-    * ``get_indices()``
-    * ``index_crash()``
-    * ``index_many_crashes()``
-    * ``refresh()``
-    * ``get_crash_data()``
-
-    """
-    legacy_es_helper = LegacyElasticsearchHelper()
-    legacy_es_helper.create_indices()
-    yield legacy_es_helper
-    legacy_es_helper.delete_indices()
-
-
-def _generate_es_helper():
-    es_helper = ElasticsearchHelper()
-    es_helper.create_indices()
-    yield es_helper
-    es_helper.delete_indices()
-
-
 @pytest.fixture
 def es_helper():
     """Returns an Elasticsearch helper for tests.
@@ -437,22 +301,10 @@ def es_helper():
     * ``get_crash_data()``
 
     """
-    yield from _generate_es_helper()
-
-
-@pytest.fixture
-def preferred_es_helper(legacy_es_helper):
-    """Returns an Elasticsearch helper for tests.
-
-    This returns a legacy or non-legacy helper depending on how the webapp is
-    configured.
-    """
-    if settings.ELASTICSEARCH_MODE == "LEGACY_ONLY":
-        yield legacy_es_helper
-    else:
-        # NOTE(relud): this fixture cannot reuse the es_helper fixture because
-        # ElasticsearchHelper cannot be instantiated in LEGACY_ONLY mode
-        yield from _generate_es_helper()
+    es_helper = ElasticsearchHelper()
+    es_helper.create_indices()
+    yield es_helper
+    es_helper.delete_indices()
 
 
 class PubSubHelper:

@@ -651,7 +651,6 @@ these files:
 * ``.readthedocs.yaml``
 * ``docker/Dockerfile``
 * ``docker/Dockerfile.fakesentry``
-* ``docker/set_up_legacy_es_requirements.sh``
 * ``pyproject.toml``
 * ``socorro/tests/processor/test_processor_app.py``
 * ``webapp/crashstats/crashstats/tests/test_sentry.py``

@@ -13,7 +13,6 @@
 set -euo pipefail
 
 waitfor --verbose --conn-only "${DATABASE_URL}"
-waitfor --verbose "${LEGACY_ELASTICSEARCH_URL}"
 waitfor --verbose "http://${PUBSUB_EMULATOR_HOST}"
 waitfor --verbose "${STORAGE_EMULATOR_HOST}/storage/v1/b"
 waitfor --verbose --codes={200,404} "${SENTRY_DSN}"

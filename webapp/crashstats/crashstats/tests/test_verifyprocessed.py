@@ -41,14 +41,14 @@ class TestVerifyProcessed:
             data=b"test",
         )
 
-    def create_processed_crash_in_es(self, preferred_es_helper, crash_id):
+    def create_processed_crash_in_es(self, es_helper, crash_id):
         crash_date = date_from_ooid(crash_id)
         processed_crash = {
             "uuid": crash_id,
             "signature": "OOM | Small",
             "date_processed": crash_date,
         }
-        preferred_es_helper.index_crash(processed_crash=processed_crash)
+        es_helper.index_crash(processed_crash=processed_crash)
 
     def test_get_threechars(self):
         cmd = Command()
@@ -71,7 +71,7 @@ class TestVerifyProcessed:
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_no_missing_crashes(self, storage_helper, preferred_es_helper, monkeypatch):
+    def test_no_missing_crashes(self, storage_helper, es_helper, monkeypatch):
         """Verify raw crashes with processed crashes result in no missing crashes."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
@@ -91,15 +91,15 @@ class TestVerifyProcessed:
             self.create_processed_crash_in_storage(
                 storage_helper, bucket_name=bucket, crash_id=crash_id
             )
-            self.create_processed_crash_in_es(preferred_es_helper, crash_id=crash_id)
+            self.create_processed_crash_in_es(es_helper, crash_id=crash_id)
 
-        preferred_es_helper.refresh()
+        es_helper.refresh()
 
         cmd = Command()
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == []
 
-    def test_missing_crashes(self, storage_helper, preferred_es_helper, monkeypatch):
+    def test_missing_crashes(self, storage_helper, es_helper, monkeypatch):
         """Verify it finds a missing crash."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
@@ -114,7 +114,7 @@ class TestVerifyProcessed:
         self.create_processed_crash_in_storage(
             storage_helper, bucket_name=bucket, crash_id=crash_id_1
         )
-        self.create_processed_crash_in_es(preferred_es_helper, crash_id=crash_id_1)
+        self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]
@@ -126,7 +126,7 @@ class TestVerifyProcessed:
         missing = cmd.find_missing(num_workers=1, date=TODAY)
         assert missing == [crash_id_2]
 
-    def test_missing_crashes_es(self, storage_helper, preferred_es_helper, monkeypatch):
+    def test_missing_crashes_es(self, storage_helper, es_helper, monkeypatch):
         """Verify it finds a processed crash missing in ES."""
         monkeypatch.setattr(Command, "get_threechars", get_threechars_subset)
 
@@ -141,7 +141,7 @@ class TestVerifyProcessed:
         self.create_processed_crash_in_storage(
             storage_helper, bucket_name=bucket, crash_id=crash_id_1
         )
-        self.create_processed_crash_in_es(preferred_es_helper, crash_id=crash_id_1)
+        self.create_processed_crash_in_es(es_helper, crash_id=crash_id_1)
 
         # Create a raw crash
         crash_id_2 = "000" + create_new_ooid()[3:]

@@ -82,9 +82,6 @@ class FakeException(Exception):
 
 class TestESCrashStorage:
     def build_crashstorage(self):
-        if settings.ELASTICSEARCH_MODE == "LEGACY_ONLY":
-            raise ValueError("cannot test elasticearch 8 in LEGACY_ONLY mode")
-
         return build_instance_from_settings(settings.ES_STORAGE)
 
     def test_index_crash(self, es_helper):
