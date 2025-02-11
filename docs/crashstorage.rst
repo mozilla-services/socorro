@@ -67,7 +67,7 @@ in the web app:
   signature. This includes aggregation on any database field, exploring
   crash reports, and generating graphs.
 
-Socorro currently requires Elasticsearch version 1.4.
+Socorro currently requires Elasticsearch version 8.
 
 You can see Elasticsearch common options by passing ``--help`` to the
 processor app and looking at the ``resource.elasticsearch`` options like
@@ -238,8 +238,8 @@ Storage mapping
 The storage mapping field contains Elasticsearch mapping instructions for the
 field.
 
-See `Elasticsearch 1.4 mapping documentation
-<https://www.elastic.co/guide/en/elasticsearch/reference/1.4/mapping.html>`_.
+See `Elasticsearch 8.17 mapping documentation
+<https://www.elastic.co/guide/en/elasticsearch/reference/8.17/mapping.html>`_.
 
 
 socorro.external.fs: File system
