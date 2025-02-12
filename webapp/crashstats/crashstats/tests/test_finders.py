@@ -17,12 +17,12 @@ class TestLeftoverPipelineFinder:
         busted_pipeline = copy.deepcopy(settings.PIPELINE)
         # Doesn't matter which key we chose to bust, so let's just
         # pick the first one.
-        key = list(busted_pipeline["STYLESHEETS"].keys())[0]
-        filenames = busted_pipeline["STYLESHEETS"][key]["source_filenames"]
+        key = list(busted_pipeline["JAVASCRIPT"].keys())[0]
+        filenames = busted_pipeline["JAVASCRIPT"][key]["source_filenames"]
 
         # add a junk one
-        filenames += ("neverheardof.css",)
-        busted_pipeline["STYLESHEETS"][key]["source_filenames"] = filenames
+        filenames += ("neverheardof.js",)
+        busted_pipeline["JAVASCRIPT"][key]["source_filenames"] = filenames
 
         settings.PIPELINE = busted_pipeline
 
