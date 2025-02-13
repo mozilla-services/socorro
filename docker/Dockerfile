@@ -47,8 +47,7 @@ USER app
 # Copy everything over
 COPY --chown=app:app . /app/
 
-# Run collectstatic in container which puts files in the default place for
-# static files
+# Build front-end static files. Runs ESBuild and collectstatic
 RUN cd /app/webapp/ && npm run build
 
 # Set entrypoint for this image. The entrypoint script takes a service
