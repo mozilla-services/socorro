@@ -4,9 +4,14 @@ services:
   app:
     volumes:
       - .:/app
+      - /app/webapp/node_modules
+      - /app/webapp/static
+
   test:
     volumes:
       - .:/app
+      - /app/webapp/node_modules
+      - /app/webapp/static
 
   processor:
     volumes:
@@ -19,6 +24,8 @@ services:
   webapp:
     volumes:
       - .:/app
+      - /app/webapp/node_modules
+      - /app/webapp/static
 
   stage_submitter:
     volumes:
