@@ -16,7 +16,9 @@
       {% endblock %}
     {% endblock %}
 
-    <link rel="stylesheet" href="/static/css/crashstats-base.css" />
+    {% block site_css %}
+      <link rel="stylesheet" href="/static/crashstats/css/crashstats-base.min.css" />
+    {% endblock %}
   </head>
 
   <body>

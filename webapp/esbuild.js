@@ -4,11 +4,47 @@
 
 import esbuild from 'esbuild';
 
-const entryPoints = ['crashstats/crashstats/static/crashstats/css/crashstats-base.css'];
+const entryPoints = [
+  {
+    out: 'crashstats/css/crashstats-base.min',
+    in: 'crashstats/crashstats/static/crashstats/css/crashstats-base.css',
+  },
+  {
+    out: 'api/css/documentation.min',
+    in: 'crashstats/api/static/api/css/documentation.css',
+  },
+  {
+    out: 'documentation/css/documentation.min',
+    in: 'crashstats/documentation/static/documentation/css/documentation.css',
+  },
+  {
+    out: 'profile/css/profile.min',
+    in: 'crashstats/profile/static/profile/css/profile.css',
+  },
+  {
+    out: 'signature/css/signature_report.min',
+    in: 'crashstats/signature/static/signature/css/signature_report.css',
+  },
+  {
+    out: 'status/css/status.min',
+    in: 'crashstats/status/static/status/css/status.css',
+  },
+  {
+    out: 'supersearch/css/search.min',
+    in: 'crashstats/supersearch/static/supersearch/css/search.css',
+  },
+  {
+    out: 'tokens/css/home.min',
+    in: 'crashstats/tokens/static/tokens/css/home.css',
+  },
+  {
+    out: 'topcrashers/css/topcrashers.min',
+    in: 'crashstats/topcrashers/static/topcrashers/css/topcrashers.css',
+  },
+];
 
 await esbuild.build({
   bundle: true,
-  entryNames: '[ext]/[name]',
   entryPoints,
   external: ['*.gif', '*.svg', '*.png', '*.eot', '*.woff', '*.ttf'],
   format: 'esm',
