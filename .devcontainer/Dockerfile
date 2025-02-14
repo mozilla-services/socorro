@@ -27,10 +27,6 @@ COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
 RUN /tmp/set_up_stackwalker.sh && \
     rm /tmp/set_up_stackwalker.sh
 
-# Install frontend JS deps
-COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
-RUN cd /webapp-frontend-deps/ && npm install
-
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
@@ -44,3 +40,7 @@ ENV PYTHONUNBUFFERED=1 \
     CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
     NPM_ROOT_PATH=/webapp-frontend-deps/ \
     NODE_PATH=/webapp-frontend-deps/node_modules/
+
+# Install frontend JS deps
+COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
+RUN cd /webapp-frontend-deps/ && npm install
