@@ -26,10 +26,6 @@ COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
 RUN /tmp/set_up_stackwalker.sh && \
     rm /tmp/set_up_stackwalker.sh
 
-# Install frontend JS deps
-COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
-RUN cd /webapp-frontend-deps/ && npm install
-
 COPY --chown=app:app requirements.txt /app/
 RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
     pip check --disable-pip-version-check
@@ -41,6 +37,10 @@ ENV PYTHONUNBUFFERED=1 \
     CSSMIN_BINARY=/webapp-frontend-deps/node_modules/.bin/cssmin \
     NPM_ROOT_PATH=/webapp-frontend-deps/ \
     NODE_PATH=/webapp-frontend-deps/node_modules/
+
+# Install frontend JS deps
+COPY --chown=app:app ./webapp/package*.json /webapp-frontend-deps/
+RUN cd /webapp-frontend-deps/ && npm install
 
 # app should own everything under /app in the container
 USER app
