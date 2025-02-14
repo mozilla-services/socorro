@@ -4,7 +4,7 @@
  
 @font-face {
   font-family: 'icons';
-  src: url('/static/crashstats/fonts/icons.eot?#iefix2013') format('embedded-opentype'), url('/static/crashstats/fonts/icons.woff?2013') format('woff'), url('/static/crashstats/fonts/icons.ttf?2013') format('truetype');
+  src: url('../../fonts/icons.eot') format('embedded-opentype'), url('../../fonts/icons.woff') format('woff'), url('../../fonts/icons.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }

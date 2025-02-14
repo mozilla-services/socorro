@@ -21,7 +21,7 @@
 }
 
 .note::before {
-  content: url("/static/img/3rdparty/silk/information.png") ' Note';
+  content: url("../../../img/3rdparty/silk/information.png") ' Note';
   display: block;
   background-color: var(--primary);
   color: #ffffff;

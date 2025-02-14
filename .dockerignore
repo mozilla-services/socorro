@@ -4,6 +4,5 @@ build/
 **/*.pyc
 __pycache__
 .cache
-webapp-django/node_modules
-webapp-django/static
+node_modules
 symbols/
