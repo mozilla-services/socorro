@@ -264,7 +264,7 @@ span.push_right {
 
 .oopp-hang .current {
   float: right;
-  background-image: url("/static/img/3rdparty/fatcow/stop16x16.png");
+  background-image: url("../../img/3rdparty/fatcow/stop16x16.png");
   background-repeat: no-repeat;
   color: var(--red);
   padding-left: 20px;
@@ -296,11 +296,11 @@ td.in2 ul {
 }
 
 .trend.up {
-  background: url("/static/img/up_arrow.png") no-repeat scroll right 10px var(--red);
+  background: url("../../img/up_arrow.png") no-repeat scroll right 10px var(--red);
 }
 
 .trend.down {
-  background: url("/static/img/down_arrow.png") no-repeat scroll right 10px var(--green);
+  background: url("../../img/down_arrow.png") no-repeat scroll right 10px var(--green);
 }
 
 .complete {

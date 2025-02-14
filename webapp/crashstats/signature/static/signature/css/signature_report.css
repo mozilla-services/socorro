@@ -63,7 +63,7 @@
 }
 
 .display-toggle-filters:before {
-  content: url('../../img/3rdparty/silk/arrow_bottom.png');
+  content: url('../../../../crashstats/static/img/3rdparty/silk/arrow_bottom.png');
   display: inline-block;
   height: 16px;
   padding: 5px;
@@ -72,7 +72,7 @@
 }
 
 .display-toggle-filters.show:before {
-  content: url('../../img/3rdparty/silk/resultset_next.png');
+  content: url('../../../../crashstats/static/img/3rdparty/silk/resultset_next.png');
 }
 
 #search-params-fieldset {
@@ -127,7 +127,7 @@ section.summary-panel .panel {
 
 section.aggregations-panel .controls .loader,
 section.summary-panel .controls .loader {
-  background-image: url('../../img/ajax-loader16x16.gif');
+  background-image: url('../../../../crashstats/static/img/ajax-loader16x16.gif');
   display: inline-block;
   height: 16px;
   position: absolute;
@@ -201,17 +201,17 @@ section.correlations-panel .controls label {
 }
 
 .tab-inner-panel .options.delete {
-  background-image: url('/static/img/3rdparty/silk/cross.png');
+  background-image: url('../../../../crashstats/static/img/3rdparty/silk/cross.png');
   position: relative;
   top: 1px;
 }
 
 .tab-inner-panel .options.show {
-  background-image: url('/static/img/3rdparty/silk/resultset_previous.png');
+  background-image: url('../../../../crashstats/static/img/3rdparty/silk/resultset_previous.png');
 }
 
 .tab-inner-panel .options.hide {
-  background-image: url('/static/img/3rdparty/silk/arrow_bottom.png');
+  background-image: url('../../../../crashstats/static/img/3rdparty/silk/arrow_bottom.png');
 }
 
 .tab-inner-panel .options:hover {

@@ -46,8 +46,16 @@ const entryPoints = [
 await esbuild.build({
   bundle: true,
   entryPoints,
-  external: ['*.gif', '*.svg', '*.png', '*.eot', '*.woff', '*.ttf'],
   format: 'esm',
+  loader: {
+    '.gif': 'file',
+    '.svg': 'file',
+    '.png': 'file',
+    '.eot': 'file',
+    '.woff': 'file',
+    '.ttf': 'file',
+  },
+  assetNames: 'img/[name]',
   logLevel: 'info',
   outdir: 'static',
   minify: true,
