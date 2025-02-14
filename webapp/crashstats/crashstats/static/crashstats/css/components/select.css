@@ -12,7 +12,7 @@ select {
   padding: 0.2em 2em 0.2em 0.2em;
   margin: 0;
   border-radius: 2px;
-  background-image: url("/static/img/3.0/caret.svg");
+  background-image: url("../../../img/3.0/caret.svg");
   background-position: calc(100% - 7px) calc(50% + 1px);
   background-size: 8px;
   background-repeat: no-repeat;

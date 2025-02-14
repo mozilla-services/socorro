@@ -29,15 +29,15 @@
 }
 
 #search-form .form-controls #search-button:before {
-  content: url("/static/img/3rdparty/silk/magnifier.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/magnifier.png");
 }
 
 #search-form .form-controls .new-line:before {
-  content: url("/static/img/3rdparty/silk/application_form_add.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/application_form_add.png");
 }
 
 #search-form .form-controls .customize:before {
-  content: url("/static/img/3rdparty/silk/wrench.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/wrench.png");
 }
 
 #search-form #simple-search,
@@ -108,7 +108,7 @@
   display: inline-block;
   margin: 5px 10px 0 0;
   vertical-align: middle;
-  background-image: url("/static/img/3rdparty/silk/delete.png");
+  background-image: url("../../../../crashstats/static/img/3rdparty/silk/delete.png");
   height: 16px;
   width: 16px;
   text-indent: -9999px;
@@ -174,13 +174,13 @@
 }
 
 #search_results .external-link {
-  background: transparent url("/static/img/icons/external.png") left top no-repeat;
+  background: transparent url("../../../../crashstats/static/img/icons/external.png") left top no-repeat;
   display: inline-block;
   padding-left: 17px;
 }
 
 #search_results .term {
-  background: transparent url("/static/img/icons/add.png") left top no-repeat;
+  background: transparent url("../../../../crashstats/static/img/icons/add.png") left top no-repeat;
   display: inline-block;
   padding-left: 13px;
 }
@@ -214,7 +214,7 @@
 }
 
 .loader {
-  background-image: url("/static/img/ajax-loader.gif");
+  background-image: url("../../../../crashstats/static/img/ajax-loader.gif");
   height: 19px;
   margin: auto;
   width: 220px;

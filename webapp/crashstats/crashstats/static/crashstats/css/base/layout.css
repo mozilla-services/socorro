@@ -91,7 +91,7 @@ body {
 }
 
 .page-header #simple_search input {
-  background: #ffffff url("/static/img/2.0/search.png") no-repeat 5px center;
+  background: #ffffff url("../../../img/2.0/search.png") no-repeat 5px center;
   border: none;
   width: 212px;
   padding: 3px 4px 4px 28px;

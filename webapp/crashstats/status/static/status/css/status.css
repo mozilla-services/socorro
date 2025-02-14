@@ -29,7 +29,7 @@
   color: var(--primary-medium);
 }
 .status-message.severity-info:before {
-  content: url("/static/img/3rdparty/silk/information.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/information.png");
 }
 .status-message.severity-warning {
   background-color: #ffe900;
@@ -39,7 +39,7 @@
   color: var(--primary-medium);
 }
 .status-message.severity-warning:before {
-  content: url("/static/img/3rdparty/silk/error.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/error.png");
 }
 .status-message.severity-critical {
   background-color: var(--red);
@@ -49,5 +49,5 @@
   color: #ffffff;
 }
 .status-message.severity-critical:before {
-  content: url("/static/img/3rdparty/silk/exclamation.png");
+  content: url("../../../../crashstats/static/img/3rdparty/silk/exclamation.png");
 }
