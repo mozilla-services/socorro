@@ -35,7 +35,7 @@
         {% if request.user and request.user.is_active %}
           <button class="user-info-button">
             <span class="user-email">{{ request.user.email }}</span>
-            <img class="menu-icon" src="{{ static('img/menu.svg') }}" >
+            <img class="menu-icon" src="/static/img/menu.svg" >
           </button>
           <ul class="user-info-menu">
             <li>

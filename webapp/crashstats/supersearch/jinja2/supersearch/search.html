@@ -5,11 +5,7 @@
 
 {% block site_css %}
   {{ super() }}
-  {% stylesheet 'select2' %}
-  {% stylesheet 'jquery_ui' %}
-  {% stylesheet 'tablesorter' %}
-  {% stylesheet 'search' %}
-  {% stylesheet 'bugzilla' %}
+  <link rel="stylesheet" href="/static/supersearch/css/search.min.css" />
 {% endblock %}
 
 {% block content %}
@@ -37,7 +33,7 @@
 
     <div class="protected-info">
       {% if request.user.has_perm('crashstats.view_pii') %}
-        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+        <img src="/static/img/3rdparty/silk/exclamation.png" alt="protected" title="Protected Data" />
         You are seeing public and protected data.
       {% else %}
         You are seeing public data only.

@@ -2,7 +2,7 @@
 
 {% block site_css %}
   {{ super() }}
-  {% stylesheet 'report_pending' %}
+  <link rel="stylesheet" href="/static/crashstats/css/pages/report_pending.min.css">
 {% endblock %}
 
 {% block site_js %}
@@ -18,7 +18,7 @@
         <p>
           Processing this crash report only takes a few seconds.
         </p>
-        <img src="{{ static('img/ajax-loader.gif') }}">
+        <img src="/static/img/ajax-loader.gif">
       </div>
       <div class="found hidden">
         <h3>Crash ID found!</h3>

@@ -2,7 +2,7 @@
 
 {% block site_css %}
 {{ super() }}
-{% stylesheet 'api_documentation' %}
+<link rel="stylesheet" href="/static/api/css/documentation.min.css">
 {% endblock %}
 
 {% block site_js %}
@@ -111,7 +111,7 @@
       <div class="run-test">
         {% if endpoint.test_drive %}
           <button type="submit">Run Test Drive!</button>
-          <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Loading..." class="loading-ajax">
+          <img src="/static/img/ajax-loader16x16.gif" alt="Loading..." class="loading-ajax">
           <button type="button" class="close">&times; Close</button>
         {% else %}
           <em>Test drive not supported.</em>
