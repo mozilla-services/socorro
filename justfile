@@ -13,7 +13,7 @@ _env:
     fi
 
 # Build docker images
-build *args: _env
+build *args='app fakesentry oidcprovider elasticsearch postgresql pubsub memcached gcs-emulator': _env
     docker compose build --progress plain {{args}}
 
 # Set up Postgres, Elasticsearch, local Pub/Sub, and local GCS services.
