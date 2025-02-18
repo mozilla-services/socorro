@@ -459,7 +459,6 @@ STATICFILES_FINDERS = [
 ]
 
 PIPELINE = {
-    # 'PIPELINE_ENABLED': False,
     "JAVASCRIPT": PIPELINE_JS,
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": _config(

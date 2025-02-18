@@ -25,11 +25,7 @@
 @import "./components/tip.css";
 @import "./components/tree.css";
 
-/* The following is copied from /webapp/crashstats/status/static/status/css/status.css 
- * Django Pipeline doesn't allow traversing urls outside the base dir
- * e.g. "../../../../status/static/status/css/status.css"; 
- * TODO: decide if it's needed in both locations and DRY */
-@import "./components/status.css";
+@import "../../../../status/static/status/css/status.css";
 
 /* Other shared styles */
 a {
