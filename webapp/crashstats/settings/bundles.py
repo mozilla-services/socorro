@@ -18,128 +18,20 @@ NPM_FILE_PATTERNS = {
         "ui/widgets/sortable.js",
         "ui/widgets/datepicker.js",
         "ui/widgets/tabs.js",
-        "themes/base/core.css",
-        "themes/base/sortable.css",
-        "themes/base/datepicker.css",
-        "themes/base/tabs.css",
     ],
-    "Select2": [
-        "select2.css",
-        "select2.js",
-        "select2.png",
-        "select2-spinner.gif",
-        "select2x2.png",
-    ],
+    "Select2": ["select2.js"],
     "metrics-graphics": ["dist/*"],
-    "@fortawesome/fontawesome-free": ["css/all.min.css", "webfonts/*"],
-    "tablesorter": ["dist/css/theme.default.min.css", "dist/js/jquery.tablesorter.js"],
+    "tablesorter": ["dist/js/jquery.tablesorter.js"],
     "d3": ["dist/*"],
     "jssha": ["dist/*.js", "dist/*.map"],
     "qs": ["dist/*"],
     "moment": ["moment.js"],
     "filesize": ["lib/*"],
     "underscore": ["*.js"],
-    "jquery.json-viewer": [
-        "json-viewer/jquery.json-viewer.css",
-        "json-viewer/jquery.json-viewer.js",
-    ],
+    "jquery.json-viewer": ["json-viewer/jquery.json-viewer.js"],
     "ace-builds": ["src/ace.js", "src/theme-monokai.js", "src/mode-json.js"],
     "jquery": ["dist/*"],
 }
-
-#
-# CSS
-#
-
-PIPELINE_CSS = {
-    "search": {
-        "source_filenames": ("supersearch/css/search.css",),
-        "output_filename": "css/search.min.css",
-    },
-    "select2": {
-        "source_filenames": ("Select2/select2.css",),
-        "output_filename": "css/select2.min.css",
-    },
-    "jquery_ui": {
-        "source_filenames": (
-            "jquery-ui/themes/base/core.css",
-            "jquery-ui/themes/base/sortable.css",
-            "jquery-ui/themes/base/datepicker.css",
-            "jquery-ui/themes/base/tabs.css",
-            # Custom theme
-            "crashstats/css/lib/jquery-ui.structure.css",
-            "crashstats/css/lib/jquery-ui.theme.css",
-        ),
-        "output_filename": "css/jquery-ui.min.css",
-    },
-    "accordion": {
-        "source_filenames": ("crashstats/css/components/accordion.css",),
-        "output_filename": "css/accordion.min.css",
-    },
-    "bugzilla": {
-        "source_filenames": ("crashstats/css/components/bugzilla.css",),
-        "output_filename": "css/bugzilla.min.css",
-    },
-    "metricsgraphics": {
-        "source_filenames": (
-            "metrics-graphics/dist/metricsgraphics.css",
-            "crashstats/css/lib/metricsgraphics_custom.css",
-        ),
-        "output_filename": "css/metricsgraphics.min.css",
-    },
-    "api_documentation": {
-        "source_filenames": ("api/css/documentation.css",),
-        "output_filename": "css/api-documentation.min.css",
-    },
-    "documentation": {
-        "source_filenames": ("documentation/css/documentation.css",),
-        "output_filename": "css/documentation.min.css",
-    },
-    "jsonview": {
-        "source_filenames": ("jsonview/jsonview.custom.css",),
-        "output_filename": "css/jsonview.min.css",
-    },
-    "report_index": {
-        "source_filenames": (
-            "crashstats/css/pages/report_index.css",
-            "crashstats/css/components/tree.css",
-        ),
-        "output_filename": "css/report-index.min.css",
-    },
-    "report_pending": {
-        "source_filenames": ("crashstats/css/pages/report_pending.css",),
-        "output_filename": "css/report-pending.min.css",
-    },
-    "product_home": {
-        "source_filenames": ("crashstats/css/pages/product_home.css",),
-        "output_filename": "css/product-home.min.css",
-    },
-    "profile": {
-        "source_filenames": ("profile/css/profile.css",),
-        "output_filename": "css/profile.min.css",
-    },
-    "signature_report": {
-        "source_filenames": ("signature/css/signature_report.css",),
-        "output_filename": "css/signature-report.min.css",
-    },
-    "tokens": {
-        "source_filenames": ("tokens/css/home.css",),
-        "output_filename": "css/tokens.min.css",
-    },
-    "topcrashers": {
-        "source_filenames": ("topcrashers/css/topcrashers.css",),
-        "output_filename": "css/topcrashers.min.css",
-    },
-    "tablesorter": {
-        "source_filenames": ("tablesorter/dist/css/theme.default.min.css",),
-        "output_filename": "js/tablesorter.min.css",
-    },
-}
-
-#
-# JavaScript
-#
-
 
 PIPELINE_JS = {
     "date_filters": {
@@ -271,45 +163,3 @@ PIPELINE_JS = {
         "output_filename": "js/error.min.js",
     },
 }
-
-
-# These are quality checks--primarily for developers. It checks that you haven't haven't
-# accidentally make a string a tuple with an excess comma, no underscores in the bundle
-# name and that the bundle file extension is either .js or .css.
-#
-# We also check, but only warn, if a file is re-used in a different bundle.  That's
-# because you might want to consider not including that file in the bundle and instead
-# break it out so it can be re-used on its own.
-_used = {}
-for config in PIPELINE_JS, PIPELINE_CSS:  # NOQA
-    _trouble = set()
-    for k, v in config.items():
-        assert isinstance(k, str), k
-        out = v["output_filename"]
-        assert isinstance(v["source_filenames"], tuple), v
-        assert isinstance(out, str), v
-        assert not out.split("/")[-1].startswith("."), k
-        assert "_" not in out
-        assert out.endswith(".min.css") or out.endswith(".min.js")
-        for asset_file in v["source_filenames"]:
-            if asset_file in _used:
-                # Consider using warnings.warn here instead
-                print(
-                    "{:<52} in {:<20} already in {}".format(
-                        asset_file, k, _used[asset_file]
-                    )
-                )
-                _trouble.add(asset_file)
-            _used[asset_file] = k
-
-    for asset_file in _trouble:
-        print("REPEATED", asset_file)
-        found_in = []
-        sets = []
-        for k, v in config.items():
-            if asset_file in v["source_filenames"]:
-                found_in.append(k)
-                sets.append(set(list(v["source_filenames"])))
-        print("FOUND IN", found_in)
-        print("ALWAYS TOGETHER WITH", set.intersection(*sets))
-        break

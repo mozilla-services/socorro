@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
+@import url('../../../../crashstats/static/crashstats/css/lib/metricsgraphics_custom.css');
+@import url('../../../../crashstats/static/crashstats/css/components/accordion.css');
+@import url('tablesorter/dist/css/theme.default.min.css');
+@import url('../../../../crashstats/static/crashstats/css/components/bugzilla.css');
+
 .page-heading p time {
   font-weight: bold;
 }

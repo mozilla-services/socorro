@@ -1,7 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- 
+
+@import url("Select2/select2.css");
+@import url('tablesorter/dist/css/theme.default.min.css');
+@import url('../../../../crashstats/static/crashstats/css/lib/jquery-ui.css');
+@import url('../../../../crashstats/static/crashstats/css/components/bugzilla.css');
+
 #search-form {
   background: var(--light-grey);
   margin-top: 1em;
