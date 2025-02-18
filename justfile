@@ -12,7 +12,7 @@ _env:
       cp docker/config/.env.dist .env
     fi
 
-# Build docker images (excludes devcontainer – unneeded for prod)
+# Build docker images
 build *args='app fakesentry oidcprovider elasticsearch postgresql pubsub memcached gcs-emulator': _env
     docker compose build --progress plain {{args}}
 
