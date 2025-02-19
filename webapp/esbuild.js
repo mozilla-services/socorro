@@ -74,13 +74,12 @@ const options = {
   sourcemap: true,
   splitting: false,
   treeShaking: true,
-}
+};
 
-
-if(process.argv.includes("--watch")){
-  const ctx = await esbuild.context(options)
-  await ctx.watch()
-  console.info('ESBuild watch-mode enabled')
-}else{
-  esbuild.build(options)
+if (process.argv.includes('--watch')) {
+  const ctx = await esbuild.context(options);
+  await ctx.watch();
+  console.info('ESBuild watch-mode enabled');
+} else {
+  esbuild.build(options);
 }
