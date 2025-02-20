@@ -1,5 +1,5 @@
 {% macro protected_warning() -%}
-  <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+  <img src="/static/img/3rdparty/silk/exclamation.png" alt="protected" title="Protected Data" />
   Protected data: <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
 {%- endmacro %}
 
@@ -21,11 +21,7 @@
 
 {% block site_css %}
   {{ super() }}
-  {% stylesheet 'jquery_ui' %}
-  {% stylesheet 'tablesorter' %}
-  {% stylesheet 'jsonview' %}
-  {% stylesheet 'report_index' %}
-  {% stylesheet 'bugzilla' %}
+  <link rel="stylesheet" href="/static/crashstats/css/pages/report_index.min.css">
 {% endblock %}
 
 {% block site_js %}
@@ -60,7 +56,7 @@
 
     <div class="protected-info">
       {% if request.user.has_perm('crashstats.view_pii') %}
-        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+        <img src="/static/img/3rdparty/silk/exclamation.png" alt="protected" title="Protected Data" />
         You are seeing public and protected data.
       {% else %}
         You are seeing public data only.
@@ -261,7 +257,7 @@
                   <td>
                     {% if report.cpu_info %}
                       {% if is_dangerous_cpu(report.cpu_arch, report.cpu_info) %}
-                        <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="warning" title="Possible AMD CPU bug related crash report" />
+                        <img src="/static/img/3rdparty/silk/exclamation.png" alt="warning" title="Possible AMD CPU bug related crash report" />
                       {% endif %}
                       {{ report.cpu_info }}
                     {% endif %}
@@ -706,7 +702,7 @@
                     Message: {% if stacktrace.value %}{{ stacktrace.value }}{% else %}--{% endif %}
                   </h3>
                   <p>
-                    <img src="{{ static('img/3rdparty/silk/exclamation.png') }}" alt="protected" title="Protected Data" />
+                    <img src="/static/img/3rdparty/silk/exclamation.png" alt="protected" title="Protected Data" />
                     Note: Java exception messages are protected data.
                     <a href="{{ url('documentation:protected_data_access') }}">Protected data policy.</a>
                   </p>
@@ -1361,7 +1357,7 @@
               </form>
               <div class="waiting hidden">
                 <p>
-                  <img src="{{ static('img/ajax-loader16x16.gif') }}" alt="Waiting...">
+                  <img src="/static/img/ajax-loader16x16.gif" alt="Waiting...">
                   <b>Sending crash ID in for reprocessing...</b>
                 </p>
               </div>

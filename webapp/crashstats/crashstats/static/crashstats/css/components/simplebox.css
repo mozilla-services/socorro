@@ -17,7 +17,7 @@
 }
 #close_simplebox {
   position: absolute;
-  background: transparent url("/static/img/icons/close_round.png") 0 0 no-repeat;
+  background: transparent url("../../../img/icons/close_round.png") 0 0 no-repeat;
   margin-top: -20px;
   border: 0;
   width: 30px;

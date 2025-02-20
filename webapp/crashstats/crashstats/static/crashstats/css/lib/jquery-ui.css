@@ -1,0 +1,7 @@
+@import url('jquery-ui/themes/base/core.css');
+@import url('jquery-ui/themes/base/sortable.css');
+@import url('jquery-ui/themes/base/datepicker.css');
+@import url('jquery-ui/themes/base/tabs.css');
+
+@import url('./jquery-ui.structure.css');
+@import url('./jquery-ui.theme.css');

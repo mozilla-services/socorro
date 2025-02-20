@@ -2,6 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
+@import url('tablesorter/dist/css/theme.default.min.css');
+@import url('../lib/metricsgraphics_custom.css');
+@import url('../lib/jquery-ui.css');
+@import url('../lib/jsonview.custom.css');
+@import url('../components/bugzilla.css');
+
 #details th,
 #metadata th {
   overflow: hidden;
@@ -61,7 +67,7 @@
 }
 .sig-overview,
 .sig-search {
-  background: transparent url("/static/img/icons/external.png") left top no-repeat;
+  background: transparent url("../../../img/icons/external.png") left top no-repeat;
   display: inline-block;
   color: var(--dark-grey);
   margin-left: 0.5em;

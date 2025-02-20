@@ -14,8 +14,7 @@
 
 {% block site_css %}
   {{ super() }}
-  {% stylesheet 'documentation' %}
-  {% stylesheet 'jsonview' %}
+  <link rel="stylesheet" href="/static/documentation/css/documentation.min.css">
 {% endblock %}
 
 {% block site_js %}
