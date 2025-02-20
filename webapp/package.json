@@ -37,7 +37,7 @@
   },
   "scripts": {
     "build": "rm -rf static/* && npm run copy:images && node esbuild && npm run build:collectstatic",
-    "build:collectstatic": "TOOL_ENV=True ./manage.py collectstatic --noinput --ignore css --ignore img",
+    "build:collectstatic": "TOOL_ENV=True ./manage.py collectstatic --noinput -i crashstats/*.css -i api/*.css -i documentation/*.css -i profile/*.css -i signature/*.css -i status/*.css -i supersearch/*.css -i tokens/*.css -i topcrashers/*.css",
     "copy:images": "mkdir -p static/img/ && cp -r crashstats/crashstats/static/img/ static/img/"
   }
 }
