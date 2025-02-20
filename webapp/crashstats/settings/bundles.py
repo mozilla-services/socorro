@@ -163,3 +163,43 @@ PIPELINE_JS = {
         "output_filename": "js/error.min.js",
     },
 }
+
+# These are quality checks--primarily for developers. It checks that you haven't haven't
+# accidentally make a string a tuple with an excess comma, no underscores in the bundle
+# name and that the bundle file extension is either .js or .css.
+#
+# We also check, but only warn, if a file is re-used in a different bundle.  That's
+# because you might want to consider not including that file in the bundle and instead
+# break it out so it can be re-used on its own.
+_used = {}
+_trouble = set()
+for k, v in PIPELINE_JS.items():
+    assert isinstance(k, str), k
+    out = v["output_filename"]
+    assert isinstance(v["source_filenames"], tuple), v
+    assert isinstance(out, str), v
+    assert not out.split("/")[-1].startswith("."), k
+    assert "_" not in out
+    assert out.endswith(".min.css") or out.endswith(".min.js")
+    for asset_file in v["source_filenames"]:
+        if asset_file in _used:
+            # Consider using warnings.warn here instead
+            print(
+                "{:<52} in {:<20} already in {}".format(
+                    asset_file, k, _used[asset_file]
+                )
+            )
+            _trouble.add(asset_file)
+        _used[asset_file] = k
+
+for asset_file in _trouble:
+    print("REPEATED", asset_file)
+    found_in = []
+    sets = []
+    for k, v in PIPELINE_JS.items():
+        if asset_file in v["source_filenames"]:
+            found_in.append(k)
+            sets.append(set(list(v["source_filenames"])))
+    print("FOUND IN", found_in)
+    print("ALWAYS TOGETHER WITH", set.intersection(*sets))
+    break
