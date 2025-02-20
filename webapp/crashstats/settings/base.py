@@ -445,7 +445,7 @@ DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "pipeline.storage.PipelineStorage",
     },
 }
 
