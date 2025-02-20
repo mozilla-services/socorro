@@ -50,6 +50,6 @@ echo ">>> run tests"
 
 # Collect static and then run pytest in the webapp
 pushd webapp
-${PYTHON} manage.py collectstatic --noinput -i crashstats/*.css -i api/*.css -i documentation/*.css -i profile/*.css -i signature/*.css -i status/*.css -i supersearch/*.css -i tokens/*.css -i topcrashers/*.css
+npm run build
 "${PYTEST}"
 popd
