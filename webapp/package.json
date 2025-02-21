@@ -11,7 +11,7 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "cssmin": "0.4.3",
-    "esbuild": "0.24.2",
+    "esbuild": "0.25.0",
     "eslint": "8.57.1",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-prettier": "5.2.3",
