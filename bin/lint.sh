@@ -46,5 +46,5 @@ else
 
     echo ">>> eslint (js)"
     cd /app/webapp
-    /webapp-frontend-deps/node_modules/.bin/eslint .
+    /app/webapp/node_modules/.bin/eslint .
 fi

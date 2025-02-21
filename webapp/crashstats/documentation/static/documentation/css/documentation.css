@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
+@import url('../../../../crashstats/static/crashstats/css/lib/jsonview.custom.css');
+
 .panel {
   font-size: 14px;
   line-height: 1.42857143;
@@ -153,7 +155,7 @@
 }
 
 .panel .example::before {
-  content: url('../../img/3rdparty/silk/bricks.png') ' Example';
+  content: url('../../../../crashstats/static/img/3rdparty/silk/bricks.png') ' Example';
   display: block;
   background-color: var(--dark-grey);
   color: #ffffff;
@@ -185,7 +187,7 @@
 }
 
 .panel .example .results .loader {
-  background-image: url('../../img/ajax-loader16x16.gif');
+  background-image: url('../../../../crashstats/static/img/ajax-loader16x16.gif');
   height: 16px;
   margin: auto;
   width: 16px;
@@ -207,7 +209,7 @@
 }
 
 .panel .example .results h2 .hide {
-  background-image: url('../../img/3rdparty/silk/cross.png');
+  background-image: url('../../../../crashstats/static/img/3rdparty/silk/cross.png');
   cursor: pointer;
   display: inline-block;
   float: right;

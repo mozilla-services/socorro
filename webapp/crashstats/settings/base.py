@@ -16,7 +16,7 @@ import dj_database_url
 
 # NOTE(willkg): Need this on a separate line so we can ignore the unused import
 from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
-from crashstats.settings.bundles import PIPELINE_CSS, PIPELINE_JS
+from crashstats.settings.bundles import PIPELINE_JS
 
 _config = ConfigManager.basic_config()
 
@@ -445,7 +445,7 @@ DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "pipeline.storage.PipelineManifestStorage",
+        "BACKEND": "pipeline.storage.PipelineStorage",
     },
 }
 
@@ -459,15 +459,12 @@ STATICFILES_FINDERS = [
 ]
 
 PIPELINE = {
-    "STYLESHEETS": PIPELINE_CSS,
     "JAVASCRIPT": PIPELINE_JS,
     "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
     "UGLIFYJS_BINARY": _config(
         "UGLIFYJS_BINARY", default=path("node_modules/.bin/uglifyjs")
     ),
     "UGLIFYJS_ARGUMENTS": "--mangle",
-    "CSS_COMPRESSOR": "pipeline.compressors.cssmin.CSSMinCompressor",
-    "CSSMIN_BINARY": _config("CSSMIN_BINARY", default=path("node_modules/.bin/cssmin")),
     # Don't wrap javascript code in... `(...code...)();`
     # because possibly much code has been built with the assumption that
     # things will be made available globally.

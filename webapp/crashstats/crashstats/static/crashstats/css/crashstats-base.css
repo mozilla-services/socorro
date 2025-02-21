@@ -1,0 +1,356 @@
+@import "./base/reset.css";
+@import "./base/variables.css";
+@import "./base/forms.css";
+@import "./base/tables.css";
+@import "./base/typography.css";
+@import "./base/layout.css";
+
+/* Layout elements */
+@import "./components/nav.css";
+@import "./components/footer.css";
+
+/* Common components */
+@import "./components/accordion.css";
+@import "./components/admin.css";
+@import "./components/code.css";
+@import "./components/message.css";
+@import "./components/pagination.css";
+@import "./components/panel.css";
+@import "./components/select.css";
+@import "./components/simplebox.css";
+@import "./components/statusicon.css";
+@import "./components/sumo_link.css";
+@import "./components/table_sorter.css";
+@import "./components/note.css";
+@import "./components/tip.css";
+@import "./components/tree.css";
+
+@import "../../../../status/static/status/css/status.css";
+
+/* Other shared styles */
+a {
+  text-decoration: none;
+}
+
+a,
+a:link,
+a:hover,
+a:active {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.ui-widget-content a:visited,
+a:visited {
+  color: var(--purple);
+}
+
+body>h1 {
+  font-size: 200%;
+}
+
+.clear {
+  clear: both;
+}
+
+.clear_left {
+  clear: left;
+}
+
+.clear_right {
+  clear: right;
+}
+
+.float_left {
+  float: left;
+}
+
+.float_right {
+  float: right;
+}
+
+.hidden {
+  display: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  clip: rect(1px 1px 1px 1px);
+  /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 0;
+  border: 0;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}
+
+time {
+  display: inline-block;
+}
+
+.mx-4 {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
+.my-2 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.w-1\/12 {
+  width: 8.3333%;
+}
+
+.w-2\/12 {
+  width: 16.6667%;
+}
+
+.w-3\/12 {
+  width: 25%;
+}
+
+.w-4\/12 {
+  width: 33.3333%;
+}
+
+.w-5\/12 {
+  width: 41.6667%;
+}
+
+.w-6\/12 {
+  width: 50%;
+}
+
+.w-7\/12 {
+  width: 58.3333%;
+}
+
+.w-8\/12 {
+  width: 66.6667%;
+}
+
+.w-9\/12 {
+  width: 75%;
+}
+
+.w-10\/12 {
+  width: 83.3333%;
+}
+
+.w-11\/12 {
+  width: 91.666667%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+#mainbody {
+  position: relative;
+  margin: 1em 2em;
+  text-align: left;
+  flex: 1;
+}
+
+.loading {
+  position: absolute;
+  top: 45%;
+  left: 45%;
+}
+
+.inline-loader {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
+.logout-form {
+  display: inline;
+}
+
+button.logout-button {
+  background: none;
+  color: var(--primary);
+  font-size: var(--base-font-size);
+  padding: 0;
+}
+
+button.logout-button:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+/* --- */
+/* --- */
+#data_sources {
+  border: 0;
+}
+
+#data_sources table {
+  width: 100%;
+}
+
+#data_sources th:last-child {
+  width: 80px;
+}
+
+#data_sources_nav {
+  background: none;
+  border: 0;
+}
+
+#data_sources_nav li {
+  background: none;
+  border: 0;
+}
+
+#data_sources_nav li:before {
+  content: "";
+}
+
+span.push_right {
+  margin-right: 10px;
+}
+
+.list tr:nth-child(2n+1) {
+  background-color: var(--off-white);
+}
+
+.list tr:nth-child(2n) {
+  background-color: #ffffff;
+}
+
+.list tr:hover {
+  background-color: #ffffff;
+}
+
+.list tr td {
+  padding: 0.5em;
+  text-align: left;
+}
+
+.list tr td label {
+  border-bottom: 1px dashed var(--grey);
+  font-weight: normal;
+}
+
+.list th {
+  background: var(--off-white);
+  padding: 2px;
+  border: 1px solid var(--black);
+  font-weight: bold;
+}
+
+.list th a {
+  display: block;
+  padding: 0.2em 1.2em 0.2em 0.2em;
+  text-align: left;
+}
+
+.list th a:hover {
+  background-color: #ffffff;
+}
+
+.oopp-hang {
+  clear: right;
+  float: right;
+}
+
+.oopp-hang .current {
+  float: right;
+  background-image: url("../../img/3rdparty/fatcow/stop16x16.png");
+  background-repeat: no-repeat;
+  color: var(--red);
+  padding-left: 20px;
+  height: 16px;
+  font-weight: 900;
+}
+
+.oopp-hang .current .type {
+  color: var(--dark-grey);
+}
+
+.oopp-hang .pair {
+  clear: right;
+  padding: 0.5em 0 0.5em 0.5em;
+}
+
+.oopp-hang .pair a {
+  text-decoration: none;
+}
+
+td.in1 ul,
+td.in2 ul {
+  padding-left: 15px;
+}
+
+.trend {
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.trend.up {
+  background: url("../../img/up_arrow.png") no-repeat scroll right 10px var(--red);
+}
+
+.trend.down {
+  background: url("../../img/down_arrow.png") no-repeat scroll right 10px var(--green);
+}
+
+.complete {
+  position: absolute;
+  right: 0px;
+  background-color: #ffffff;
+  border: solid 1px var(--grey);
+  margin: 1em;
+}
+
+.correlation-module {
+  position: relative;
+  float: left;
+  padding: 1em;
+  width: 320px;
+}
+
+.correlation-module h3 {
+  font-weight: bold;
+}
+
+#duration-nav {
+  float: right;
+}
+
+#duration-nav ul li {
+  float: left;
+  padding-right: 1em;
+  list-style-type: none;
+}
+
+div.expandable-menu,
+div.each-sparkline {
+  margin-left: 12px;
+  border: none;
+}
+
+.correlation-cell div div.complete {
+  display: none;
+}
+
+.correlation pre {
+  clear: left;
+}
+
+.correlation h3 {
+  margin-top: 0.1em;
+}
+
+.complete h3 {
+  margin: 0.75em 0 0 0;
+}
+
+/* jQueryUI theme overrides */
+.ui-tabs-panel {
+  border: 1px solid var(--off-white);
+}

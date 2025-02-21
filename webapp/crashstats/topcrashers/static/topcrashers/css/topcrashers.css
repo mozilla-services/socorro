@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
+@import url('tablesorter/dist/css/theme.default.min.css');
+@import url('../../../../crashstats/static/crashstats/css/components/bugzilla.css');
+
 #topcrashers h1 {
   font-size: 2em;
   font-weight: normal;
@@ -15,7 +18,7 @@
 }
 
 #topcrashers th {
-  background: url("/static/img/slate/white-grad.png") repeat-x scroll bottom left #ffffff;
+  background: url("../../../../crashstats/static/img/slate/white-grad.png") repeat-x scroll bottom left #ffffff;
   padding: 0.1em 0.5em;
 }
 
@@ -162,11 +165,11 @@
 }
 
 .moving-up {
-  background: var(--red) url("../../img/up_arrow.png") 9px 4px no-repeat;
+  background: var(--red) url("../../../../crashstats/static/img/up_arrow.png") 9px 4px no-repeat;
 }
 
 .moving-down {
-  background: var(--green) url("../../img/down_arrow.png") 9px 4px no-repeat;
+  background: var(--green) url("../../../../crashstats/static/img/down_arrow.png") 9px 4px no-repeat;
 }
 
 .label {

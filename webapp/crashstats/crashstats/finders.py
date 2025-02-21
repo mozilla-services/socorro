@@ -20,16 +20,15 @@ class LeftoverPipelineFinder(PipelineFinder):
         # staticfiles finders. Before we raise an error, try to find out where,
         # in the bundles, this was defined. This will make it easier to correct
         # the mistake.
-        for config_name in "STYLESHEETS", "JAVASCRIPT":
-            config = settings.PIPELINE[config_name]
-            for key, directive in config.items():
-                if path in directive["source_filenames"]:
-                    raise ImproperlyConfigured(
-                        "Static file {} can not be found anywhere. Defined in "
-                        "PIPELINE[{!r}][{!r}]['source_filenames']".format(
-                            path, config_name, key
-                        )
+        config = settings.PIPELINE["JAVASCRIPT"]
+        for key, directive in config.items():
+            if path in directive["source_filenames"]:
+                raise ImproperlyConfigured(
+                    "Static file {} can not be found anywhere. Defined in "
+                    "PIPELINE[{!r}][{!r}]['source_filenames']".format(
+                        path, "JAVASCRIPT", key
                     )
+                )
         # If the file can't be found AND it's not in bundles, there's
         # got to be something else really wrong.
         raise NotImplementedError(path)

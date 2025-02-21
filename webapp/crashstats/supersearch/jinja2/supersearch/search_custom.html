@@ -46,8 +46,7 @@
 
 {% block site_css %}
   {{ super() }}
-  {% stylesheet 'select2' %}
-  {% stylesheet 'search' %}
+  <link rel="stylesheet" href="/static/supersearch/css/search.min.css" />
 {% endblock %}
 
 {% block site_js %}

@@ -23,7 +23,7 @@
 }
 
 .page-footer .nav {
-  background: url("/static/img/3.0/mozilla.gif") no-repeat scroll 0% -1px transparent;
+  background: url("../../../img/3.0/mozilla.gif") no-repeat scroll 0% -1px transparent;
   background-size: 102px auto;
   float: left;
   padding-left: 109px;
