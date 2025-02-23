@@ -1,3 +1,5 @@
+import {default as moment} from 'moment'
+
 $(function () {
   function replaceTimeTag(inTheFuture) {
     return function () {

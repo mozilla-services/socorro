@@ -1,5 +1,27 @@
 /* global BugLinks, DateFilters, socorro */
 
+import 'Select2'
+import {default as Qs} from 'qs'
+
+import 'jquery-ui/ui/version.js'
+import 'jquery-ui/ui/widget.js'
+import 'jquery-ui/ui/safe-active-element.js'
+import 'jquery-ui/ui/unique-id.js'
+import 'jquery-ui/ui/keycode.js'
+import 'jquery-ui/ui/widgets/mouse.js'
+import 'jquery-ui/ui/widgets/sortable.js'
+import 'jquery-ui/ui/widgets/datepicker.js'
+import 'jquery-ui/ui/widgets/tabs.js'
+
+import 'tablesorter/dist/js/jquery.tablesorter.js'
+
+import '../lib/dynamic_form.js'
+
+import '../../../../../crashstats/static/crashstats/js/socorro/utils.js'
+import '../../../../../crashstats/static/crashstats/js/socorro/bugzilla.js'
+
+import './date_filters.js'
+
 $(function () {
   'use strict';
 

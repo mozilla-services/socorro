@@ -12,9 +12,7 @@
 
 {% block site_js %}
   {{ super() }}
-  {% javascript 'tablesorter' %}
-  {% javascript 'bugzilla' %}
-  {% javascript 'topcrashers' %}
+  <script src="/static/topcrashers/js/topcrashers.min.js" type="module"></script>
 {% endblock %}
 
 {% block page_title %}

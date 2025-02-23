@@ -1,5 +1,10 @@
 /* global ace */
 
+import 'Select2'
+import 'ace-builds/src-min/ace.js'
+import 'ace-builds/src-min/theme-monokai.js'
+import 'ace-builds/src-min/mode-json.js'
+
 $(function () {
   'use strict';
 

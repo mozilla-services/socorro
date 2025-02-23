@@ -8,6 +8,11 @@
   <link rel="stylesheet" href="/static/supersearch/css/search.min.css" />
 {% endblock %}
 
+{% block site_js %}
+  {{ super() }}
+  <script src="/static/supersearch/js/search.min.js" type="module"></script>
+{% endblock %}
+
 {% block content %}
   <div id="mainbody"
        data-columns="{{ possible_columns | to_json }}"
@@ -118,17 +123,4 @@
       </div>
     </div>
   </div>
-{% endblock %}
-
-{% block site_js %}
-  {{ super() }}
-
-  {% javascript 'select2' %}
-  {% javascript 'jquery_ui' %}
-  {% javascript 'tablesorter' %}
-  {% javascript 'dynamic_form' %}
-  {% javascript 'socorro_utils' %}
-  {% javascript 'bugzilla' %}
-  {% javascript 'date_filters' %}
-  {% javascript 'search' %}
 {% endblock %}

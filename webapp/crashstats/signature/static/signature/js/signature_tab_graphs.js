@@ -1,5 +1,8 @@
 /* global SignatureReport, MG, d3, socorro */
 
+import {default as d3} from 'd3'
+import {default as MG} from 'metrics-graphics/dist/metricsgraphics.min.js'
+
 /**
  * Tab for displaying graphs.
  * Has panels.

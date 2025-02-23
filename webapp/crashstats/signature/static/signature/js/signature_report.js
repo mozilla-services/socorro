@@ -1,5 +1,40 @@
 /* global DateFilters, socorro */
 
+import 'Select2'
+import {default as Qs} from 'qs'
+
+import 'jquery-ui/ui/version.js'
+import 'jquery-ui/ui/widget.js'
+import 'jquery-ui/ui/safe-active-element.js'
+import 'jquery-ui/ui/unique-id.js'
+import 'jquery-ui/ui/keycode.js'
+import 'jquery-ui/ui/widgets/mouse.js'
+import 'jquery-ui/ui/widgets/sortable.js'
+import 'jquery-ui/ui/widgets/datepicker.js'
+import 'jquery-ui/ui/widgets/tabs.js'
+
+import 'tablesorter/dist/js/jquery.tablesorter.js'
+
+
+import '../../../../crashstats/static/crashstats/js/lib/accordions.js'
+import '../../../../supersearch/static/supersearch/js/lib/dynamic_form.js'
+
+import '../../../../crashstats/static/crashstats/js/socorro/timeutils.js'
+import '../../../../crashstats/static/crashstats/js/socorro/utils.js'
+import '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js'
+import '../../../../crashstats/static/crashstats/js/socorro/correlation.js'
+import '../../../../supersearch/static/supersearch/js/socorro/date_filters.js'
+
+import './signature_tab_reports.js'
+import './signature_tab_summary.js'
+import './signature_tab_graphs.js'
+import './signature_tab_reports.js'
+import './signature_tab_aggregations.js'
+import './signature_tab_comments.js'
+import './signature_tab_correlations.js'
+import './signature_tab_bugzilla.js'
+import './signature_panel.js'
+
 var SignatureReport = {
   // Function to help with inheritance.
   inherit: function (proto) {

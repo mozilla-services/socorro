@@ -17,8 +17,13 @@
     {% endblock %}
 
     {% block site_css %}
-      <link rel="stylesheet" href="/static/crashstats/css/crashstats-base.min.css" />
+      <link rel="stylesheet" href="/static/crashstats/css/crashstats.min.css">
     {% endblock %}
+
+    {% block site_js %}
+      <script src="/static/crashstats/js/crashstats.min.js" type="module"></script>
+    {% endblock %}
+
   </head>
 
   <body>
@@ -153,9 +158,5 @@
 
       <br class="clear" />
     </div>
-
-    {% block site_js %}
-      {% javascript 'crashstats_base' %}
-    {% endblock %}
   </body>
 </html>
