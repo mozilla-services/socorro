@@ -19,8 +19,7 @@
 
 {% block site_js %}
   {{ super() }}
-  {% javascript 'jsonview' %}
-  {% javascript 'documentation' %}
+  <script src="/static/documentation/js/documentation.min.js" type="module"></script>
 {% endblock %}
 
 {% block page_title%}Crash Stats Documentation: {% block doc_title %}Home{% endblock %}{% endblock %}

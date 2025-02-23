@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <title>{% block page_title %}Error{% endblock %}</title>
-    <link rel="stylesheet" href="/static/crashstats/css/crashstats-base.min.css" />
+    {% block site_css %}
+      {{ super() }}
+      <link rel="stylesheet" href="/static/crashstats/css/crashstats-base.min.css">
+    {% endblock %}
+
+    {% block site_js %}
+      <script src="/static/crashstats/js/error.min.js" type="module"></script>
+    {% endblock %}
   </head>
   <body>
     <div class="page-header">
@@ -13,8 +20,5 @@
     <div id="footer" class="page-footer">
       {% include "footer_nav.html" %}
     </div>
-    {% block site_js %}
-    {% javascript 'error' %}
-    {% endblock %}
   </body>
 </html>
