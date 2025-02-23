@@ -33,7 +33,6 @@ RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
-    UGLIFYJS_BINARY=/app/webapp/node_modules/.bin/uglifyjs \
     NPM_ROOT_PATH=/app/webapp/ \
     NODE_PATH=/app/webapp/node_modules/
 

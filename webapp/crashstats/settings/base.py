@@ -14,10 +14,6 @@ import socket
 from everett.manager import ConfigManager, ListOf, parse_bool
 import dj_database_url
 
-# NOTE(willkg): Need this on a separate line so we can ignore the unused import
-from crashstats.settings.bundles import NPM_FILE_PATTERNS  # noqa
-from crashstats.settings.bundles import PIPELINE_JS
-
 _config = ConfigManager.basic_config()
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -93,7 +89,6 @@ ROOT_URLCONF = "crashstats.urls"
 
 INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",
-    "pipeline",
     "corsheaders",
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -190,7 +185,6 @@ TEMPLATES = [
                 "django_jinja.builtins.extensions.CsrfExtension",
                 "django_jinja.builtins.extensions.StaticFilesExtension",
                 "django_jinja.builtins.extensions.DjangoFiltersExtension",
-                "pipeline.jinja2.PipelineExtension",
                 "waffle.jinja.WaffleExtension",
             ],
             "globals": {},
@@ -445,7 +439,7 @@ DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "pipeline.storage.PipelineStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
@@ -453,27 +447,7 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "npm.finders.NpmFinder",
-    "pipeline.finders.PipelineFinder",
-    # Make sure this comes last!
-    "crashstats.crashstats.finders.LeftoverPipelineFinder",
 ]
-
-PIPELINE = {
-    "JAVASCRIPT": PIPELINE_JS,
-    "JS_COMPRESSOR": "pipeline.compressors.uglifyjs.UglifyJSCompressor",
-    "UGLIFYJS_BINARY": _config(
-        "UGLIFYJS_BINARY", default=path("node_modules/.bin/uglifyjs")
-    ),
-    "UGLIFYJS_ARGUMENTS": "--mangle",
-    # Don't wrap javascript code in... `(...code...)();`
-    # because possibly much code has been built with the assumption that
-    # things will be made available globally.
-    "DISABLE_WRAPPER": True,
-    # The pipeline.jinja2.PipelineExtension extension doesn't support
-    # automatically rendering any potentional compilation errors into
-    # the rendered HTML, so just let it raise plain python exceptions.
-    "SHOW_ERRORS_INLINE": False,
-}
 
 NPM_ROOT_PATH = _config("NPM_ROOT_PATH", default=ROOT)
 
