@@ -5,6 +5,6 @@
 // This jQuery shim is necessary as a separate file because imports are hoisted/evaluated before we can assign the global var.
 // By encapsulating this here, this entire shim will process before subsequent imports.
 
-import $ from 'jquery'
-window.jQuery = window.$ = $
-export { $ }
+import $ from 'jquery';
+window.jQuery = window.$ = $;
+export { $ };

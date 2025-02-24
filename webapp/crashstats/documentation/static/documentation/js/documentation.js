@@ -1,4 +1,4 @@
-import 'jquery.json-viewer/json-viewer/jquery.json-viewer.js'
+import 'jquery.json-viewer/json-viewer/jquery.json-viewer.js';
 
 $(function () {
   'use strict';
