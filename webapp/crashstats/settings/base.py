@@ -446,7 +446,6 @@ STORAGES = {
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "npm.finders.NpmFinder",
 ]
 
 NPM_ROOT_PATH = _config("NPM_ROOT_PATH", default=ROOT)
