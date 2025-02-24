@@ -49,7 +49,7 @@ const entryPointsJS = [
     in: 'crashstats/crashstats/static/js/error.js',
     out: 'crashstats/js/error.min',
   },
-]
+];
 
 const entryPointsCSS = [
   {

@@ -1,7 +1,7 @@
 /* global filesize */
 
-import {default as Qs} from 'qs'
-import 'filesize/lib/filesize.min.js'
+import { default as Qs } from 'qs';
+import 'filesize/lib/filesize.min.js';
 
 (function ($, document) {
   'use strict';
