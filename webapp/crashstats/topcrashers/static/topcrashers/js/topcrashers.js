@@ -4,9 +4,8 @@
 
 /* global BugLinks */
 
-import 'tablesorter/dist/js/jquery.tablesorter.js'
-import '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js'
-
+import 'tablesorter/dist/js/jquery.tablesorter.js';
+import '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
 
 $(document).ready(function () {
   var perosTbl = $('#peros-tbl');
