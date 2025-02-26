@@ -1,0 +1,34 @@
+name: Draft a new production release
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+    - name: Draft a new production release
+      run: |
+        # Determine tag
+        base_tag="$(date +v%Y.%m.%d)"
+        tag="$base_tag"
+        gh api "repos/${{ github.repository }}/tags" --paginate \
+          -q '.[].name | select(startswith("'"$tag"'"))' > matching_tags
+        for i in 1 2 3 4 5 6 7 8 9 error; do
+          if ! grep -qx "$tag" matching_tags; then
+            # Tag doesn't exist yet, good to use.
+            break
+          fi
+          if [ "$i" = error ]; then
+            echo "You've used up your tag budget for today. Try again tomorrow."
+            exit 1
+          fi
+          tag="$base_tag-$i"
+        done
+
+        # Create release
+        gh release create --repo "${{ github.repository }}" --draft --generate-notes "$tag"
+      env:
+        GH_TOKEN: ${{ github.token }}
