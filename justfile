@@ -14,6 +14,9 @@ _env:
 
 # Build docker images
 build *args='app fakesentry oidcprovider elasticsearch postgresql pubsub memcached gcs-emulator': _env
+    # Create these two directories using the current user so they don't end up
+    # created by Docker with the wrong ownership; ignore errors
+    -mkdir webapp/static/ webapp/node_modules/
     docker compose build --progress plain {{args}}
 
 # Set up Postgres, Elasticsearch, local Pub/Sub, and local GCS services.
@@ -56,7 +59,7 @@ clean:
     -rm -rf .cache
     @echo "Skipping deletion of symbols/ in case you have data in there."
 
-# Generate Sphinx HTML documetation.
+# Generate Sphinx HTML documentation.
 docs: _env
     docker compose run --rm app shell make -C docs/ clean
     docker compose run --rm app shell make -C docs/ html
