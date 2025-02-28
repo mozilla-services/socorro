@@ -19,14 +19,18 @@ Setup quickstart
 
    **Linux**:
 
-       Use your package manager.
+       git: use package manager
+
+       docker: `install Docker Engine <https://docs.docker.com/engine/install/>`__
+
+       just: `just.systems <https://just.systems/man/en/packages.html>`__
 
    **OSX**:
 
-       Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
+       docker: Install `Docker for Mac <https://docs.docker.com/docker-for-mac/>`_ which
        will install Docker.
 
-       Use `homebrew <https://brew.sh>`_ to install just and git:
+       just and git: Use `homebrew <https://brew.sh>`_.
 
        .. code-block:: shell
 
@@ -34,16 +38,16 @@ Setup quickstart
 
    **Other**:
 
-       Install `Docker <https://docs.docker.com/engine/installation/>`_.
+       docker: Install `Docker <https://docs.docker.com/engine/installation/>`_.
 
-       Install `just <https://github.com/casey/just?tab=readme-ov-file#installation>`_.
+       git: Install `git <https://git-scm.com/>`_.
 
-       Install `git <https://git-scm.com/>`_.
+       just: Install `just <https://github.com/casey/just?tab=readme-ov-file#installation>`_.
 
 2. Clone the repository so you have a copy on your host machine.
 
    Instructions for cloning are `on the Socorro page in GitHub
-   <https://github.com/mozilla-services/socorro>`_.
+   <https://github.com/mozilla-services/socorro>`__.
 
 3. (*Optional for Linux users*) Set UID and GID for Docker container user.
 
@@ -71,7 +75,7 @@ Setup quickstart
 
    That will build the app Docker image required for development.
 
-5. Initialize Postgres, Elasticsearch, Pub/Sub, S3, and SQS.
+5. Initialize services.
 
    To do that, run:
 
@@ -86,13 +90,11 @@ Setup quickstart
    For Elasticsearch, it sets up Super Search fields and the index for
    processed crash data.
 
-   For S3, this creates the required buckets.
+   For GCS, this creates the required buckets.
 
    For Pub/Sub, this creates the required topics and subscriptions.
 
-   For SQS, this creates queues.
-
-6. Populate data stores with required data.
+6. Populate data stores with required lookup data.
 
    Then you need to fetch product build data and normalization data that
    Socorro relies on that comes from external systems and changes day-to-day.
@@ -140,11 +142,11 @@ environment that has no crash data in it.
 Bugs / Issues
 =============
 
-We use `Bugzilla <https://bugzilla.mozilla.org/>`_ for bug tracking.
+We use `Bugzilla <https://bugzilla.mozilla.org/>`__ for bug tracking.
 
-`Existing bugs <https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro>`_
+`Existing bugs <https://bugzilla.mozilla.org/buglist.cgi?quicksearch=product%3Asocorro>`__
 
-`Write up a new bug <https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General>`_
+`Write up a new bug <https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General>`__
 
 If you want to do work for which there is no bug, please write up a bug first
 so we can work out the problem and how to approach a solution.
@@ -167,14 +169,27 @@ additional details by posting comments in the bug.
 Pull requests
 -------------
 
-Pull request summary should indicate the bug the pull request addresses. Use a hyphen between "bug" and the bug ID(s). For
-example::
+Pull request summary should indicate the bug the pull request addresses. Use a
+hyphen between "bug" and the bug ID(s) or "obs" and the OBS number.
 
-    bug-nnnnnnn: removed frog from tree class
+Examples::
 
-For multiple bugs fixed within a single pull request, list the bugs out individually. For example::
+   bug-nnnnnnn: removed frog from tree class
+
+   obs-nnn: removed from from tree class
+
+
+For multiple bugs fixed within a single pull request, list the bugs out
+individually.
+
+Examples::
 
    bug-nnnnnnn, bug-nnnnnnn: removed frog from tree class
+
+   obs-nnn, obs-nnn: removed from from tree class
+
+   bug-nnnnnnn, obs-nnn: removed from from tree class
+
 
 Pull request descriptions should cover at least some of the following:
 
@@ -186,10 +201,11 @@ Pull request descriptions should cover at least some of the following:
 
 After creating a pull request, attach the pull request to the relevant bugs.
 
-We use the `rob-bugson Firefox addon
-<https://addons.mozilla.org/en-US/firefox/addon/rob-bugson/>`_. If the pull
-request has "bug-nnnnnnn: ..." or "bug-nnnnnnn, bug-nnnnnnn: ..." in the summary, then rob-bugson will see that
-and create a "Attach this PR to bug ..." link.
+We use the
+`rob-bugson Firefox addon <https://addons.mozilla.org/en-US/firefox/addon/rob-bugson/>`__.
+If the pull request has "bug-nnnnnnn: ..." or "bug-nnnnnnn, bug-nnnnnnn: ..."
+in the summary, then rob-bugson will see that and create a "Attach this PR to
+bug ..." link.
 
 Then ask someone to review the pull request. If you don't know who to ask, look
 at other pull requests to see who's currently reviewing things.
@@ -222,7 +238,7 @@ Conventions
 ===========
 
 For conventions, see:
-`<https://github.com/mozilla-services/socorro/blob/main/.editorconfig>`_
+`<https://github.com/mozilla-services/socorro/blob/main/.editorconfig>`__
 
 
 Python code conventions
@@ -230,9 +246,9 @@ Python code conventions
 
 All Python code files should have an MPL v2 header at the top::
 
-  # This Source Code Form is subject to the terms of the Mozilla Public
-  # License, v. 2.0. If a copy of the MPL was not distributed with this
-  # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+   # This Source Code Form is subject to the terms of the Mozilla Public
+   # License, v. 2.0. If a copy of the MPL was not distributed with this
+   # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
 To lint the code:
@@ -241,7 +257,8 @@ To lint the code:
 
    $ just lint
 
-If you hit issues, use ``# noqa``.
+If you hit issues with lines that fail linting, but you can't fix the issue,
+use ``# noqa``.
 
 To run the reformatter:
 
@@ -251,7 +268,7 @@ To run the reformatter:
 
 We're using:
 
-* `ruff <https://beta.ruff.rs/docs/>`_: linting and code formatting
+* `ruff <https://beta.ruff.rs/docs/>`__: linting and code formatting
 
 
 HTML conventions
@@ -267,19 +284,32 @@ Javascript code conventions
 
 We're using:
 
-* `eslint <https://eslint.org/>`_: linting
+* `eslint <https://eslint.org/>`__: linting
 
 
 Git conventions
 ---------------
 
-First line is a summary of the commit. It should start with the bug number. Use a hyphen between "bug" and the bug ID(s). For example::
+First line is a summary of the commit. It should start with the bug number. Use
+a hyphen between "bug" and the bug ID(s) or "obs" and the OBS number.
 
-   bug-nnnnnnn: summary
+Examples::
 
-For multiple bugs fixed within a single commit, list the bugs out individually. For example::
+   bug-nnnnnnn: removed frog from tree class
 
-   bug-nnnnnnn, bug-nnnnnnn: summary
+   obs-nnn: removed from from tree class
+
+
+For multiple bugs fixed within a single commit, list the bugs out individually.
+
+Examples::
+
+   bug-nnnnnnn, bug-nnnnnnn: removed frog from tree class
+
+   obs-nnn, obs-nnn: removed from from tree class
+
+   bug-nnnnnnn, obs-nnn: removed from from tree class
+
 
 After that, the commit should explain *why* the changes are being made and any
 notes that future readers should know for context.
@@ -384,6 +414,20 @@ To build the docs, run this:
    $ just docs
 
 
+Compiling the documentation will point out errors in reStructuredText.
+
+Compiled documentation will be in ``docs/_build/html/index.html``. If you're on
+Linux, you can do this to open the compiled documentation in your browser:
+
+.. code-block:: shell
+
+   $ xdg-open docs/_build/html/index.html
+
+When you merge a PR into the main branch, that'll execute a webhook telling
+`ReadTheDocs <https://readthedocs.org>`__ to rebuild the documentation. Then
+you can videw it on `<https://socorro.readthedocs.io./>`__.
+
+
 Testing
 =======
 
@@ -394,9 +438,9 @@ The Socorro tests are in ``socorro/tests/``.
 
 The webapp tests are in ``webapp/``.
 
-Both sets of tests use `pytest <https://pytest.org/>`_.
+Both sets of tests use `pytest <https://pytest.org/>`__.
 
-To run the tests, do:
+To run all of the tests, do:
 
 .. code-block:: shell
 
@@ -428,10 +472,17 @@ Running the webapp tests (make sure you run ``./manage.py collectstatic`` first)
    app@socorro:/app/webapp$ ./manage.py collectstatic
    app@socorro:/app/webapp$ pytest
 
+
 .. Note::
 
    For the webapp tests, you have to run ``./manage.py collectstatic`` before
    running the tests.
+
+
+.. Note::
+
+   We have tests for code in Python, but we have **no** tests for code written
+   in JavaScript. The frontend interface must be tested manually.
 
 
 Writing tests
@@ -447,9 +498,8 @@ For webapp tests, put them in the ``tests/`` directory of the appropriate app in
 Repository structure
 ====================
 
-If you clone our `git repository
-<https://github.com/mozilla-services/socorro>`_, you will find the following
-folders.
+If you clone our `git repository <https://github.com/mozilla-services/socorro>`_,
+you will find the following folders.
 
 Here is what each of them contains:
 
@@ -478,12 +528,12 @@ Updating data in a dev environment
 Updating the code
 -----------------
 
-Any time you want to update the code in the repostory, run something like this from
+Any time you want to update the code in the repository, run something like this from
 the main branch:
 
 .. code-block:: shell
 
-   $ git pull
+   $ git pull --prune
 
 
 After you do that, you'll need to update other things.
@@ -564,14 +614,14 @@ The following ENV files can be found in ``/app/docker/config/``:
 
 This ENV file is found in the repository root:
 
-``my.env``
+``.env``
     This file lets you override any environment variables set in other ENV files
     as well as set variables that are specific to your instance.
 
     It is your personal file for your specific development environment--it
     doesn't get checked into version control.
 
-    The template for this is in ``docker/config/my.env.dist``.
+    The template for this is in ``docker/config/.env.dist``.
 
 In this way:
 
@@ -582,29 +632,30 @@ In this way:
    it uses is versioned alongside the code making it easy to deploy and revert
    behavioral changes with the code depending on them
 
-3. ``my.env`` lets you set configuration specific to your development
-   environment as well as override any configuration and is not checked into
-   version control
+3. ``.env`` lets you set configuration specific to your development environment
+   as well as override any configuration and is not checked into version
+   control
 
 
 Setting configuration specific to your local dev environment
 ------------------------------------------------------------
 
 There are some variables you need to set that are specific to your local dev
-environment. Put them in ``my.env``.
+environment. Put them in ``.env``.
 
 
 Overriding configuration
 ------------------------
 
 If you want to override configuration temporarily for your local development
-environment, put it in ``my.env``.
+environment, put it in ``.env``.
 
 
 Setting up a development container for VS Code
 ==============================================
+
 The repository contains configuration files to build a
-`development container <https://containers.dev/>`_ in the `.devcontainer`
+`development container <https://containers.dev/>`__ in the ``.devcontainer``
 directory. If you have the "Dev Containers" extension installed in VS Code, you
 should be prompted whether you want to reopen the folder in a container on
 startup. You can also use the "Dev containers: Reopen in container" command
@@ -620,13 +671,16 @@ first run:
    $ just build devcontainer
 
 Additionally on mac there is the potential that running git from inside any
-container that mounts the current directory to `/app`, such as the development
-container, will fail with `fatal: detected dubious ownership in repository at
-'/app'`. This is likely related to `mozilla-services/tecken#2872
-<https://github.com/mozilla-services/tecken/pull/2872>`_, and can be treated by
-running the following command from inside the development container, which will
-probably throw exceptions on some git read-only objects that are already owned
-by app:app, so that's fine:
+container that mounts the current directory to ``/app``, such as the development
+container, will fail with::
+
+   fatal: detected dubious ownership in repository at '/app'
+
+This is likely related to
+`mozilla-services/tecken#2872 <https://github.com/mozilla-services/tecken/pull/2872>`_,
+and can be treated by running the following command from inside the development
+container, which will probably throw exceptions on some git read-only objects
+that are already owned by app:app, so that's fine:
 
 .. code-block:: shell
 
@@ -650,7 +704,6 @@ these files:
 * ``.github/dependabot.yml``
 * ``.readthedocs.yaml``
 * ``docker/Dockerfile``
-* ``docker/Dockerfile.fakesentry``
 * ``pyproject.toml``
 * ``socorro/tests/processor/test_processor_app.py``
 * ``webapp/crashstats/crashstats/tests/test_sentry.py``
@@ -674,11 +727,6 @@ All helper scripts run in the shell in the container:
 
    $ just shell
 
-Some of the scripts require downloading production data from
-`crash-stats.mozilla.org <https://crash-stats.mozilla.org>`_, and it is
-useful to add an API token with higher permissions before entering the shell.
-
-
 .. _`API token`:
 
 Adding an API Token
@@ -687,11 +735,12 @@ Adding an API Token
 By default, the download scripts will fetch anonymized crash data, which does
 not include personally identifiable information (PII). This anonymized data can
 be used to test some workflows, but the the processor will not be able to
-analyze memory dumps or generate signatures.
+process minidumps and protected data won't be available in the webapp.
 
-If you have access to memory dumps, you can fetch those with the crash data by
-using an API token with these permissions:
+If you have protected data access in Crash Stats, you can create an API
+token with these permissions:
 
+* Reprocess Crashes
 * View Personal Identifiable Information
 * View Raw Dumps
 
@@ -702,23 +751,23 @@ You can generate API tokens at `<https://crash-stats.mozilla.org/api/tokens/>`_.
    Make sure you treat any data you pull from production in accordance with our
    data policies that you agreed to when granted access to it.
 
-Add the API token value to your ``my.env`` file::
+Add the API token value to your ``.env`` file::
 
    SOCORRO_API_TOKEN=apitokenhere
 
-The API token is used by the download scripts (run inside ``$ just shell``),
-but not directly by the processor.
+The API token is used by the scripts run inside ``just shell``, but not by
+Socorro in the local dev environment.
 
 
 bin/process_crashes.sh
 ----------------------
 
-You can use the ``bin/process_crashes.sh`` script which will fetch crash
-data, sync it with the S3 bucket, and publish the crash ids to the queue
-for processing. If you have access to memory dumps and use a valid
+You can use the ``bin/process_crashes.sh`` script which will fetch crash data,
+sync it with local dev environment storage, and publish the crash ids to the
+queue for processing. If you have access to minidumps and use a valid
 `API token`_, then memory dumps will be fetched for processing as well.
 
-It takes one or more crash ids as arguments.
+The ``bin/process_crashes.sh`` script takes one or more crash ids as arguments.
 
 For example:
 
@@ -742,9 +791,9 @@ below.
 socorro-cmd fetch_crashids
 --------------------------
 
-This will generate a list of crash ids from crash-stats.mozilla.org that meet
-specified criteria. Crash ids are printed to stdout, so you can use this in
-conjunction with other scripts or redirect to a file.
+This will generate a list of crash ids from Crash Stats that meet specified
+criteria. Crash ids are printed to stdout, so you can use this in conjunction
+with other scripts or redirect to a file.
 
 This pulls 100 crash ids from yesterday for Firefox product:
 
@@ -775,10 +824,10 @@ You can get command help:
 socorro-cmd fetch_crash_data
 ----------------------------
 
-This will fetch raw crash data from crash-stats.mozilla.org and save it in the
-appropriate directory structure rooted at outputdir. If you have access to
-memory dumps and use a valid `API token`_, then memory dumps will be fetched
-for processing as well.
+This will fetch raw crash data from Crash Stats and save it in the appropriate
+directory structure rooted at outputdir. If you have access to memory dumps and
+use a valid `API token`_, then minidumps will be fetched for processing as
+well.
 
 Usage from host:
 
@@ -809,105 +858,89 @@ You can get command help:
    app@socorro:/app$ socorro-cmd fetch_crash_data --help
 
 
-bin/socorro_aws_s3.sh
----------------------
+obs-common scripts
+------------------
 
-This script is a convenience wrapper around the aws cli s3 subcommand that uses
-Socorro environment variables to set the credentials and endpoint.
+Additionally, there are scripts installed into the Socorro app Docker image
+from the `obs-common <https://github.com/mozilla-services/obs-common>`__
+project for manipulating data in storage.
 
-For example, this creates an S3 bucket named ``dev-bucket``:
-
-.. code-block:: shell
-
-   app@socorro:/app$ bin/socorro_aws_s3.sh mb s3://dev-bucket/
+See that project for details.
 
 
-This copies the contents of ``./testdata`` into the ``dev-bucket``:
+Example processing crash data in local dev environment
+------------------------------------------------------
 
-.. code-block:: shell
+Let's process crashes for Firefox from yesterday.
 
-   app@socorro:/app$ bin/socorro_aws_s3.sh sync ./testdata s3://dev-bucket/
-
-
-This lists the contents of the bucket:
+First, build and initialize the local dev environment:
 
 .. code-block:: shell
 
-   app@socorro:/app$ bin/socorro_aws_s3.sh ls s3://dev-bucket/
+   $ just build
+   $ just setup
+
+   # Optionally, depending on what you're working on...
+   $ just update-data
 
 
-Since this is just a wrapper, you can get help:
+Then make sure you have ``SOCORRO_API_TOKEN`` set to your API token in your
+``.env`` file.
 
-.. code-block:: shell
-
-   app@socorro:/app$ bin/socorro_aws_s3.sh help
-
-
-socorro-cmd sqs
----------------
-
-This script can manipulate the AWS SQS emulator and also publish crash ids
-AWS SQS queues.
-
-Typically, you'd use this to publish crash ids to the AWS SQS standard queue for
-processing.
-
-For example:
+In a terminal run Socorro:
 
 .. code-block:: shell
 
-   app@socorro:/app$ socorro-cmd sqs publish local-dev-standard \
-       ed35821d-3af5-4fe9-bfa3-dc4dc0181128
+   $ just run
 
 
-For help:
-
-.. code-block:: shell
-
-   app@socorro:/app$ socorro-cmd sqs publish --help
-
-
-.. Note::
-
-   Processing will fail unless the crash data is in the S3 container first!
-
-
-Example using all the scripts
------------------------------
-
-Let's process crashes for Firefox from yesterday. We'd do this:
+Then in another terminal, generate a list of crash ids to process and queue
+them up for processing:
 
 .. code-block:: shell
 
-  # Set up dev environment resources
-  $ just setup
+   $ just shell
+   app@socorro:/app$ socorro-cmd fetch_crashids --num=2 | ./bin/process_crashes.sh
+   Using api token: abcdxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   Working on 58448603-bc46-4700-b199-6b0200250227...
+   Fetching raw 58448603-bc46-4700-b199-6b0200250227
+   Fetching dump 58448603-bc46-4700-b199-6b0200250227/upload_file_minidump
+   Working on 91e4e5a1-6c50-4150-ad23-99b400250227...
+   Fetching raw 91e4e5a1-6c50-4150-ad23-99b400250227
+   Fetching dump 91e4e5a1-6c50-4150-ad23-99b400250227/upload_file_minidump
+   GCS bucket 'dev-bucket' already exists.
+   Uploaded gs://dev-bucket/v1/dump_names/58448603-bc46-4700-b199-6b0200250227
+   Uploaded gs://dev-bucket/v1/dump_names/91e4e5a1-6c50-4150-ad23-99b400250227
+   Uploaded gs://dev-bucket/v1/raw_crash/20250227/58448603-bc46-4700-b199-6b0200250227
+   Uploaded gs://dev-bucket/v1/raw_crash/20250227/91e4e5a1-6c50-4150-ad23-99b400250227
+   Uploaded gs://dev-bucket/v1/dump/58448603-bc46-4700-b199-6b0200250227
+   Uploaded gs://dev-bucket/v1/dump/91e4e5a1-6c50-4150-ad23-99b400250227
+   v1/dump/58448603-bc46-4700-b199-6b0200250227    941151  2025-02-28 15:13:58.046949+00:00
+   v1/dump/91e4e5a1-6c50-4150-ad23-99b400250227    307415  2025-02-28 15:13:58.055488+00:00
+   v1/dump_names/58448603-bc46-4700-b199-6b0200250227      24      2025-02-28 15:13:58.026822+00:00
+   v1/dump_names/91e4e5a1-6c50-4150-ad23-99b400250227      24      2025-02-28 15:13:58.030578+00:00
+   v1/raw_crash/20250227/58448603-bc46-4700-b199-6b0200250227      19198   2025-02-28 15:13:58.034456+00:00
+   v1/raw_crash/20250227/91e4e5a1-6c50-4150-ad23-99b400250227      18916   2025-02-28 15:13:58.038712+00:00
+   Publishing crash ids to topic: 'local-standard-topic':
+   1
+   2
+   Check webapp: http://localhost:8000/report/index/58448603-bc46-4700-b199-6b0200250227
+   Check webapp: http://localhost:8000/report/index/91e4e5a1-6c50-4150-ad23-99b400250227
+   The crash(es) has/have been queued.
+   To process and view them, start up the processor and webapp.
 
-  # Set SOCORRO_API_TOKEN in my.env
-  # Start bash in the socorro container
-  $ just shell
 
-  # Generate a file of crashids--one per line
-  app@socorro:/app$ socorro-cmd fetch_crashids > crashids.txt
-
-  # Pull raw crash data from -prod for each crash id and put it in the
-  # "crashdata" directory on the host
-  app@socorro:/app$ cat crashids.txt | socorro-cmd fetch_crash_data ./crashdata
-
-  # Copy that data from the host into the gcs emulator
-  app@socorro:/app$ gcs-cli upload ./crashdata gs://dev-bucket/
-
-  # Add all the crash ids to the pubsub topic
-  app@socorro:/app$ cat crashids.txt | pubsub-cli publish test local-standard-topic
-
-  # Then exit the container
-  app@socorro:/app$ exit
-
-  # Run the processor to process all those crashes
-  $ docker compose up processor
+Then in the terminal where you're running Socorro, you'll see the processor
+pick up the crash ids from the standard queue and process the crash reports.
 
 
 Processing crashes from the collector
 =====================================
+
+.. Note::
+
+   This needs to be updated--it's out-of-date.
+
 
 `Antenna <https://antenna.readthedocs.io/>`_ is the collector of the Socorro
 crash ingestion pipeline. It was originally part of the Socorro repository, but

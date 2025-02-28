@@ -3,7 +3,7 @@ line-length = 88
 
 # NOTE(willkg): Need to keep using Python 3.8 until socorro-siggen drops
 # support for it
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 # Enable pycodestyle (E), pyflakes (F), and bugbear (B) rules
