@@ -48,7 +48,7 @@ requests-mock==1.12.1
 ruff==0.9.9
 semver==3.0.4
 sentry-sdk==2.17.0
-Sphinx==8.1.3
+Sphinx==8.2.3
 sphinx_rtd_theme==3.0.2
 statsd==4.0.1
 urlwait==1.0
