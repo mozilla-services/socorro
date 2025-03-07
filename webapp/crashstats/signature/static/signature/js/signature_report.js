@@ -1,4 +1,4 @@
-/* global DateFilters, socorro */
+/* global DateFilters, SignatureReport */
 
 import 'Select2';
 import { default as Qs } from 'qs';
@@ -13,28 +13,16 @@ import 'jquery-ui/ui/widgets/sortable.js';
 import 'jquery-ui/ui/widgets/datepicker.js';
 import 'jquery-ui/ui/widgets/tabs.js';
 
-import 'tablesorter/dist/js/jquery.tablesorter.js';
-
 import '../../../../crashstats/static/crashstats/js/lib/accordions.js';
 import '../../../../supersearch/static/supersearch/js/lib/dynamic_form.js';
 
 import '../../../../crashstats/static/crashstats/js/socorro/timeutils.js';
-import '../../../../crashstats/static/crashstats/js/socorro/utils.js';
-import '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
+import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
+
 import '../../../../crashstats/static/crashstats/js/socorro/correlation.js';
 import '../../../../supersearch/static/supersearch/js/socorro/date_filters.js';
 
-import './signature_tab_reports.js';
-import './signature_tab_summary.js';
-import './signature_tab_graphs.js';
-import './signature_tab_reports.js';
-import './signature_tab_aggregations.js';
-import './signature_tab_comments.js';
-import './signature_tab_correlations.js';
-import './signature_tab_bugzilla.js';
-import './signature_panel.js';
-
-var SignatureReport = {
+window.SignatureReport = {
   // Function to help with inheritance.
   inherit: function (proto) {
     var f = function () {};
@@ -47,6 +35,16 @@ SignatureReport.getURL = function (name) {
   'use strict';
   return $('#mainbody').data('urls-' + name);
 };
+
+await import('./signature_tab.js');
+await import('./signature_tab_summary.js');
+await import('./signature_tab_graphs.js');
+await import('./signature_tab_reports.js');
+await import('./signature_tab_aggregations.js');
+await import('./signature_tab_comments.js');
+await import('./signature_tab_correlations.js');
+await import('./signature_tab_bugzilla.js');
+await import('./signature_panel.js');
 
 SignatureReport.init = function () {
   'use strict';

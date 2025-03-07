@@ -1,4 +1,4 @@
-/* global ace */
+/* global ace, select2 */
 
 import 'Select2';
 import 'ace-builds/src-min/ace.js';

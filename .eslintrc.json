@@ -2,7 +2,8 @@
   "env": {
       "browser": true,
       "jquery": true,
-      "node": true
+      "node": true,
+      "es6": true
   },
   "extends": ["plugin:prettier/recommended", "eslint:recommended"],
   "parserOptions": {
