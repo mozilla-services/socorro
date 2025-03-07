@@ -1,5 +1,3 @@
-/* global BugLinks */
-
 import 'jquery-ui/ui/version.js';
 import 'jquery-ui/ui/widget.js';
 import 'jquery-ui/ui/safe-active-element.js';
@@ -14,7 +12,7 @@ import 'tablesorter/dist/js/jquery.tablesorter.js';
 
 import 'jquery.json-viewer/json-viewer/jquery.json-viewer.js';
 
-import './bugzilla.js';
+import { BugLinks } from './bugzilla.js';
 import './reprocessing.js';
 import './correlation.js';
 

@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global BugLinks */
-
 import 'tablesorter/dist/js/jquery.tablesorter.js';
-import '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
+import { BugLinks } from '../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
 
 $(document).ready(function () {
   var perosTbl = $('#peros-tbl');

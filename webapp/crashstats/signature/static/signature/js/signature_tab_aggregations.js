@@ -1,4 +1,6 @@
-/* global SignatureReport, socorro */
+/* global SignatureReport */
+
+import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
 
 /**
  * Tab for displaying aggregations tables.

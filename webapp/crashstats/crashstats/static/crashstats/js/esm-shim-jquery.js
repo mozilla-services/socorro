@@ -6,5 +6,7 @@
 // By encapsulating this here, this entire shim will process before subsequent imports.
 
 import $ from 'jquery';
+import 'tablesorter/dist/js/jquery.tablesorter.js';
+
 window.jQuery = window.$ = $;
 export { $ };

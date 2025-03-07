@@ -1,4 +1,4 @@
-/* global BugLinks, DateFilters, socorro */
+/* global DateFilters */
 
 import 'Select2';
 import { default as Qs } from 'qs';
@@ -17,8 +17,8 @@ import 'tablesorter/dist/js/jquery.tablesorter.js';
 
 import '../lib/dynamic_form.js';
 
-import '../../../../../crashstats/static/crashstats/js/socorro/utils.js';
-import '../../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
+import { socorro } from '../../../../../crashstats/static/crashstats/js/socorro/utils.js';
+import { BugLinks } from '../../../../../crashstats/static/crashstats/js/socorro/bugzilla.js';
 
 import './date_filters.js';
 
