@@ -1,5 +1,7 @@
 /* global SignatureReport */
 
+import { default as Qs } from 'qs';
+
 /**
  * Abstract class for a tab to show information on the signature report page.
  *

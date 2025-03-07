@@ -1,4 +1,7 @@
-/* global SignatureReport, socorro */
+/* global SignatureReport */
+
+import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
+import { default as Qs } from 'qs';
 
 /**
  * Tab for displaying reports table.

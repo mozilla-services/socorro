@@ -4,10 +4,57 @@
 
 import esbuild from 'esbuild';
 
-const entryPoints = [
+const entryPointsJS = [
+  {
+    in: 'crashstats/crashstats/static/crashstats/js/socorro/crashstats-base.js',
+    out: 'crashstats/js/crashstats.min',
+  },
+  {
+    in: 'crashstats/crashstats/static/crashstats/js/socorro/report.js',
+    out: 'crashstats/js/socorro/report_index.min',
+  },
+  {
+    in: 'crashstats/crashstats/static/crashstats/js/socorro/pending.js',
+    out: 'crashstats/js/socorro/report_pending.min',
+  },
+  {
+    in: 'crashstats/supersearch/static/supersearch/js/socorro/search.js',
+    out: 'supersearch/js/search.min',
+  },
+  {
+    in: 'crashstats/supersearch/static/supersearch/js/socorro/search_custom.js',
+    out: 'supersearch/js/search_custom.min',
+  },
+  {
+    in: 'crashstats/documentation/static/documentation/js/documentation.js',
+    out: 'documentation/js/documentation.min',
+  },
+  {
+    in: 'crashstats/api/static/api/js/testdrive.js',
+    out: 'api/js/api_documentation.min',
+  },
+  {
+    in: 'crashstats/signature/static/signature/js/signature_report.js',
+    out: 'signature/js/signature_report.min',
+  },
+  {
+    in: 'crashstats/topcrashers/static/topcrashers/js/topcrashers.js',
+    out: 'topcrashers/js/topcrashers.min',
+  },
+  {
+    in: 'crashstats/tokens/static/tokens/js/home.js',
+    out: 'tokens/js/tokens.min',
+  },
+  {
+    in: 'crashstats/crashstats/static/js/error.js',
+    out: 'crashstats/js/error.min',
+  },
+];
+
+const entryPointsCSS = [
   {
     in: 'crashstats/crashstats/static/crashstats/css/crashstats-base.css',
-    out: 'crashstats/css/crashstats-base.min',
+    out: 'crashstats/css/crashstats.min',
   },
   {
     in: 'crashstats/crashstats/static/crashstats/css/pages/product_home.css',
@@ -47,7 +94,7 @@ const entryPoints = [
   },
   {
     in: 'crashstats/tokens/static/tokens/css/home.css',
-    out: 'tokens/css/home.min',
+    out: 'tokens/css/tokens.min',
   },
   {
     in: 'crashstats/topcrashers/static/topcrashers/css/topcrashers.css',
@@ -57,7 +104,7 @@ const entryPoints = [
 
 const options = {
   bundle: true,
-  entryPoints,
+  entryPoints: [...entryPointsJS, ...entryPointsCSS],
   format: 'esm',
   loader: {
     '.gif': 'copy',

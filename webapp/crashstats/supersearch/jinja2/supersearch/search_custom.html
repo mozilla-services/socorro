@@ -1,6 +1,16 @@
 {% extends "crashstats_base.html" %}
 {% block page_title %}Search - Mozilla Crash Stats{% endblock %}
 
+{% block site_css %}
+  {{ super() }}
+  <link rel="stylesheet" href="/static/supersearch/css/search.min.css" />
+{% endblock %}
+
+{% block site_js %}
+  {{ super() }}
+  <script src="/static/supersearch/js/search_custom.min.js" type="module"></script>
+{% endblock %}
+
 {% block content %}
   <div id="mainbody"
        class="custom-search"
@@ -42,16 +52,4 @@
       </div>
     </div>
   </div>
-{% endblock %}
-
-{% block site_css %}
-  {{ super() }}
-  <link rel="stylesheet" href="/static/supersearch/css/search.min.css" />
-{% endblock %}
-
-{% block site_js %}
-  {{ super() }}
-
-  {% javascript 'select2' %}
-  {% javascript 'search_custom' %}
 {% endblock %}

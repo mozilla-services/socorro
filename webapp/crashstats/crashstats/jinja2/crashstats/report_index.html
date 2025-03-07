@@ -26,12 +26,7 @@
 
 {% block site_js %}
   {{ super() }}
-  {% javascript 'jquery_ui' %}
-  {% javascript 'tablesorter' %}
-  {% javascript 'bugzilla' %}
-  {% javascript 'correlation' %}
-  {% javascript 'jsonview' %}
-  {% javascript 'report_index' %}
+  <script src="/static/crashstats/js/socorro/report_index.min.js" type="module"></script>
 {% endblock %}
 
 {% block page_title %}[@ {{ report.signature }}] - {{ report.product }} {{ report.version }} Crash Report - Report ID: {{ report.uuid }}{% endblock %}
