@@ -41,18 +41,17 @@ To ease debugging, you can run a shell in the container:
 Then you can start and stop the webapp, adjust files, and debug.  The webapp
 runs ESBuild's watch mode and Django's StatReloader to reload static file
 changes automatically. This avoids needing to stop, rebuild, and restart the
-container/server on every change.
+container/server on every change to static files. 
+Note that changes to ``esbuild.js`` and other config files may still require stop/rebuild/restart.
 
 
 Static Assets
 =============
 
-At the time of this writing, JS files are collected and processed by
-collectstatic and django-pipeline. All other static assets (CSS, images,
-fonts, etc) are collected and processed by ESBuild. Migration of JS to ESBuild
-is currently in progress, with the intent to retire django-pipeline when
-complete. The collectstatic package will continue to be used in support of the
-internal Django admin pages.
+Static assets (JS, CSS, images, fonts) are collected and processed by ESBuild. 
+Because we host Django admin pages, we also rely on the collectstatic package
+for assets that belong to those internal admin pages. There is minor overlap between ESBuild and collectstatic, 
+particarly relating to images/fonts. However, main site development involves only ESBuild.
 
 Static asset builds are triggered by NPM scripts in ``webapp/package.json``.
 The assets are built into ``/app/webapp/static`` also known as ``STATIC_ROOT``.
