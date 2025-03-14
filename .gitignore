@@ -28,3 +28,7 @@ symbols/
 
 # docs things
 docs/_build/
+
+# exclude generated crashdata
+crashids.txt
+crashdata
