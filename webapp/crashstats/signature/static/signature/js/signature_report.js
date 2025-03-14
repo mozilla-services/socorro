@@ -1,6 +1,28 @@
-/* global DateFilters, socorro */
+/* global DateFilters, SignatureReport */
 
-var SignatureReport = {
+import 'Select2';
+import { default as Qs } from 'qs';
+
+import 'jquery-ui/ui/version.js';
+import 'jquery-ui/ui/widget.js';
+import 'jquery-ui/ui/safe-active-element.js';
+import 'jquery-ui/ui/unique-id.js';
+import 'jquery-ui/ui/keycode.js';
+import 'jquery-ui/ui/widgets/mouse.js';
+import 'jquery-ui/ui/widgets/sortable.js';
+import 'jquery-ui/ui/widgets/datepicker.js';
+import 'jquery-ui/ui/widgets/tabs.js';
+
+import '../../../../crashstats/static/crashstats/js/lib/accordions.js';
+import '../../../../supersearch/static/supersearch/js/lib/dynamic_form.js';
+
+import '../../../../crashstats/static/crashstats/js/socorro/timeutils.js';
+import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
+
+import '../../../../crashstats/static/crashstats/js/socorro/correlation.js';
+import '../../../../supersearch/static/supersearch/js/socorro/date_filters.js';
+
+window.SignatureReport = {
   // Function to help with inheritance.
   inherit: function (proto) {
     var f = function () {};
@@ -13,6 +35,16 @@ SignatureReport.getURL = function (name) {
   'use strict';
   return $('#mainbody').data('urls-' + name);
 };
+
+await import('./signature_tab.js');
+await import('./signature_tab_summary.js');
+await import('./signature_tab_graphs.js');
+await import('./signature_tab_reports.js');
+await import('./signature_tab_aggregations.js');
+await import('./signature_tab_comments.js');
+await import('./signature_tab_correlations.js');
+await import('./signature_tab_bugzilla.js');
+await import('./signature_panel.js');
 
 SignatureReport.init = function () {
   'use strict';

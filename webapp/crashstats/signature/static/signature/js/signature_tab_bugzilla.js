@@ -1,4 +1,6 @@
-/* global BugLinks, SignatureReport */
+/* global SignatureReport */
+
+import { BugLinks } from '../../../../crashstats/static/crashstats/js/socorro/bugzilla';
 
 /**
  * Tab for displaying Bugzilla table.

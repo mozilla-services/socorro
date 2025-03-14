@@ -1,4 +1,8 @@
-/* global SignatureReport, MG, d3, socorro */
+/* global SignatureReport */
+
+import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
+import * as d3 from 'd3';
+import { default as MG } from 'metrics-graphics/dist/metricsgraphics.min.js';
 
 /**
  * Tab for displaying graphs.

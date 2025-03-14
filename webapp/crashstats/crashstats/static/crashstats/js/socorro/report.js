@@ -1,4 +1,20 @@
-/* global BugLinks */
+import 'jquery-ui/ui/version.js';
+import 'jquery-ui/ui/widget.js';
+import 'jquery-ui/ui/safe-active-element.js';
+import 'jquery-ui/ui/unique-id.js';
+import 'jquery-ui/ui/keycode.js';
+import 'jquery-ui/ui/widgets/mouse.js';
+import 'jquery-ui/ui/widgets/sortable.js';
+import 'jquery-ui/ui/widgets/datepicker.js';
+import 'jquery-ui/ui/widgets/tabs.js';
+
+import 'tablesorter/dist/js/jquery.tablesorter.js';
+
+import 'jquery.json-viewer/json-viewer/jquery.json-viewer.js';
+
+import { BugLinks } from './bugzilla.js';
+import './reprocessing.js';
+import './correlation.js';
 
 $(document).ready(function () {
   /* Idempotent function to display the TelemetryEnvironment with

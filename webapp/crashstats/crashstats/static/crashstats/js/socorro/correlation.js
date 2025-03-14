@@ -1,4 +1,4 @@
-/* global Promise, jsSHA */
+import jsSHA from 'jssha';
 
 window.correlations = (function () {
   /**
