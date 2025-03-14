@@ -57,7 +57,7 @@ jobs:
       - name: Set Docker image tag to the shortened commit sha for updates of the main branch
         if: github.ref == 'refs/heads/main'
         run: |
-          echo IMAGE_TAG=$(git rev-parse --short "$GITHUB_SHA") >> "$GITHUB_ENV"
+          echo IMAGE_TAG=$(git rev-parse --short=10 "$GITHUB_SHA") >> "$GITHUB_ENV"
       - name: Set Docker image tag to the git tag for tagged builds
         if: startsWith(github.ref, 'refs/tags/')
         run: |
