@@ -6,3 +6,5 @@ __pycache__
 .cache
 node_modules
 symbols/
+crashdata
+crashids.txt
