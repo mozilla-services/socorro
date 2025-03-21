@@ -260,7 +260,7 @@ definitions:
                         result of many things).
                       type: boolean
                       permissions: ["public"]
-                    posion_registers:
+                    poison_registers:
                       description: >
                         Whether any poison register values were found.
                       type: boolean
