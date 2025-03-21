@@ -500,6 +500,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "json_dump.unloaded_modules.[].end_addr",
     "json_dump.unloaded_modules.[].filename",
     "last_crash",
+    "last_error_value",
     "mac_available_memory_sysctl",
     "mac_crash_info",
     "mac_memory_pressure",

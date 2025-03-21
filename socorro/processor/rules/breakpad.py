@@ -27,6 +27,7 @@ class CrashingThreadInfoRule(Rule):
     * crashing_thread_name (str or None): name of crashing thread
     * address (str or None): the address of the crash
     * type (str): the crash reason
+    * last_error_value (str): the last_error_value if any
 
     """
 
@@ -76,6 +77,14 @@ class CrashingThreadInfoRule(Rule):
                 address = adjusted_address["address"]
 
         processed_crash["address"] = address
+
+        last_error_value = glom.glom(
+            processed_crash,
+            "json_dump.crashing_thread.last_error_value",
+            default=None,
+        )
+        if isinstance(last_error_value, str):
+            processed_crash["last_error_value"] = last_error_value
 
 
 class CrashInconsistenciesRule(Rule):
