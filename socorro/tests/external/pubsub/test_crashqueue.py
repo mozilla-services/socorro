@@ -52,6 +52,53 @@ class TestPubSubCrashQueue:
             (reprocessing_crash,),
         }
 
+    def test_pull_max(self, pubsub_helper):
+        standard_crashids = []
+        for _ in range(10):
+            crashid = "000" + create_new_ooid()[3:]
+            standard_crashids.append(crashid)
+
+            pubsub_helper.publish("standard", crashid)
+
+        reprocessing_crashids = []
+        for _ in range(5):
+            crashid = "111" + create_new_ooid()[3:]
+            reprocessing_crashids.append(crashid)
+
+            pubsub_helper.publish("reprocessing", crashid)
+
+        # wait for published messages to become available before pulling
+        time.sleep(PUBSUB_DELAY_PULL)
+
+        crashqueue = build_instance_from_settings(settings.QUEUE_PUBSUB)
+        new_crashes = [item[0][0] for item in crashqueue.new_crashes()]
+
+        # Crash ids may not be in the same order they were published, so we check to see
+        # if we get the right balance of crash ids from the standard (000) and
+        # reprocessing (111) queues and then check to see if all crash ids were
+        # accounted for.
+        assert [item[0:3] for item in new_crashes] == [
+            "000",
+            "000",
+            "000",
+            "000",
+            "000",
+            "111",
+            "000",
+            "000",
+            "000",
+            "000",
+            "000",
+            "111",
+            "111",
+            "111",
+            "111",
+        ]
+
+        assert list(sorted(new_crashes)) == list(sorted(standard_crashids)) + list(
+            sorted(reprocessing_crashids)
+        )
+
     def test_ack(self, pubsub_helper):
         original_crash_id = create_new_ooid()
 
