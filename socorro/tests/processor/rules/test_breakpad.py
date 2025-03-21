@@ -198,6 +198,7 @@ class TestCrashingThreadInfoRule:
                     },
                     "crashing_thread": {
                         "thread_name": "MainThread",
+                        "last_error_value": "ERROR_COMMITMENT_LEVEL",
                     },
                 },
                 {
@@ -205,6 +206,7 @@ class TestCrashingThreadInfoRule:
                     "crashing_thread_name": "MainThread",
                     "address": "0x00007fff0b54a5d7",
                     "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
+                    "last_error_value": "ERROR_COMMITMENT_LEVEL",
                 },
             ),
             # json_dump is missing
@@ -912,7 +914,7 @@ class TestMinidumpStackwalkRule:
 
     def test_stackwalker_timeout(self, tmp_path):
         # NOTE(willkg): we run the stackwalker with a "timeout --signal KILL ..." When
-        # stackwalker exceeds the amount of time alotted, timeout kills it with a
+        # stackwalker exceeds the amount of time allotted, timeout kills it with a
         # SIGKILL (9) and subprocess denotes that using a negative exit code of -9.
         # This tests that.
         rule = MinidumpStackwalkRule(

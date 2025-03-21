@@ -260,7 +260,7 @@ definitions:
                         result of many things).
                       type: boolean
                       permissions: ["public"]
-                    posion_registers:
+                    poison_registers:
                       description: >
                         Whether any poison register values were found.
                       type: boolean
@@ -1607,7 +1607,7 @@ definitions:
                 type: ["integer"]
               extensions:
                 description: >
-                  This lists the avaible CPU extensions as strings.
+                  This lists the available CPU extensions as strings.
                 examples:
                   - "hasMMX"
                   - "hasSSE"
@@ -2141,7 +2141,7 @@ properties:
     source_annotation: AdapterSubsysID
   adapter_vendor_id:
     description: >
-      The graphics adapter vendor. Sometimes a name, but often a hexidecimal
+      The graphics adapter vendor. Sometimes a name, but often a hexadecimal
       identifier. Common identifiers include `0x8086` (Intel), `0x1002` (AMD),
       and `0x10de` (NVIDIA).
     type: string
@@ -2333,7 +2333,7 @@ properties:
     source_annotation: AvailablePageFile
   available_physical_memory:
     description: >
-      The amount of physical memory currently avaialble. This is the amount of
+      The amount of physical memory currently available. This is the amount of
       physical memory that can be immediately reused without having to write
       its contents to disk first.
     type: integer
@@ -2698,6 +2698,11 @@ properties:
       Length of time between the previous crash submission and this one. Low
       values indicate repeated crashes.
     type: ["integer", "null"]
+    permissions: ["public"]
+  last_error_value:
+    description: >
+      The Windows `GetLastError()` value for the crashing thread if any.
+    type: ["string", "null"]
     permissions: ["public"]
   mac_available_memory_sysctl:
     description: >

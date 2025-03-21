@@ -1016,6 +1016,7 @@ FIELDS = {
         "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
+    "last_error_value": keyword_field("last_error_value"),
     "mac_boot_args": text_field("mac_boot_args"),
     "mac_crash_info": text_field("mac_crash_info"),
     "mac_available_memory_sysctl": integer_field(name="mac_available_memory_sysctl"),
