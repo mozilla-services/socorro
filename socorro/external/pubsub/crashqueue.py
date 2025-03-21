@@ -97,7 +97,9 @@ class PubSubCrashQueue(CrashQueueBase):
         priority_subscription_name,
         reprocessing_topic_name,
         reprocessing_subscription_name,
-        pull_max_messages=5,
+        standard_pull_max_messages=5,
+        priority_pull_max_messages=5,
+        reprocessing_pull_max_messages=1,
         publish_max_messages=10,
         publish_timeout=5,
     ):
@@ -110,11 +112,16 @@ class PubSubCrashQueue(CrashQueueBase):
         :arg reprocessing_topic_name: topic name for the reprocessing queue
         :arg reprocessing_subscription_name: subscription name for the reprocessing
             queue
-        :arg pull_max_messages: maximum number of messages to pull from Google Pub/Sub
-            in a single request
+        :arg standard_pull_max_messages: maximum number of messages to pull
+            from Google Pub/Sub in a single request
+        :arg priority_pull_max_messages: maximum number of messages to pull
+            from Google Pub/Sub in a single request
+        :arg reprocessing_pull_max_messages: maximum number of messages to pull
+            from Google Pub/Sub in a single request
         :arg publish_max_messages: maximum number of messages to publish to Google
             Pub/Sub in a single request
         :arg publish_timeout: rpc timeout for publish requests
+
         """
 
         if emulator := os.environ.get("PUBSUB_EMULATOR_HOST"):
@@ -142,6 +149,7 @@ class PubSubCrashQueue(CrashQueueBase):
             self.publisher, project_id, reprocessing_topic_name
         )
 
+        # name -> (topic path, max messages)
         self.queue_to_topic_path = {
             "standard": self.standard_topic_path,
             "priority": self.priority_topic_path,
@@ -164,13 +172,12 @@ class PubSubCrashQueue(CrashQueueBase):
         )
 
         # Order matters here, and is checked in tests
-        self.queue_to_subscription_path = {
-            "standard": self.standard_subscription_path,
-            "priority": self.priority_subscription_path,
-            "reprocessing": self.reprocessing_subscription_path,
-        }
+        self.subscription_paths = [
+            (self.standard_subscription_path, standard_pull_max_messages),
+            (self.priority_subscription_path, priority_pull_max_messages),
+            (self.reprocessing_subscription_path, reprocessing_pull_max_messages),
+        ]
 
-        self.pull_max_messages = pull_max_messages
         self.publish_max_messages = publish_max_messages
 
     def ack_crash(self, subscription_path, ack_id):
@@ -193,20 +200,20 @@ class PubSubCrashQueue(CrashQueueBase):
         """
         while True:
             has_msgs = {}
-            for subscription_path in self.queue_to_subscription_path.values():
+            for subscription_path, pull_max_messages in self.subscription_paths:
                 if subscription_path is None:
                     continue
 
                 resp = self.subscriber.pull(
                     subscription=subscription_path,
-                    max_messages=self.pull_max_messages,
+                    max_messages=pull_max_messages,
                     return_immediately=True,
                 )
                 msgs = resp.received_messages
 
                 # if pull returned the max number of messages, this subscription
                 # may have more messages.
-                has_msgs[subscription_path] = len(msgs) == self.pull_max_messages
+                has_msgs[subscription_path] = len(msgs) == pull_max_messages
 
                 if not msgs:
                     continue
