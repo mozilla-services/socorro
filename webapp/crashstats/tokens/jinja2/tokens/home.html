@@ -6,12 +6,12 @@
 
 {% block site_css %}
   {{ super() }}
-  <link rel="stylesheet" href="/static/tokens/css/home.min.css">
+  <link rel="stylesheet" href="/static/tokens/css/tokens.min.css">
 {% endblock %}
 
 {% block site_js %}
   {{ super() }}
-  {% javascript 'tokens' %}
+  <script src="/static/tokens/js/tokens.min.js" type="module"></script>
 {% endblock %}
 
 {% block content %}

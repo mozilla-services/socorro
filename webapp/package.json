@@ -7,17 +7,26 @@
     "url": "git://github.com/mozilla-services/socorro.git"
   },
   "type": "module",
+  "//browserComment": [
+    "The 'browser' key indicates to ESBuild that we're client-side and not to install listed packages",
+    "This is necessitated by 'metrics-graphics' source code, which is very old and triggers build errors with listed packages."
+  ],
+  "browser": {
+    "url": false,
+    "child_process": false,
+    "fs": false,
+    "http": false,
+    "https": false
+  },
   "author": "Mozilla",
   "license": "MPL-2.0",
   "devDependencies": {
-    "cssmin": "0.4.3",
     "esbuild": "0.25.0",
     "eslint": "8.57.1",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-prettier": "5.2.3",
     "graceful-fs": "4.2.4",
-    "prettier": "3.5.0",
-    "uglify-js": "3.11.5"
+    "prettier": "3.5.0"
   },
   "dependencies": {
     "ace-builds": "1.4.12",
@@ -29,15 +38,13 @@
     "jssha": "3.1.2",
     "metrics-graphics": "2.15.6",
     "moment": "2.29.4",
-    "photon-colors": "3.3.2",
     "prop-types": "^15.6.2",
     "qs": "6.9.7",
     "Select2": "github:select2/select2#3.5.4",
     "tablesorter": "2.31.3"
   },
   "scripts": {
-    "build": "rm -rf static/* && npm run copy:images && node esbuild && npm run build:collectstatic",
-    "build:collectstatic": "TOOL_ENV=True ./manage.py collectstatic --noinput -i crashstats/*.css -i api/*.css -i documentation/*.css -i profile/*.css -i signature/*.css -i status/*.css -i supersearch/*.css -i tokens/*.css -i topcrashers/*.css",
-    "copy:images": "mkdir -p static/img/ && cp -r crashstats/crashstats/static/img/ static/img/"
+    "build": "rm -rf static/* && node esbuild && npm run build:collectstatic",
+    "build:collectstatic": "TOOL_ENV=True ./manage.py collectstatic --noinput -i crashstats -i api -i documentation -i profile -i signature -i status -i supersearch -i tokens -i topcrashers"
   }
 }

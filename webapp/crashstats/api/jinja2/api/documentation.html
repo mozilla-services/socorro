@@ -7,7 +7,7 @@
 
 {% block site_js %}
 {{ super() }}
-{% javascript 'api_documentation' %}
+<script src="/static/api/js/api_documentation.min.js" type="module"></script>
 {% endblock %}
 
 {% block doc_title %}API Reference{% endblock %}
