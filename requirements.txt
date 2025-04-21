@@ -316,9 +316,9 @@ elastic-transport==8.17.0 \
     --hash=sha256:59f553300866750e67a38828fede000576562a0e66930c641adb75249e0c95af \
     --hash=sha256:e755f38f99fa6ec5456e236b8e58f0eb18873ac8fe710f74b91a16dd562de2a5
     # via elasticsearch
-elasticsearch==8.17.2 \
-    --hash=sha256:2d058dcddd8f2686cd431a916cdf983f9fb7d211d902834f564ab7df05ba6478 \
-    --hash=sha256:ff7f1db8aeefd87ceba4edce3aa4070994582e6cf029d2e67b74e66d634509db
+elasticsearch==8.18.0 \
+    --hash=sha256:4fb28cfe82d480c72fc049e659afe4cad450b318c210e43493ca402e900793eb \
+    --hash=sha256:b26a6e67958b7bd04711a31f3400197aabf4a6f03873eadce1a0aeb446653886
     # via
     #   -r requirements.in
     #   elasticsearch-dsl
@@ -1027,6 +1027,7 @@ python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
     # via
+    #   elasticsearch
     #   elasticsearch-dsl
     #   freezegun
 python-decouple==3.8 \
@@ -1319,6 +1320,7 @@ typing-extensions==4.9.0 \
     --hash=sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd
     # via
     #   dj-database-url
+    #   elasticsearch
     #   elasticsearch-dsl
     #   opentelemetry-sdk
 urllib3==2.3.0 \
