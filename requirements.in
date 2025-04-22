@@ -65,7 +65,7 @@ django==4.2.20
 
 # NOTE(relud): Need to keep elasticsearch and elasticsearch-dsl at versions compatible with the
 # cluster we're using
-elasticsearch==8.17.2
+elasticsearch==8.18.0
 elasticsearch-dsl==8.15.3
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
