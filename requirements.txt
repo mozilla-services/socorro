@@ -316,9 +316,9 @@ elastic-transport==8.17.0 \
     --hash=sha256:59f553300866750e67a38828fede000576562a0e66930c641adb75249e0c95af \
     --hash=sha256:e755f38f99fa6ec5456e236b8e58f0eb18873ac8fe710f74b91a16dd562de2a5
     # via elasticsearch
-elasticsearch==8.18.0 \
-    --hash=sha256:4fb28cfe82d480c72fc049e659afe4cad450b318c210e43493ca402e900793eb \
-    --hash=sha256:b26a6e67958b7bd04711a31f3400197aabf4a6f03873eadce1a0aeb446653886
+elasticsearch==8.18.1 \
+    --hash=sha256:1a8c8b5ec3ce5be88f96d2f898375671648e96272978bce0dee3137d9326aabb \
+    --hash=sha256:998035f17a8c1fba7ae26b183dca797dcf95db86da6a7ecba56d31afc40f07c7
     # via
     #   -r requirements.in
     #   elasticsearch-dsl
