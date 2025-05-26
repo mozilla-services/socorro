@@ -344,9 +344,9 @@ fillmore==2.1.0 \
     --hash=sha256:251ed9154ba7f20f5825e4d757db0ad7b1642e72bda7657fe39fe39031cd2092 \
     --hash=sha256:29873e6f7fae15b32ddd01eff7a8418f26ab33c731f3b99a6a07a4c4c8c3625f
     # via -r requirements.in
-freezegun==1.5.1 \
-    --hash=sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9 \
-    --hash=sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1
+freezegun==1.5.2 \
+    --hash=sha256:5aaf3ba229cda57afab5bd311f0108d86b6fb119ae89d2cd9c43ec8c1733c85b \
+    --hash=sha256:a54ae1d2f9c02dbf42e02c18a3ab95ab4295818b549a34dac55592d72a905181
     # via -r requirements.in
 glom==24.11.0 \
     --hash=sha256:4325f96759a912044af7b6c6bd0dba44ad8c1eb6038aab057329661d2021bb27 \
