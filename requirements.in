@@ -43,7 +43,7 @@ pytest-django==4.11.1
 pytest-env==1.1.5
 python-decouple==3.8
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.32.4
 requests-mock==1.12.1
 ruff==0.11.12
 semver==3.0.4
