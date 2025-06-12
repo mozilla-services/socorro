@@ -83,6 +83,9 @@ STATIC_URL = "/static/"
 
 ALLOWED_HOSTS = _config("ALLOWED_HOSTS", default="", parser=ListOf(str))
 
+# When behind a reverse proxy that sets the Host header, use the original Host header
+# for absolute URLs. This is relevant for the OIDC callback URL.
+USE_X_FORWARDED_HOST = True
 
 # Defines the views served for root URLs.
 ROOT_URLCONF = "crashstats.urls"
