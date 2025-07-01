@@ -90,7 +90,7 @@ def get_fields(user):
 
 
 @track_view
-@csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
+@csp_update({"connect-src": "analysis-output.telemetry.mozilla.org"})
 @pass_validated_params
 @pass_default_context
 def signature_report(request, params, default_context=None):

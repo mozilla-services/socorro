@@ -88,7 +88,7 @@ def generate_signature(processed_crash):
 
 
 @track_view
-@csp_update(CONNECT_SRC="analysis-output.telemetry.mozilla.org")
+@csp_update({"connect-src": "analysis-output.telemetry.mozilla.org"})
 @pass_default_context
 def report_index(request, crash_id, default_context=None):
     valid_crash_id = utils.find_crash_id(crash_id)
