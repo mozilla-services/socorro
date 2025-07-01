@@ -18,7 +18,7 @@ fillmore==2.1.0
 freezegun==1.5.2
 glom==24.11.0
 google-cloud-pubsub==2.30.0
-google-cloud-storage==3.1.0
+google-cloud-storage==3.1.1
 gunicorn==23.0.0
 honcho==2.0.0
 humanfriendly==10.0
