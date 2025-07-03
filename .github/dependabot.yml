@@ -6,7 +6,13 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 10
-
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types: ["major", "minor", "patch"]
+      development-dependencies:
+        dependency-type: "development"
+        update-types: ["major", "minor", "patch"]
   - package-ecosystem: "docker"
     directories:
       - "/docker"
@@ -25,3 +31,6 @@ updates:
       interval: "monthly"
     rebase-strategy: "disabled"
     open-pull-requests-limit: 10
+    groups:
+      all-dependencies:
+        update-types: ["major", "minor", "patch"]

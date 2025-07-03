@@ -32,3 +32,6 @@ docs/_build/
 # exclude generated crashdata
 crashids.txt
 crashdata
+
+# ides
+.vscode
