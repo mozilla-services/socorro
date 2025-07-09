@@ -13,6 +13,7 @@ import socket
 
 from everett.manager import ConfigManager, ListOf, parse_bool
 import dj_database_url
+from csp.constants import NONE, SELF, UNSAFE_INLINE
 
 _config = ConfigManager.basic_config()
 
@@ -98,6 +99,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "django.contrib.admin.apps.SimpleAdminConfig",
+    "csp",
     "mozilla_django_oidc",
     "rest_framework",
     # Socorro apps
@@ -557,17 +559,20 @@ LAST_LOGIN_MAX = _config(
     ),
 )
 
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_OBJECT_SRC = ("'none'",)
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = (
-    "'self'",
-    "data:",  # what jquery.tablesorter.js's CSS uses
-)
-CSP_CONNECT_SRC = ("'self'",)
-
-CSP_REPORT_URI = ("/__cspreport__",)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": [SELF],
+        "object-src": [NONE],
+        "script-src": [SELF],
+        "style-src": [SELF, UNSAFE_INLINE],
+        "img-src": [
+            SELF,
+            "data:",  # for jquery.tablesorter.js's CSS
+        ],
+        "connect-src": [SELF],
+        "report-uri": "/__cspreport__",
+    }
+}
 
 NUMBER_OF_FEATURED_VERSIONS = _config(
     "NUMBER_OF_FEATURED_VERSIONS",

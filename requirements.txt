@@ -275,9 +275,9 @@ django-cors-headers==4.7.0 \
     --hash=sha256:6fdf31bf9c6d6448ba09ef57157db2268d515d94fc5c89a0a1028e1fc03ee52b \
     --hash=sha256:f1c125dcd58479fe7a67fe2499c16ee38b81b397463cf025f0e2c42937421070
     # via -r requirements.in
-django-csp==3.8 \
-    --hash=sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719 \
-    --hash=sha256:ef0f1a9f7d8da68ae6e169c02e9ac661c0ecf04db70e0d1d85640512a68471c0
+django-csp==4.0 \
+    --hash=sha256:b27010bb702eb20a3dad329178df2b61a2b82d338b70fbdc13c3a3bd28712833 \
+    --hash=sha256:d5a0a05463a6b75a4f1fc1828c58c89af8db9364d09fc6e12f122b4d7f3d00dc
     # via -r requirements.in
 django-jinja==2.11.0 \
     --hash=sha256:47c06d3271e6b2f27d3596278af517bfe2e19c1eb36ae1c0b1cc302d7f0259af \
@@ -856,6 +856,7 @@ packaging==23.2 \
     --hash=sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7
     # via
     #   build
+    #   django-csp
     #   gunicorn
     #   pytest
     #   sphinx
