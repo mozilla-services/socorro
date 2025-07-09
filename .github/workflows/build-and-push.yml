@@ -64,7 +64,7 @@ jobs:
           echo IMAGE_TAG="$GITHUB_REF_NAME" >> "$GITHUB_ENV"
       - name: Push the Docker image to GAR
         if: env.IMAGE_TAG != ''
-        uses: mozilla-it/deploy-actions/docker-push@v3.17.0
+        uses: mozilla-it/deploy-actions/docker-push@v4.0.2
         with:
           local_image: local/socorro_app:latest
           image_repo_path: ${{ secrets.DOCKER_IMAGE_PATH }}
