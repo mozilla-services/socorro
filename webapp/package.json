@@ -34,10 +34,10 @@
     "jquery": "^3.7.1",
     "jquery-ui": "^1.14.1",
     "jquery.json-viewer": "1.5.0",
-    "jssha": "3.1.2",
+    "jssha": "^3.3.1",
     "metrics-graphics": "2.15.6",
-    "moment": "2.29.4",
-    "qs": "6.9.7",
+    "moment": "^2.30.1",
+    "qs": "^6.14.0",
     "Select2": "github:select2/select2#3.5.4",
     "tablesorter": "^2.32.0"
   },
