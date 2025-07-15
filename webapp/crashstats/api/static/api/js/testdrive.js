@@ -1,10 +1,9 @@
 import { default as Qs } from 'qs';
-import fileSize from 'filesize';
+import { filesize } from 'filesize';
 
 (function ($, document) {
   'use strict';
 
-  var filesize = fileSize;
   var _submission_locked = false;
 
   $.fn.serializeExclusive = function () {

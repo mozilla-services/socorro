@@ -30,7 +30,7 @@
   "dependencies": {
     "ace-builds": "^1.43.2",
     "d3": "5.1.0",
-    "filesize": "6.1.0",
+    "filesize": "^11.0.1",
     "jquery": "^3.7.1",
     "jquery-ui": "^1.14.1",
     "jquery.json-viewer": "1.5.0",
