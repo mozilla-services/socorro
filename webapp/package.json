@@ -21,11 +21,11 @@
   "author": "Mozilla",
   "license": "MPL-2.0",
   "devDependencies": {
-    "esbuild": "0.25.0",
-    "eslint": "8.57.1",
-    "eslint-config-prettier": "10.0.1",
-    "eslint-plugin-prettier": "5.2.3",
-    "prettier": "3.5.0"
+    "esbuild": "^0.25.6",
+    "eslint": "^9.31.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.1",
+    "prettier": "^3.6.1"
   },
   "dependencies": {
     "ace-builds": "^1.43.2",
