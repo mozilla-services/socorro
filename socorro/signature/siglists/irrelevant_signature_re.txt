@@ -264,6 +264,7 @@ std::io::stdio::_eprint
 std::panicking::
 std::sys_common::backtrace::__rust_end_short_backtrace<T>
 std::terminate
+std::unique_ptr
 stdext::_?(h|H)ash
 __str
 system@framework@.*\.art
