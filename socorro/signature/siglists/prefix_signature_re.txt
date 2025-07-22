@@ -259,7 +259,6 @@ zzz_AsmCodeRange_
 .*DebugAbort
 mozilla::ipc::MessageChannel::~MessageChannel
 mozilla::MakeUnique<.*>
-mozilla::UniquePtr<T>::reset
 
 # Always continue for .dll files
 .*\.dll
