@@ -12,7 +12,7 @@ set -euo pipefail
 
 # This should be a url to a .tar.gz file from the release page:
 # https://github.com/rust-minidump/rust-minidump/releases
-URL="https://github.com/mozilla-services/socorro-stackwalk/releases/download/v20250321.0/socorro-stackwalker.2025-03-19.v0.25.0.tar.gz"
+URL="https://github.com/mozilla-services/socorro-stackwalk/releases/download/v20250801.0/socorro-stackwalker.2025-06-20.v0.26.0.tar.gz"
 
 TARFILE="stackwalker.tar.gz"
 TARGETDIR="/stackwalk-rust"
