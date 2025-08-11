@@ -5,7 +5,6 @@ import { default as Qs } from 'qs';
 
 import 'jquery-ui/ui/version.js';
 import 'jquery-ui/ui/widget.js';
-import 'jquery-ui/ui/safe-active-element.js';
 import 'jquery-ui/ui/unique-id.js';
 import 'jquery-ui/ui/keycode.js';
 import 'jquery-ui/ui/widgets/mouse.js';
