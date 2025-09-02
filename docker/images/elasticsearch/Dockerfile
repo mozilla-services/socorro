@@ -1,1 +1,1 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:9.1.0@sha256:47f91984aa1065d745f0a7c827bc912ea1ac439c635854902b65b6ed77f62055
+FROM docker.elastic.co/elasticsearch/elasticsearch:9.1.3@sha256:d620e80b7222e32eff42ac0fc614a0a5753f6ce9859df33b9ddea49c3bf5fb01
