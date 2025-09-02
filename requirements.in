@@ -30,7 +30,7 @@ jsonschema==4.25.1
 lxml==5.2.2
 markus[datadog]==5.1.0
 markdown-it-py==4.0.0
-more-itertools==10.7.0
+more-itertools==10.8.0
 mozilla-django-oidc==4.0.1
 oauth2client==4.1.3
 pip-tools==7.4.1
@@ -70,4 +70,4 @@ elasticsearch-dsl==8.15.3
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
-obs-common==2025.8.8.1
+obs-common==2025.9.2.2
