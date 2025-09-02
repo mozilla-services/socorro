@@ -22,7 +22,7 @@ jobs:
       # Disable docker compose volume mounts in docker-compose.override.yml
       COMPOSE_FILE: docker-compose.yml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Get info
         run: |
           uname -v
@@ -72,7 +72,7 @@ jobs:
           docker tag local/socorro_app:latest "$TARGET_IMAGE"
       - name: Push the Docker image to GAR
         if: env.TARGET_IMAGE != ''
-        uses: mozilla-it/deploy-actions/docker-push@v4.0.6
+        uses: mozilla-it/deploy-actions/docker-push@v4.4.0
         with:
           image_tags: ${{ env.TARGET_IMAGE }}
           workload_identity_pool_project_number: ${{ secrets.WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
