@@ -5,7 +5,7 @@
 # https://hub.docker.com/_/python
 # NOTE(smarnach): To upgrade Python to a new minor or major version, see
 # https://socorro.readthedocs.io/en/latest/dev.html#upgrading-to-a-new-python-version
-FROM --platform=linux/amd64 python:3.11.13-slim-bookworm@sha256:0ce77749ac83174a31d5e107ce0cfa6b28a2fd6b0615e029d9d84b39c48976ee AS app_amd64
+FROM --platform=linux/amd64 python:3.11.13-slim-bookworm@sha256:838ff46ae6c481e85e369706fa3dea5166953824124735639f3c9f52af85f319 AS app_amd64
 
 # Set up user and group
 ARG groupid=10001
