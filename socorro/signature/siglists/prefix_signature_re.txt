@@ -258,7 +258,7 @@ WSASend
 zzz_AsmCodeRange_
 .*DebugAbort
 mozilla::ipc::MessageChannel::~MessageChannel
-mozilla::MakeUnique<.*>
+mozilla::MakeUnique
 
 # Always continue for .dll files
 .*\.dll
