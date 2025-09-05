@@ -726,6 +726,14 @@ properties:
     type: string
     permissions: ["public"]
 
+  Marionette:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D233482#8114805
+    description: >
+      Set to 1 when Marionette (WebDriver Classic) is enabled.
+    type: string
+    permissions: ["public"]
+  
   ModuleSignatureInfo:
     data_reviews:
       - unknown
@@ -908,6 +916,14 @@ properties:
       - "esr"
     permissions: ["public"]
 
+  RemoteAgent:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D233482#8114805
+    description: >
+      Set to 1 when the Remote Agent (WebDriver BiDi) is enabled.
+    type: string
+    permissions: ["public"]
+  
   RemoteType:
     data_reviews:
       - unknown

@@ -2,11 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from contextlib import suppress
 import logging
+from contextlib import suppress
 
 from socorro.lib.libsocorrodataschema import get_schema
-
 
 logger = logging.getLogger(__name__)
 
@@ -1037,6 +1036,9 @@ FIELDS = {
         "query_type": "integer",
         "storage_mapping": {"type": "integer"},
     },
+    "marionette": boolean_field(
+        name="marionette",
+    ),
     "memory_explicit": {
         "data_validation_type": "int",
         "form_field_choices": [],
@@ -1326,6 +1328,9 @@ FIELDS = {
         "query_type": "enum",
         "storage_mapping": {"type": "keyword"},
     },
+    "remote_agent": boolean_field(
+        name="remote_agent",
+    ),
     "remote_type": {
         "data_validation_type": "enum",
         "form_field_choices": [],

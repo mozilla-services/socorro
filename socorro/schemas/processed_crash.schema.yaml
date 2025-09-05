@@ -2777,6 +2777,13 @@ properties:
       `major_version`, this is 0.
     type: integer
     permissions: ["public"]
+  marionette:
+    description: >
+      Set to `true` when Marionette (WebDriver Classic) is enabled.
+    type: boolean
+    default: false
+    permissions: ["public"]
+    source_annotation: Marionette
   mdsw_return_code:
     description: >
       Exit code of the stackwalker process when processing
@@ -3053,6 +3060,13 @@ properties:
     type: string
     permissions: ["public"]
     source_annotation: ReleaseChannel
+  remote_agent:
+    description: >
+      Set to `true` when the Remote Agent (WebDriver BiDi) is enabled.
+    type: boolean
+    default: false
+    permissions: ["public"]
+    source_annotation: RemoteAgent
   remote_type:
     description: >
       Type of the content process, can be set to `web`, `file`, or `extension`.

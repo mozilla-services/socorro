@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from click.testing import CliRunner
 import jsonschema
 import pytest
+from click.testing import CliRunner
 
 from socorro.lib.libmarkdown import get_markdown
 from socorro.lib.libsocorrodataschema import (
-    get_schema,
     FlattenKeys,
+    get_schema,
     split_path,
     transform_schema,
 )
@@ -104,6 +104,7 @@ PUBLIC_RAW_CRASH_FIELDS = {
     "MacMemoryPressureNormalTime",
     "MacMemoryPressureSysctl",
     "MacMemoryPressureWarningTime",
+    "Marionette",
     "Notes",
     "OOMAllocationSize",
     "PluginFilename",
@@ -114,6 +115,7 @@ PUBLIC_RAW_CRASH_FIELDS = {
     "ProductName",
     "QuotaManagerShutdownTimeout",
     "ReleaseChannel",
+    "RemoteAgent",
     "SafeMode",
     "SecondsSinceLastCrash",
     "ShutdownProgress",
@@ -509,6 +511,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "mac_memory_pressure_sysctl",
     "mac_memory_pressure_warning_time",
     "major_version",
+    "marionette",
     "mdsw_status_string",
     "memory_measures",
     "memory_measures.explicit",
@@ -548,6 +551,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "quota_manager_shutdown_timeout",
     "reason",
     "release_channel",
+    "remote_agent",
     "report_type",
     "safe_mode",
     "shutdown_progress",
