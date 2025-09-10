@@ -13,8 +13,8 @@
 set -euo pipefail
 
 waitfor --verbose --conn-only "${DATABASE_URL}"
-waitfor --verbose "http://${PUBSUB_EMULATOR_HOST}"
 waitfor --verbose "${STORAGE_EMULATOR_HOST}/storage/v1/b"
 waitfor --verbose --codes={200,404} "${SENTRY_DSN}"
-# wait for this last because it's slow to start
+# wait for these last because they're slow to start
 waitfor --verbose --timeout=30 "${ELASTICSEARCH_URL}"
+waitfor --verbose --timeout=30 "http://${PUBSUB_EMULATOR_HOST}"
