@@ -22,6 +22,7 @@ build *args='app fakesentry oidcprovider elasticsearch postgresql pubsub memcach
 # Set up Postgres, Elasticsearch, local Pub/Sub, and local GCS services.
 setup: _env
     docker compose run --rm app shell /app/bin/setup_services.sh
+    bin/create_superuser.sh
 
 # Add/update necessary database data.
 update-data: _env

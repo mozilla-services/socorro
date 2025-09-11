@@ -91,40 +91,24 @@ to re-run ``npm run build --prefix webapp`` - the "watch mode" feature is not en
 Admin Account
 =============
 
-If you want to do anything in the webapp admin, you'll need to create a
+If you want to do anything in the webapp admin, or use superuser features like Customize in Super Search, you'll need to create a
 superuser in the Crash Stats webapp and a OIDC account to authenticate against
-in the oidcprovider service container.
+in the oidcprovider service container. This is done automatically as part of ``just setup`` (see :ref:`setup-quickstart`), but it can also be run separately via::
+   bin/create_superuser.sh
 
-Let's use these credentials:
+As the output indicates, this creates a superuser in Crash Stats with:
 
-* username: willkg
-* password: foo
-* email: willkg@example.com
+* username: admin
+* password: admin
+* email: admin@example.com
 
-This creates an account in the oidcprovider service container:
-
-.. code-block:: shell
-
-   $ docker compose up -d oidcprovider
-   $ docker compose exec oidcprovider /code/manage.py createuser willkg foo willkg@example.com
-
-This creates a superuser account in the Crash Stats webapp corresponding to the
-account we created in the oidcprovider service container:
-
-.. code-block:: shell
-
-   $ docker compose run app shell ./webapp/manage.py makesuperuser willkg@example.com
-
-Feel free to use different credentials.
+To log into Crash Stats, start up the webapp via ``just run``, click Login, and use these credentials.
 
 .. Note::
 
    You will have to recreate both of these accounts any time you do something
    that recreates the postgres db or restarts the oidcprovider service
    container.
-
-   Best to put account creation in a shell script so you can recreate both
-   accounts easily.
 
 
 Permissions
