@@ -43,6 +43,7 @@ CxxThrowException
 __delayLoadHelper2
 dlmalloc
 dvm
+ElementAt
 EtwEventEnabled
 extent_
 enum\$<T>::unwrap
@@ -102,10 +103,14 @@ memset
 MessageLoop::PostTask_Helper
 MessageLoop::PostTask
 moz_malloc_size_of
+mozilla::Array<T>
+mozilla::BitSet<T>
 mozilla::CheckedInt
 mozilla::CrashOnDanglingCheckedUnsafePtr::NotifyCheckFailure
 mozilla::detail::InvalidArrayIndex_CRASH
+mozilla::detail::nsTStringLengthStorage<T>
 mozilla::detail::nsTStringRepr<T>::
+mozilla::EnumeratedArray<T>
 mozilla::Variant<T>::
 mozilla::dom::AutoJSAPI::Init
 mozilla::dom::Promise::
