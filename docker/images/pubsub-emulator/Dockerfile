@@ -1,3 +1,3 @@
 # Define this image outside of docker-compose.yml so that it gets dependabot updates
-FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:541.0.0-emulators@sha256:ed771bafa46526511cbbd3476ba5d7f7773fb39c07fdb03f46feddd5f3459d19
+FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:545.0.0-emulators@sha256:9ea696eaede81cc591147fdfc628c7268a9d18cdd0192ea4602d32a2de784ddb
 # also available as google/cloud-sdk:<version>-emulators
