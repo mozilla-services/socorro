@@ -311,3 +311,13 @@ std::_Atomic
 std::_Fetch
 std::_Load
 std::_Store
+
+# chromium sandbox CHECK() failures: we want to ignore the destructors for
+# CheckError, for LogMessage, and for all child classes of LogMessage
+logging::CheckError::~CheckError
+logging::DCheckLogMessage::~DCheckLogMessage
+logging::DumpWillBeCheckLogMessage::~DumpWillBeCheckLogMessage
+logging::ErrnoLogMessage::~ErrnoLogMessage
+logging::LogMessage::~LogMessage
+logging::NotReachedLogMessage::~NotReachedLogMessage
+logging::Win32ErrorLogMessage::~Win32ErrorLogMessage
