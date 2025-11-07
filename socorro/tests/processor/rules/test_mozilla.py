@@ -36,6 +36,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ReportTypeRule,
     SignatureGeneratorRule,
+    SoftErrorsRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -2315,3 +2316,63 @@ class TestReportTypeRule:
         rule = ReportTypeRule()
         rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
         assert processed_crash["report_type"] == expected
+
+
+class TestSoftErrorsRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # These shouldn't result in a soft_errors
+            ({}, False),
+            ({"json_dump": {}}, False),
+            ({"json_dump": {"soft_errors": None}}, False),
+            ({"json_dump": {"soft_errors": []}}, False),
+            # This should
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    }
+                },
+                True,
+            ),
+        ],
+    )
+    def test_predicate(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = SoftErrorsRule()
+
+        result = rule.predicate(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert result == expected
+
+    def test_soft_errors_action(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "json_dump": {
+                "soft_errors": [
+                    {
+                        "WriteOsReleaseInfoFailed": {
+                            "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                        }
+                    }
+                ],
+            }
+        }
+        status = Status()
+
+        rule = SoftErrorsRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["soft_errors"] == (
+            '[{"WriteOsReleaseInfoFailed": {"IOError": "Os {\\n    code: 2,\\n    kind: NotFound,\\n    message: \\"No such file or directory\\",\\n}"}}]'
+        )

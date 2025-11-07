@@ -1359,6 +1359,18 @@ FIELDS = {
     "shutdown_progress": text_field("shutdown_progress"),
     "shutdown_reason": keyword_field(name="shutdown_reason"),
     "signature": text_field("signature"),
+    "soft_errors": {
+        "data_validation_type": "str",
+        "form_field_choices": [],
+        "has_full_version": False,
+        "in_database_name": "soft_errors",
+        "is_exposed": True,
+        "is_returned": True,
+        "name": "soft_errors",
+        "namespace": "processed_crash",
+        "query_type": "string",
+        "storage_mapping": {"type": "keyword"},
+    },
     "stackwalk_version": keyword_field(
         name="stackwalk_version",
         namespace="processed_crash",
