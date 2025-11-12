@@ -2325,9 +2325,9 @@ class TestSoftErrorsRule:
             # These shouldn't result in a soft_errors
             ({}, False),
             ({"json_dump": {}}, False),
-            ({"json_dump": {"soft_errors": None}}, False),
-            ({"json_dump": {"soft_errors": []}}, False),
-            # This should
+            # These should
+            ({"json_dump": {"soft_errors": None}}, True),
+            ({"json_dump": {"soft_errors": []}}, True),
             (
                 {
                     "json_dump": {
@@ -2354,25 +2354,52 @@ class TestSoftErrorsRule:
 
         assert result == expected
 
-    def test_soft_errors_action(self, tmp_path):
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # We want null values to still show up in the processed crash
+            (
+                {"json_dump": {"soft_errors": None}},
+                {"json_dump": {"soft_errors": None}, "soft_errors": "null"},
+            ),
+            # We want empty arrays to still show up in the processed crash
+            (
+                {"json_dump": {"soft_errors": []}},
+                {"json_dump": {"soft_errors": []}, "soft_errors": "[]"},
+            ),
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    },
+                    "soft_errors": '[{"WriteOsReleaseInfoFailed": {"IOError": "Os {\\n    code: 2,\\n    kind: NotFound,\\n    message: \\"No such file or directory\\",\\n}"}}]',
+                },
+            ),
+        ],
+    )
+    def test_soft_errors_action(self, tmp_path, processed, expected):
         raw_crash = {}
         dumps = {}
-        processed_crash = {
-            "json_dump": {
-                "soft_errors": [
-                    {
-                        "WriteOsReleaseInfoFailed": {
-                            "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
-                        }
-                    }
-                ],
-            }
-        }
         status = Status()
 
         rule = SoftErrorsRule()
-        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
 
-        assert processed_crash["soft_errors"] == (
-            '[{"WriteOsReleaseInfoFailed": {"IOError": "Os {\\n    code: 2,\\n    kind: NotFound,\\n    message: \\"No such file or directory\\",\\n}"}}]'
-        )
+        assert processed == expected

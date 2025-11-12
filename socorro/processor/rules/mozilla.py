@@ -1251,9 +1251,16 @@ class SoftErrorsRule(Rule):
     """Copies soft_errors from minidump-stackwalk output to processed crash"""
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        # If the value is null, [] or omitted from the mdsw output entirely, don't
-        # add it to the processed crash.
-        return bool(glom(processed_crash, "json_dump.soft_errors", default=None))
+        # If the value is omitted from the mdsw output entirely, don't add it to
+        # the processed crash. If the value is present (even if falsy), add it
+        # to the processed crash.
+        if (
+            "json_dump" in processed_crash
+            and "soft_errors" in processed_crash["json_dump"]
+        ):
+            return True
+
+        return False
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         soft_errors_json = glom(processed_crash, "json_dump.soft_errors")
