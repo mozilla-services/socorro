@@ -507,9 +507,16 @@ definitions:
         permissions: ["public"]
       soft_errors:
         description: >
-          JSON-encoded soft errors encountered by minidump-writer during generation.
-          Extracted from minidump. Useful for debugging Crash Reporters.
-        type: ["string", "null"]
+          Non-fatal errors encountered by minidump-writer during
+          generation. Extracted from minidump. Useful for debugging Crash
+          Reporters.
+        type: ["array", "null"]
+        items:
+          description: >
+            A serialized Rust structure or string representing a particular
+            type of non-fatal error.
+          type: ["object", "string", "null"]
+          permissions: ["protected"]
         permissions: ["protected"]
       status:
         description: >

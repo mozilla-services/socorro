@@ -2367,6 +2367,27 @@ class TestSoftErrorsRule:
                 {"json_dump": {"soft_errors": []}},
                 {"json_dump": {"soft_errors": []}, "soft_errors": "[]"},
             ),
+            # Array of strings
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            "Received SIGPERM trying to stop process",
+                            "Thread 2 'Background' could not be stopped in time",
+                        ],
+                    }
+                },
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            "Received SIGPERM trying to stop process",
+                            "Thread 2 'Background' could not be stopped in time",
+                        ],
+                    },
+                    "soft_errors": '["Received SIGPERM trying to stop process", "Thread 2 \'Background\' could not be stopped in time"]',
+                },
+            ),
+            # Array of objects
             (
                 {
                     "json_dump": {

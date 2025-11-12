@@ -120,9 +120,9 @@ DEFAULT_RULESET = [
     MissingSymbolsRule(),
     ThemePrettyNameRule(),
     MemoryReportExtraction(),
+    SoftErrorsRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
-    SoftErrorsRule(),
 ]
 
 
