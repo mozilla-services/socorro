@@ -1323,6 +1323,36 @@ class Test_report_index:
         )
         assert "Thread 0, Name: I am a Regular Thread" in smart_str(response.content)
 
+    def test_soft_errors(self, client, db, storage_helper, user_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["soft_errors"] = '[{"InitErrors": 123}]'
+        upload_crash_data(
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
+        )
+
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = client.get(url)
+        assert response.status_code == 200
+
+        # Request url as anonymous user--should not appear
+        assert "Soft Errors" not in smart_str(response.content)
+
+        # Log in as a user without protected data access--should not appear
+        user = user_helper.create_user(username="user1")
+        client.force_login(user)
+        response = client.get(url)
+        assert response.status_code == 200
+        assert "Soft Errors" not in smart_str(response.content)
+        client.logout()
+
+        # Log in as a user with protected data access--should appear
+        user = user_helper.create_protected_user(username="user2")
+        client.force_login(user)
+        response = client.get(url)
+        assert response.status_code == 200
+        assert "Soft Errors" in smart_str(response.content)
+        assert "InitErrors" in smart_str(response.content)
+
 
 class TestLogin(BaseTestViews):
     def test_login_required(self):
