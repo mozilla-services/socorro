@@ -675,13 +675,11 @@
                   </td>
                 </tr>
 
-                {% if request.user.has_perm('crashstats.view_pii') %}
-                  {% if report.soft_errors %}
-                    <tr title="{{ fields_desc['processed_crash.soft_errors'] }}">
-                      <th scope="row">Soft Errors</th>
-                      <td>{{ report.soft_errors }} - {{ protected_warning() }}</td>
-                        </tr>
-                    {% endif %}
+                {% if request.user.has_perm('crashstats.view_pii') and report.soft_errors %}
+                  <tr title="{{ fields_desc['processed_crash.soft_errors'] }}">
+                    <th scope="row">Soft Errors</th>
+                    <td>{{ report.soft_errors }} - {{ protected_warning() }}</td>
+                  </tr>
                 {% endif %}
 
                 {# Notes #}
