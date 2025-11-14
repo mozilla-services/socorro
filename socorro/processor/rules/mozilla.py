@@ -1245,3 +1245,23 @@ class ReportTypeRule(Rule):
         report_type = self.identify_report_type(processed_crash, status)
 
         processed_crash["report_type"] = report_type
+
+
+class SoftErrorsRule(Rule):
+    """Copies soft_errors from minidump-stackwalk output to processed crash"""
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        # If the value is omitted from the mdsw output entirely, don't add it to
+        # the processed crash. If the value is present (even if falsy), add it
+        # to the processed crash.
+        return (
+            "json_dump" in processed_crash
+            and "soft_errors" in processed_crash["json_dump"]
+        )
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        soft_errors_json = glom(processed_crash, "json_dump.soft_errors")
+        soft_errors_str = json.dumps(soft_errors_json)
+        # Limit the size to 4KB to avoid any potential performance impacts.
+        soft_errors_limited = soft_errors_str[:4096]
+        processed_crash["soft_errors"] = soft_errors_limited

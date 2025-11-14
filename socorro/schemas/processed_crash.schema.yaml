@@ -505,6 +505,19 @@ definitions:
         description: Process ID of the crashing process.
         type: ["integer", "null"]
         permissions: ["public"]
+      soft_errors:
+        description: >
+          Non-fatal errors encountered by minidump-writer during
+          generation. Extracted from minidump. Useful for debugging Crash
+          Reporters.
+        type: ["array", "null"]
+        items:
+          description: >
+            A serialized Rust structure or string representing a particular
+            type of non-fatal error.
+          type: ["object", "string", "null"]
+          permissions: ["protected"]
+        permissions: ["protected"]
       status:
         description: >
           Status of the output of the stackwalker. Currently, this is always
@@ -3113,6 +3126,12 @@ properties:
       generating the signature for this crash report. Useful for debugging
       signature generation algorithm problems.
     type: string
+    permissions: ["protected"]
+  soft_errors:
+    description: >
+      JSON-encoded soft errors encountered by minidump-writer during generation.
+      Extracted from minidump. Useful for debugging Crash Reporters.
+    type: ["string", "null"]
     permissions: ["protected"]
   stackwalk_version:
     description: >

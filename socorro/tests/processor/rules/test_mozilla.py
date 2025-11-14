@@ -36,6 +36,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ReportTypeRule,
     SignatureGeneratorRule,
+    SoftErrorsRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -2315,3 +2316,111 @@ class TestReportTypeRule:
         rule = ReportTypeRule()
         rule.action(raw_crash, {}, processed_crash, str(tmp_path), Status())
         assert processed_crash["report_type"] == expected
+
+
+class TestSoftErrorsRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # These shouldn't result in a soft_errors
+            ({}, False),
+            ({"json_dump": {}}, False),
+            # These should
+            ({"json_dump": {"soft_errors": None}}, True),
+            ({"json_dump": {"soft_errors": []}}, True),
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    }
+                },
+                True,
+            ),
+        ],
+    )
+    def test_predicate(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+        rule = SoftErrorsRule()
+
+        result = rule.predicate(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # We want null values to still show up in the processed crash
+            (
+                {"json_dump": {"soft_errors": None}},
+                {"json_dump": {"soft_errors": None}, "soft_errors": "null"},
+            ),
+            # We want empty arrays to still show up in the processed crash
+            (
+                {"json_dump": {"soft_errors": []}},
+                {"json_dump": {"soft_errors": []}, "soft_errors": "[]"},
+            ),
+            # Array of strings
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            "Received SIGPERM trying to stop process",
+                            "Thread 2 'Background' could not be stopped in time",
+                        ],
+                    }
+                },
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            "Received SIGPERM trying to stop process",
+                            "Thread 2 'Background' could not be stopped in time",
+                        ],
+                    },
+                    "soft_errors": '["Received SIGPERM trying to stop process", "Thread 2 \'Background\' could not be stopped in time"]',
+                },
+            ),
+            # Array of objects
+            (
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    }
+                },
+                {
+                    "json_dump": {
+                        "soft_errors": [
+                            {
+                                "WriteOsReleaseInfoFailed": {
+                                    "IOError": 'Os {\n    code: 2,\n    kind: NotFound,\n    message: "No such file or directory",\n}'
+                                }
+                            }
+                        ],
+                    },
+                    "soft_errors": '[{"WriteOsReleaseInfoFailed": {"IOError": "Os {\\n    code: 2,\\n    kind: NotFound,\\n    message: \\"No such file or directory\\",\\n}"}}]',
+                },
+            ),
+        ],
+    )
+    def test_soft_errors_action(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+
+        rule = SoftErrorsRule()
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert processed == expected

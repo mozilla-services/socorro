@@ -52,6 +52,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ReportTypeRule,
     SignatureGeneratorRule,
+    SoftErrorsRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -119,6 +120,7 @@ DEFAULT_RULESET = [
     MissingSymbolsRule(),
     ThemePrettyNameRule(),
     MemoryReportExtraction(),
+    SoftErrorsRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
 ]
