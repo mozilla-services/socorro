@@ -13,7 +13,7 @@ import datetime
 import json
 
 import click
-from elasticsearch_dsl import Search
+from elasticsearch.dsl import Search
 
 from socorro import settings
 from socorro.external.es.base import generate_list_of_indexes
