@@ -8,7 +8,7 @@ import datetime
 import re
 
 from elasticsearch.exceptions import NotFoundError, BadRequestError
-from elasticsearch_dsl import A, Q, Search, AggResponse
+from elasticsearch.dsl import A, Q, Search, AggResponse
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.search_common import SearchBase

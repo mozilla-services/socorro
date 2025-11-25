@@ -11,7 +11,7 @@ from math import isnan, isinf
 
 import elasticsearch
 from elasticsearch.exceptions import NotFoundError
-from elasticsearch_dsl import Search
+from elasticsearch.dsl import Search
 import glom
 import markus
 
@@ -339,7 +339,7 @@ class ESCrashStorage(CrashStorageBase):
         return SuperSearch(crashstorage=self)
 
     def build_search(self, **kwargs):
-        """Return new instance of elasticsearch_dsl's Search."""
+        """Return new instance of elasticsearch.dsl's Search."""
         with self.client() as conn:
             return Search(using=conn, **kwargs)
 
