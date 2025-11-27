@@ -507,18 +507,6 @@ def test_parse_graphics_devices_iterable__pci_ids():
                 "vendor_name": "PEAK-System Technik GmbH",
             },
             {
-                "adapter_hex": "0x0004",
-                "adapter_name": "2 Channel CAN Bus SJC1000",
-                "vendor_hex": "0x001c",
-                "vendor_name": "PEAK-System Technik GmbH",
-            },
-            {
-                "adapter_hex": "0x0005",
-                "adapter_name": "2 Channel CAN Bus SJC1000 (Optically Isolated)",
-                "vendor_hex": "0x001c",
-                "vendor_name": "PEAK-System Technik GmbH",
-            },
-            {
                 "adapter_hex": "0x7801",
                 "adapter_name": "WinTV HVR-1800 MCE",
                 "vendor_hex": "0x0070",

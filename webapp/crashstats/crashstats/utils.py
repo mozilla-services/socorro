@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from collections import OrderedDict
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 import datetime
 import functools
@@ -11,7 +12,7 @@ import json
 import logging
 import random
 import re
-from typing import Optional
+from typing import Optional, TypedDict
 from urllib.parse import urlencode
 
 from django import http
@@ -783,12 +784,23 @@ def string_hex_to_hex_string(hexcode):
     return "0x" + format(int(hexcode, 16), "04x")
 
 
-VENDOR_RE = re.compile(r"^([0-9a-f]{4})  (.+)$")
-DEVICE_RE = re.compile(r"^\t([0-9a-f]{4})  (.+)$")
-SUBDEVICE_RE = re.compile(r"^\t\t([0-9a-f]{4}) ([0-9a-f]{4})  (.+)$")
+VENDOR_RE = re.compile(r"^([0-9a-f]{4}) +(.+)$")
+DEVICE_RE = re.compile(r"^\t([0-9a-f]{4}) +(.+)$")
+SUBDEVICE_RE = re.compile(r"^\t\t([0-9a-f]{4}) ([0-9a-f]{4}) +(.+)$")
 
 
-def pci_ids__parse_graphics_devices_iterable(iterable, debug=False):
+class PCIDeviceDesc(TypedDict):
+    """Dictionary type yielded by pci_ids__parse_graphics_devices_iterable()."""
+
+    vendor_hex: str
+    vendor_name: str
+    adapter_hex: str
+    adapter_name: str
+
+
+def pci_ids__parse_graphics_devices_iterable(
+    iterable: Iterable[str], debug: bool = False
+) -> Generator[PCIDeviceDesc]:
     """
     This function is for parsing the CSVish files from https://pci-ids.ucw.cz/
 
@@ -811,45 +823,41 @@ def pci_ids__parse_graphics_devices_iterable(iterable, debug=False):
         #     device  device_name                       <-- single tab indent
         #         subvendor subdevice  subsystem_name   <-- two tab indent
 
+    Since we are only interested in device and vendor ids, we can skip subsystem id lines.
+
     """
     vendor_hex = vendor_name = None
 
     for line in iterable:
         line = smart_str(line)
 
-        if not line:
-            continue
-
-        if line.startswith("#"):
+        if not line or line.startswith("#"):
             if "List of known device classes" in line:
                 # There's a section at the bottom of the files which
                 # we don't need to parse.
                 break
             continue
 
-        match = VENDOR_RE.match(line)
-        if match:
-            vendor_hex, vendor_name = match.group(1, 2)
-            continue
-
-        device_hex = device_name = None
-
-        match = DEVICE_RE.match(line)
-        if match:
-            device_hex, device_name = match.group(1, 2)
-        else:
-            match = SUBDEVICE_RE.match(line)
-            if match:
-                device_hex, device_name = match.group(2, 3)
-
-        if device_hex and device_name:
-            vendor_hex = string_hex_to_hex_string(vendor_hex)
-            device_hex = string_hex_to_hex_string(device_hex)
+        if match := VENDOR_RE.match(line):
+            vendor_hex = string_hex_to_hex_string(match.group(1))
+            vendor_name = match.group(2)
+        elif match := DEVICE_RE.match(line):
+            # vendor_hex and vendor_name must have been set by now. Explicitly asserting this
+            # makes the type checker happy.
+            assert vendor_hex and vendor_name
+            adapter_hex = string_hex_to_hex_string(match.group(1))
+            adapter_name = match.group(2)
             yield {
                 "vendor_hex": vendor_hex,
                 "vendor_name": vendor_name,
-                "adapter_hex": device_hex,
-                "adapter_name": device_name,
+                "adapter_hex": adapter_hex,
+                "adapter_name": adapter_name,
             }
+        elif SUBDEVICE_RE.match(line):
+            # We don't currently pretty-print subsystem ids in the web interface, but we may
+            # at some point in the future, so we keep this code here. It also helps making the
+            # debug output useful – printing tens of thousands of subsystem lines from pci.ids
+            # in debug mode would give any useful signal.
+            pass
         elif debug:
             print(f"Doesn't match: {line!r}")
