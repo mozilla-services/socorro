@@ -65,7 +65,7 @@ django==4.2.27
 
 # NOTE(relud): Need to keep elasticsearch at versions compatible with the
 # cluster we're using
-elasticsearch==8.19.2
+elasticsearch==9.2.0
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
