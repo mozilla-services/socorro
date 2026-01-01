@@ -72,7 +72,7 @@ jobs:
           docker tag local/socorro_app:latest "$TARGET_IMAGE"
       - name: Push the Docker image to GAR
         if: env.TARGET_IMAGE != ''
-        uses: mozilla-it/deploy-actions/docker-push@v6.1.0
+        uses: mozilla-it/deploy-actions/docker-push@v6.1.1
         with:
           image_tags: ${{ env.TARGET_IMAGE }}
           workload_identity_pool_project_number: ${{ secrets.WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
