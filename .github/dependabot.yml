@@ -6,16 +6,10 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 10
-    ignore:
-      # NOTE(bdanforth): This can be removed once CRINGE-125 is done.
-      - dependency-name: django
-        versions: [">=4.3"]
     groups:
       production-dependencies:
         dependency-type: "production"
         update-types: ["major", "minor", "patch"]
-        # NOTE(bdanforth): This can be removed once CRINGE-125 is done.
-        exclude-patterns: ["django"]
       development-dependencies:
         dependency-type: "development"
         update-types: ["major", "minor", "patch"]
