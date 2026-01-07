@@ -10,15 +10,15 @@ django-npm==1.0.1
 django-pipeline==4.1.0
 django-ratelimit==4.1.0
 djangorestframework==3.16.1
-dj-database-url==3.0.1
+dj-database-url==3.1.0
 dockerflow==2024.4.2
 enforce-typing==1.0.0.post1
 everett==3.5.0
 fillmore==2.2.0
 freezegun==1.5.5
-glom==24.11.0
-google-cloud-pubsub==2.33.0
-google-cloud-storage==3.6.0
+glom==25.12.0
+google-cloud-pubsub==2.34.0
+google-cloud-storage==3.7.0
 gunicorn==23.0.0
 honcho==2.0.0
 humanfriendly==10.0
@@ -26,26 +26,26 @@ inotify_simple==2.0.1
 isodate==0.7.2
 isoweek==1.3.3
 jinja2==3.1.6
-jsonschema==4.25.1
+jsonschema==4.26.0
 lxml==6.0.2
 markus[datadog]==5.2.0
 markdown-it-py==4.0.0
 more-itertools==10.8.0
-mozilla-django-oidc==4.0.1
+mozilla-django-oidc==5.0.2
 oauth2client==4.1.3
 pip-tools==7.4.1
 psycopg2-binary==2.9.11
 pygments==2.19.2
 pymemcache==4.0.0
 pyquery==2.0.1
-pytest==9.0.1
+pytest==9.0.2
 pytest-django==4.11.1
 pytest-env==1.2.0
 python-decouple==3.8
 PyYAML==6.0.3
 requests==2.32.5
 requests-mock==1.12.1
-ruff==0.14.7
+ruff==0.14.10
 semver==3.0.4
 sentry-sdk==2.17.0
 Sphinx==8.2.3
@@ -61,7 +61,7 @@ whitenoise==6.11.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 5.2 (2025).
-django==4.2.27
+django==5.0.14
 
 # NOTE(relud): Need to keep elasticsearch at versions compatible with the
 # cluster we're using
