@@ -284,6 +284,7 @@ _XReply
 zero
 
 # Windows-specific fastfail frames
+_C_specific_handler
 KiFastSystemCall
 KiRaiseUserExceptionDispatcher
 KiUserApcDispatch
@@ -295,6 +296,7 @@ KiUserExceptionDispatcher
 LdrpDispatchUserCallTarget
 LdrpHandleInvalidUserCallTarget
 LdrpICallHandler
+LdrpInitializeNode\$filt\$1
 LdrpValidateUserCallTarget
 RtlDispatchException
 RtlFailFast2
