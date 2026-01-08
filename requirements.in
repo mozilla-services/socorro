@@ -45,14 +45,14 @@ python-decouple==3.8
 PyYAML==6.0.3
 requests==2.32.5
 requests-mock==1.12.1
-ruff==0.14.10
+ruff==0.14.11
 semver==3.0.4
 sentry-sdk==2.17.0
 Sphinx==8.2.3
 sphinx_rtd_theme==3.0.2
 statsd==4.0.1
 urlwait==1.0
-werkzeug==3.1.4
+werkzeug==3.1.5
 whitenoise==6.11.0
 
 
@@ -69,4 +69,4 @@ elasticsearch==9.2.0
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
-obs-common==2025.9.2.2
+obs-common==2026.1.8
