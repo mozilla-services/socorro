@@ -52,7 +52,7 @@ Sphinx==8.2.3
 sphinx_rtd_theme==3.0.2
 statsd==4.0.1
 urlwait==1.0
-werkzeug==3.1.4
+werkzeug==3.1.5
 whitenoise==6.11.0
 
 
@@ -61,7 +61,7 @@ whitenoise==6.11.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 5.2 (2025).
-django==4.2.27
+django==5.0.14
 
 # NOTE(relud): Need to keep elasticsearch at versions compatible with the
 # cluster we're using
@@ -69,4 +69,4 @@ elasticsearch==9.2.0
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
-obs-common==2025.9.2.2
+obs-common==2026.1.8
