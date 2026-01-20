@@ -62,6 +62,7 @@ class TestModels(DjangoTestCase):
         assert permission not in token.permissions.all()
 
     def test_api_token_losing_permissions_user_removed_from_group(self):
+        # Forward direction (User.groups.remove(group))
         bab = User.objects.create(username="bab")
         permission = Permission.objects.get(codename="view_pii")
         group = Group.objects.create(name="MVP")
@@ -73,6 +74,20 @@ class TestModels(DjangoTestCase):
 
         # remove user from group
         bab.groups.remove(group)
+
+        # reload the token
+        token = models.Token.objects.get(id=token.id)
+        assert permission not in token.permissions.all()
+
+        # Reverse direction (Group.user_set.remove(user))
+        bub = User.objects.create(username="bub")
+        bub.groups.add(group)
+
+        token = models.Token.objects.create(user=bub, notes="Some notes")
+        token.permissions.add(permission)
+
+        # remove user from group
+        group.user_set.remove(bub)
 
         # reload the token
         token = models.Token.objects.get(id=token.id)

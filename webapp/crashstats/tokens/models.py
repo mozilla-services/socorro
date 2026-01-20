@@ -62,25 +62,40 @@ def drop_permissions_on_group_change(sender, instance, action, **kwargs):
 
 @receiver(models.signals.m2m_changed, sender=User.groups.through)
 def drop_permissions_on_user_removed_from_group(sender, instance, action, **kwargs):
-    if action == "post_remove":
-        # A user was removed from a group.
-        # Every Token that had this permission needs to be re-evaluated
-        # because, had the user created this token now, they might
-        # no longer have access to that permission due to their
-        # group memberships.
-        removed_groups = Group.objects.filter(id__in=kwargs["pk_set"])
+    if action != "post_remove":
+        return
 
-        # Permissions the user lost by leaving these groups
-        lost_permissions = Permission.objects.filter(group__in=removed_groups)
+    # A user was removed from a group.
+    # Every Token that had this permission needs to be re-evaluated
+    # because, had the user created this token now, they might
+    # no longer have access to that permission due to their
+    # group memberships.
+
+    if kwargs["reverse"]:
+        # Called via Group.user_set.remove(user)
+        removed_groups = Group.objects.filter(pk=instance.pk)
+        removed_users = User.objects.filter(pk__in=kwargs["pk_set"])
+    else:
+        # Called via User.groups.remove(group)
+        removed_users = User.objects.filter(pk=instance.pk)
+        removed_groups = Group.objects.filter(pk__in=kwargs["pk_set"])
+
+    lost_permissions = Permission.objects.filter(group__in=removed_groups).distinct()
+
+    for user in removed_users:
+        current_user_permissions = Permission.objects.filter(
+            group__user=user
+        ).distinct()
 
         tokens = Token.objects.filter(
-            user=instance, permissions__in=lost_permissions
+            user=user, permissions__in=lost_permissions
         ).distinct()
+
         for token in tokens:
-            current_user_permissions = Permission.objects.filter(group__user=instance)
+            # Remove only permissions that the token has but the user no longer has
             for permission in lost_permissions:
                 if (
-                    permission in token.permissions.all()
-                    and permission not in current_user_permissions
+                    token.permissions.filter(pk=permission.pk).exists()
+                    and not current_user_permissions.filter(pk=permission.pk).exists()
                 ):
                     token.permissions.remove(permission)
