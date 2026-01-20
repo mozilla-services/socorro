@@ -36,9 +36,9 @@ PACKAGES_TO_INSTALL=(
 # Install Ubuntu packages
 apt-get install -y "${PACKAGES_TO_INSTALL[@]}"
 
-# Install nodejs and npm from Nodesource's 14.x branch
-curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x bookworm main' > /etc/apt/sources.list.d/nodesource.list
+# Install nodejs and npm from Nodesource's 18.x branch
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main' > /etc/apt/sources.list.d/nodesource.list
 # Give Nodesource packages priority over the packages included in the Debian distribution
 cat > /etc/apt/preferences.d/nodesource <<EOF
 Package: nodejs

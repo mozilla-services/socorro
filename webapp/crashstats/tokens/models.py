@@ -58,3 +58,44 @@ def drop_permissions_on_group_change(sender, instance, action, **kwargs):
                 user_permissions = Permission.objects.filter(group__user=token.user)
                 if permission not in user_permissions:
                     token.permissions.remove(permission)
+
+
+@receiver(models.signals.m2m_changed, sender=User.groups.through)
+def drop_permissions_on_user_removed_from_group(sender, instance, action, **kwargs):
+    if action != "post_remove":
+        return
+
+    # A user was removed from a group.
+    # Every Token that had this permission needs to be re-evaluated
+    # because, had the user created this token now, they might
+    # no longer have access to that permission due to their
+    # group memberships.
+
+    if kwargs["reverse"]:
+        # Called via Group.user_set.remove(user)
+        removed_groups = Group.objects.filter(pk=instance.pk)
+        removed_users = User.objects.filter(pk__in=kwargs["pk_set"])
+    else:
+        # Called via User.groups.remove(group)
+        removed_users = User.objects.filter(pk=instance.pk)
+        removed_groups = Group.objects.filter(pk__in=kwargs["pk_set"])
+
+    lost_permissions = Permission.objects.filter(group__in=removed_groups).distinct()
+
+    for user in removed_users:
+        current_user_permissions = Permission.objects.filter(
+            group__user=user
+        ).distinct()
+
+        tokens = Token.objects.filter(
+            user=user, permissions__in=lost_permissions
+        ).distinct()
+
+        for token in tokens:
+            # Remove only permissions that the token has but the user no longer has
+            for permission in lost_permissions:
+                if (
+                    token.permissions.filter(pk=permission.pk).exists()
+                    and not current_user_permissions.filter(pk=permission.pk).exists()
+                ):
+                    token.permissions.remove(permission)
