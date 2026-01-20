@@ -44,7 +44,7 @@ class TestModels(DjangoTestCase):
         token.save()
         assert token.is_expired
 
-    def test_api_token_losing_permissions(self):
+    def test_api_token_losing_permissions_permission_removed_from_group(self):
         bob = User.objects.create(username="bob")
         permission = Permission.objects.get(codename="view_pii")
         group = Group.objects.create(name="VIP")
@@ -56,6 +56,23 @@ class TestModels(DjangoTestCase):
 
         # change the group's permissions
         group.permissions.remove(permission)
+
+        # reload the token
+        token = models.Token.objects.get(id=token.id)
+        assert permission not in token.permissions.all()
+
+    def test_api_token_losing_permissions_user_removed_from_group(self):
+        bab = User.objects.create(username="bab")
+        permission = Permission.objects.get(codename="view_pii")
+        group = Group.objects.create(name="MVP")
+        group.permissions.add(permission)
+        bab.groups.add(group)
+
+        token = models.Token.objects.create(user=bab, notes="Some notes")
+        token.permissions.add(permission)
+
+        # remove user from group
+        bab.groups.remove(group)
 
         # reload the token
         token = models.Token.objects.get(id=token.id)

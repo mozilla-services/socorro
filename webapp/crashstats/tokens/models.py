@@ -58,3 +58,29 @@ def drop_permissions_on_group_change(sender, instance, action, **kwargs):
                 user_permissions = Permission.objects.filter(group__user=token.user)
                 if permission not in user_permissions:
                     token.permissions.remove(permission)
+
+
+@receiver(models.signals.m2m_changed, sender=User.groups.through)
+def drop_permissions_on_user_removed_from_group(sender, instance, action, **kwargs):
+    if action == "post_remove":
+        # A user was removed from a group.
+        # Every Token that had this permission needs to be re-evaluated
+        # because, had the user created this token now, they might
+        # no longer have access to that permission due to their
+        # group memberships.
+        removed_groups = Group.objects.filter(id__in=kwargs["pk_set"])
+
+        # Permissions the user lost by leaving these groups
+        lost_permissions = Permission.objects.filter(group__in=removed_groups)
+
+        tokens = Token.objects.filter(
+            user=instance, permissions__in=lost_permissions
+        ).distinct()
+        for token in tokens:
+            current_user_permissions = Permission.objects.filter(group__user=instance)
+            for permission in lost_permissions:
+                if (
+                    permission in token.permissions.all()
+                    and permission not in current_user_permissions
+                ):
+                    token.permissions.remove(permission)
