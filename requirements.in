@@ -61,7 +61,7 @@ whitenoise==6.11.0
 django-waffle==2.3.0
 
 # NOTE(willkg): We stick with LTS releases and the next one is 5.2 (2025).
-django==4.2.28
+django==5.0
 
 # NOTE(relud): Need to keep elasticsearch at versions compatible with the
 # cluster we're using
