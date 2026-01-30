@@ -35,6 +35,7 @@ core::panicking::
 core::ptr::write
 core::ptr::mut_ptr
 core::result::impl\$
+core::result::unwrap_failed
 core::result::Result<T>
 core::slice::index
 core::sync::atomic::
