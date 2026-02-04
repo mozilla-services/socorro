@@ -41,7 +41,7 @@ logconfig_dict = {
     "formatters": {
         "socorroapp": {"format": "%(asctime)s %(levelname)s - %(name)s - %(message)s"},
         "mozlog": {
-            "()": "dockerflow.logging.JsonLogFormatter",
+            "()": "dockerflow.logging.MozlogFormatter",
             "logger_name": "socorro",
         },
     },

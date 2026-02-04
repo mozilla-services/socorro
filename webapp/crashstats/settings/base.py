@@ -248,7 +248,7 @@ LOGGING = {
             "format": "%(asctime)s %(levelname)s - webapp - %(name)s - %(message)s"
         },
         "mozlog": {
-            "()": "dockerflow.logging.JsonLogFormatter",
+            "()": "dockerflow.logging.MozlogFormatter",
             "logger_name": "socorro",
         },
     },

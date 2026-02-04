@@ -52,7 +52,7 @@ def set_up_logging(
                 ),
             },
             "mozlog": {
-                "()": "dockerflow.logging.JsonLogFormatter",
+                "()": "dockerflow.logging.MozlogFormatter",
                 "logger_name": "socorro",
             },
         },

@@ -11,7 +11,7 @@ django-pipeline==4.1.0
 django-ratelimit==4.1.0
 djangorestframework==3.16.1
 dj-database-url==3.1.0
-dockerflow==2024.4.2
+dockerflow==2026.1.26
 enforce-typing==1.0.0.post1
 everett==3.5.0
 fillmore==2.2.0
@@ -19,7 +19,7 @@ freezegun==1.5.5
 glom==25.12.0
 google-cloud-pubsub==2.34.0
 google-cloud-storage==3.8.0
-gunicorn==24.0.0
+gunicorn==25.0.0
 honcho==2.0.0
 humanfriendly==10.0
 inotify_simple==2.0.1
@@ -48,7 +48,7 @@ requests-mock==1.12.1
 ruff==0.14.14
 semver==3.0.4
 sentry-sdk==2.17.0
-Sphinx==8.2.3
+Sphinx==9.0.4
 sphinx_rtd_theme==3.1.0
 statsd==4.0.1
 urlwait==1.0
