@@ -272,6 +272,7 @@ system@framework@.*\.art
 _Unwind_Resume
 {virtual override thunk}
 wgpu_hal::auxil::dxgi::result
+webrtc::webrtc_checks_impl
 wil::details::DebugBreak
 
 # These frames have platform variants and bucket poorly so we nix them
