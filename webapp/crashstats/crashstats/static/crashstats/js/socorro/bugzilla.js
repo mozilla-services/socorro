@@ -87,6 +87,29 @@ export const BugLinks = (function () {
       }
       $link.data('transformed', true);
     });
+
+    // This function puts the open bugs first
+    // in the bugzilla tab
+    $('.bug_ids_expanded_list').each(function () {
+      var $container = $(this);
+      var $listItems = $container.find('li');
+      var $listItemsParent = $listItems.first().parent();
+      var closedBugs = [];
+      var openBugs = [];
+
+      $listItems.each(function () {
+        var $li = $(this);
+        var $anchor = $li.find('a');
+        if ($anchor.hasClass('strike')) {
+          closedBugs.push($li);
+        } else {
+          openBugs.push($li);
+        }
+      });
+
+      $listItemsParent.append(openBugs);
+      $listItemsParent.append(closedBugs);
+    });
   }
 
   function fetch_without_data() {
