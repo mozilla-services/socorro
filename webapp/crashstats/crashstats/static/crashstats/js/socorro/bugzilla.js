@@ -89,24 +89,26 @@ export const BugLinks = (function () {
     });
 
     // This code puts open bugs first in the bugzilla tab
-    var $container = $('.bug_ids_expanded_list');
-    var $listItems = $container.find('li');
-    var $listItemsParent = $listItems.first().parent();
-    var closedBugs = [];
-    var openBugs = [];
+    $('.bug_ids_expanded_list').each(function () {
+      var $container = $(this);
+      var $listItems = $container.find('li');
+      var $listItemsParent = $listItems.first().parent();
+      var closedBugs = [];
+      var openBugs = [];
 
-    $listItems.each(function () {
-      var $li = $(this);
-      var $anchor = $li.find('a');
-      if ($anchor.hasClass('strike')) {
-        closedBugs.push($li);
-      } else {
-        openBugs.push($li);
-      }
+      $listItems.each(function () {
+        var $li = $(this);
+        var $anchor = $li.find('a');
+        if ($anchor.hasClass('strike')) {
+          closedBugs.push($li);
+        } else {
+          openBugs.push($li);
+        }
+      });
+
+      $listItemsParent.append(openBugs);
+      $listItemsParent.append(closedBugs);
     });
-
-    $listItemsParent.append(openBugs);
-    $listItemsParent.append(closedBugs);
   }
 
   function fetch_without_data() {
