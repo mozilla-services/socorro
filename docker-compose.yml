@@ -64,6 +64,7 @@ services:
       - elasticsearch
     volumes:
       - .:/app
+      - /app/.venv
 
   processor:
     image: local/socorro_app

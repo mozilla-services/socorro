@@ -1,10 +1,8 @@
-.git
-build/
-**/*.swp
-**/*.pyc
-__pycache__
-.cache
-node_modules
+.git/
+.ruff_cache/
+.venv/
+__pycache__/
+node_modules/
 symbols/
-crashdata
+crashdata/
 crashids.txt

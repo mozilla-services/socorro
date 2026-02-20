@@ -44,9 +44,6 @@ jobs:
         run: |
           just build
           docker compose images
-      - name: Verify requirements.txt contains correct dependencies
-        run: |
-          just verify-reqs
       - name: Run lint check
         run: |
           just lint
