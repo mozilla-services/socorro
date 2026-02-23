@@ -10,16 +10,16 @@ django-npm==1.0.1
 django-pipeline==4.1.0
 django-ratelimit==4.1.0
 djangorestframework==3.16.1
-dj-database-url==3.1.0
+dj-database-url==3.1.2
 dockerflow==2026.1.26
 enforce-typing==1.0.0.post1
 everett==3.5.0
 fillmore==2.2.0
 freezegun==1.5.5
 glom==25.12.0
-google-cloud-pubsub==2.34.0
-google-cloud-storage==3.8.0
-gunicorn==25.0.0
+google-cloud-pubsub==2.35.0
+google-cloud-storage==3.9.0
+gunicorn==25.1.0
 honcho==2.0.0
 humanfriendly==10.0
 inotify_simple==2.0.1
@@ -39,20 +39,20 @@ pygments==2.19.2
 pymemcache==4.0.0
 pyquery==2.0.1
 pytest==9.0.2
-pytest-django==4.11.1
-pytest-env==1.2.0
+pytest-django==4.12.0
+pytest-env==1.5.0
 python-decouple==3.8
 PyYAML==6.0.3
 requests==2.32.5
 requests-mock==1.12.1
-ruff==0.14.14
+ruff==0.15.2
 semver==3.0.4
 sentry-sdk==2.17.0
 Sphinx==9.0.4
 sphinx_rtd_theme==3.1.0
 statsd==4.0.1
 urlwait==1.0
-werkzeug==3.1.5
+werkzeug==3.1.6
 whitenoise==6.11.0
 
 
@@ -69,4 +69,4 @@ elasticsearch==9.2.0
 
 # Mozilla obs-team libraries that are published to GAR instead of pypi
 --extra-index-url https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/
-obs-common==2026.1.21
+obs-common==2026.2.16.1
