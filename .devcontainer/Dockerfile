@@ -1,5 +1,5 @@
 # This should be kept in sync with the python version used in docker/Dockerfile
-FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/python:3.11-bookworm@sha256:138c451b17c1c5930f77e71a6510a0bae1d7b77feff5e0a714a22fa3d757a51f AS devcontainer_amd64
+FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/python:3.11-bookworm@sha256:48ded8da0748a85a4f37fbf5383c31f4893438fe76b1e11a0698c6965bea61a1 AS devcontainer_amd64
 
 ARG userid=10001
 ARG groupid=10001
