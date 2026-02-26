@@ -21,8 +21,10 @@ _SPECIAL_EXTENDED_VALUES = {
     "signature_sentinels": [
         (
             "mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)",
-            lambda x: "CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)"
-            in x,  # noqa
+            lambda x: (
+                "CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)"
+                in x
+            ),
         )
     ]
 }
