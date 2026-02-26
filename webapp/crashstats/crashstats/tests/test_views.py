@@ -1353,6 +1353,33 @@ class Test_report_index:
         assert "Soft Errors" in smart_str(response.content)
         assert "InitErrors" in smart_str(response.content)
 
+    def test_thread_count(self, client, db, storage_helper, user_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        processed_crash["thread_count"] = 2
+        upload_crash_data(
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
+        )
+
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = client.get(url)
+        assert response.status_code == 200
+
+        # Request url as anonymous user--should appear
+        assert "Thread Count" in smart_str(response.content)
+
+    def test_no_thread_count(self, client, db, storage_helper, user_helper):
+        crash_id, raw_crash, processed_crash = build_crash_data()
+        upload_crash_data(
+            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
+        )
+
+        url = reverse("crashstats:report_index", args=(crash_id,))
+        response = client.get(url)
+        assert response.status_code == 200
+
+        # Request url as anonymous user--should not appear
+        assert "Thread Count" not in smart_str(response.content)
+
 
 class TestLogin(BaseTestViews):
     def test_login_required(self):

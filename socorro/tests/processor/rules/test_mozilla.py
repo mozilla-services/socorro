@@ -37,6 +37,7 @@ from socorro.processor.rules.mozilla import (
     ReportTypeRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
+    ThreadCountRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -2421,6 +2422,38 @@ class TestSoftErrorsRule:
         status = Status()
 
         rule = SoftErrorsRule()
+        rule.act(raw_crash, dumps, processed, str(tmp_path), status)
+
+        assert processed == expected
+
+
+class TestThreadCountRule:
+    @pytest.mark.parametrize(
+        "processed, expected",
+        [
+            # Happy path
+            (
+                {"json_dump": {"thread_count": 2}},
+                {"json_dump": {"thread_count": 2}, "thread_count": 2},
+            ),
+            # No json_dump.thread_count
+            (
+                {"json_dump": {}},
+                {"json_dump": {}, "thread_count": None},
+            ),
+            # No json_dump
+            (
+                {},
+                {"thread_count": None},
+            ),
+        ],
+    )
+    def test_thread_count_action(self, tmp_path, processed, expected):
+        raw_crash = {}
+        dumps = {}
+        status = Status()
+
+        rule = ThreadCountRule()
         rule.act(raw_crash, dumps, processed, str(tmp_path), status)
 
         assert processed == expected

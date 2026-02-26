@@ -1414,6 +1414,7 @@ FIELDS = {
         "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
+    "thread_count": integer_field(name="thread_count"),
     "throttleable": {
         "data_validation_type": "bool",
         "form_field_choices": None,
