@@ -1,3 +1,94 @@
+[project]
+name = "socorro"
+description = "Socorro is a server to process Breakpad crash reports."
+readme = "README.rst"
+version = "1.0.0"  # Required, but unused
+requires-python = "==3.11.*"
+dependencies = [
+    "attrs",
+    "boltons",
+    "click",
+    "contextlib2",
+    "datadog",
+    "dj-database-url",
+    "django~=5.2.11",
+    "django-cors-headers",
+    "django-csp",
+    "django-jinja",
+    "django-npm",
+    "django-pipeline",
+    "django-ratelimit",
+    "django-waffle",
+    "djangorestframework",
+    "dockerflow",
+    "elasticsearch~=9.2",
+    "enforce-typing",
+    "everett",
+    "fillmore",
+    "freezegun",
+    "glom",
+    "google-cloud-pubsub",
+    "google-cloud-storage",
+    "gunicorn",
+    "honcho",
+    "humanfriendly",
+    "inotify-simple",
+    "isodate",
+    "isoweek",
+    "jinja2",
+    "jsonschema",
+    "lxml",
+    "markdown-it-py",
+    "markus[datadog]",
+    "more-itertools",
+    "mozilla-django-oidc",
+    "oauth2client",
+    "obs-common",
+    "psycopg2-binary",
+    "pygments",
+    "pymemcache",
+    "pyquery",
+    "pytest",
+    "pytest-django",
+    "pytest-env",
+    "python-decouple",
+    "pyyaml",
+    "requests",
+    "requests-mock",
+    "ruff",
+    "semver",
+    "sentry-sdk",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "statsd",
+    "urlwait",
+    "werkzeug",
+    "whitenoise",
+]
+
+[dependency-groups]
+devcontainer = [
+    "ipython",
+]
+
+[project.urls]
+Homepage = "https://github.com/mozilla-services/socorro"
+
+[tool.uv]
+environments = ["""
+    sys_platform == 'linux' and
+    platform_machine == 'x86_64' and
+    implementation_name == 'cpython'
+"""]
+package = false
+
+[[tool.uv.index]]
+name = "cavendish"
+url = "https://us-python.pkg.dev/moz-fx-cavendish-prod/cavendish-prod-python/simple/"
+
+[tool.uv.sources]
+obs-common = { index = "cavendish" }
+
 [tool.ruff]
 line-length = 88
 

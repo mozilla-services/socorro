@@ -4,18 +4,18 @@
 
 # This tests whether sentry is set up correctly in the webapp.
 
+import site
 from unittest.mock import ANY
-
-from fillmore.test import diff_structure
-from markus.testing import AnyTagValue, MetricsMock
-from werkzeug.test import Client
-
-from django.contrib.auth.models import User
 
 from crashstats.crashstats.apps import count_sentry_scrub_error
 from crashstats.tokens.models import Token
 from crashstats.wsgi import application
+from django.contrib.auth.models import User
+from fillmore.test import diff_structure
+from markus.testing import AnyTagValue, MetricsMock
+from werkzeug.test import Client
 
+[SITE_PACKAGES] = site.getsitepackages()
 
 # NOTE(willkg): If this changes, we should update it and look for new things that should
 # be scrubbed. Use ANY for things that change between tests like timestamps, source code
@@ -45,7 +45,8 @@ BROKEN_EVENT = {
                 "stacktrace": {
                     "frames": [
                         {
-                            "abs_path": "/usr/local/lib/python3.11/site-packages/django/core/handlers/exception.py",
+                            "abs_path": SITE_PACKAGES
+                            + "/django/core/handlers/exception.py",
                             "context_line": ANY,
                             "filename": "django/core/handlers/exception.py",
                             "function": "inner",
@@ -56,7 +57,7 @@ BROKEN_EVENT = {
                             "pre_context": ANY,
                         },
                         {
-                            "abs_path": "/usr/local/lib/python3.11/site-packages/django/core/handlers/base.py",
+                            "abs_path": SITE_PACKAGES + "/django/core/handlers/base.py",
                             "context_line": ANY,
                             "filename": "django/core/handlers/base.py",
                             "function": "_get_response",

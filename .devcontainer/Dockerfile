@@ -27,12 +27,6 @@ COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
 RUN /tmp/set_up_stackwalker.sh && \
     rm /tmp/set_up_stackwalker.sh
 
-# Install Python dependencies
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
-    pip install --no-cache-dir ipython && \
-    pip check --disable-pip-version-check
-
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
@@ -43,3 +37,14 @@ ENV PYTHONUNBUFFERED=1 \
 COPY --chown=app:app ./webapp/package*.json /app/webapp/
 RUN cd /app/webapp/ && npm ci
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+USER app
+
+# Install Python dependencies
+RUN --mount=type=cache,uid=$userid,gid=$groupid,target=/home/app/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --group devcontainer
+ENV PATH="/app/.venv/bin:$PATH"

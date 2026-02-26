@@ -4,32 +4,38 @@ services:
   app:
     volumes:
       - .:/app
+      - /app/.venv
       - /app/webapp/node_modules
       - /app/webapp/static
 
   test:
     volumes:
       - .:/app
+      - /app/.venv
       - /app/webapp/node_modules
       - /app/webapp/static
 
   processor:
     volumes:
       - .:/app
+      - /app/.venv
 
   crontabber:
     volumes:
       - .:/app
+      - /app/.venv
 
   webapp:
     volumes:
       - .:/app
+      - /app/.venv
       - /app/webapp/node_modules
       - /app/webapp/static
 
   stage_submitter:
     volumes:
       - .:/app
+      - /app/.venv
 
   collector:
     volumes:
@@ -38,7 +44,9 @@ services:
   fakecollector:
     volumes:
       - .:/app
+      - /app/.venv
 
   symbolsserver:
     volumes:
       - .:/app
+      - /app/.venv

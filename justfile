@@ -77,13 +77,9 @@ psql *args:
 test *args:
     docker compose run --rm test shell ./bin/test.sh {{args}}
 
-# Build requirements.txt file after requirements.in changes.
-rebuild-reqs *args: _env
-    docker compose run --rm --no-deps app shell pip-compile --generate-hashes --strip-extras {{args}}
-
-# Verify that the requirements file is built by the version of Python that runs in the container.
-verify-reqs: _env
-    docker compose run --rm --no-deps app shell ./bin/verify_reqs.sh
+# Run uv inside the container
+uv *args: _env
+	docker compose run --rm --no-deps app shell uv {{args}}
 
 # Check how far behind different server environments are from main tip.
 service-status *args: _env

@@ -5,7 +5,7 @@
 # https://hub.docker.com/_/python
 # NOTE(smarnach): To upgrade Python to a new minor or major version, see
 # https://socorro.readthedocs.io/en/latest/dev.html#upgrading-to-a-new-python-version
-FROM --platform=linux/amd64 python:3.11.14-slim-bookworm@sha256:bcbbec29f7a3f9cbee891e3cd69d7fe4dec7e281daf36cbd415ddd8ee2ba0077 AS app_amd64
+FROM --platform=linux/amd64 ghcr.io/astral-sh/uv:python3.11-bookworm-slim@sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36
 
 # Set up user and group
 ARG groupid=10001
@@ -26,10 +26,6 @@ COPY docker/set_up_stackwalker.sh /tmp/set_up_stackwalker.sh
 RUN /tmp/set_up_stackwalker.sh && \
     rm /tmp/set_up_stackwalker.sh
 
-COPY --chown=app:app requirements.txt /app/
-RUN pip install --no-cache-dir --no-deps -r requirements.txt && \
-    pip check --disable-pip-version-check
-
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
@@ -42,6 +38,13 @@ RUN cd /app/webapp/ && npm ci
 
 # app should own everything under /app in the container
 USER app
+
+# Install Python dependencies
+RUN --mount=type=cache,uid=$userid,gid=$groupid,target=/home/app/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy everything over
 COPY --chown=app:app . /app/

@@ -347,26 +347,22 @@ Dependencies
 Python Dependencies
 -------------------
 
-Python dependencies for all parts of Socorro are in ``requirements.in``
-and compiled using ``pip-compile`` with hashes and dependencies of dependencies
-in the ``requirements.txt`` file.
+Python dependencies are maintained in the ``pyproject.toml`` file; ``uv`` keeps
+exact versions and build hashes in ``uv.lock``.
 
-For example, to add ``foobar`` version 5:
+Most ``uv`` commands should be run inside the container, which can be done
+using ``just uv``. To add a new dependency, you can run:
 
-1. add ``foobar==5`` to ``requirements.in``
-2. run:
+.. code-block:: shell
 
-   .. code-block:: shell
+   $ just uv add my-new-dependency
 
-      $ just rebuild-reqs
+Then install the new dependency in the managed virtual environment in the
+container, you can run
 
-   to apply the updates to ``requirements.txt``
+.. code-block:: shell
 
-3. rebuild your docker environment:
-
-   .. code-block:: shell
-
-      $ just build
+   $ just uv sync
 
 If there are problems, it'll tell you.
 
@@ -375,8 +371,7 @@ dependencies. To do this, run:
 
 .. code-block:: shell
 
-   $ just rebuild-reqs --update
-
+   $ just uv lock --upgrade
 
 JavaScript Dependencies
 -----------------------
@@ -702,11 +697,11 @@ these files:
 
 * ``.devcontainer/Dockerfile``
 * ``.github/dependabot.yml``
+* ``.python-version``
 * ``.readthedocs.yaml``
 * ``docker/Dockerfile``
 * ``pyproject.toml``
 * ``socorro/tests/processor/test_processor_app.py``
-* ``webapp/crashstats/crashstats/tests/test_sentry.py``
 
 
 Processing crashes

@@ -17,7 +17,6 @@ socorro.egg-info/
 dist/
 webapp-django/.env
 .pytest_cache
-.python-version
 symbols/
 
 # docker things
