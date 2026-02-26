@@ -776,6 +776,7 @@ PUBLIC_PROCESSED_CRASH_FIELDS = {
     "telemetry_environment.system.sec.antivirus.[]",
     "telemetry_environment.system.sec.firewall.[]",
     "telemetry_environment.system.virtualMaxMB",
+    "thread_count",
     "throttleable",
     "topmost_filenames",
     "total_page_file",

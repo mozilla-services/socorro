@@ -1265,3 +1265,12 @@ class SoftErrorsRule(Rule):
         # Limit the size to 4KB to avoid any potential performance impacts.
         soft_errors_limited = soft_errors_str[:4096]
         processed_crash["soft_errors"] = soft_errors_limited
+
+
+class ThreadCountRule(Rule):
+    """Copies thread_count from minidump-stackwalk output to processed crash"""
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        processed_crash["thread_count"] = glom(
+            processed_crash, "json_dump.thread_count", default=None
+        )
