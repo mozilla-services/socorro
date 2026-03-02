@@ -15,6 +15,7 @@ from socorro.processor.rules.breakpad import (
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
     PossibleBitFlipsRule,
+    ThreadCountRule,
     TruncateStacksRule,
 )
 from socorro.processor.rules.general import (
@@ -55,7 +56,6 @@ from socorro.processor.rules.mozilla import (
     SoftErrorsRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
-    ThreadCountRule,
     TopMostFilesRule,
     UtilityActorsNameRule,
 )

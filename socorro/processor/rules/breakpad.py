@@ -9,7 +9,7 @@ import os
 import shlex
 import subprocess
 
-import glom
+from glom import glom
 
 from socorro.libmarkus import METRICS
 from socorro.processor.rules.base import Rule
@@ -35,14 +35,14 @@ class CrashingThreadInfoRule(Rule):
         return processed_crash.get("json_dump", None) is not None
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        crash_info = glom.glom(processed_crash, "json_dump.crash_info", default={})
+        crash_info = glom(processed_crash, "json_dump.crash_info", default={})
 
         crashing_thread = crash_info.get("crashing_thread")
         processed_crash["crashing_thread"] = crashing_thread
         if crashing_thread is None:
             status.add_note("mdsw did not identify the crashing thread")
 
-        processed_crash["crashing_thread_name"] = glom.glom(
+        processed_crash["crashing_thread_name"] = glom(
             processed_crash,
             "json_dump.crashing_thread.thread_name",
             default=None,
@@ -78,7 +78,7 @@ class CrashingThreadInfoRule(Rule):
 
         processed_crash["address"] = address
 
-        last_error_value = glom.glom(
+        last_error_value = glom(
             processed_crash,
             "json_dump.crashing_thread.last_error_value",
             default=None,
@@ -101,7 +101,7 @@ class CrashInconsistenciesRule(Rule):
         return processed_crash.get("json_dump", None) is not None
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        crash_info = glom.glom(processed_crash, "json_dump.crash_info", default={})
+        crash_info = glom(processed_crash, "json_dump.crash_info", default={})
 
         crash_inconsistencies = crash_info.get("crash_inconsistencies")
         processed_crash["crash_inconsistencies"] = crash_inconsistencies
@@ -134,7 +134,7 @@ class PossibleBitFlipsRule(Rule):
     """
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        bit_flips = glom.glom(
+        bit_flips = glom(
             processed_crash, "json_dump.crash_info.possible_bit_flips", default=None
         )
         if bit_flips is None:
@@ -164,7 +164,7 @@ class HasGuardPageAccessRule(Rule):
     """
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        accesses = glom.glom(
+        accesses = glom(
             processed_crash, "json_dump.crash_info.memory_accesses", default=None
         )
         if accesses is None:
@@ -586,3 +586,12 @@ class MinidumpStackwalkRule(Rule):
                     processed_crash["additional_minidumps"].append(dump_name)
                 processed_crash.setdefault(dump_name, {})
                 processed_crash[dump_name].update(stackwalker_data)
+
+
+class ThreadCountRule(Rule):
+    """Copies thread_count from minidump-stackwalk output to processed crash"""
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        processed_crash["thread_count"] = glom(
+            processed_crash, "json_dump.thread_count", default=None
+        )
