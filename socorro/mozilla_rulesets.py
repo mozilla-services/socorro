@@ -15,6 +15,7 @@ from socorro.processor.rules.breakpad import (
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
     PossibleBitFlipsRule,
+    ThreadCountRule,
     TruncateStacksRule,
 )
 from socorro.processor.rules.general import (
@@ -121,6 +122,7 @@ DEFAULT_RULESET = [
     ThemePrettyNameRule(),
     MemoryReportExtraction(),
     SoftErrorsRule(),
+    ThreadCountRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
 ]

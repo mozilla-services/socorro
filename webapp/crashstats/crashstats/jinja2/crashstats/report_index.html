@@ -414,6 +414,12 @@
                     </tr>
                   {% endif %}
                 {% endif %}
+                {% if report.thread_count %}
+                  <tr title="{{ fields_desc['processed_crash.thread_count'] }}">
+                    <th scope="row">Thread Count</th>
+                    <td>{{ report.thread_count }}</td>
+                  </tr>
+                {% endif %}
 
                 {# Personal user info #}
 
