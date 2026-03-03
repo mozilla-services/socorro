@@ -25,15 +25,12 @@ ul.errorlist li {
       <h2>The request's parameters could not be understood.</h2>
     </div>
     <div class="body">
-      {% if 'ul class="errorlist"' in error %}
-        {{ error | safe }}
-      {% else %}
-        <p>
-          Error Message:
-        </p>
-        <pre>{{ error }}
-        </pre>
-      {% endif %}
+      <p>
+        Error Message:
+      </p>
+      <pre>
+        {{ error }}
+      </pre>
     </div>
   </div>
 </div>
