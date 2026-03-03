@@ -14,6 +14,8 @@ updates:
       development-dependencies:
         dependency-type: "development"
         update-types: ["major", "minor", "patch"]
+    cooldown:
+      default-days: 7
   - package-ecosystem: "docker"
     directories:
       - "/docker"
@@ -24,6 +26,8 @@ updates:
     ignore:
       - dependency-name: python
         versions: [">=3.12"]
+    cooldown:
+      default-days: 7
 
   # Set update schedule for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -35,3 +39,5 @@ updates:
     groups:
       all-dependencies:
         update-types: ["major", "minor", "patch"]
+    cooldown:
+      default-days: 7

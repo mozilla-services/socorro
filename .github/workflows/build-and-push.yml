@@ -22,7 +22,9 @@ jobs:
       # Disable docker compose volume mounts in docker-compose.override.yml
       COMPOSE_FILE: docker-compose.yml
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Get info
         run: |
           uname -v
@@ -62,14 +64,14 @@ jobs:
       - name: Set Docker image target name
         if: env.IMAGE_TAG != ''
         run: |
-          echo TARGET_IMAGE=us-docker.pkg.dev/${{ secrets.DOCKER_IMAGE_PATH }}:${{ env.IMAGE_TAG }} >> "$GITHUB_ENV"
+          echo TARGET_IMAGE=us-docker.pkg.dev/${{ secrets.DOCKER_IMAGE_PATH }}:${IMAGE_TAG} >> "$GITHUB_ENV"
       - name: Tag Docker image
         if: env.TARGET_IMAGE != ''
         run: |
           docker tag local/socorro_app:latest "$TARGET_IMAGE"
       - name: Push the Docker image to GAR
         if: env.TARGET_IMAGE != ''
-        uses: mozilla-it/deploy-actions/docker-push@v6.2.2
+        uses: mozilla-it/deploy-actions/docker-push@4784cb70739a4f32ce010921f60fb1ebbc791a38 # v6.2.2
         with:
           image_tags: ${{ env.TARGET_IMAGE }}
           workload_identity_pool_project_number: ${{ secrets.WORKLOAD_IDENTITY_POOL_PROJECT_NUMBER }}
