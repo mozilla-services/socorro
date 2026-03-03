@@ -52,7 +52,7 @@ def get_topcrashers_stats(**kwargs):
     params["_results_number"] = 0
 
     # Remove the process terms that we don't want to query
-    # The process types are dynamically updated from settings/base.py
+    # The process types are dynamically updated from socorro/mozilla_settings.py
     process_set = {
         process[0] if isinstance(process, tuple) else process
         for process in PROCESS_TYPES
