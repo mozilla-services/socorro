@@ -14,6 +14,7 @@ from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.search_common import SearchBase
 from socorro.external.es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
+from socorro.mozilla_settings import PROCESS_TYPES
 
 
 BAD_INDEX_REGEX = re.compile(r"\[\[(.*)\] missing\]")
@@ -269,6 +270,14 @@ class SuperSearch(SearchBase):
                 # comparison operator.
                 operator_range = {">": "gt", "<": "lt", ">=": "gte", "<=": "lte"}
 
+                # Remove the process terms that we don't want to query
+                # The process types are dynamically updated from settings/base.py
+                process_set = {
+                    process[0] if isinstance(process, tuple) else process
+                    for process in PROCESS_TYPES
+                }
+                process_set = process_set - {"any", "all", "other"}
+
                 args = {}
                 query_name = "term"
                 filter_value = None
@@ -294,9 +303,17 @@ class SuperSearch(SearchBase):
                         }
                 elif param.operator == "=":
                     # is exactly
-                    if field_data["has_full_version"]:
-                        search_key = f"{search_key}.full"
-                    filter_value = param.value
+                    if param.value == "other":
+                        query_name = "terms"
+                        filter_value = list(process_set)
+                        if not param.operator_not:
+                            param.operator_not = True
+                        else:
+                            param.operator_not = False
+                    else:
+                        if field_data["has_full_version"]:
+                            search_key = f"{search_key}.full"
+                        filter_value = param.value
                 elif param.operator in operator_range:
                     query_name = "range"
                     filter_value = {operator_range[param.operator]: param.value}

@@ -98,6 +98,62 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert "2021-01-01 12:23:34" in smart_str(response.content)
 
+    def test_topcrashers_other_process_types(self, client, db, es_helper):
+        # Index crash data for known process types
+        crash_data = []
+        now = utc_now() - datetime.timedelta(days=1)
+        for _ in range(15):
+            crash_data.append(
+                {
+                    "date_processed": now,
+                    "uuid": create_new_ooid(timestamp=now),
+                    "signature": "KnownProcess",
+                    "product": "Firefox",
+                    "version": "1.0",
+                    "dom_fission_enabled": True,
+                    "is_garbage_collecting": False,
+                    "os_name": "Linux",
+                    "process_type": "parent",
+                    "report_type": "crash",
+                    "startup_crash": False,
+                    "uptime": 1000,
+                }
+            )
+
+        # Index crash data for unknown process types
+        for _ in range(15):
+            crash_data.append(
+                {
+                    "date_processed": now,
+                    "uuid": create_new_ooid(timestamp=now),
+                    "signature": "OtherProcess",
+                    "product": "Firefox",
+                    "version": "1.0",
+                    "dom_fission_enabled": True,
+                    "is_garbage_collecting": False,
+                    "os_name": "Linux",
+                    "process_type": "vr",
+                    "report_type": "crash",
+                    "startup_crash": False,
+                    "uptime": 1000,
+                }
+            )
+
+        for item in crash_data:
+            es_helper.index_crash(processed_crash=item, refresh=False)
+        es_helper.refresh()
+
+        url = reverse("topcrashers:topcrashers")
+
+        # Check to see if 'other' return OtherProcess type on topcrashers page
+        response = client.get(
+            url,
+            {"product": "Firefox", "version": "1.0", "process_type": "other"},
+        )
+        assert response.status_code == 200
+        assert "OtherProcess" in smart_str(response.content)
+        assert "KnownProcess" not in smart_str(response.content)
+
     def test_topcrashers_multiple_version(self, client, db, es_helper):
         # Test that querying several versions do not raise an error
         url = reverse("topcrashers:topcrashers")

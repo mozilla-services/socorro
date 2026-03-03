@@ -22,6 +22,7 @@ from crashstats.crashstats.utils import get_comparison_signatures, SignatureStat
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
 from crashstats.topcrashers.forms import TopCrashersForm
+from socorro.mozilla_settings import PROCESS_TYPES
 
 
 def datetime_to_build_id(date):
@@ -50,9 +51,18 @@ def get_topcrashers_stats(**kwargs):
     # We don't care about no results, only facets.
     params["_results_number"] = 0
 
+    # Remove the process terms that we don't want to query
+    # The process types are dynamically updated from settings/base.py
+    process_set = {
+        process[0] if isinstance(process, tuple) else process
+        for process in PROCESS_TYPES
+    }
+    process_set = process_set - {"any", "all", "other"}
+
     if params.get("process_type") in ("any", "all"):
         params["process_type"] = None
-
+    elif params.get("process_type") == "other":
+        params["process_type"] = [f"!{process}" for process in process_set]
     if params.get("report_type") in ("any", "all"):
         params["report_type"] = None
 
