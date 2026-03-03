@@ -270,8 +270,8 @@ class SuperSearch(SearchBase):
                 # comparison operator.
                 operator_range = {">": "gt", "<": "lt", ">=": "gte", "<=": "lte"}
 
-                # Remove the process terms that we don't want to query
-                # The process types are dynamically updated from settings/base.py
+                # Remove the process_type terms that we don't want to query
+                # The process types are dynamically updated from socorro/mozilla_settings.py
                 process_set = {
                     process[0] if isinstance(process, tuple) else process
                     for process in PROCESS_TYPES
