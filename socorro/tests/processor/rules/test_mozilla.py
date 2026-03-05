@@ -527,6 +527,7 @@ class TestPluginRule:
         }
         assert processed_crash == expected
 
+
 class TestProcessTypeRule:
     # Test that main process type is interpreted as parent
     def test_main_becomes_parent(self, tmp_path):
@@ -534,23 +535,24 @@ class TestProcessTypeRule:
         dumps = {}
         processed_crash = {}
         status = Status()
-        
+
         rule = ProcessTypeRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
-        
+
         assert processed_crash["process_type"] == "parent"
-    
+
     # Test that other types don't get interpreted as parent
     def test_type_not_become_parent(self, tmp_path):
         raw_crash = {"ProcessType": "plugin"}
         dumps = {}
         processed_crash = {}
         status = Status()
-        
+
         rule = ProcessTypeRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         print(processed_crash)
         assert "process_type" not in processed_crash
+
 
 class TestAccessibilityRule:
     def test_not_there(self, tmp_path):
