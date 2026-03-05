@@ -77,6 +77,20 @@ LOGGING_LEVEL = _config(
 STATSD_HOST = _config("STATSD_HOST", default="localhost", doc="statsd host.")
 STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int, doc="statsd port.")
 
+# Process types to allow in queries.
+# If tuple, the second option is human readable label.
+PROCESS_TYPES = (
+    "any",
+    "parent",
+    "plugin",
+    "content",
+    ("gpu", "GPU"),
+    "socket",
+    "rdd",
+    "utility",
+    "other",
+    "all",  # alias for 'any'
+)
 
 # Processor configuration
 PROCESSOR = {
