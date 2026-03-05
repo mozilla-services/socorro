@@ -185,7 +185,15 @@ class CopyFromRawCrashRule(Rule):
                 except libsocorrodataschema.InvalidDocumentError:
                     status.add_note(f"{annotation} value is malformed {copy_item.key}")
 
-
+class ProcessTypeRule(Rule):
+    """
+    add docstring here later
+    """
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        value = raw_crash.get("ProcessType")
+        if value == "main":
+            processed_crash["process_type"] = "parent"
+    
 class AccessibilityRule(Rule):
     """Add accessibility data to processed crash
 
