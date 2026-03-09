@@ -6,7 +6,7 @@ import logging
 from contextlib import suppress
 
 from socorro.lib.libsocorrodataschema import get_schema
-from socorro.mozilla_settings import PROCESS_TYPES
+from webapp.crashstats.settings.base import PROCESS_TYPES
 
 logger = logging.getLogger(__name__)
 

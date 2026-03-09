@@ -14,7 +14,6 @@ import socket
 from everett.manager import ConfigManager, ListOf, parse_bool
 import dj_database_url
 from csp.constants import NONE, SELF, UNSAFE_INLINE
-from socorro.mozilla_settings import PROCESS_TYPES  # noqa: F401
 
 _config = ConfigManager.basic_config()
 
@@ -328,6 +327,21 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 # django-cors-headers should kick in for all API requests and support all origins
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_URLS_REGEX = r"^/api/.*$"
+
+# Process types to allow in queries.
+# If tuple, the second option is human readable label.
+PROCESS_TYPES = (
+    "any",
+    "parent",
+    "plugin",
+    "content",
+    ("gpu", "GPU"),
+    "socket",
+    ("rdd", "RDD"),
+    "utility",
+    "other",
+    "all",  # alias for 'any'
+)
 
 # fields used in the simplified UI for Super Search
 SIMPLE_SEARCH_FIELDS = ("product", "version", "platform", "process_type")

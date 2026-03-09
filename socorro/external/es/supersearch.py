@@ -14,7 +14,7 @@ from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.search_common import SearchBase
 from socorro.external.es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
-from socorro.mozilla_settings import PROCESS_TYPES
+from webapp.crashstats.settings.base import PROCESS_TYPES
 
 
 BAD_INDEX_REGEX = re.compile(r"\[\[(.*)\] missing\]")

@@ -22,7 +22,7 @@ from crashstats.crashstats.utils import get_comparison_signatures, SignatureStat
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
 from crashstats.topcrashers.forms import TopCrashersForm
-from socorro.mozilla_settings import PROCESS_TYPES
+from webapp.crashstats.settings.base import PROCESS_TYPES
 
 
 def datetime_to_build_id(date):
