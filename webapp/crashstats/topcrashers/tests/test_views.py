@@ -108,7 +108,7 @@ class TestTopCrasherViews:
             for process in PROCESS_TYPES
         }
         specific_process_types = process_types - {"any", "all", "other"}
-        
+
         for process in specific_process_types:
             crash_data.append(
                 {
@@ -159,7 +159,7 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         assert "UnknownProcess" in smart_str(response.content)
         assert "KnownProcess" not in smart_str(response.content)
-        
+
         # Assert that each process type has a button
         response = client.get(
             url,
@@ -169,15 +169,16 @@ class TestTopCrasherViews:
         assert response.status_code == 200
         for process in all_process_type:
             assert process in smart_str(response.content)
-        
+
         # Assert total report count for any equals the sum of all distinct process types
         response = client.get(
             url,
             {"product": "Firefox", "version": "1.0", "process_type": "any"},
         )
         assert response.status_code == 200
-        assert f"of all {len(specific_process_types)+1} crashes" in smart_str(response.content)
-        
+        assert f"of all {len(specific_process_types) + 1} crashes" in smart_str(
+            response.content
+        )
 
     def test_topcrashers_multiple_version(self, client, db, es_helper):
         # Test that querying several versions do not raise an error
