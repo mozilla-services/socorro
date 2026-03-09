@@ -51,18 +51,15 @@ def get_topcrashers_stats(**kwargs):
     # We don't care about no results, only facets.
     params["_results_number"] = 0
 
-    # Remove the process terms that we don't want to query
-    # The process types are dynamically updated from socorro/mozilla_settings.py
-    process_set = {
-        process[0] if isinstance(process, tuple) else process
-        for process in PROCESS_TYPES
-    }
-    process_set = process_set - {"any", "all", "other"}
-
     if params.get("process_type") in ("any", "all"):
         params["process_type"] = None
     elif params.get("process_type") == "other":
-        params["process_type"] = [f"!{process}" for process in process_set]
+        process_types = {
+            process[0] if isinstance(process, tuple) else process
+            for process in PROCESS_TYPES
+        }
+        specific_process_types = process_types - {"any", "all", "other"}
+        params["process_type"] = [f"!{process}" for process in specific_process_types]
     if params.get("report_type") in ("any", "all"):
         params["report_type"] = None
 
