@@ -330,17 +330,19 @@ CORS_URLS_REGEX = r"^/api/.*$"
 
 # Process types to allow in queries.
 # If tuple, the second option is human readable label.
+# 'other' is added at the end as a fallback option
+# for types not listed explicitly
 PROCESS_TYPES = (
+    "all",  # alias for 'any'
     "any",
-    "parent",
-    "plugin",
     "content",
     ("gpu", "GPU"),
-    "socket",
+    "parent",
+    "plugin",
     ("rdd", "RDD"),
+    "socket",
     "utility",
     "other",
-    "all",  # alias for 'any'
 )
 
 # fields used in the simplified UI for Super Search

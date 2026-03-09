@@ -270,14 +270,6 @@ class SuperSearch(SearchBase):
                 # comparison operator.
                 operator_range = {">": "gt", "<": "lt", ">=": "gte", "<=": "lte"}
 
-                # Remove the process_type terms that we don't want to query
-                # The process types are dynamically updated from socorro/mozilla_settings.py
-                process_set = {
-                    process[0] if isinstance(process, tuple) else process
-                    for process in PROCESS_TYPES
-                }
-                process_set = process_set - {"any", "all", "other"}
-
                 args = {}
                 query_name = "term"
                 filter_value = None
@@ -305,7 +297,12 @@ class SuperSearch(SearchBase):
                     # is exactly
                     if param.value == "other":
                         query_name = "terms"
-                        filter_value = list(process_set)
+                        process_types = {
+                            process[0] if isinstance(process, tuple) else process
+                            for process in PROCESS_TYPES
+                        }
+                        specific_process_types = process_types - {"any", "all", "other"}
+                        filter_value = list(specific_process_types)
                         if not param.operator_not:
                             param.operator_not = True
                         else:
