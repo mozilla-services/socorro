@@ -243,6 +243,13 @@ TRANSFORM_GET_ERROR = {
     "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
+    "_meta": {
+        "breadcrumbs": {
+            "": {
+                "len": ANY,
+            },
+        },
+    },
 }
 
 

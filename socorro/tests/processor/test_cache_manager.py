@@ -400,6 +400,7 @@ BROKEN_EVENT = {
     },
     "level": "error",
     "logentry": {
+        "formatted": "Exception thrown while handling events: intentional exception",
         "message": "Exception thrown while handling events: %s",
         "params": ["Exception('intentional exception')"],
     },
@@ -430,6 +431,13 @@ BROKEN_EVENT = {
     "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
+    "_meta": {
+        "breadcrumbs": {
+            "": {
+                "len": ANY,
+            },
+        },
+    },
 }
 
 

@@ -109,6 +109,13 @@ RULE_ERROR_EVENT = {
     "server_name": ANY,
     "timestamp": ANY,
     "transaction_info": {},
+    "_meta": {
+        "breadcrumbs": {
+            "": {
+                "len": ANY,
+            },
+        },
+    },
 }
 
 
