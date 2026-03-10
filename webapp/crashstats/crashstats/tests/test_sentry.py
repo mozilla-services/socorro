@@ -13,6 +13,7 @@ from crashstats.wsgi import application
 from django.contrib.auth.models import User
 from fillmore.test import diff_structure
 from markus.testing import AnyTagValue, MetricsMock
+from sentry_sdk.tracing import TransactionSource
 from werkzeug.test import Client
 
 [SITE_PACKAGES] = site.getsitepackages()
@@ -121,7 +122,7 @@ BROKEN_EVENT = {
     "server_name": ANY,
     "timestamp": ANY,
     "transaction": "/__broken__",
-    "transaction_info": {"source": "route"},
+    "transaction_info": {"source": TransactionSource.ROUTE},
 }
 
 
