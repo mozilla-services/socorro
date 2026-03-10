@@ -187,12 +187,18 @@ class CopyFromRawCrashRule(Rule):
 
 
 class ProcessTypeRule(Rule):
-    """Interprets main process_type as parent in the processed crash"""
+    """Adds the ProcessType annotation to the processed crash
+
+    If the ProcessType annotation is empty, it defaults to 'parent'. If
+    the value is 'main', it is interpreted as 'parent'.
+
+    """
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        value = raw_crash.get("ProcessType")
+        value = raw_crash.get("ProcessType", "parent")
         if value == "main":
-            processed_crash["process_type"] = "parent"
+            value = "parent"
+        processed_crash["process_type"] = value
 
 
 class AccessibilityRule(Rule):
