@@ -187,9 +187,7 @@ class CopyFromRawCrashRule(Rule):
 
 
 class ProcessTypeRule(Rule):
-    """
-    add docstring here later
-    """
+    """Interprets main process_type as parent in the processed crash"""
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         value = raw_crash.get("ProcessType")
