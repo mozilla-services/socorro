@@ -186,6 +186,21 @@ class CopyFromRawCrashRule(Rule):
                     status.add_note(f"{annotation} value is malformed {copy_item.key}")
 
 
+class ProcessTypeRule(Rule):
+    """Adds the ProcessType annotation to the processed crash
+
+    If the ProcessType annotation is empty, it defaults to 'parent'. If
+    the value is 'main', it is interpreted as 'parent'.
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        value = raw_crash.get("ProcessType", "parent")
+        if value == "main":
+            value = "parent"
+        processed_crash["process_type"] = value
+
+
 class AccessibilityRule(Rule):
     """Add accessibility data to processed crash
 

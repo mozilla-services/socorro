@@ -34,6 +34,7 @@ from socorro.processor.rules.mozilla import (
     OutOfMemoryBinaryRule,
     PHCRule,
     PluginRule,
+    ProcessTypeRule,
     ReportTypeRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
@@ -525,6 +526,38 @@ class TestPluginRule:
             "plugin_version": "1.0",
         }
         assert processed_crash == expected
+
+
+class TestProcessTypeRule:
+    def test_main_becomes_parent(self, tmp_path):
+        raw_crash = {"ProcessType": "main"}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule = ProcessTypeRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["process_type"] == "parent"
+
+    def test_unchanged_process_type(self, tmp_path):
+        raw_crash = {"ProcessType": "plugin"}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule = ProcessTypeRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["process_type"] == "plugin"
+
+    def test_default_process_type(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        rule = ProcessTypeRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["process_type"] == "parent"
 
 
 class TestAccessibilityRule:
