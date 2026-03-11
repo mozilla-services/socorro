@@ -376,6 +376,48 @@ class TestViews:
             assert "$thanks" in params["reason"]
             assert "Exception" in params["java_stack_trace"]
 
+    def test_search_results_other(seld, client, db, es_helper):
+        """"""
+
+        def build_crash_data(**params):
+            crash_id = create_new_ooid()
+            data = {
+                "date_processed": utc_now(),
+                "uuid": crash_id,
+                "version": "1.0",
+                "os_name": "Linux",
+            }
+            data.update(params)
+            return data
+
+        crash_data = [
+            build_crash_data(
+                signature="ParentProcess", product="Firefox", process_type="parent"
+            ),
+            build_crash_data(
+                signature="UnknownProcess",
+                product="Firefox",
+                process_type="vr",
+            ),
+        ]
+        for item in crash_data:
+            es_helper.index_crash(processed_crash=item, refresh=False)
+        es_helper.refresh()
+
+        url = reverse("supersearch:search_results")
+
+        # Test that `other` only returns UnknownProcess
+        response = client.get(url, {"product": "Firefox", "process_type": "=other"})
+        assert response.status_code == 200
+        assert "UnknownProcess" in smart_str(response.content)
+        assert "ParentProcess" not in smart_str(response.content)
+
+        # Test that parent searching for `parent` returns ParentProcess
+        response = client.get(url, {"product": "Firefox", "process_type": "parent"})
+        assert response.status_code == 200
+        assert "ParentProcess" in smart_str(response.content)
+        assert "UnknownProcess" not in smart_str(response.content)
+
     def test_search_results_pagination(self, client, db, es_helper):
         """Test that the pagination of results works as expected."""
 
