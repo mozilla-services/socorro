@@ -14,7 +14,6 @@ from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.search_common import SearchBase
 from socorro.external.es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
-from webapp.crashstats.settings.base import PROCESS_TYPES
 
 
 BAD_INDEX_REGEX = re.compile(r"\[\[(.*)\] missing\]")
@@ -295,22 +294,9 @@ class SuperSearch(SearchBase):
                         }
                 elif param.operator == "=":
                     # is exactly
-                    if param.value == "other":
-                        query_name = "terms"
-                        process_types = {
-                            process[0] if isinstance(process, tuple) else process
-                            for process in PROCESS_TYPES
-                        }
-                        specific_process_types = process_types - {"any", "all", "other"}
-                        filter_value = list(specific_process_types)
-                        if not param.operator_not:
-                            param.operator_not = True
-                        else:
-                            param.operator_not = False
-                    else:
-                        if field_data["has_full_version"]:
-                            search_key = f"{search_key}.full"
-                        filter_value = param.value
+                    if field_data["has_full_version"]:
+                        search_key = f"{search_key}.full"
+                    filter_value = param.value
                 elif param.operator in operator_range:
                     query_name = "range"
                     filter_value = {operator_range[param.operator]: param.value}

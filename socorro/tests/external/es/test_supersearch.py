@@ -175,47 +175,6 @@ class TestIntegrationSuperSearch:
                 _results_number=50,
             )
 
-    def test_get_with_other_process_type(self, es_helper):
-        now = utc_now()
-        crashstorage = self.build_crashstorage()
-        api = SuperSearchWithFields(crashstorage=crashstorage)
-
-        es_helper.index_crash(
-            processed_crash={
-                "uuid": create_new_ooid(timestamp=now),
-                "process_type": "parent",
-                "date_processed": now,
-            },
-        )
-
-        es_helper.index_crash(
-            processed_crash={
-                "uuid": create_new_ooid(timestamp=now),
-                "process_type": "vr",
-                "date_processed": now,
-            },
-        )
-
-        es_helper.refresh()
-
-        # Search for a known process type
-        res = api.get(process_type="=parent", _columns=["process_type"])
-        assert res["total"] == 1
-        assert len(res["hits"]) == 1
-        assert res["hits"][0]["process_type"] == "parent"
-
-        # Check if other process type returns the unknown type
-        res = api.get(process_type="=other", _columns=["process_type"])
-        assert res["total"] == 1
-        assert len(res["hits"]) == 1
-        assert res["hits"][0]["process_type"] == "vr"
-
-        # Not other should return all known types
-        res = api.get(process_type="!=other", _columns=["process_type"])
-        assert res["total"] == 1
-        assert len(res["hits"]) == 1
-        assert res["hits"][0]["process_type"] == "parent"
-
     def test_get_with_enum_operators(self, es_helper):
         now = utc_now()
         crashstorage = self.build_crashstorage()
