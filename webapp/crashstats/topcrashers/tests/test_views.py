@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats.models import Signature, BugAssociation
+from crashstats.settings.base import PROCESS_TYPES
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
 
@@ -97,6 +98,85 @@ class TestTopCrasherViews:
         response = client.get(url, {"product": "Firefox", "version": "1.0"})
         assert response.status_code == 200
         assert "2021-01-01 12:23:34" in smart_str(response.content)
+
+    def test_topcrashers_other_process_types(self, client, db, es_helper):
+        # Index crash data for known process types
+        crash_data = []
+        expected_num_reports = 0
+        now = utc_now() - datetime.timedelta(days=1)
+        process_types = {
+            process[0] if isinstance(process, tuple) else process
+            for process in PROCESS_TYPES
+        }
+
+        base_crash_report = {
+            "date_processed": now,
+            "product": "Firefox",
+            "version": "1.0",
+            "dom_fission_enabled": True,
+            "is_garbage_collecting": False,
+            "os_name": "Linux",
+            "report_type": "crash",
+            "startup_crash": False,
+            "uptime": 1000,
+        }
+
+        # Index crash data for a known process type
+        for process in process_types:
+            crash_data.append(
+                {
+                    **base_crash_report,
+                    "uuid": create_new_ooid(timestamp=now),
+                    "process_type": process,
+                    "signature": "KnownProcess",
+                }
+            )
+            expected_num_reports += 1
+
+        # Index crash data for an other process type
+        crash_data.append(
+            {
+                **base_crash_report,
+                "uuid": create_new_ooid(timestamp=now),
+                "process_type": "vr",
+                "signature": "OtherProcess",
+            }
+        )
+        expected_num_reports += 1
+
+        for item in crash_data:
+            es_helper.index_crash(processed_crash=item, refresh=False)
+        es_helper.refresh()
+
+        url = reverse("topcrashers:topcrashers")
+
+        # Check to see if 'other' returns OtherProcess type result on topcrashers page
+        response = client.get(
+            url,
+            {"product": "Firefox", "version": "1.0", "process_type": "other"},
+        )
+        assert response.status_code == 200
+        assert "OtherProcess" in smart_str(response.content)
+        assert "KnownProcess" not in smart_str(response.content)
+
+        # Assert that each process type has a button
+        response = client.get(
+            url,
+            {"product": "Firefox", "version": "1.0"},
+        )
+        process_types_with_any_other = process_types | {"any", "other"}
+        assert response.status_code == 200
+        for process in process_types_with_any_other:
+            assert process in smart_str(response.content)
+
+        # Assert total report count for any equals the sum of reports for
+        # each specific process type, including those not in PROCESS_TYPE
+        response = client.get(
+            url,
+            {"product": "Firefox", "version": "1.0", "process_type": "any"},
+        )
+        assert response.status_code == 200
+        assert f"of all {expected_num_reports} crashes" in smart_str(response.content)
 
     def test_topcrashers_multiple_version(self, client, db, es_helper):
         # Test that querying several versions do not raise an error

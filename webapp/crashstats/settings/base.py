@@ -331,12 +331,13 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # Process types to allow in queries.
 # If tuple, the second option is human readable label.
 PROCESS_TYPES = (
-    "any",
-    "parent",
-    "plugin",
     "content",
     ("gpu", "GPU"),
-    "all",  # alias for 'any'
+    "parent",
+    "plugin",
+    ("rdd", "RDD"),
+    "socket",
+    "utility",
 )
 
 # fields used in the simplified UI for Super Search

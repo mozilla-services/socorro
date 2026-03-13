@@ -6,6 +6,7 @@ import logging
 from contextlib import suppress
 
 from socorro.lib.libsocorrodataschema import get_schema
+from webapp.crashstats.settings.base import PROCESS_TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -1281,12 +1282,8 @@ FIELDS = {
     "process_type": {
         "data_validation_type": "str",
         "form_field_choices": [
-            "any",
-            "parent",
-            "plugin",
-            "content",
-            "gpu",
-            "all",
+            process[0] if isinstance(process, tuple) else process
+            for process in PROCESS_TYPES
         ],
         "has_full_version": False,
         "in_database_name": "process_type",
