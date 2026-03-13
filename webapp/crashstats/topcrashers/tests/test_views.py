@@ -102,6 +102,7 @@ class TestTopCrasherViews:
     def test_topcrashers_other_process_types(self, client, db, es_helper):
         # Index crash data for known process types
         crash_data = []
+        expected_num_reports = 0
         now = utc_now() - datetime.timedelta(days=1)
         process_types = {
             process[0] if isinstance(process, tuple) else process
@@ -109,41 +110,40 @@ class TestTopCrasherViews:
         }
         specific_process_types = process_types - {"any", "all", "other"}
 
+        base_crash_report = {
+            "date_processed": now,
+            "product": "Firefox",
+            "version": "1.0",
+            "dom_fission_enabled": True,
+            "is_garbage_collecting": False,
+            "os_name": "Linux",
+            "report_type": "crash",
+            "startup_crash": False,
+            "uptime": 1000,
+        }
+
+        # Index crash data for a known process type
         for process in specific_process_types:
             crash_data.append(
                 {
-                    "date_processed": now,
+                    **base_crash_report,
                     "uuid": create_new_ooid(timestamp=now),
-                    "signature": "KnownProcess",
-                    "product": "Firefox",
-                    "version": "1.0",
-                    "dom_fission_enabled": True,
-                    "is_garbage_collecting": False,
-                    "os_name": "Linux",
                     "process_type": process,
-                    "report_type": "crash",
-                    "startup_crash": False,
-                    "uptime": 1000,
+                    "signature": "KnownProcess",
                 }
             )
+            expected_num_reports += 1
 
-        # Index crash data for an unknown process type
+        # Index crash data for an other process type
         crash_data.append(
             {
-                "date_processed": now,
+                **base_crash_report,
                 "uuid": create_new_ooid(timestamp=now),
-                "signature": "UnknownProcess",
-                "product": "Firefox",
-                "version": "1.0",
-                "dom_fission_enabled": True,
-                "is_garbage_collecting": False,
-                "os_name": "Linux",
                 "process_type": "vr",
-                "report_type": "crash",
-                "startup_crash": False,
-                "uptime": 1000,
+                "signature": "OtherProcess",
             }
         )
+        expected_num_reports += 1
 
         for item in crash_data:
             es_helper.index_crash(processed_crash=item, refresh=False)
@@ -151,13 +151,13 @@ class TestTopCrasherViews:
 
         url = reverse("topcrashers:topcrashers")
 
-        # Check to see if 'other' returns OtherProcess type signature on topcrashers page
+        # Check to see if 'other' returns OtherProcess type result on topcrashers page
         response = client.get(
             url,
             {"product": "Firefox", "version": "1.0", "process_type": "other"},
         )
         assert response.status_code == 200
-        assert "UnknownProcess" in smart_str(response.content)
+        assert "OtherProcess" in smart_str(response.content)
         assert "KnownProcess" not in smart_str(response.content)
 
         # Assert that each process type has a button
@@ -170,15 +170,14 @@ class TestTopCrasherViews:
         for process in all_process_type:
             assert process in smart_str(response.content)
 
-        # Assert total report count for any equals the sum of all distinct process types
+        # Assert total report count for any equals the sum of reports for
+        # each specific process type, including those not in PROCESS_TYPE
         response = client.get(
             url,
             {"product": "Firefox", "version": "1.0", "process_type": "any"},
         )
         assert response.status_code == 200
-        assert f"of all {len(specific_process_types) + 1} crashes" in smart_str(
-            response.content
-        )
+        assert f"of all {expected_num_reports} crashes" in smart_str(response.content)
 
     def test_topcrashers_multiple_version(self, client, db, es_helper):
         # Test that querying several versions do not raise an error
