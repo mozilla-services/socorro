@@ -333,8 +333,6 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # 'other' is added at the end as a fallback option
 # for types not listed explicitly
 PROCESS_TYPES = (
-    "all",  # alias for 'any'
-    "any",
     "content",
     ("gpu", "GPU"),
     "parent",
@@ -342,7 +340,6 @@ PROCESS_TYPES = (
     ("rdd", "RDD"),
     "socket",
     "utility",
-    "other",
 )
 
 # fields used in the simplified UI for Super Search

@@ -108,7 +108,6 @@ class TestTopCrasherViews:
             process[0] if isinstance(process, tuple) else process
             for process in PROCESS_TYPES
         }
-        specific_process_types = process_types - {"any", "all", "other"}
 
         base_crash_report = {
             "date_processed": now,
@@ -123,7 +122,7 @@ class TestTopCrasherViews:
         }
 
         # Index crash data for a known process type
-        for process in specific_process_types:
+        for process in process_types:
             crash_data.append(
                 {
                     **base_crash_report,
@@ -165,9 +164,9 @@ class TestTopCrasherViews:
             url,
             {"product": "Firefox", "version": "1.0"},
         )
-        all_process_type = process_types - {"all"}
+        process_types_with_any_other = process_types | {"any", "other"}
         assert response.status_code == 200
-        for process in all_process_type:
+        for process in process_types_with_any_other:
             assert process in smart_str(response.content)
 
         # Assert total report count for any equals the sum of reports for

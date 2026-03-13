@@ -58,8 +58,7 @@ def get_topcrashers_stats(**kwargs):
             process[0] if isinstance(process, tuple) else process
             for process in PROCESS_TYPES
         }
-        specific_process_types = process_types - {"any", "all", "other"}
-        params["process_type"] = [f"!{process}" for process in specific_process_types]
+        params["process_type"] = [f"!{process}" for process in process_types]
     if params.get("report_type") in ("any", "all"):
         params["report_type"] = None
 
@@ -179,7 +178,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
         else:
             process_types.append(option)
 
-    if crash_type not in process_types:
+    if crash_type not in process_types and crash_type not in ("any", "other"):
         crash_type = "parent"
 
     context["crash_type"] = crash_type
@@ -290,9 +289,9 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context["possible_days"] = possible_days
     context["total_crashing_signatures"] = len(signatures)
     context["process_type_values"] = []
-    for option in settings.PROCESS_TYPES:
-        if option == "all":
-            continue
+
+    process_types = ("any",) + PROCESS_TYPES + ("other",)
+    for option in process_types:
         if isinstance(option, (list, tuple)):
             value, label = option
         else:
