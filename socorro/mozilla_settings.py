@@ -77,6 +77,7 @@ LOGGING_LEVEL = _config(
 STATSD_HOST = _config("STATSD_HOST", default="localhost", doc="statsd host.")
 STATSD_PORT = _config("STATSD_PORT", default="8125", parser=int, doc="statsd port.")
 
+
 # Processor configuration
 PROCESSOR = {
     "task_manager": {

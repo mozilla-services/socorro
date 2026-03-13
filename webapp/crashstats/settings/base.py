@@ -330,8 +330,6 @@ CORS_URLS_REGEX = r"^/api/.*$"
 
 # Process types to allow in queries.
 # If tuple, the second option is human readable label.
-# 'other' is added at the end as a fallback option
-# for types not listed explicitly
 PROCESS_TYPES = (
     "content",
     ("gpu", "GPU"),
