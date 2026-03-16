@@ -6,12 +6,23 @@ import logging
 from contextlib import suppress
 
 from socorro.lib.libsocorrodataschema import get_schema
-from webapp.crashstats.settings.base import PROCESS_TYPES
 
 logger = logging.getLogger(__name__)
 
 
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
+
+# Process types to allow in queries.
+# If tuple, the second option is human readable label.
+PROCESS_TYPES = [
+    "content",
+    ("gpu", "GPU"),
+    "parent",
+    "plugin",
+    ("rdd", "RDD"),
+    "socket",
+    "utility",
+]
 
 
 def parse_mapping(mapping, namespace):

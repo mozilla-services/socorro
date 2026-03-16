@@ -328,18 +328,6 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_URLS_REGEX = r"^/api/.*$"
 
-# Process types to allow in queries.
-# If tuple, the second option is human readable label.
-PROCESS_TYPES = (
-    "content",
-    ("gpu", "GPU"),
-    "parent",
-    "plugin",
-    ("rdd", "RDD"),
-    "socket",
-    "utility",
-)
-
 # fields used in the simplified UI for Super Search
 SIMPLE_SEARCH_FIELDS = ("product", "version", "platform", "process_type")
 
