@@ -22,7 +22,7 @@ from crashstats.crashstats.utils import get_comparison_signatures, SignatureStat
 from crashstats.supersearch.models import SuperSearchUnredacted
 from crashstats.supersearch.utils import get_date_boundaries
 from crashstats.topcrashers.forms import TopCrashersForm
-from webapp.crashstats.settings.base import PROCESS_TYPES
+from socorro.external.es.super_search_fields import PROCESS_TYPES
 
 
 def datetime_to_build_id(date):
@@ -169,10 +169,10 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     elif tcbs_mode == "byday":
         end_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # settings.PROCESS_TYPES might contain tuple to indicate that some
+    # PROCESS_TYPES might contain tuple to indicate that some
     # are actual labels.
     process_types = []
-    for option in settings.PROCESS_TYPES:
+    for option in PROCESS_TYPES:
         if isinstance(option, (list, tuple)):
             process_types.append(option[0])
         else:
@@ -290,7 +290,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     context["total_crashing_signatures"] = len(signatures)
     context["process_type_values"] = []
 
-    process_types = ("any",) + PROCESS_TYPES + ("other",)
+    process_types = ["any", *PROCESS_TYPES, "other"]
     for option in process_types:
         if isinstance(option, (list, tuple)):
             value, label = option

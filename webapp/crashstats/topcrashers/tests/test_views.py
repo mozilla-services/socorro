@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from crashstats.crashstats.models import Signature, BugAssociation
-from crashstats.settings.base import PROCESS_TYPES
+from socorro.external.es.super_search_fields import PROCESS_TYPES
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
 
