@@ -347,31 +347,54 @@ Dependencies
 Python Dependencies
 -------------------
 
-Python dependencies are maintained in the ``pyproject.toml`` file; ``uv`` keeps
-exact versions and build hashes in ``uv.lock``.
+Python dependencies are maintained in the ``pyproject.toml`` file and managed
+with ``uv``; ``uv`` keeps exact versions and build hashes in ``uv.lock``. Most
+``uv`` commands should be run inside the container, which can be done using
+``just uv``. It's usually helpful to run ``just uv sync`` after dependency
+changes to make sure the managed virtual environment inside the Docker
+container gets updated.
 
-Most ``uv`` commands should be run inside the container, which can be done
-using ``just uv``. To add a new dependency, you can run:
+Adding a dependency
+^^^^^^^^^^^^^^^^^^^
+
+We don't restrict the versions of most dependencies in ``pyproject.toml``, so
+in the common case you can simply run
 
 .. code-block:: shell
 
-   $ just uv add my-new-dependency
+   just uv add my-new-dependency
+   just uv sync
 
-Then install the new dependency in the managed virtual environment in the
-container, you can run
+Upgrading a dependency restricted in ``pyproject.yaml``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If a dependency has version restrictions in ``pyproject.yaml``, e.g.
+``django~=5.2.11``, and you want to upgrade to a new version range, e.g.
+``django~=6.2.4``, you can use ``uv add`` as well:
 
 .. code-block:: shell
 
-   $ just uv sync
+   just uv add django~=6.2.4
+   just uv sync
 
-If there are problems, it'll tell you.
+Upgrading the pinned versions of dependencies in ``uv.lock``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In some cases, you might want to update the primary and all the secondary
 dependencies. To do this, run:
 
 .. code-block:: shell
 
-   $ just uv lock --upgrade
+   just uv lock --upgrade
+   just uv sync
+
+You can also upgrade only a single dependency (and whatever newer versions
+of transitive dependencies it needs):
+
+.. code-block:: shell
+
+   just uv lock --upgrade-package some-dependency
+   just uv sync
 
 JavaScript Dependencies
 -----------------------
