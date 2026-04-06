@@ -39,6 +39,7 @@ def delta_days(since_datetime):
     """Return the delta in days between now and since_datetime"""
     return (timezone.now() - since_datetime).days
 
+
 def get_access_token(client_id, client_secret, domain, session):
     url = f"https://{domain}/oauth/token"
     audience = f"https://{domain}/api/v2/"
@@ -67,6 +68,7 @@ def find_users(client_id, client_secret, domain, email, session):
 
     return response.json()
 
+
 def is_blocked_in_auth0(email):
     session = session_with_retries(total_retries=5)
     users = find_users(
@@ -80,6 +82,7 @@ def is_blocked_in_auth0(email):
         if user.get("blocked"):
             return True
     return False
+
 
 class Command(BaseCommand):
     help = "Audits Django groups and removes inactive users."
@@ -117,13 +120,13 @@ class Command(BaseCommand):
         for user in hackers_group.user_set.all():
             is_blocked = False
             try:
-                if self.is_employee_or_exception(user):
-                    is_blocked = is_blocked_in_auth0(user.email)
+                is_blocked = is_blocked_in_auth0(user.email)
             except RuntimeError as e:
                 self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
 
             if is_blocked:
                 users_to_remove.append((user, "user has lost employment"))
+
             elif not user.is_active:
                 users_to_remove.append((user, "!is_active"))
 
@@ -152,13 +155,7 @@ class Command(BaseCommand):
             self.stdout.write("Removing: %s (%s)" % (user.email, reason))
             if dryrun is False:
                 hackers_group.user_set.remove(user)
-                change_message = f"Removed {user.email} from hackers--{reason}."
-                
-                if reason == "user has lost employment":
-                    user.token_set.all().delete()
-                    self.stdout.write("Removing %s's tokens: (%s)" % (user.email, reason))
-                    change_message = f"Removed {user.email} from hackers and revoked API tokens--{reason}."
-                
+
                 # Toss a LogEntry in so we can keep track of when people get
                 # de-granted and what did it
                 LogEntry.objects.log_action(
@@ -167,7 +164,8 @@ class Command(BaseCommand):
                     object_id=user.pk,
                     object_repr=user.email,
                     action_flag=CHANGE,
-                    change_message=change_message,
+                    change_message="Removed %s from hackers--%s."
+                    % (user.email, reason),
                 )
 
         self.stdout.write("Total removed: %s" % len(users_to_remove))
