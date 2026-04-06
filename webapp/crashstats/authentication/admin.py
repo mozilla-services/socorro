@@ -63,7 +63,7 @@ class PolicyExceptionAdmin(admin.ModelAdmin):
     """Admin page for PolicyExceptions."""
 
     list_display = ["get_user_email", "comment", "created", "user_linked"]
-    search_fields = ["user__email", "notes"]
+    search_fields = ["user__email", "comment"]
 
     def get_user_email(self, obj):
         return obj.user.email
