@@ -92,14 +92,11 @@ class Command(BaseCommand):
             "--dry-run", action="store_true", help="Whether or not to do a dry run."
         )
 
-    def is_policy_exception(self, user):
+    def is_employee_or_exception(self, user):
         # If this user has a policy exception, then they're allowed
         if PolicyException.objects.filter(user=user).exists():
             return True
 
-        return False
-
-    def has_valid_mozilla_email(self, user):
         if user.email.endswith(VALID_EMAIL_DOMAINS):
             return True
 
@@ -128,15 +125,13 @@ class Command(BaseCommand):
                 self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
 
             # User may be blocked as a security mitigation. Eg: too many login attempts
-            if is_blocked and self.has_valid_mozilla_email(user):
+            if is_blocked:
                 users_to_remove.append((user, "user has most likely lost employment"))
 
             elif not user.is_active:
                 users_to_remove.append((user, "!is_active"))
 
-            elif not self.is_policy_exception(
-                user
-            ) and not self.has_valid_mozilla_email(user):
+            elif not self.is_employee_or_exception(user):
                 users_to_remove.append((user, "not employee or exception"))
 
             elif user.last_login and user.last_login < cutoff:

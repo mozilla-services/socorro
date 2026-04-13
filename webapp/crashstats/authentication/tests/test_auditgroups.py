@@ -189,28 +189,6 @@ class TestAuditGroupsCommand:
         assert hackers_group.user_set.count() == 1
         assert "Removing:" not in buffer.getvalue()
 
-    def test_blocked_user_with_invalid_email_and_no_exception(self, db, monkeypatch):
-        hackers_group = Group.objects.get(name="Hackers")
-
-        bob = User.objects.create(username="bob", email="bob@gmail.com")
-        bob.last_login = timezone.now()
-        bob.groups.add(hackers_group)
-        bob.save()
-
-        monkeypatch.setattr(
-            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
-            lambda email: True,
-        )
-
-        assert hackers_group.user_set.count() == 1
-
-        buffer = StringIO()
-        call_command("auditgroups", dry_run=False, stdout=buffer)
-        assert hackers_group.user_set.count() == 0
-        assert (
-            "Removing: bob@gmail.com (not employee or exception)" in buffer.getvalue()
-        )
-
     def test_dry_run_true(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
