@@ -24,7 +24,7 @@ JOBS = [
     {
         # Audit hackers group every week
         "cmd": "auditgroups",
-        "frequency": "7d",
+        "frequency": "1d",
         "time": "05:00",
     },
     {
