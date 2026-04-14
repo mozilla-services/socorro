@@ -2,19 +2,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections import defaultdict
-from contextlib import suppress
 import datetime
 import re
+from collections import defaultdict
+from contextlib import suppress
 
-from elasticsearch.exceptions import NotFoundError, BadRequestError
-from elasticsearch.dsl import A, Q, Search, AggResponse
+from elasticsearch.dsl import A, AggResponse, Q, Search
+from elasticsearch.exceptions import BadRequestError, ConnectionTimeout, NotFoundError
 
 from socorro.external.es.base import generate_list_of_indexes
 from socorro.external.es.search_common import SearchBase
 from socorro.external.es.super_search_fields import get_search_key
 from socorro.lib import BadArgumentError, MissingArgumentError, libdatetime
-
 
 BAD_INDEX_REGEX = re.compile(r"\[\[(.*)\] missing\]")
 ELASTICSEARCH_PARSE_EXCEPTION_REGEX = re.compile(r"\[([^\]]+)\] could not be parsed")
@@ -485,8 +484,30 @@ class SuperSearch(SearchBase):
                             if value == bad_input:
                                 raise BadArgumentError(key) from exc
 
+                with suppress(KeyError):
+                    if (
+                        exc.body["error"]["caused_by"]["type"]
+                        == "too_complex_to_determinize_exception"
+                    ):
+                        raise BadArgumentError(
+                            "query",
+                            msg=(
+                                "Search query is too complex to execute. "
+                                "Simplify the search pattern and try again."
+                            ),
+                        ) from exc
+
                 # Re-raise the original exception
                 raise
+
+            except ConnectionTimeout as exc:
+                raise BadArgumentError(
+                    "query",
+                    msg=(
+                        "Search query timed out. "
+                        "Simplify the search pattern and try again."
+                    ),
+                ) from exc
 
         if shards and shards.failed:
             # Some shards failed. We want to explain what happened in the

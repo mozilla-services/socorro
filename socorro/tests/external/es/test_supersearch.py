@@ -3,8 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-import json
 import http.server
+import json
 import threading
 from contextlib import contextmanager
 from copy import deepcopy
@@ -13,23 +13,26 @@ import pytest
 
 from socorro import settings
 from socorro.external.es import search_common
-from socorro.external.es.supersearch import SuperSearch
 from socorro.external.es.super_search_fields import FIELDS
+from socorro.external.es.supersearch import SuperSearch
 from socorro.lib import BadArgumentError, libdatetime
-
-from socorro.libclass import build_instance
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
+from socorro.libclass import build_instance
 
 
 @contextmanager
-def mock_es_server(ip, port, post_response):
+def mock_es_server(ip, port, post_response, status_code=200, delay=0):
     class MockHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         """mock request handler"""
 
         def do_POST(self):  # pylint: disable=invalid-name
             """Handle GET requests"""
-            self.send_response(200)
+            if delay:
+                import time
+
+                time.sleep(delay)
+            self.send_response(status_code)
             self.send_header("Content-Type", "application/json")
             self.send_header("X-Elastic-Product", "Elasticsearch")
             self.end_headers()
@@ -1884,3 +1887,54 @@ class TestIntegrationSuperSearch:
                 {"type": "shards", "index": "other_index", "shards_count": 1},
             ]
             assert res["errors"] == errors_exp
+
+    def test_get_with_too_complex_query(self, es_helper):
+        ip, port = "127.0.0.1", 9998
+        too_complex_response = {
+            "error": {
+                "root_cause": [
+                    {
+                        "type": "too_complex_to_determinize_exception",
+                        "reason": (
+                            "Determinizing automaton with 501 states and 125250 "
+                            "transitions would require more than 10000 effort."
+                        ),
+                    }
+                ],
+                "type": "search_phase_execution_exception",
+                "reason": "all shards failed",
+                "phase": "query",
+                "grouped": True,
+                "failed_shards": [],
+                "caused_by": {
+                    "type": "too_complex_to_determinize_exception",
+                    "reason": (
+                        "Determinizing automaton with 501 states and 125250 "
+                        "transitions would require more than 10000 effort."
+                    ),
+                },
+            },
+            "status": 400,
+        }
+        with settings.override(**{"ES_STORAGE.options.url": f"http://{ip}:{port}"}):
+            crashstorage = self.build_crashstorage()
+            api = SuperSearchWithFields(crashstorage=crashstorage)
+
+            with mock_es_server(ip, port, too_complex_response, status_code=400):
+                with pytest.raises(BadArgumentError):
+                    api.get(signature="@a?a?a?a?a?")
+
+    def test_get_with_connection_timeout(self, es_helper):
+        ip, port = "127.0.0.1", 9999
+        with settings.override(
+            **{
+                "ES_STORAGE.options.url": f"http://{ip}:{port}",
+                "ES_STORAGE.options.timeout": 0.05,
+            }
+        ):
+            crashstorage = self.build_crashstorage()
+            api = SuperSearchWithFields(crashstorage=crashstorage)
+
+            with mock_es_server(ip, port, {}, delay=0.2):
+                with pytest.raises(BadArgumentError):
+                    api.get(signature="@a?a?a?a?a?")
