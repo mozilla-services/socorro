@@ -177,13 +177,15 @@ class CSignatureTool:
 
         # Collapse arguments
         if self.collapse_arguments:
+            function = function.replace("(anonymous namespace)", "placeholder")
             function = collapse(
                 function,
                 open_string="(",
                 close_string=")",
                 replacement="",
-                exceptions=("anonymous namespace", "operator"),
+                exceptions=("operator",),
             )
+            function = function.replace("placeholder", "(anonymous namespace)")
 
         # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
         if "clone .cold" in function:
