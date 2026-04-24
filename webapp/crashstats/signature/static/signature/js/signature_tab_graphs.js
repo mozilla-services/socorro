@@ -103,11 +103,20 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
     });
   });
 
+  // By reading back innerHTML, the browser serializes the text node
+  // into safe HTML thus escaping special characters.
+  function escapeHTML(str) {
+    let tmpDiv = document.createElement('div');
+    tmpDiv.textContent = str;
+    return tmpDiv.innerHTML;
+  }
+
   // Make the data object into an array of arrays for Metrics Graphics
   // and add the associated legend in the same order.
-  $.each(lineDataObject, function (key, lineData) {
+  // The keys of lineDataObject are crash report field values
+  $.each(lineDataObject, function (fieldValue, lineData) {
     lineDataArray.push(lineData);
-    legend.push(key);
+    legend.push(escapeHTML(fieldValue));
   });
 
   // Return the line data, the legend and also any remaining terms after the
@@ -150,7 +159,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
     legend_target: '.new-legend',
     show_secondary_x_label: false,
     mouseover: function (d) {
-      $('.mg-active-datapoint', contentElement).html(d.term + ': ' + d.count + (d.count === 1 ? ' crash' : ' crashes'));
+      $('.mg-active-datapoint', contentElement).text(d.term + ': ' + d.count + (d.count === 1 ? ' crash' : ' crashes'));
     },
   });
 
