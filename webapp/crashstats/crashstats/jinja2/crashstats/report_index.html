@@ -1010,7 +1010,7 @@
                         {% if module.missing_symbols %}
                           <span class="row-notice" title="missing symbol">&Oslash;</span>
                         {% endif %}
-                        {% if module.symbol_url %}
+                        {% if module.symbol_url and module.symbol_url.startswith(('http://', 'https://')) %}
                           <a href="{{ module.symbol_url }}">{{ module.filename }}</a>
                         {% else %}
                           {{ module.filename }}

@@ -633,6 +633,20 @@ class Test_report_index:
                     "symbol_url": "https://s3.example.com/winmm.sym",
                     "version": "5.1.2600.2180",
                 },
+                {
+                    "base_addr": "0x00007ff6701d0000",
+                    "cert_subject": "Mozilla Corporation",
+                    "code_id": "69dff8aaaf000",
+                    "corrupt_symbols": False,
+                    "debug_file": "firefox.pdb",
+                    "debug_id": "5DE8036FC7DE826B4C4C44205044422E1",
+                    "end_addr": "0x00007ff67027f000",
+                    "filename": "firefox.exe",
+                    "loaded_symbols": True,
+                    "missing_symbols": False,
+                    "symbol_url": "javascript:alert(1)",
+                    "version": "150.0.0.3",
+                },
             ],
         }
 
@@ -647,10 +661,10 @@ class Test_report_index:
         response = client.get(url)
         assert response.status_code == 200
 
-        assert 'id="modules-list"' in smart_str(response.content)
-        assert '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in smart_str(
-            response.content
-        )
+        content = smart_str(response.content)
+        assert 'id="modules-list"' in content
+        assert '<a href="https://s3.example.com/winmm.sym">winmm.dll</a>' in content
+        assert 'href="javascript:alert(1)"' not in content
 
     def test_cert_subject_in_modules(self, client, db, storage_helper):
         json_dump = {
