@@ -176,7 +176,8 @@ class CSignatureTool:
         )
 
         def cpp_argument_exceptions(exceptions, before_token, after_token, token):
-            exceptions = ["(anonymous namespace)", "operator"]
+            if not exceptions:
+                return False
             for s in exceptions:
                 if before_token.endswith(s):
                     return True
@@ -191,6 +192,7 @@ class CSignatureTool:
                 open_string="(",
                 close_string=")",
                 replacement="",
+                exceptions=("(anonymous namespace)", "operator"),
                 is_exception=cpp_argument_exceptions,
             )
 
