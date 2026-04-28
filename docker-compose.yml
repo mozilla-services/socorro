@@ -146,14 +146,12 @@ services:
   # External services
   # -----------------------------
 
-  # https://hub.docker.com/r/mozilla/socorro_collector/
-  #
   # This pulls the latest Antenna and treats it as an external service.
   #
   # This uses the development ./bin/run_web.sh script from the Antenna
   # container since that creates a bucket before running Antenna.
   collector:
-    image: mozilla/socorro_collector:latest
+    image: us-docker.pkg.dev/moz-fx-socorro-prod/socorro-prod/antenna:latest
     env_file:
       - docker/config/local_dev.env
       - .env
