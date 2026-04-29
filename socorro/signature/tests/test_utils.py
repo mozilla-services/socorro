@@ -146,13 +146,45 @@ def test_parse_source_file(source_file, expected):
         ),
     ],
 )
-def test_collapse(function, expected):
+def test_collapse_types(function, expected):
     params = {
         "function": function,
         "open_string": "<",
         "close_string": ">",
         "replacement": "<T>",
         "exceptions": ["name omitted", "IPC::ParamTraits", " as "],
+    }
+    assert collapse(**params) == expected
+
+
+@pytest.mark.parametrize(
+    "function, expected",
+    [
+        ("", ""),
+        ("testVal", "testVal"),
+        ("f( *s)", "f"),
+        ("f( &s)", "f"),
+        ("f( *s , &n)", "f"),
+        ("f3(s,t,u)", "f3"),
+        ("(anonymous namespace)::foo", "(anonymous namespace)::foo"),
+        (
+            "CCGraphBuilder::BuildGraph(class js::SliceBudget& const)",
+            "CCGraphBuilder::BuildGraph",
+        ),
+        ("operator()(s,t,u)", "operator()"),
+        (
+            "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+            "mozilla::SpinEventLoopUntil",
+        ),
+    ],
+)
+def test_collapse_arguments(function, expected):
+    params = {
+        "function": function,
+        "open_string": "(",
+        "close_string": ")",
+        "replacement": "",
+        "exceptions": ["(anonymous namespace)", "operator"],
     }
     assert collapse(**params) == expected
 

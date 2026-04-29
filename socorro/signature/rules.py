@@ -175,16 +175,6 @@ class CSignatureTool:
             exceptions=("name omitted", "IPC::ParamTraits", " in "),
         )
 
-        def cpp_argument_exceptions(exceptions, before_token, after_token, token):
-            if not exceptions:
-                return False
-            for s in exceptions:
-                if before_token.endswith(s):
-                    return True
-                if s == token:
-                    return True
-            return False
-
         # Collapse arguments
         if self.collapse_arguments:
             function = collapse(
@@ -193,7 +183,6 @@ class CSignatureTool:
                 close_string=")",
                 replacement="",
                 exceptions=("(anonymous namespace)", "operator"),
-                is_exception=cpp_argument_exceptions,
             )
 
         # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
