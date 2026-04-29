@@ -249,14 +249,10 @@ def collapse(
     open_count = 0
     open_token = []
 
-    if is_exception is None:
-        is_exception = _is_exception
-
     for i, char in enumerate(function):
         if not open_count:
-            if char == open_string and not (
-                is_exception
-                and is_exception(exceptions, function[:i], function[i + 1 :], "")
+            if char == open_string and not _is_exception(
+                exceptions, function[:i], function[i + 1 :], ""
             ):
                 open_count += 1
                 open_token = [char]
@@ -274,7 +270,7 @@ def collapse(
 
                 if open_count == 0:
                     token = "".join(open_token)
-                    if is_exception and is_exception(
+                    if _is_exception(
                         exceptions, function[:i], function[i + 1 :], token
                     ):
                         collapsed.append("".join(open_token))
@@ -286,9 +282,7 @@ def collapse(
 
     if open_count:
         token = "".join(open_token)
-        if is_exception and is_exception(
-            exceptions, function[:i], function[i + 1 :], token
-        ):
+        if _is_exception(exceptions, function[:i], function[i + 1 :], token):
             collapsed.append("".join(open_token))
         else:
             collapsed.append(replacement)
