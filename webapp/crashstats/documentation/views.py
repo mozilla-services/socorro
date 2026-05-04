@@ -57,7 +57,7 @@ def read_whatsnew():
 
     with open(path, "r") as fp:
         data = fp.read()
-        parts = docutils.core.publish_parts(data, writer_name="html")
+        parts = docutils.core.publish_parts(data, writer="html")
 
     return parts["html_body"]
 
