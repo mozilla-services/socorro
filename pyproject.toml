@@ -64,6 +64,7 @@ dependencies = [
     "urlwait",
     "werkzeug",
     "whitenoise",
+    "yamllint",
 ]
 
 [dependency-groups]

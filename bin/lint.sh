@@ -44,6 +44,9 @@ else
         license-check .
     fi
 
+    echo ">>> yamllint"
+    yamllint socorro/schemas/
+
     echo ">>> eslint (js)"
     cd /app/webapp
     /app/webapp/node_modules/.bin/eslint .

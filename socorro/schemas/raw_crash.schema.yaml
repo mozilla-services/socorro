@@ -733,7 +733,7 @@ properties:
       Set to 1 when Marionette (WebDriver Classic) is enabled.
     type: string
     permissions: ["public"]
-  
+
   ModuleSignatureInfo:
     data_reviews:
       - unknown
@@ -923,7 +923,7 @@ properties:
       Set to 1 when the Remote Agent (WebDriver BiDi) is enabled.
     type: string
     permissions: ["public"]
-  
+
   RemoteType:
     data_reviews:
       - unknown
