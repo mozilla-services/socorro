@@ -583,6 +583,7 @@ definitions:
         description: >
           Number of threads in the crashing process at the time of the crash.
         type: ["integer", "null"]
+        permissions: ["public"]
       unloaded_modules:
         description: |
           Modules no longer mapped into the process' address space when the
@@ -628,10 +629,6 @@ definitions:
           permissions: ["public"]
           type: object
         type: ["array", "null"]
-      thread_count:
-        description: How many threads there are.
-        type: ["integer", "null"]
-        permissions: ["public"]
       threads:
         items:
           description: Information on a thread.
