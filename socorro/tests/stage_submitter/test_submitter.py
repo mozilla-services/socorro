@@ -547,6 +547,44 @@ def test_different_samples(pubsub_helper, monkeypatch, gcs_helper, mock_collecto
     metricsmock.assert_incr("socorro.submitter.ignore")
 
 
+def test_bearer_token(pubsub_helper, gcs_helper, mock_collector):
+    token = "123"
+
+    bucket = gcs_helper.get_crashstorage_bucket()
+    gcs_helper.create_bucket(bucket)
+    crash_id = "de1bb258-cbbf-4589-a673-34f800160918"
+    save_crash(
+        gcs_helper=gcs_helper,
+        bucket=bucket,
+        raw_crash={
+            "Product": "Firefox",
+            "uuid": crash_id,
+            "Version": "60.0",
+            "metadata": {
+                "collector_notes": [],
+                "dump_checksums": {},
+                "payload_compressed": "0",
+                "payload": "multipart",
+            },
+            "version": 2,
+        },
+        dumps={"upload_file_minidump": "abcdef"},
+    )
+
+    pubsub_helper.publish("standard", crash_id)
+
+    with settings.override(
+        STAGE_SUBMITTER_DESTINATIONS=["http://antenna:8000/submit|100"],
+        BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN=token,
+    ):
+        app = get_app()
+        app.run_once()
+
+    assert len(mock_collector.payloads) == 1
+    headers = mock_collector.payloads[0].headers
+    assert headers["Authorization"] == f"Bearer {token}"
+
+
 def test_user_agent(pubsub_helper, gcs_helper, mock_collector):
     user_agent = "crash-reporter/1.0"
 

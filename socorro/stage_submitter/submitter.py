@@ -256,6 +256,9 @@ class SubmitterApp:
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     def set_up(self):
+        if not settings.BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN:
+            raise ValueError("BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN is not set.")
+
         set_up_logging(
             local_dev_env=settings.LOCAL_DEV_ENV,
             logging_level=settings.STAGE_SUBMITTER_LOGGING_LEVEL,
@@ -395,6 +398,12 @@ class SubmitterApp:
 
                 # Set the User-Agent header so the collector captures this in the metadata
                 headers["User-Agent"] = user_agent
+
+                # Set the Authorization header, so the collector accepts the crash report
+                # with its pre-existing uuid.
+                headers["Authorization"] = (
+                    f"Bearer {settings.BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN}"
+                )
 
                 # Post to all destinations
                 for destination in destinations:

@@ -45,7 +45,7 @@ Additionally has:
 Running in a local dev environment
 ==================================
 
-To run the stage submitter and fake collector, do:
+To run the stage submitter and fake collector, first start up socorro, then do:
 
 ::
 
