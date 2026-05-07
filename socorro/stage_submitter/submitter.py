@@ -396,6 +396,12 @@ class SubmitterApp:
                 # Set the User-Agent header so the collector captures this in the metadata
                 headers["User-Agent"] = user_agent
 
+                # Set the Authorization header, so the collector accepts the crash report
+                # with its pre-existing uuid.
+                headers["Authorization"] = (
+                    f"Bearer {settings.BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN}"
+                )
+
                 # Post to all destinations
                 for destination in destinations:
                     try:

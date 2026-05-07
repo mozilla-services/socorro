@@ -41,6 +41,7 @@ TOOL_ENV = _config(
 if TOOL_ENV:
     fake_values = [
         ("ELASTICSEARCH_URL", "http://elasticsearch:9200"),
+        ("BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN", "faketoken"),
     ]
     for key, val in fake_values:
         os.environ[key] = val
@@ -303,8 +304,15 @@ BETAVERSIONRULE_VERSION_STRING_API = _config(
     doc="URL for the version string API endpoint in the Crash Stats webapp.",
 )
 
-
 # Stage submitter configuration
+BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN = _config(
+    "BREAKPAD_STAGE_SUBMITTER_BEARER_TOKEN",
+    doc=(
+        "Stage submitter bearer auth token sent on every /submit HTTP POST "
+        "request to Antenna."
+    ),
+)
+
 STAGE_SUBMITTER_LOGGING_LEVEL = _config(
     "STAGE_SUBMITTER_LOGGING_LEVEL",
     default="INFO",
