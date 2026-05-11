@@ -376,6 +376,51 @@ class TestViews:
             assert "$thanks" in params["reason"]
             assert "Exception" in params["java_stack_trace"]
 
+    def test_search_results_strips_disallowed_field_references(
+        self, client, db, es_helper
+    ):
+        """Anonymous users can't reference protected fields in list-of-fields params."""
+
+        calls = []
+
+        def mocked_supersearch_get(**params):
+            calls.append(params)
+            return {"hits": [], "facets": "", "total": 0}
+
+        with mock.patch(
+            "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
+        ) as mocked_get_implementation:
+            mocked_get_implementation.return_value.get.side_effect = (
+                mocked_supersearch_get
+            )
+            url = reverse("supersearch:search_results")
+
+            response = client.get(
+                url,
+                {
+                    "_sort": ["user_comments", "-user_comments", "date"],
+                    "_columns": ["signature", "user_comments"],
+                    "_facets": ["signature", "user_comments"],
+                },
+            )
+            assert response.status_code == 200
+
+            # First call is get_versions_for_product(); the real query is calls[1]
+            params = calls[1]
+
+            # _sort: protected field is stripped (both forms), allowed field survives.
+            assert "user_comments" not in params["_sort"]
+            assert "-user_comments" not in params["_sort"]
+            assert "date" in params["_sort"]
+
+            # _columns: protected field is stripped.
+            assert "user_comments" not in params["_columns"]
+            assert "signature" in params["_columns"]
+
+            # _facets: protected field is stripped.
+            assert "user_comments" not in params["_facets"]
+            assert "signature" in params["_facets"]
+
     def test_search_results_pagination(self, client, db, es_helper):
         """Test that the pagination of results works as expected."""
 

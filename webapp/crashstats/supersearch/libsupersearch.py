@@ -114,3 +114,57 @@ class SuperSearchStatusModel:
             "latest_index": latest_index,
             "mapping": mapping_properties,
         }
+
+
+def get_allowed_fields(user=None):
+    """Return the names of SuperSearch fields the User may reference.
+
+    :arg user: A Django User or ``None``. If ``None``, only fields with no
+    permissions requirements are returned.
+
+    :returns: tuple of field name strings.
+
+    """
+
+    def permissions_condition(field):
+        if user is not None:
+            return user.has_perms(field["webapp_permissions_needed"])
+        return not field["webapp_permissions_needed"]
+
+    fields = get_supersearch_fields().values()
+
+    return tuple(
+        x["name"] for x in fields if x["is_exposed"] and permissions_condition(x)
+    )
+
+
+def sanitize_list_of_fields_params(
+    params, allowed_fields, list_of_fields_params=("_facets", "_columns", "_sort")
+):
+    """Strip disallowed field references from list-of-fields parameters.
+    Handles _sort fields that may be prefixed with `-`.
+
+    :arg params: dict of SuperSearch query parameters
+
+    :arg list_of_fields_params: tuple of parameter names whose values are
+    lists of field names
+
+    :returns: the mutated ``params`` dict, with disallowed entries
+    removed
+    """
+    allowed_fields_set = set(allowed_fields)
+
+    for key in list_of_fields_params:
+        # _sort: bare field name or with `-` prefix for reverse order.
+        if key == "_sort":
+            params[key] = [
+                v
+                for v in params.get(key, [])
+                if v in allowed_fields_set
+                or (v.startswith("-") and v[1:] in allowed_fields_set)
+            ]
+        # Other list-of-fields parameters (no `-` prefix)
+        else:
+            params[key] = [v for v in params.get(key, []) if v in allowed_fields_set]
+
+    return params
