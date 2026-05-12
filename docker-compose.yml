@@ -161,6 +161,7 @@ services:
       - statsd
     expose:
       - 8000
+    command: web
     ports:
       - "8888:8000"
 
