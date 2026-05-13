@@ -429,7 +429,13 @@ class TestSuperSearch(BaseTestViews):
     @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
     def test_api(self, mock_implementation):
         def mocked_get(**params):
-            restricted_params = ("_facets", "_aggs.signature", "_histogram.date")
+            restricted_params = (
+                "_facets",
+                "_aggs.signature",
+                "_histogram.date",
+                "_sort",
+                "_columns",
+            )
             for key in restricted_params:
                 if key in params:
                     assert "url" not in params[key]
@@ -472,6 +478,8 @@ class TestSuperSearch(BaseTestViews):
                 "_facets": ["url", "product"],
                 "_aggs.signature": ["url", "product"],
                 "_histogram.date": ["url", "product"],
+                "_sort": ["url", "-url"],
+                "_columns": ["url", "product"],
             },
         )
         assert response.status_code == 200

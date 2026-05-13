@@ -31,6 +31,10 @@ from crashstats.supersearch.models import (
 from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
+from webapp.crashstats.supersearch.libsupersearch import (
+    get_allowed_fields,
+    sanitize_list_of_fields_params,
+)
 
 
 DEFAULT_COLUMNS = ("date", "signature", "product", "version", "build_id", "platform")
@@ -48,14 +52,6 @@ DEFAULT_DATE_RANGE_DAYS = 7
 
 class ValidationError(Exception):
     pass
-
-
-def get_allowed_fields(user):
-    return tuple(
-        x["name"]
-        for x in SuperSearchFields().get().values()
-        if x["is_exposed"] and user.has_perms(x["webapp_permissions_needed"])
-    )
 
 
 def get_supersearch_form(request):
@@ -93,16 +89,9 @@ def get_params(request):
     params["_facets"] = request.GET.getlist("_facets", DEFAULT_FACETS)
     params["_columns"] = request.GET.getlist("_columns") or DEFAULT_COLUMNS
 
-    allowed_fields = get_allowed_fields(request.user)
-
     # Make sure only allowed fields are used.
-    params["_sort"] = [
-        x
-        for x in params["_sort"]
-        if x in allowed_fields or (x.startswith("-") and x[1:] in allowed_fields)
-    ]
-    params["_facets"] = [x for x in params["_facets"] if x in allowed_fields]
-    params["_columns"] = [x for x in params["_columns"] if x in allowed_fields]
+    allowed_fields = get_allowed_fields(request.user)
+    params = sanitize_list_of_fields_params(params, allowed_fields)
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.

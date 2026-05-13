@@ -7,8 +7,10 @@ import copy
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
+    get_allowed_fields,
     get_supersearch_fields,
     SuperSearchStatusModel,
+    sanitize_list_of_fields_params,
 )
 from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
@@ -34,7 +36,9 @@ SUPERSEARCH_META_PARAMS = (
 PARAMETERS_LISTING_FIELDS = (
     "_aggs.product.version",
     "_aggs.android_cpu_abi.android_manufacturer.android_model",
+    "_columns",
     "_facets",
+    "_sort",
 )
 
 
@@ -151,12 +155,7 @@ class SuperSearch(ESSocorroMiddleware):
 
         # Initialize the list of allowed fields with all the fields we know
         # that are returned and do not require any permission.
-        allowed_fields = {
-            x
-            for x in self.all_fields
-            if self.all_fields[x]["is_returned"]
-            and not self.all_fields[x]["webapp_permissions_needed"]
-        }
+        allowed_fields = set(get_allowed_fields())
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.
@@ -178,10 +177,9 @@ class SuperSearch(ESSocorroMiddleware):
 
         # Now make sure all fields listing fields only have unrestricted
         # values.
-        for param in self.parameters_listing_fields:
-            values = kwargs.get(param, [])
-            filtered_values = [x for x in values if x in allowed_fields]
-            kwargs[param] = filtered_values
+        kwargs = sanitize_list_of_fields_params(
+            kwargs, allowed_fields, list_of_fields_params=self.parameters_listing_fields
+        )
 
         # SuperSearch requires that the list of fields be passed to it.
         kwargs["_fields"] = self.all_fields
