@@ -21,7 +21,7 @@ class TestAuditGroupsCommand:
         call_command("auditgroups", stdout=buffer)
         assert "Removing:" not in buffer.getvalue()
 
-    def test_inactive_user_is_removed(self, db):
+    def test_inactive_user_is_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
@@ -29,6 +29,10 @@ class TestAuditGroupsCommand:
         bob.is_active = False
         bob.groups.add(hackers_group)
         bob.save()
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         assert hackers_group.user_set.count() == 1
 
@@ -39,13 +43,18 @@ class TestAuditGroupsCommand:
 
         assert hackers_group.user_set.count() == 0
 
-    def test_old_user_is_removed(self, db):
+    def test_old_user_is_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
         bob.last_login = timezone.now() - datetime.timedelta(days=366)
         bob.groups.add(hackers_group)
         bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         buffer = StringIO()
         call_command("auditgroups", dry_run=False, stdout=buffer)
@@ -54,13 +63,18 @@ class TestAuditGroupsCommand:
             "Removing: bob@mozilla.com (inactive 366d, no tokens)" in buffer.getvalue()
         )
 
-    def test_user_with_invalid_email_removed(self, db):
+    def test_user_with_invalid_email_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@example.com")
         bob.last_login = timezone.now()
         bob.groups.add(hackers_group)
         bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         buffer = StringIO()
         call_command("auditgroups", dry_run=False, stdout=buffer)
@@ -69,13 +83,18 @@ class TestAuditGroupsCommand:
             "Removing: bob@example.com (not employee or exception)" in buffer.getvalue()
         )
 
-    def test_user_with_policy_exception_is_not_removed(self, db):
+    def test_user_with_policy_exception_is_not_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@example.com")
         bob.last_login = timezone.now()
         bob.groups.add(hackers_group)
         bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         policyexception = PolicyException.objects.create(user=bob, comment="friend")
         policyexception.save()
@@ -85,13 +104,18 @@ class TestAuditGroupsCommand:
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@example.com"]
         assert "Removing:" not in buffer.getvalue()
 
-    def test_old_user_with_active_api_tokens_is_not_removed(self, db):
+    def test_old_user_with_active_api_tokens_is_not_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
         bob.last_login = timezone.now() - datetime.timedelta(days=366)
         bob.groups.add(hackers_group)
         bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         token = Token.objects.create(user=bob)
         token.save()
@@ -104,7 +128,7 @@ class TestAuditGroupsCommand:
             in buffer.getvalue()
         )
 
-    def test_active_user_is_not_removed(self, db):
+    def test_active_user_is_not_removed(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
@@ -112,18 +136,71 @@ class TestAuditGroupsCommand:
         bob.groups.add(hackers_group)
         bob.save()
 
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
+
         buffer = StringIO()
         call_command("auditgroups", dry_run=False, stdout=buffer)
         assert [u.email for u in hackers_group.user_set.all()] == ["bob@mozilla.com"]
         assert "Removing:" not in buffer.getvalue()
 
-    def test_dry_run_true(self, db):
+    def test_user_blocked_in_auth0_is_removed(self, db, monkeypatch):
+        hackers_group = Group.objects.get(name="Hackers")
+
+        bob = User.objects.create(username="bob", email="bob@mozilla.com")
+        bob.last_login = timezone.now()
+        bob.groups.add(hackers_group)
+        bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: True,
+        )
+
+        assert hackers_group.user_set.count() == 1
+
+        buffer = StringIO()
+        call_command("auditgroups", dry_run=False, stdout=buffer)
+        assert hackers_group.user_set.count() == 0
+        assert (
+            "Removing: bob@mozilla.com (user has most likely lost employment)"
+            in buffer.getvalue()
+        )
+
+    def test_user_not_blocked_in_auth0_is_not_removed(self, db, monkeypatch):
+        hackers_group = Group.objects.get(name="Hackers")
+
+        bob = User.objects.create(username="bob", email="bob@mozilla.com")
+        bob.last_login = timezone.now()
+        bob.groups.add(hackers_group)
+        bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
+
+        assert hackers_group.user_set.count() == 1
+
+        buffer = StringIO()
+        call_command("auditgroups", dry_run=False, stdout=buffer)
+        assert hackers_group.user_set.count() == 1
+        assert "Removing:" not in buffer.getvalue()
+
+    def test_dry_run_true(self, db, monkeypatch):
         hackers_group = Group.objects.get(name="Hackers")
 
         bob = User.objects.create(username="bob", email="bob@mozilla.com")
         bob.last_login = timezone.now() - datetime.timedelta(days=366)
         bob.groups.add(hackers_group)
         bob.save()
+
+        monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
+            lambda email: False,
+        )
 
         assert hackers_group.user_set.count() == 1
 
