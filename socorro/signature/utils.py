@@ -6,6 +6,7 @@
 import contextlib
 import copy
 import re
+from typing import Callable, Iterator
 from urllib.parse import urlsplit
 
 from glom import glom, assign
@@ -184,110 +185,60 @@ def parse_source_file(source_file):
     return None
 
 
-def _is_exception(exceptions, before_token, after_token, token):
-    """Predicate for whether the open token is in an exception context
+def find_enclosed_slices(
+    s: str, opening_token: str, closing_token: str
+) -> Iterator[tuple[int, int]]:
+    """Takes a string and returns a tuple of the start and end index for each substring enclosed
+    by opening_token and closing_token
 
-    :arg exceptions: list of strings or None
-    :arg before_token: the text of the function up to the token delimiter
-    :arg after_token: the text of the function after the token delimiter
-    :arg token: the token (only if we're looking at a close delimiter
+    :arg s: the string to search
+    :arg opening_token: the character that indicates the start of the substring
+    :arg closing_token: the character that indicates the end of the substring
 
-    :returns: bool
-
+    :returns: generator iterator where each value is a tuple (start_index, end_index)
     """
-    if not exceptions:
-        return False
-    for s in exceptions:
-        if before_token.endswith(s):
-            return True
-        if s in token:
-            return True
-    return False
+    nesting_level = 0
+    start_index = 0
+
+    for i, char in enumerate(s):
+        if char == opening_token:
+            if nesting_level == 0:
+                start_index = i
+            nesting_level += 1
+        elif char == closing_token and nesting_level > 0:
+            nesting_level -= 1
+            if nesting_level == 0:
+                yield start_index, i + 1
+    if nesting_level:
+        yield start_index, len(s)
 
 
-def collapse(
-    function,
-    open_string,
-    close_string,
-    replacement="",
-    exceptions=None,
-    is_exception=None,
-):
-    """Collapses the text between two delimiters in a frame function value
+def replace_enclosed_slices(
+    s: str,
+    opening_token: str,
+    closing_token: str,
+    replace: Callable[[str, str, str], str],
+) -> str:
+    """Takes a string and modifies the space inside the opening_token and closing_token based on replace function
 
-    This collapses the text between two delimiters and either removes the text
-    altogether or replaces it with a replacement string.
+    :arg s: The string to modify
+    :arg opening_token: the character that indicates the start of the substring
+    :arg closing_token: the character that indicates the end of the substring
+    :arg replace: A function that determines what the substring is replaced by
 
-    There are certain contexts in which we might not want to collapse the text
-    between two delimiters. These are denoted as "exceptions" and collapse will
-    check for those exception strings occuring before the token to be replaced
-    or inside the token to be replaced.
-
-    Before::
-
-        IPC::ParamTraits<nsTSubstring<char> >::Write(IPC::Message *,nsTSubstring<char> const &)
-               ^        ^ open token
-               exception string occurring before open token
-
-    Inside::
-
-        <rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute
-        ^                              ^^^^ exception string inside token
-        open token
-
-    :arg function: the function value from a frame to collapse tokens in
-    :arg open_string: the open delimiter; e.g. ``(``
-    :arg close_string: the close delimiter; e.g. ``)``
-    :arg replacement: what to replace the token with; e.g. ``<T>``
-    :arg exceptions: list of strings denoting exceptions where we don't want
-        to collapse the token
-
-    :returns: new function string with tokens collapsed
-
+    :returns: A new string with the slice replaced
     """
-    collapsed = []
-    open_count = 0
-    open_token = []
+    fragments = []
+    previous_end = 0
 
-    for i, char in enumerate(function):
-        if not open_count:
-            if char == open_string and not _is_exception(
-                exceptions, function[:i], function[i + 1 :], ""
-            ):
-                open_count += 1
-                open_token = [char]
-            else:
-                collapsed.append(char)
+    for start, end in find_enclosed_slices(s, opening_token, closing_token):
+        before, inside, after = s[previous_end:start], s[start:end], s[end:]
+        fragments.append(before)
+        fragments.append(replace(before, inside, after))
+        previous_end = end
 
-        else:
-            if char == open_string:
-                open_count += 1
-                open_token.append(char)
-
-            elif char == close_string:
-                open_count -= 1
-                open_token.append(char)
-
-                if open_count == 0:
-                    token = "".join(open_token)
-                    if _is_exception(
-                        exceptions, function[:i], function[i + 1 :], token
-                    ):
-                        collapsed.append("".join(open_token))
-                    else:
-                        collapsed.append(replacement)
-                    open_token = []
-            else:
-                open_token.append(char)
-
-    if open_count:
-        token = "".join(open_token)
-        if _is_exception(exceptions, function[:i], function[i + 1 :], token):
-            collapsed.append("".join(open_token))
-        else:
-            collapsed.append(replacement)
-
-    return "".join(collapsed)
+    fragments.append(s[previous_end:])
+    return "".join(fragments)
 
 
 def drop_prefix_and_return_type(function):
