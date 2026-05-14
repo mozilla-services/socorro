@@ -12,7 +12,7 @@ from glom import glom
 
 from .siglists_utils import get_signature_list_content
 from .utils import (
-    collapse,
+    replace_enclosed_slices,
     drop_bad_characters,
     drop_prefix_and_return_type,
     get_crashing_thread,
@@ -115,18 +115,20 @@ class CSignatureTool:
         function = drop_prefix_and_return_type(function)
 
         # Collapse types
-        function = collapse(
+        function = replace_enclosed_slices(
             function,
-            open_string="<",
-            close_string=">",
-            replacement="<T>",
-            exceptions=(" as ",),
+            opening_token="<",
+            closing_token=">",
+            replace=lambda before, inside, after: inside if " as " in inside else "<T>",
         )
 
         # Collapse arguments
         if self.collapse_arguments:
-            function = collapse(
-                function, open_string="(", close_string=")", replacement=""
+            function = replace_enclosed_slices(
+                function,
+                opening_token="(",
+                closing_token=")",
+                replace=lambda before, inside, after: "",
             )
 
         if self.signatures_with_line_numbers_re.match(function):
@@ -167,28 +169,50 @@ class CSignatureTool:
         #
         # NOTE(willkg): The " in " is for handling "<unknown in foobar.dll>". bug
         # #1685178
-        function = collapse(
-            function,
-            open_string="<",
-            close_string=">",
-            replacement="<T>",
-            exceptions=("name omitted", "IPC::ParamTraits", " in "),
+        def get_type_replacement(before, inside, after):
+            exceptions = ["name omitted", "IPC::ParamTraits", " as "]
+            for s in exceptions:
+                if before.endswith(s):
+                    s_without_outer_tokens = inside[1:-1]
+
+                    inside_substring = replace_enclosed_slices(
+                        s_without_outer_tokens, "<", ">", get_type_replacement
+                    )
+                    return f"<{inside_substring}>"
+                if s in inside:
+                    return inside
+            return "<T>"
+
+        function = replace_enclosed_slices(
+            function, opening_token="<", closing_token=">", replace=get_type_replacement
         )
 
         # Collapse arguments
-        if self.collapse_arguments:
-            function = collapse(
-                function,
-                open_string="(",
-                close_string=")",
-                replacement="",
-                exceptions=("anonymous namespace", "operator"),
-            )
+        def get_argument_replacement(before, inside, after):
+            exceptions = ["(anonymous namespace)", "operator"]
+            for s in exceptions:
+                if before.endswith(s):
+                    return inside
+                if s in inside and not (s.startswith("(") and s.endswith(")")):
+                    return inside
+                if s == inside:
+                    return inside
+            return ""
+
+        function = replace_enclosed_slices(
+            function,
+            opening_token="(",
+            closing_token=")",
+            replace=get_argument_replacement,
+        )
 
         # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
         if "clone .cold" in function:
-            function = collapse(
-                function, open_string="[", close_string="]", replacement=""
+            function = replace_enclosed_slices(
+                function,
+                opening_token="[",
+                closing_token="]",
+                replace=lambda before, inside, after: "",
             )
 
         if self.signatures_with_line_numbers_re.match(function):

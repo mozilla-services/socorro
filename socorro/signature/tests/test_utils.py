@@ -7,7 +7,7 @@ import copy
 import pytest
 
 from ..utils import (
-    collapse,
+    replace_enclosed_slices,
     drop_bad_characters,
     drop_prefix_and_return_type,
     get_crashing_thread,
@@ -114,6 +114,9 @@ def test_parse_source_file(source_file, expected):
     assert parse_source_file(source_file) == expected
 
 
+# TODO: add test cases for find_enclosed_slices
+
+
 @pytest.mark.parametrize(
     "function, expected",
     [
@@ -146,15 +149,70 @@ def test_parse_source_file(source_file, expected):
         ),
     ],
 )
-def test_collapse(function, expected):
+def test_replace_enclosed_slices_types(function, expected):
+    def get_type_replacement(before, inside, after):
+        exceptions = ["name omitted", "IPC::ParamTraits", " as "]
+        for s in exceptions:
+            if before.endswith(s):
+                s_without_outer_tokens = inside[1:-1]
+
+                inside_substring = replace_enclosed_slices(
+                    s_without_outer_tokens, "<", ">", get_type_replacement
+                )
+                return f"<{inside_substring}>"
+            if s in inside:
+                return inside
+        return "<T>"
+
     params = {
-        "function": function,
-        "open_string": "<",
-        "close_string": ">",
-        "replacement": "<T>",
-        "exceptions": ["name omitted", "IPC::ParamTraits", " as "],
+        "s": function,
+        "opening_token": "<",
+        "closing_token": ">",
+        "replace": get_type_replacement,
     }
-    assert collapse(**params) == expected
+    assert replace_enclosed_slices(**params) == expected
+
+
+@pytest.mark.parametrize(
+    "function, expected",
+    [
+        ("", ""),
+        ("testVal", "testVal"),
+        ("f( *s)", "f"),
+        ("f( &s)", "f"),
+        ("f( *s , &n)", "f"),
+        ("f3(s,t,u)", "f3"),
+        ("(anonymous namespace)::foo", "(anonymous namespace)::foo"),
+        (
+            "CCGraphBuilder::BuildGraph(class js::SliceBudget& const)",
+            "CCGraphBuilder::BuildGraph",
+        ),
+        ("operator()(s,t,u)", "operator()"),
+        (
+            "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+            "mozilla::SpinEventLoopUntil",
+        ),
+    ],
+)
+def test_replace_enclosed_slices_arguments(function, expected):
+    def get_argument_replacement(before, inside, after):
+        exceptions = ["(anonymous namespace)", "operator"]
+        for s in exceptions:
+            if before.endswith(s):
+                return inside
+            if s in inside and not (s.startswith("(") and s.endswith(")")):
+                return inside
+            if s == inside:
+                return inside
+        return ""
+
+    params = {
+        "s": function,
+        "opening_token": "(",
+        "closing_token": ")",
+        "replace": get_argument_replacement,
+    }
+    assert replace_enclosed_slices(**params) == expected
 
 
 @pytest.mark.parametrize(
