@@ -510,6 +510,7 @@ OIDC_RP_CLIENT_SECRET = _config("OIDC_RP_CLIENT_SECRET", default="")
 OIDC_OP_AUTHORIZATION_ENDPOINT = _config("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
 OIDC_OP_TOKEN_ENDPOINT = _config("OIDC_OP_TOKEN_ENDPOINT", default="")
 OIDC_OP_USER_ENDPOINT = _config("OIDC_OP_USER_ENDPOINT", default="")
+AUTH0_MANAGEMENT_API_ENDPOINT = _config("AUTH0_MANAGEMENT_API_ENDPOINT", default="")
 # List of urls that are exempt from session refresh because they're used in XHR
 # contexts and that doesn't handle redirecting.
 OIDC_EXEMPT_URLS = [
