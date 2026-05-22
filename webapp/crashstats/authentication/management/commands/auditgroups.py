@@ -121,7 +121,9 @@ class Command(BaseCommand):
                 try:
                     # User may be blocked as a security mitigation. Eg: too many login attempts
                     if is_blocked_in_auth0(user.email):
-                        users_to_remove.append((user, "user has most likely lost employment"))
+                        users_to_remove.append(
+                            (user, "user has most likely lost employment")
+                        )
                 except RuntimeError as e:
                     self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
 
