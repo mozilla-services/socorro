@@ -170,17 +170,14 @@ class CSignatureTool:
         # NOTE(willkg): The " in " is for handling "<unknown in foobar.dll>". bug
         # #1685178
         def get_type_replacement(before, inside, after):
-            exceptions = ["name omitted", "IPC::ParamTraits", " as "]
-            for s in exceptions:
-                if before.endswith(s):
-                    s_without_outer_tokens = inside[1:-1]
-
-                    inside_substring = replace_enclosed_slices(
-                        s_without_outer_tokens, "<", ">", get_type_replacement
-                    )
-                    return f"<{inside_substring}>"
-                if s in inside:
-                    return inside
+            if inside == "<name omitted>" or " as " in inside:
+                return inside
+            if before.endswith("IPC::ParamTraits"):
+                s_without_outer_tokens = inside[1:-1]
+                inside_substring = replace_enclosed_slices(
+                    s_without_outer_tokens, "<", ">", get_type_replacement
+                )
+                return f"<{inside_substring}>"
             return "<T>"
 
         function = replace_enclosed_slices(
@@ -189,14 +186,8 @@ class CSignatureTool:
 
         # Collapse arguments
         def get_argument_replacement(before, inside, after):
-            exceptions = ["(anonymous namespace)", "operator"]
-            for s in exceptions:
-                if before.endswith(s):
-                    return inside
-                if s in inside and not (s.startswith("(") and s.endswith(")")):
-                    return inside
-                if s == inside:
-                    return inside
+            if inside == "(anonymous namespace)" or before.endswith("operator"):
+                return inside
             return ""
 
         function = replace_enclosed_slices(

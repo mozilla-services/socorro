@@ -7,6 +7,7 @@ import copy
 import pytest
 
 from ..utils import (
+    find_enclosed_slices,
     replace_enclosed_slices,
     drop_bad_characters,
     drop_prefix_and_return_type,
@@ -114,7 +115,39 @@ def test_parse_source_file(source_file, expected):
     assert parse_source_file(source_file) == expected
 
 
-# TODO: add test cases for find_enclosed_slices
+@pytest.mark.parametrize(
+    "s, opening_token, closing_token, expected",
+    [
+        ("", "(", ")", []),
+        ("(anonymous namespace)::foo", "(", ")", [(0, 21)]),
+        ("operator()(s,t,u)", "(", ")", [(8, 10), (10, 17)]),
+        ("testVal", "(", ")", []),
+        ("f( *s)", "(", ")", [(1, 6)]),
+        ("Foo<bar", "<", ">", [(3, 7)]),
+        ("Foo<bar <baz> >", "<", ">", [(3, 15)]),
+        ("Foo<bar<baz>", "<", ">", [(3, 12)]),
+        (
+            "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+            "(",
+            ")",
+            [(27, 131)],
+        ),
+        (
+            "<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute",
+            "<",
+            ">",
+            [(0, 56)],
+        ),
+        (
+            "IPC::ParamTraits<nsTSubstring<char> >::Write(IPC::Message *,nsTSubstring<char> const &)",
+            "<",
+            ">",
+            [(16, 37), (72, 78)],
+        ),
+    ],
+)
+def test_find_enclosed_slices(s, opening_token, closing_token, expected):
+    assert list(find_enclosed_slices(s, opening_token, closing_token)) == expected
 
 
 @pytest.mark.parametrize(
@@ -151,17 +184,14 @@ def test_parse_source_file(source_file, expected):
 )
 def test_replace_enclosed_slices_types(function, expected):
     def get_type_replacement(before, inside, after):
-        exceptions = ["name omitted", "IPC::ParamTraits", " as "]
-        for s in exceptions:
-            if before.endswith(s):
-                s_without_outer_tokens = inside[1:-1]
-
-                inside_substring = replace_enclosed_slices(
-                    s_without_outer_tokens, "<", ">", get_type_replacement
-                )
-                return f"<{inside_substring}>"
-            if s in inside:
-                return inside
+        if inside == "<name omitted>" or " as " in inside:
+            return inside
+        if before.endswith("IPC::ParamTraits"):
+            s_without_outer_tokens = inside[1:-1]
+            inside_substring = replace_enclosed_slices(
+                s_without_outer_tokens, "<", ">", get_type_replacement
+            )
+            return f"<{inside_substring}>"
         return "<T>"
 
     params = {
@@ -196,14 +226,8 @@ def test_replace_enclosed_slices_types(function, expected):
 )
 def test_replace_enclosed_slices_arguments(function, expected):
     def get_argument_replacement(before, inside, after):
-        exceptions = ["(anonymous namespace)", "operator"]
-        for s in exceptions:
-            if before.endswith(s):
-                return inside
-            if s in inside and not (s.startswith("(") and s.endswith(")")):
-                return inside
-            if s == inside:
-                return inside
+        if inside == "(anonymous namespace)" or before.endswith("operator"):
+            return inside
         return ""
 
     params = {
