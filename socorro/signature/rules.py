@@ -13,6 +13,8 @@ from glom import glom
 from .siglists_utils import get_signature_list_content
 from .utils import (
     replace_enclosed_slices,
+    collapse_arguments,
+    collapse_types,
     drop_bad_characters,
     drop_prefix_and_return_type,
     get_crashing_thread,
@@ -169,33 +171,10 @@ class CSignatureTool:
         #
         # NOTE(willkg): The " in " is for handling "<unknown in foobar.dll>". bug
         # #1685178
-        def get_type_replacement(before, inside, after):
-            if inside == "<name omitted>" or " as " in inside:
-                return inside
-            if before.endswith("IPC::ParamTraits"):
-                s_without_outer_tokens = inside[1:-1]
-                inside_substring = replace_enclosed_slices(
-                    s_without_outer_tokens, "<", ">", get_type_replacement
-                )
-                return f"<{inside_substring}>"
-            return "<T>"
-
-        function = replace_enclosed_slices(
-            function, opening_token="<", closing_token=">", replace=get_type_replacement
-        )
+        function = collapse_types(function)
 
         # Collapse arguments
-        def get_argument_replacement(before, inside, after):
-            if inside == "(anonymous namespace)" or before.endswith("operator"):
-                return inside
-            return ""
-
-        function = replace_enclosed_slices(
-            function,
-            opening_token="(",
-            closing_token=")",
-            replace=get_argument_replacement,
-        )
+        function = collapse_arguments(function)
 
         # Remove PGO cold block labels like "[clone .cold.222]". bug #1397926
         if "clone .cold" in function:

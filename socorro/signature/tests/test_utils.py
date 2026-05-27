@@ -8,7 +8,8 @@ import pytest
 
 from ..utils import (
     find_enclosed_slices,
-    replace_enclosed_slices,
+    collapse_arguments,
+    collapse_types,
     drop_bad_characters,
     drop_prefix_and_return_type,
     get_crashing_thread,
@@ -182,25 +183,8 @@ def test_find_enclosed_slices(s, opening_token, closing_token, expected):
         ),
     ],
 )
-def test_replace_enclosed_slices_types(function, expected):
-    def get_type_replacement(before, inside, after):
-        if inside == "<name omitted>" or " as " in inside:
-            return inside
-        if before.endswith("IPC::ParamTraits"):
-            s_without_outer_tokens = inside[1:-1]
-            inside_substring = replace_enclosed_slices(
-                s_without_outer_tokens, "<", ">", get_type_replacement
-            )
-            return f"<{inside_substring}>"
-        return "<T>"
-
-    params = {
-        "s": function,
-        "opening_token": "<",
-        "closing_token": ">",
-        "replace": get_type_replacement,
-    }
-    assert replace_enclosed_slices(**params) == expected
+def test_collapse_types(function, expected):
+    assert collapse_types(function) == expected
 
 
 @pytest.mark.parametrize(
@@ -224,19 +208,8 @@ def test_replace_enclosed_slices_types(function, expected):
         ),
     ],
 )
-def test_replace_enclosed_slices_arguments(function, expected):
-    def get_argument_replacement(before, inside, after):
-        if inside == "(anonymous namespace)" or before.endswith("operator"):
-            return inside
-        return ""
-
-    params = {
-        "s": function,
-        "opening_token": "(",
-        "closing_token": ")",
-        "replace": get_argument_replacement,
-    }
-    assert replace_enclosed_slices(**params) == expected
+def test_collapse_arguments(function, expected):
+    assert collapse_arguments(function) == expected
 
 
 @pytest.mark.parametrize(

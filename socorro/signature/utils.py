@@ -241,6 +241,56 @@ def replace_enclosed_slices(
     return "".join(fragments)
 
 
+def collapse_types(func_signature: str) -> str:
+    """Takes a C++ function signature string and collapses the types
+    into <T> or an exception based on the replacement function
+
+    :arg func_signature: The function signature string
+
+    :returns: A new function signtaure string with types collapsed
+    """
+
+    def get_type_replacement(before, inside, after):
+        if inside == "<name omitted>" or " as " in inside:
+            return inside
+        if before.endswith("IPC::ParamTraits"):
+            s_without_outer_tokens = inside[1:-1]
+            inside_substring = replace_enclosed_slices(
+                s_without_outer_tokens, "<", ">", get_type_replacement
+            )
+            return f"<{inside_substring}>"
+        return "<T>"
+
+    return replace_enclosed_slices(
+        func_signature,
+        opening_token="<",
+        closing_token=">",
+        replace=get_type_replacement,
+    )
+
+
+def collapse_arguments(func_signature: str) -> str:
+    """Takes a C++ function signature string and collapses the arguments
+    into "" or an exception based on the replacement function
+
+    :arg func_signature: The function signature string
+
+    :returns: A new function signtaure string with types collapsed
+    """
+
+    def get_argument_replacement(before, inside, after):
+        if inside == "(anonymous namespace)" or before.endswith("operator"):
+            return inside
+        return ""
+
+    return replace_enclosed_slices(
+        func_signature,
+        opening_token="(",
+        closing_token=")",
+        replace=get_argument_replacement,
+    )
+
+
 def drop_prefix_and_return_type(function):
     """Takes the function value from a frame and drops prefix and return type
 
