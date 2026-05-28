@@ -381,6 +381,11 @@ class TestCSignatureTool:
             # Normalize anonymous namespace
             ("`anonymous namespace'::foo", "23", "(anonymous namespace)::foo"),
             ("(anonymous namespace)::foo", "23", "(anonymous namespace)::foo"),
+            (
+                "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+                "23",
+                "mozilla::SpinEventLoopUntil",
+            ),
             # Normalize lambda numbers
             (
                 "ShutdownWorkThreads::$_52::__invoke",

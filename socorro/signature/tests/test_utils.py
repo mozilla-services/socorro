@@ -7,7 +7,9 @@ import copy
 import pytest
 
 from ..utils import (
-    collapse,
+    find_enclosed_slices,
+    collapse_arguments,
+    collapse_types,
     drop_bad_characters,
     drop_prefix_and_return_type,
     get_crashing_thread,
@@ -115,6 +117,41 @@ def test_parse_source_file(source_file, expected):
 
 
 @pytest.mark.parametrize(
+    "s, opening_token, closing_token, expected",
+    [
+        ("", "(", ")", []),
+        ("(anonymous namespace)::foo", "(", ")", [(0, 21)]),
+        ("operator()(s,t,u)", "(", ")", [(8, 10), (10, 17)]),
+        ("testVal", "(", ")", []),
+        ("f( *s)", "(", ")", [(1, 6)]),
+        ("Foo<bar", "<", ">", [(3, 7)]),
+        ("Foo<bar <baz> >", "<", ">", [(3, 15)]),
+        ("Foo<bar<baz>", "<", ">", [(3, 12)]),
+        (
+            "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+            "(",
+            ")",
+            [(27, 131)],
+        ),
+        (
+            "<rayon_core::job::HeapJob<BODY> as rayon_core::job::Job>::execute",
+            "<",
+            ">",
+            [(0, 56)],
+        ),
+        (
+            "IPC::ParamTraits<nsTSubstring<char> >::Write(IPC::Message *,nsTSubstring<char> const &)",
+            "<",
+            ">",
+            [(16, 37), (72, 78)],
+        ),
+    ],
+)
+def test_find_enclosed_slices(s, opening_token, closing_token, expected):
+    assert list(find_enclosed_slices(s, opening_token, closing_token)) == expected
+
+
+@pytest.mark.parametrize(
     "function, expected",
     [
         ("", ""),
@@ -146,15 +183,33 @@ def test_parse_source_file(source_file, expected):
         ),
     ],
 )
-def test_collapse(function, expected):
-    params = {
-        "function": function,
-        "open_string": "<",
-        "close_string": ">",
-        "replacement": "<T>",
-        "exceptions": ["name omitted", "IPC::ParamTraits", " as "],
-    }
-    assert collapse(**params) == expected
+def test_collapse_types(function, expected):
+    assert collapse_types(function) == expected
+
+
+@pytest.mark.parametrize(
+    "function, expected",
+    [
+        ("", ""),
+        ("testVal", "testVal"),
+        ("f( *s)", "f"),
+        ("f( &s)", "f"),
+        ("f( *s , &n)", "f"),
+        ("f3(s,t,u)", "f3"),
+        ("(anonymous namespace)::foo", "(anonymous namespace)::foo"),
+        (
+            "CCGraphBuilder::BuildGraph(class js::SliceBudget& const)",
+            "CCGraphBuilder::BuildGraph",
+        ),
+        ("operator()(s,t,u)", "operator()"),
+        (
+            "mozilla::SpinEventLoopUntil(nsTSubstring<T> const&, (anonymous namespace)::ParentImpl::ShutdownBackgroundThread::<T>&&, nsIThread*)",
+            "mozilla::SpinEventLoopUntil",
+        ),
+    ],
+)
+def test_collapse_arguments(function, expected):
+    assert collapse_arguments(function) == expected
 
 
 @pytest.mark.parametrize(
