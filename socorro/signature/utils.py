@@ -255,9 +255,7 @@ def collapse_types(func_signature: str) -> str:
             return inside
         if before.endswith("IPC::ParamTraits"):
             s_without_outer_tokens = inside[1:-1]
-            inside_substring = replace_enclosed_slices(
-                s_without_outer_tokens, "<", ">", get_type_replacement
-            )
+            inside_substring = collapse_types(s_without_outer_tokens)
             return f"<{inside_substring}>"
         return "<T>"
 
