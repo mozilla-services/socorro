@@ -21,7 +21,7 @@ dependencies = [
     "django-waffle",
     "djangorestframework",
     "dockerflow",
-    "elasticsearch~=9.2",
+    "elasticsearch~=9.4",
     "enforce-typing",
     "everett",
     "fillmore",
