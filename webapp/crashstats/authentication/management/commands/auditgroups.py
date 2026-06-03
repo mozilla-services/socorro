@@ -42,12 +42,11 @@ def delta_days(since_datetime):
 
 def get_access_token(client_id, client_secret, domain, session):
     url = f"https://{domain}/oauth/token"
-    audience = f"https://{domain}/api/v2/"
     payload = {
         "client_id": client_id,
         "client_secret": client_secret,
         "grant_type": "client_credentials",
-        "audience": audience,
+        "audience": settings.AUTH0_MANAGEMENT_API_ENDPOINT,
     }
     response = session.post(url, json=payload)
     if response.status_code != 200:
@@ -118,15 +117,15 @@ class Command(BaseCommand):
         # Go through the users and mark the ones for removal
         users_to_remove = []
         for user in hackers_group.user_set.all():
-            is_blocked = False
-            try:
-                is_blocked = is_blocked_in_auth0(user.email)
-            except RuntimeError as e:
-                self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
-
-            # User may be blocked as a security mitigation. Eg: too many login attempts
-            if is_blocked:
-                users_to_remove.append((user, "user has most likely lost employment"))
+            if not settings.LOCAL_DEV_ENV:
+                try:
+                    # User may be blocked as a security mitigation. Eg: too many login attempts
+                    if is_blocked_in_auth0(user.email):
+                        users_to_remove.append(
+                            (user, "user has most likely lost employment")
+                        )
+                except RuntimeError as e:
+                    self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
 
             elif not user.is_active:
                 users_to_remove.append((user, "!is_active"))

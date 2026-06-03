@@ -155,6 +155,11 @@ class TestAuditGroupsCommand:
         bob.save()
 
         monkeypatch.setattr(
+            "crashstats.authentication.management.commands.auditgroups.settings.LOCAL_DEV_ENV",
+            False,
+        )
+
+        monkeypatch.setattr(
             "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
             lambda email: True,
         )

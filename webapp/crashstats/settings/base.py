@@ -505,6 +505,7 @@ VALID_RULESETS = ["default", "regenerate_signature"]
 
 # OIDC credentials are needed to be able to connect with OpenID Connect.
 # Credentials for local development are set in /docker/config/oidcprovider-fixtures.json.
+AUTH0_MANAGEMENT_API_ENDPOINT = _config("AUTH0_MANAGEMENT_API_ENDPOINT", default="")
 OIDC_RP_CLIENT_ID = _config("OIDC_RP_CLIENT_ID", default="")
 OIDC_RP_CLIENT_SECRET = _config("OIDC_RP_CLIENT_SECRET", default="")
 OIDC_OP_AUTHORIZATION_ENDPOINT = _config("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
