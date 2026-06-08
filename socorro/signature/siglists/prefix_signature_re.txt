@@ -202,6 +202,7 @@ RpcRaiseException
 realloc
 recv
 ReleaseData
+rlbox::detail::dynamic_check
 _RTC_Terminate
 Rtl
 _Rtl
