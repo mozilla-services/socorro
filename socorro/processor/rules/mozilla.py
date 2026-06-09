@@ -1286,7 +1286,21 @@ class ShutDownHangCrashingThreadRule(Rule):
     """add docstring here"""
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        signature = processed_crash.get("signature")
-        threads = glom(processed_crash, "json_dump.threads", default=None)
-        if signature and signature.startswith("shutdownhang") and threads:
-            processed_crash["crashing_thread"] = 0
+        if "json_dump" in processed_crash:
+            crash_data = processed_crash["json_dump"]
+            try:
+                crash_info = crash_data.get("crash_info") or {}
+                crashing_thread = int(crash_info.get("crashing_thread", 0))
+            except (TypeError, ValueError):
+                crashing_thread = 0
+
+            stack = glom(crash_data, "threads.%d.frames" % crashing_thread, default=[])
+            
+            if crashing_thread == 0:
+                return
+            
+            for frame in stack:
+                if "RunWatchdog" in (frame.get("function") or ""):
+                    processed_crash["crashing_thread"] = 0
+                    return
+            
