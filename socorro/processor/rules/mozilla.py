@@ -1280,3 +1280,13 @@ class SoftErrorsRule(Rule):
         # Limit the size to 4KB to avoid any potential performance impacts.
         soft_errors_limited = soft_errors_str[:4096]
         processed_crash["soft_errors"] = soft_errors_limited
+
+
+class ShutDownHangCrashingThreadRule(Rule):
+    """add docstring here"""
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        signature = processed_crash.get("signature")
+        threads = glom(processed_crash, "json_dump.threads", default=None)
+        if signature and signature.startswith("shutdownhang") and threads:
+            processed_crash["crashing_thread"] = 0
