@@ -59,6 +59,7 @@ from socorro.processor.rules.mozilla import (
     ThemePrettyNameRule,
     TopMostFilesRule,
     UtilityActorsNameRule,
+    ShutDownHangCrashingThreadRule,
 )
 
 
@@ -125,6 +126,7 @@ DEFAULT_RULESET = [
     MemoryReportExtraction(),
     SoftErrorsRule(),
     ThreadCountRule(),
+    ShutDownHangCrashingThreadRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
 ]
