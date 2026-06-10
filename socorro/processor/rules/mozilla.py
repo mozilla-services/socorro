@@ -1302,5 +1302,6 @@ class ShutDownHangCrashingThreadRule(Rule):
             for frame in stack:
                 if "RunWatchdog" in (frame.get("function") or ""):
                     processed_crash["crashing_thread"] = 0
-                    return
+                    if "crash_info" in processed_crash["json_dump"]:
+                        processed_crash["json_dump"]["crash_info"]["crashing_thread"] = 0
             
