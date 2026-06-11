@@ -126,9 +126,10 @@ DEFAULT_RULESET = [
     MemoryReportExtraction(),
     SoftErrorsRule(),
     ThreadCountRule(),
-    ShutDownHangCrashingThreadRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
+    # change the crashing thread if it's a shutdownhang
+    ShutDownHangCrashingThreadRule(),
 ]
 
 
