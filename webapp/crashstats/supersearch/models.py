@@ -36,7 +36,6 @@ SUPERSEARCH_META_PARAMS = (
 PARAMETERS_LISTING_FIELDS = (
     "_aggs.product.version",
     "_aggs.android_cpu_abi.android_manufacturer.android_model",
-    "_columns",
     "_facets",
     "_sort",
 )

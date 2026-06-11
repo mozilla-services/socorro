@@ -434,7 +434,6 @@ class TestSuperSearch(BaseTestViews):
                 "_aggs.signature",
                 "_histogram.date",
                 "_sort",
-                "_columns",
             )
             for key in restricted_params:
                 if key in params:
@@ -449,7 +448,7 @@ class TestSuperSearch(BaseTestViews):
                         "signature": "abcdef",
                         "product": "WaterWolf",
                         "version": "1.0",
-                        "url": "http://embarassing.website.com",
+                        "url": "http://embarrassing.website.com",
                         "user_comments": "hey I am thebig@lebowski.net",
                     }
                 ],
@@ -487,6 +486,38 @@ class TestSuperSearch(BaseTestViews):
         # Verify values can be lists.
         response = self.client.get(url, {"product": ["WaterWolf", "NightTrain"]})
         assert response.status_code == 200
+
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api_with_view_pii(self, mock_implementation):
+        def mocked_get(**params):
+            assert "url" in params["_columns"]
+            assert "signature" in params["_columns"]
+            return {
+                "hits": [
+                    {
+                        "signature": "abcdef",
+                        "url": "http://embarrassing.website.com",
+                    }
+                ],
+                "facets": {"signature": []},
+                "total": 1,
+            }
+
+        mock_implementation.return_value.get.side_effect = mocked_get
+
+        url = reverse("api:model_wrapper", args=("SuperSearch",))
+
+        user = self._login()
+        self._add_permission(user, "view_pii")
+
+        response = self.client.get(url, {"_columns": ["url", "signature"]})
+        assert response.status_code == 200
+        res = json.loads(response.content)
+
+        assert res["hits"]
+        for hit in res["hits"]:
+            assert hit["signature"] == "abcdef"
+            assert hit["url"] == "http://embarrassing.website.com"
 
 
 class TestSuperSearchUnredacted(BaseTestViews):
