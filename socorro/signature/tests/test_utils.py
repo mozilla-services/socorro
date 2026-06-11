@@ -181,6 +181,7 @@ def test_find_enclosed_slices(s, opening_token, closing_token, expected):
             "IPC::ParamTraits<nsTSubstring<char> >::Write(IPC::Message *,nsTSubstring<char> const &)",
             "IPC::ParamTraits<nsTSubstring<T> >::Write(IPC::Message *,nsTSubstring<T> const &)",
         ),
+        ("<unknown in ntdll.pdb>", "<unknown in ntdll.pdb>"),
     ],
 )
 def test_collapse_types(function, expected):
