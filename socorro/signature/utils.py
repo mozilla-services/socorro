@@ -251,7 +251,7 @@ def collapse_types(func_signature: str) -> str:
     """
 
     def get_type_replacement(before, inside, after):
-        if inside == "<name omitted>" or " as " in inside:
+        if inside == "<name omitted>" or " as " in inside or " in " in inside:
             return inside
         if before.endswith("IPC::ParamTraits"):
             s_without_outer_tokens = inside[1:-1]
