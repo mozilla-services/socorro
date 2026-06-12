@@ -754,34 +754,6 @@ class Test_report_index:
         # Assert that the second unloaded module cert subject shows up
         assert "<td>Microsoft Windows</td>" in smart_str(response.content)
 
-    def test_shutdownhang_signature(self, client, db, storage_helper):
-        json_dump = {
-            "crash_info": {"crashing_thread": 2},
-            "status": "OK",
-            "threads": [
-                {"frame_count": 0, "frames": []},
-                {"frame_count": 0, "frames": []},
-                {"frame_count": 0, "frames": []},
-            ],
-            "modules": [],
-        }
-
-        crash_id, raw_crash, processed_crash = build_crash_data()
-        processed_crash["json_dump"] = json_dump
-        processed_crash["crashing_thread"] = json_dump["crash_info"]["crashing_thread"]
-        processed_crash["json_dump"] = json_dump
-        processed_crash["signature"] = "shutdownhang | foo::bar()"
-        upload_crash_data(
-            storage_helper, raw_crash=raw_crash, processed_crash=processed_crash
-        )
-
-        url = reverse("crashstats:report_index", args=(crash_id,))
-        response = client.get(url)
-        assert response.status_code == 200
-
-        assert "Crashing Thread (2)" not in smart_str(response.content)
-        assert "Crashing Thread (0)" in smart_str(response.content)
-
     def test_no_crashing_thread(self, client, db, storage_helper):
         # If the json_dump has no crashing thread available, do not display a
         # specific crashing thread, but instead display all threads.

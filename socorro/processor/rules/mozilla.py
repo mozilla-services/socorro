@@ -1283,10 +1283,17 @@ class SoftErrorsRule(Rule):
 
 
 class ShutDownHangCrashingThreadRule(Rule):
-    """add docstring here"""
+    """Sets the crashing thread to 0 for shutdownhangs
+
+    Crashes with a `shutdownhang` signature always return the watchdog thread as
+    the crashing thread. But, we want the crashing thread to be 0 since its stack
+    frame reveals the actual reason for the crash.
+
+    Bug #2037932
+
+    """
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         signature = processed_crash.get("signature")
-        threads = glom(processed_crash, "json_dump.threads", default=None)
-        if signature and signature.startswith("shutdownhang") and threads:
+        if signature and signature.startswith("shutdownhang"):
             processed_crash["crashing_thread"] = 0
