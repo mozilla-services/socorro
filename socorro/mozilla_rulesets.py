@@ -53,13 +53,13 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ProcessTypeRule,
     ReportTypeRule,
+    ShutDownHangCrashingThreadRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
     UtilityActorsNameRule,
-    ShutDownHangCrashingThreadRule,
 )
 
 
