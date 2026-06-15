@@ -1280,3 +1280,20 @@ class SoftErrorsRule(Rule):
         # Limit the size to 4KB to avoid any potential performance impacts.
         soft_errors_limited = soft_errors_str[:4096]
         processed_crash["soft_errors"] = soft_errors_limited
+
+
+class ShutDownHangCrashingThreadRule(Rule):
+    """Sets the crashing thread to 0 for shutdownhangs
+
+    Crashes with a `shutdownhang` signature always return the watchdog thread as
+    the crashing thread. But, we want the crashing thread to be 0 since its stack
+    frame reveals the actual reason for the crash.
+
+    Bug #2037932
+
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        signature = processed_crash.get("signature")
+        if signature and signature.startswith("shutdownhang"):
+            processed_crash["crashing_thread"] = 0

@@ -36,6 +36,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ProcessTypeRule,
     ReportTypeRule,
+    ShutDownHangCrashingThreadRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
     SubmittedFromRule,
@@ -2457,3 +2458,43 @@ class TestSoftErrorsRule:
         rule.act(raw_crash, dumps, processed, str(tmp_path), status)
 
         assert processed == expected
+
+
+class TestShutDownHangCrashingThreadRule:
+    def test_is_shutdownhang(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "crashing_thread": 58,
+            "signature": "shutdownhang | mozilla::scache::StartupCache::GetBuffer",
+        }
+        status = Status()
+        rule = ShutDownHangCrashingThreadRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["crashing_thread"] == 0
+
+    def test_is_not_shutdownhang(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "crashing_thread": 58,
+            "signature": "mozilla::scache::StartupCache::GetBuffer",
+        }
+        status = Status()
+        rule = ShutDownHangCrashingThreadRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["crashing_thread"] == 58
+
+    def test_no_crash_signature(self, tmp_path):
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {
+            "crashing_thread": 58,
+        }
+        status = Status()
+        rule = ShutDownHangCrashingThreadRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["crashing_thread"] == 58

@@ -53,6 +53,7 @@ from socorro.processor.rules.mozilla import (
     PluginRule,
     ProcessTypeRule,
     ReportTypeRule,
+    ShutDownHangCrashingThreadRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
     SubmittedFromRule,
@@ -127,6 +128,8 @@ DEFAULT_RULESET = [
     ThreadCountRule(),
     # generate signature now that we've done all the processing it depends on
     SignatureGeneratorRule(),
+    # change the crashing thread if it's a shutdownhang
+    ShutDownHangCrashingThreadRule(),
 ]
 
 

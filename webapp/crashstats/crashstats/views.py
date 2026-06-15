@@ -170,11 +170,6 @@ def report_index(request, crash_id, default_context=None):
         parsed_dump = {}
 
     context["crashing_thread"] = context["report"].get("crashing_thread")
-    if context["report"]["signature"].startswith("shutdownhang"):
-        # For shutdownhang signatures, we want to use thread 0 as the crashing thread,
-        # because that's the thread that actually contains the useful data about what
-        # happened.
-        context["crashing_thread"] = 0
 
     context["parsed_dump"] = parsed_dump
 
