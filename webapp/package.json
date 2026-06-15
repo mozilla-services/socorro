@@ -1,7 +1,8 @@
 {
-  "name": "socorro-webapp",
+  "name": "@mozilla/socorro-webapp",
   "version": "0.0.0",
   "description": "webapp for crash-stats",
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla-services/socorro.git"
