@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  
 @import url('tablesorter/dist/css/theme.default.min.css');
-@import url('../lib/metricsgraphics_custom.css');
 @import url('../lib/jquery-ui.css');
 @import url('../lib/jsonview.custom.css');
 @import url('../components/bugzilla.css');
