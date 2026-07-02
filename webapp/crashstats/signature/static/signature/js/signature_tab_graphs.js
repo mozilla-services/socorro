@@ -1,8 +1,7 @@
 /* global SignatureReport */
 
 import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
-import * as d3 from 'd3';
-import { default as MG } from 'metrics-graphics/dist/metricsgraphics.min.js';
+import Chart from 'chart.js/auto';
 
 /**
  * Tab for displaying graphs.
@@ -63,6 +62,10 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
   });
 };
 
+// TODO: I need to rework the function below since metrics-graphics and chart.js
+// don't accept the same dataset
+// NOTE: update comments after
+
 // Format the data for the graph library.
 SignatureReport.GraphsTab.prototype.formatData = function (data) {
   var option = data.aggregation;
@@ -71,37 +74,13 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
   // array containing arrays of data for each line of the multi-line graph.
   var lineDataObject = {};
   var lineDataArray = [];
-  var legend = [];
+
+  // Array of dates for the data
+  var dateValues = [];
 
   // Array of objects containing the count for each term, in descending order
   // of counts.
   var termCounts = data.term_counts;
-
-  // Splice out terms with the highest counts (up to the 4th highest) and
-  // add an empty array for each one to lineDataObject
-  $.each(termCounts.splice(0, 4), function (i, element) {
-    lineDataObject[element.term] = [];
-  });
-
-  // Each object in data.aggregates contains data for one date.
-  $.each(data.aggregates, function (i, dateData) {
-    // Each object in dateData.facets[option] contains data for one term
-    // on this date.
-    $.each(dateData.facets[option], function (j, termData) {
-      // If this term is one of the 4 with the highest counts...
-      if (Object.prototype.hasOwnProperty.call(lineDataObject, termData.term)) {
-        // ...Make a data object for a node on the graph...
-        var nodeData = {
-          count: termData.count,
-          date: new Date(dateData.term),
-          term: termData.term,
-        };
-
-        // ... And add it to this term's data array.
-        lineDataObject[termData.term].push(nodeData);
-      }
-    });
-  });
 
   // By reading back innerHTML, the browser serializes the text node
   // into safe HTML thus escaping special characters.
@@ -111,17 +90,39 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
     return tmpDiv.innerHTML;
   }
 
+  $.each(termCounts.splice(0, 4), function (i, element) {
+    lineDataObject[element.term] = {
+      label: escapeHTML(element.term),
+      data: [],
+    };
+  });
+
+  // Each object in data.aggregates contains data for one date.
+  $.each(data.aggregates, function (i, dateData) {
+    dateValues.push(dateData.term);
+
+    $.each(lineDataObject, function (termName, dataObject) {
+      var crashCount = 0;
+
+      $.each(dateData.facets[option], function (j, termData) {
+        if (termData.term == termName) {
+          crashCount = termData.count;
+        }
+      });
+      dataObject.data.push(crashCount);
+    });
+  });
+
   // Make the data object into an array of arrays for Metrics Graphics
   // and add the associated legend in the same order.
   // The keys of lineDataObject are crash report field values
   $.each(lineDataObject, function (fieldValue, lineData) {
     lineDataArray.push(lineData);
-    legend.push(escapeHTML(fieldValue));
   });
 
   // Return the line data, the legend and also any remaining terms after the
   // top 4 were spliced out.
-  return { data: lineDataArray, legend: legend, missingTerms: termCounts };
+  return { datasets: lineDataArray, labels: dateValues, missingTerms: termCounts };
 };
 
 SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElement) {
@@ -144,7 +145,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
     });
     contentElement.append($('<p>', { text: message.slice(0, -1) }));
   }
-
+  /*
   MG.data_graphic({
     data: graphData.data,
     full_width: true,
@@ -162,7 +163,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
       $('.mg-active-datapoint', contentElement).text(d.term + ': ' + d.count + (d.count === 1 ? ' crash' : ' crashes'));
     },
   });
-
+*/
   // Ensure the next graph and legend don't get added to this panel.
   graphElement.removeClass('new-graph');
   legendElement.removeClass('new-legend');
@@ -173,8 +174,11 @@ SignatureReport.GraphsTab.prototype.onAjaxSuccess = function (contentElement, da
   // Data needs to be processed to determine if we can draw the graph.
   var graphData = this.formatData(data);
 
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(graphData));
+
   // If data was returned, draw the graph.
-  if (graphData.data.length) {
+  if (graphData.datasets.length) {
     this.drawGraph(graphData, contentElement);
     // If no data was returned, let the user know.
   } else {
