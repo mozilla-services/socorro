@@ -94,7 +94,13 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
 
   // Each object in data.aggregates contains data for one date.
   $.each(data.aggregates, function (i, dateData) {
-    dateValues.push(dateData.term);
+    var isoDate = new Date(dateData.term);
+    var formatDate = isoDate.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      month: 'long',
+      day: 'numeric',
+    });
+    dateValues.push(formatDate);
 
     var currentDateCount = {};
 
@@ -127,11 +133,18 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
 };
 
 SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElement) {
+  // Create a div container for the graphElement
+  var graphContainer = $('<div>', {
+    style: 'height: 250px',
+  });
+
   // Create a canvas element for chart.js
   var graphElement = $('<canvas></canvas>');
 
+  graphContainer.append(graphElement);
+
   // Remove the loader and append divs for graph.
-  contentElement.empty().append(graphElement);
+  contentElement.empty().append(graphContainer);
 
   // If there are extra terms missing, let the user know.
   if (graphData.missingTerms.length) {
@@ -142,12 +155,15 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
     contentElement.append($('<p>', { text: message.slice(0, -1) }));
   }
 
-  // Draw the graph on the canvas element using chart.js
+  // Draw the graph on the graphElement using chart.js
   new Chart(graphElement, {
     type: 'line',
     data: {
       labels: graphData.labels,
       datasets: graphData.datasets,
+    },
+    options: {
+      maintainAspectRatio: false,
     },
   });
 };
