@@ -164,6 +164,24 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
     },
     options: {
       maintainAspectRatio: false,
+      elements: {
+        point: {
+          radius: 0,
+          hitRadius: 20,
+          hoverRadius: 4,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10,
+          },
+        },
+      },
     },
   });
 };
