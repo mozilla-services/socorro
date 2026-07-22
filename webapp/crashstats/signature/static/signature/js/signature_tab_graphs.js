@@ -77,12 +77,12 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
   // of counts.
   var termCounts = data.term_counts;
 
-  $.each(termCounts.splice(0, 4), function (i, element) {
+  for (const element of termCounts.splice(0, 4)) {
     lineDataObject[element.term] = {
       label: element.term,
       data: [],
     };
-  });
+  }
 
   // Each object in data.aggregates contains data for one date.
   $.each(data.aggregates, function (i, dateData) {
@@ -103,13 +103,7 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
 
     // Check if each top 4 element contains crashes for the current date
     $.each(lineDataObject, function (element, dataObject) {
-      var crashCount = 0;
-
-      if (Object.prototype.hasOwnProperty.call(currentDateCount, element)) {
-        crashCount = currentDateCount[element];
-      } else {
-        crashCount = 0;
-      }
+      let crashCount = currentDateCount[element] || 0;
       dataObject.data.push(crashCount);
     });
   });
