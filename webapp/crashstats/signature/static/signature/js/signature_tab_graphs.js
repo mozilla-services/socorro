@@ -77,17 +77,9 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
   // of counts.
   var termCounts = data.term_counts;
 
-  // By reading back innerHTML, the browser serializes the text node
-  // into safe HTML thus escaping special characters.
-  function escapeHTML(str) {
-    let tmpDiv = document.createElement('div');
-    tmpDiv.textContent = str;
-    return tmpDiv.innerHTML;
-  }
-
   $.each(termCounts.splice(0, 4), function (i, element) {
     lineDataObject[element.term] = {
-      label: escapeHTML(element.term),
+      label: element.term,
       data: [],
     };
   });

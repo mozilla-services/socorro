@@ -179,11 +179,6 @@ section.graphs-panel .controls .fields-list {
   width: 30%;
 }
 
-section.graphs-panel .legend {
-  width: 100%;
-  text-align: center;
-}
-
 section.correlations-panel .controls .products-list,
 section.correlations-panel .controls .channels-list {
   width: 15%;

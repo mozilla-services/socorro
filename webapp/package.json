@@ -8,17 +8,6 @@
     "url": "git://github.com/mozilla-services/socorro.git"
   },
   "type": "module",
-  "//browserComment": [
-    "The 'browser' key indicates to ESBuild that we're client-side and not to install listed packages",
-    "This is necessitated by 'metrics-graphics' source code, which is very old and triggers build errors with listed packages."
-  ],
-  "browser": {
-    "url": false,
-    "child_process": false,
-    "fs": false,
-    "http": false,
-    "https": false
-  },
   "author": "Mozilla",
   "license": "MPL-2.0",
   "devDependencies": {
