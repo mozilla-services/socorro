@@ -142,7 +142,7 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
   }
 
   // Draw the graph on the graphElement using chart.js
-  new Chart(graphElement, {
+  var chart = new Chart(graphElement, {
     type: 'line',
     data: {
       labels: graphData.labels,
@@ -170,6 +170,8 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
       },
     },
   });
+
+  contentElement.data('chart', chart);
 };
 
 // Extends onAjaxSuccess to process the data and draw a graph.
