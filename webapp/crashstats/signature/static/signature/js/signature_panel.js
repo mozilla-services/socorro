@@ -20,6 +20,10 @@ SignatureReport.Panel = function (panelName, onDelete) {
   // Bind the delete function to the delet button.
   $deleteButton.on('click', function (e) {
     e.preventDefault();
+    var chart = that.$contentElement.data('chart');
+    if (chart) {
+      chart.destroy();
+    }
     that.$panelElement.remove();
     // Check that onDelete is not undefined
     if (onDelete) {

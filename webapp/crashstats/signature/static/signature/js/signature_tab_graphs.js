@@ -1,8 +1,7 @@
 /* global SignatureReport */
 
 import { socorro } from '../../../../crashstats/static/crashstats/js/socorro/utils.js';
-import * as d3 from 'd3';
-import { default as MG } from 'metrics-graphics/dist/metricsgraphics.min.js';
+import Chart from 'chart.js/auto';
 
 /**
  * Tab for displaying graphs.
@@ -67,74 +66,71 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
 SignatureReport.GraphsTab.prototype.formatData = function (data) {
   var option = data.aggregation;
 
-  // Variables for the graph's data and legend. Metrics Graphics requires an
-  // array containing arrays of data for each line of the multi-line graph.
+  // Object map to contain data for each element
   var lineDataObject = {};
+  // Array list to hold the formatted dataset
   var lineDataArray = [];
-  var legend = [];
+  // Array of date values for the graph's x-axis
+  var dateValues = [];
 
   // Array of objects containing the count for each term, in descending order
   // of counts.
   var termCounts = data.term_counts;
 
-  // Splice out terms with the highest counts (up to the 4th highest) and
-  // add an empty array for each one to lineDataObject
-  $.each(termCounts.splice(0, 4), function (i, element) {
-    lineDataObject[element.term] = [];
-  });
+  for (const element of termCounts.splice(0, 4)) {
+    lineDataObject[element.term] = {
+      label: element.term,
+      data: [],
+    };
+  }
 
   // Each object in data.aggregates contains data for one date.
   $.each(data.aggregates, function (i, dateData) {
-    // Each object in dateData.facets[option] contains data for one term
-    // on this date.
-    $.each(dateData.facets[option], function (j, termData) {
-      // If this term is one of the 4 with the highest counts...
-      if (Object.prototype.hasOwnProperty.call(lineDataObject, termData.term)) {
-        // ...Make a data object for a node on the graph...
-        var nodeData = {
-          count: termData.count,
-          date: new Date(dateData.term),
-          term: termData.term,
-        };
+    var isoDate = new Date(dateData.term);
+    var formatDate = isoDate.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      month: 'long',
+      day: 'numeric',
+    });
+    dateValues.push(formatDate);
 
-        // ... And add it to this term's data array.
-        lineDataObject[termData.term].push(nodeData);
-      }
+    var currentDateCount = {};
+
+    // Maps the current date's crash count to the element
+    $.each(dateData.facets[option], function (j, termData) {
+      currentDateCount[termData.term] = termData.count;
+    });
+
+    // Check if each top 4 element contains crashes for the current date
+    $.each(lineDataObject, function (element, dataObject) {
+      let crashCount = currentDateCount[element] || 0;
+      dataObject.data.push(crashCount);
     });
   });
 
-  // By reading back innerHTML, the browser serializes the text node
-  // into safe HTML thus escaping special characters.
-  function escapeHTML(str) {
-    let tmpDiv = document.createElement('div');
-    tmpDiv.textContent = str;
-    return tmpDiv.innerHTML;
-  }
-
-  // Make the data object into an array of arrays for Metrics Graphics
-  // and add the associated legend in the same order.
-  // The keys of lineDataObject are crash report field values
+  // Convert the data object into an array of data points for chart.js
   $.each(lineDataObject, function (fieldValue, lineData) {
     lineDataArray.push(lineData);
-    legend.push(escapeHTML(fieldValue));
   });
 
-  // Return the line data, the legend and also any remaining terms after the
+  // Return the line data, the date labels and also any remaining terms after the
   // top 4 were spliced out.
-  return { data: lineDataArray, legend: legend, missingTerms: termCounts };
+  return { datasets: lineDataArray, labels: dateValues, missingTerms: termCounts };
 };
 
 SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElement) {
-  var graphElement = $('<div>', {
-    class: 'new-graph',
+  // Create a div container for the graphElement
+  var graphContainer = $('<div>', {
+    style: 'height: 250px',
   });
 
-  var legendElement = $('<div>', {
-    class: 'legend new-legend',
-  });
+  // Create a canvas element for chart.js
+  var graphElement = $('<canvas></canvas>');
 
-  // Remove the loader and append divs for graph and legend.
-  contentElement.empty().append(graphElement, legendElement);
+  graphContainer.append(graphElement);
+
+  // Remove the loader and append divs for graph.
+  contentElement.empty().append(graphContainer);
 
   // If there are extra terms missing, let the user know.
   if (graphData.missingTerms.length) {
@@ -145,27 +141,37 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
     contentElement.append($('<p>', { text: message.slice(0, -1) }));
   }
 
-  MG.data_graphic({
-    data: graphData.data,
-    full_width: true,
-    target: '.new-graph',
-    x_accessor: 'date',
-    y_accessor: 'count',
-    axes_not_compact: true,
-    utc_time: true,
-    interpolate: d3.curveLinear,
-    area: false,
-    legend: graphData.legend,
-    legend_target: '.new-legend',
-    show_secondary_x_label: false,
-    mouseover: function (d) {
-      $('.mg-active-datapoint', contentElement).text(d.term + ': ' + d.count + (d.count === 1 ? ' crash' : ' crashes'));
+  // Draw the graph on the graphElement using chart.js
+  var chart = new Chart(graphElement, {
+    type: 'line',
+    data: {
+      labels: graphData.labels,
+      datasets: graphData.datasets,
+    },
+    options: {
+      maintainAspectRatio: false,
+      elements: {
+        point: {
+          radius: 0,
+          hitRadius: 20,
+          hoverRadius: 4,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10,
+          },
+        },
+      },
     },
   });
 
-  // Ensure the next graph and legend don't get added to this panel.
-  graphElement.removeClass('new-graph');
-  legendElement.removeClass('new-legend');
+  contentElement.data('chart', chart);
 };
 
 // Extends onAjaxSuccess to process the data and draw a graph.
@@ -174,7 +180,7 @@ SignatureReport.GraphsTab.prototype.onAjaxSuccess = function (contentElement, da
   var graphData = this.formatData(data);
 
   // If data was returned, draw the graph.
-  if (graphData.data.length) {
+  if (graphData.datasets.length) {
     this.drawGraph(graphData, contentElement);
     // If no data was returned, let the user know.
   } else {
