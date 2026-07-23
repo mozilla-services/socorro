@@ -2,27 +2,19 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Iterable
 import contextlib
 import json
+from collections.abc import Iterable
 from unittest import mock
 
-from django.core.cache import cache
-from django.contrib.auth.models import User, Permission
-from django.forms import ValidationError
-from django.urls import reverse
-from django.utils.encoding import smart_str
-
-from markus.testing import MetricsMock
 import pyquery
 import pytest
-
 from crashstats import libproduct
 from crashstats.api.views import (
+    TYPE_MAP,
+    MultipleStringField,
     api_models_and_names,
     is_valid_model_class,
-    MultipleStringField,
-    TYPE_MAP,
 )
 from crashstats.crashstats.models import (
     BugAssociation,
@@ -31,13 +23,20 @@ from crashstats.crashstats.models import (
     SocorroMiddleware,
 )
 from crashstats.crashstats.tests.conftest import BaseTestViews
+from crashstats.crashstats.utils import DateTimeEncoder
 from crashstats.supersearch.models import (
+    ESSocorroMiddleware,
     SuperSearch,
     SuperSearchUnredacted,
-    ESSocorroMiddleware,
 )
 from crashstats.tokens.models import Token
-from crashstats.crashstats.utils import DateTimeEncoder
+from django.contrib.auth.models import Permission, User
+from django.core.cache import cache
+from django.forms import ValidationError
+from django.urls import reverse
+from django.utils.encoding import smart_str
+from markus.testing import MetricsMock
+
 from socorro.lib.libooid import create_new_ooid
 
 
@@ -426,79 +425,43 @@ class TestField(BaseTestViews):
 
 
 class TestSuperSearch(BaseTestViews):
-    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
-    def test_api(self, mock_implementation):
-        def mocked_get(**params):
-            restricted_params = (
-                "_facets",
-                "_aggs.signature",
-                "_histogram.date",
-                "_sort",
-            )
-            for key in restricted_params:
-                if key in params:
-                    assert "url" not in params[key]
+    """
+    SuperSearch must respect the caller's permissions.
 
-            if "product" in params:
-                assert params["product"] == ["WaterWolf", "NightTrain"]
-
-            return {
-                "hits": [
-                    {
-                        "signature": "abcdef",
-                        "product": "WaterWolf",
-                        "version": "1.0",
-                        "url": "http://embarrassing.website.com",
-                        "user_comments": "hey I am thebig@lebowski.net",
-                    }
-                ],
-                "facets": {"signature": []},
-                "total": 0,
-            }
-
-        mock_implementation.return_value.get.side_effect = mocked_get
-
-        url = reverse("api:model_wrapper", args=("SuperSearch",))
-        response = self.client.get(url)
-        assert response.status_code == 200
-        res = json.loads(response.content)
-
-        assert res["hits"]
-        assert res["facets"]
-
-        # Verify forbidden fields are not exposed.
-        assert "url" not in res["hits"]
-
-        # Verify it's not possible to use restricted parameters.
-        response = self.client.get(
-            url,
-            {
-                "url": "example.com",
-                "_facets": ["url", "product"],
-                "_aggs.signature": ["url", "product"],
-                "_histogram.date": ["url", "product"],
-                "_sort": ["url", "-url"],
-                "_columns": ["url", "product"],
-            },
-        )
-        assert response.status_code == 200
-
-        # Verify values can be lists.
-        response = self.client.get(url, {"product": ["WaterWolf", "NightTrain"]})
-        assert response.status_code == 200
+    Expected behavior:
+    * For unauthorized callers (anonymous/logged in user without ``crashstats.view_pii``):
+        - a request referencing only public fields (including the all-public
+          defaults) returns an HTTP 200 with public data;
+        - a request referencing a protected field in ANY form:
+            - as a param name (i.e. ``<field>=...``),
+            - as a list-of-fields value (e.g. ``_facets=[<field>]``), or
+            - as an ``_aggs.<field>`` param name)
+          returns an HTTP 200, redacting any protected fields before/after
+          running the query.
+    * For authorized callers (logged in user with ``crashstats.view_pii``):
+        - protected fields are honored in the query in every form, and are not
+          redacted from the returned hits.
+    """
 
     @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
-    def test_api_with_view_pii(self, mock_implementation):
+    def test_api_public_query_without_permission(self, mock_implementation):
+        """
+        Queries referencing only public fields (and the defaults which are all
+        public) succeed without auth, and the fields reach Elasticsearch.
+        """
+        # Store request parameters after the model-level permissions/sanitization
+        # logic is run, but before the ES query is run.
+        # This allows us to distinguish between the case the field was stripped
+        # from the ES query versus the case where the field was in the query but
+        # redacted from the ES response.
+        # See also https://bugzilla.mozilla.org/show_bug.cgi?id=2038160#c9.
+        params_before_query = {}
+
         def mocked_get(**params):
-            assert "url" in params["_columns"]
-            assert "signature" in params["_columns"]
+            params_before_query.clear()
+            params_before_query.update(params)
             return {
-                "hits": [
-                    {
-                        "signature": "abcdef",
-                        "url": "http://embarrassing.website.com",
-                    }
-                ],
+                "hits": [{"signature": "abcdef"}],
                 "facets": {"signature": []},
                 "total": 1,
             }
@@ -507,17 +470,168 @@ class TestSuperSearch(BaseTestViews):
 
         url = reverse("api:model_wrapper", args=("SuperSearch",))
 
-        user = self._login()
-        self._add_permission(user, "view_pii")
+        # The bare request relies on defaults that are all public fields
+        response = self.client.get(url)
+        assert response.status_code == 200
+        assert json.loads(response.content)["hits"]
 
-        response = self.client.get(url, {"_columns": ["url", "signature"]})
+        # Query with only public fields
+        response = self.client.get(
+            url,
+            {
+                "product": ["WaterWolf", "NightTrain"],
+                "_facets": ["product"],
+                "_sort": ["signature"],
+                "_columns": ["signature"],
+            },
+        )
         assert response.status_code == 200
         res = json.loads(response.content)
-
         assert res["hits"]
-        for hit in res["hits"]:
-            assert hit["signature"] == "abcdef"
-            assert hit["url"] == "http://embarrassing.website.com"
+        assert "signature" in res["hits"][0]
+        # Assert nothing is sanitized in this case.
+        # Also verify values can be lists.
+        assert params_before_query["product"] == ["WaterWolf", "NightTrain"]
+        assert params_before_query["_facets"] == ["product"]
+        assert params_before_query["_sort"] == ["signature"]
+        assert params_before_query["_columns"] == ["signature"]
+
+    def _assert_supersearch_field_permissions(
+        self, mock_implementation, *, authorized, auth_token=None
+    ):
+        """
+        Test helper for shared behavior and assertions between test cases.
+
+        `url` is used as an example of a protected field and `product` is used
+        as an example of a public field.
+
+        If `authorized` is `True`, `url` is not redacted from the ES query or its
+        response. Else, it is.
+        """
+        params_before_query = {}
+
+        def mocked_get(**params):
+            params_before_query.clear()
+            params_before_query.update(params)
+            # _columns is the only query parameter that requires sanitizing the ES
+            # response, so it is always returned regardless of permissions.
+            # A Cleaner runs on the response for unauthorized callers to redact it
+            # afterwards.
+            # Note: A realistic response for authorized callers would have more
+            # information (like`url` facets/aggregations), but the only part of
+            # the response being tested is how `hits` does or doesn't get sanitized.
+            return {
+                "hits": [
+                    {"signature": "abcdef", "url": "http://embarrassing.website.com"}
+                ],
+                "facets": {"signature": []},
+                "total": 1,
+            }
+
+        mock_implementation.return_value.get.side_effect = mocked_get
+
+        url = reverse("api:model_wrapper", args=("SuperSearch",))
+        headers = {"auth-token": auth_token} if auth_token else {}
+        response = self.client.get(
+            url,
+            {
+                # direct filter parameter
+                "url": "example.com",
+                # list-of-fields parameters
+                "_aggs.signature": ["url", "product"],
+                "_facets": ["url", "product"],
+                "_histogram.date": ["url", "product"],
+                "_sort": ["url", "-url"],
+                # parameter name
+                "_aggs.url": ["signature"],
+                # list-of-fields parameter sanitized AFTER the query (by the Cleaner)
+                "_columns": ["url", "signature"],
+            },
+            headers=headers,
+        )
+
+        assert response.status_code == 200
+        res = json.loads(response.content)
+        assert res["hits"]
+
+        # Public fields always reach the ES query and the response.
+        assert "product" in params_before_query.get("_aggs.signature", [])
+        assert "product" in params_before_query.get("_facets", [])
+        assert "product" in params_before_query.get("_histogram.date", [])
+        assert "signature" in res["hits"][0]
+
+        # `_columns` bypasses pre-query sanitization for everyone, so `url` always
+        # reaches ES as a column; only the response side differs by permission.
+        assert "url" in params_before_query.get("_columns", [])
+
+        if authorized:
+            # The protected field also reaches the ES query in every other form...
+            assert "url" in params_before_query
+            assert "url" in params_before_query.get("_facets", [])
+            assert "url" in params_before_query.get("_sort", [])
+            assert "-url" in params_before_query.get("_sort", [])
+            assert "_aggs.url" in params_before_query
+            assert "url" in params_before_query.get("_aggs.signature", [])
+            assert "url" in params_before_query.get("_histogram.date", [])
+            # ...and is returned unredacted in the hits.
+            assert "url" in res["hits"][0]
+        else:
+            # The protected field never reaches the ES query in any other form...
+            assert "url" not in params_before_query
+            assert "url" not in params_before_query.get("_facets", [])
+            assert "url" not in params_before_query.get("_sort", [])
+            assert "-url" not in params_before_query.get("_sort", [])
+            assert "_aggs.url" not in params_before_query
+            assert "url" not in params_before_query.get("_aggs.signature", [])
+            assert "url" not in params_before_query.get("_histogram.date", [])
+            # ...and is redacted from the hits by the Cleaner.
+            assert "url" not in res["hits"][0]
+
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api_protected_fields_redacted_for_anonymous_user(
+        self, mock_implementation
+    ):
+        """Anonymous caller: protected fields are stripped from the query and
+        redacted from the hits."""
+        self._assert_supersearch_field_permissions(
+            mock_implementation, authorized=False
+        )
+
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api_protected_fields_redacted_for_user_without_view_pii(
+        self, mock_implementation
+    ):
+        """A logged-in user lacking view_pii is treated exactly like an anonymous
+        caller: protected fields stripped from the query and redacted from hits."""
+        self._login()  # logged in, but without view_pii
+        self._assert_supersearch_field_permissions(
+            mock_implementation, authorized=False
+        )
+
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api_protected_fields_allowed_for_user_with_view_pii(
+        self, mock_implementation
+    ):
+        """With view_pii on the user, protected fields are not stripped from the ES
+        query and not redacted from the response."""
+        user = self._login()
+        self._add_permission(user, "view_pii")
+        self._assert_supersearch_field_permissions(mock_implementation, authorized=True)
+
+    @mock.patch("crashstats.supersearch.models.SuperSearch.get_implementation")
+    def test_api_protected_fields_allowed_with_view_pii_token(
+        self, mock_implementation
+    ):
+        """view_pii granted via an API token also honors protected fields in the
+        query and hits (token permissions resolve via a different code path than
+        session permissions)."""
+        user = User.objects.create(username="test")
+        self._add_permission(user, "view_pii")
+        token = Token.objects.create(user=user, notes="test token")
+        token.permissions.add(Permission.objects.get(codename="view_pii"))
+        self._assert_supersearch_field_permissions(
+            mock_implementation, authorized=True, auth_token=token.key
+        )
 
 
 class TestSuperSearchUnredacted(BaseTestViews):

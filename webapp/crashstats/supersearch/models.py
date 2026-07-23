@@ -108,9 +108,7 @@ class SuperSearch(ESSocorroMiddleware):
 
         self.possible_params = (
             tuple(
-                (x["name"], list)
-                for x in self.all_fields.values()
-                if x["is_exposed"] and not x["webapp_permissions_needed"]
+                (x["name"], list) for x in self.all_fields.values() if x["is_exposed"]
             )
             + SUPERSEARCH_META_PARAMS
             + tuple(self.extended_fields)
@@ -121,10 +119,11 @@ class SuperSearch(ESSocorroMiddleware):
         return es_crash_dest.build_supersearch()
 
     def _get_extended_params(self):
-        # Add histogram fields for all 'date','integer', or 'float' fields.
+        # Add aggregation fields to all fields, and add histogram fields for all
+        # 'date','integer', or 'float' fields.
         extended_fields = []
         for field in self.all_fields.values():
-            if not field["is_exposed"] or field["webapp_permissions_needed"]:
+            if not field["is_exposed"]:
                 continue
 
             extended_fields.append(("_aggs.%s" % field["name"], list))
@@ -149,12 +148,9 @@ class SuperSearch(ESSocorroMiddleware):
         return tuple(extended_fields)
 
     def get(self, **kwargs):
-        # Sanitize all parameters listing fields and make sure no private data
-        # is requested.
+        # Sanitize all parameters based on the user's permissions.
 
-        # Initialize the list of allowed fields with all the fields we know
-        # that are returned and do not require any permission.
-        allowed_fields = set(get_allowed_fields())
+        allowed_fields = set(get_allowed_fields(self.api_user))
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.
@@ -167,7 +163,7 @@ class SuperSearch(ESSocorroMiddleware):
             if (
                 field_name in self.all_fields
                 and self.all_fields[field_name]["is_returned"]
-                and not self.all_fields[field_name]["webapp_permissions_needed"]
+                and field_name in allowed_fields
             ):
                 allowed_fields.add(histogram)
 
