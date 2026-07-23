@@ -4,11 +4,10 @@
 
 
 import pytest
-
 from crashstats.supersearch.libsupersearch import (
     convert_permissions,
     get_allowed_fields,
-    sanitize_list_of_fields_params,
+    sanitize_params,
 )
 
 
@@ -122,10 +121,10 @@ def test_get_allowed_fields(
 @pytest.mark.parametrize(
     "param_name, input_values, allowed, expected",
     [
-        # --- _sort: with/without `-` prefix ---
-        # Without prefix on disallowed field is stripped
+        # _sort is the only param with a possible prefix
+        # Without - prefix on disallowed field is stripped
         ("_sort", ["signature", "user_comments"], {"signature"}, ["signature"]),
-        # With prefix on disallowed field is stripped
+        # With - prefix on disallowed field is stripped
         ("_sort", ["-signature", "-user_comments"], {"signature"}, ["-signature"]),
         # With prefix on allowed field remains
         ("_sort", ["-signature"], {"signature"}, ["-signature"]),
@@ -140,32 +139,86 @@ def test_get_allowed_fields(
         ("_sort", ["user_comments", "-user_comments"], {"signature"}, []),
         # Empty input -> empty output
         ("_sort", [], {"signature"}, []),
-        # --- Other list-of-fields params: no `-` prefix to handle as with _sort ---
         # _facets / _columns / _aggs.* / _histogram.* all work identically.
         ("_facets", ["signature", "user_comments"], {"signature"}, ["signature"]),
         ("_columns", ["signature", "url"], {"signature"}, ["signature"]),
-        ("_aggs.product", ["version", "user_comments"], {"version"}, ["version"]),
-        ("_histogram.date", ["product", "url"], {"product"}, ["product"]),
-        # `-` prefix is NOT a sort directive on non-_sort params; rejected as literal.
+        (
+            "_aggs.product",
+            ["version", "user_comments"],
+            {"product", "version"},
+            ["version"],
+        ),
+        ("_histogram.date", ["product", "url"], {"date", "product"}, ["product"]),
+        # `-` prefix is not a sort directive on non-_sort params, so the value is rejected.
         ("_columns", ["-signature"], {"signature"}, []),
     ],
 )
-def test_sanitize_list_of_fields_params(param_name, input_values, allowed, expected):
+def test_sanitize_params_list_of_fields_values(
+    param_name, input_values, allowed, expected
+):
+    """Params dict with list-of-fields have their values sanitized appropriately."""
     params = {param_name: input_values}
-    sanitize_list_of_fields_params(
+    sanitize_params(
         params,
         allowed_fields=allowed,
+        all_fields={},
         list_of_fields_params=(param_name,),
     )
     assert params[param_name] == expected
 
 
-def test_sanitize_list_of_fields_params_handles_missing_keys():
-    """Params dict without the listed keys gets them initialized to []."""
+def test_sanitize_params_handles_missing_keys_for_list_of_fields_values():
+    """Empty params dict results in empty default list-of-fields values."""
     params = {}
-    sanitize_list_of_fields_params(
+    sanitize_params(
         params,
         allowed_fields={"signature"},
+        all_fields={},
         list_of_fields_params=("_sort", "_facets", "_columns"),
     )
     assert params == {"_sort": [], "_facets": [], "_columns": []}
+
+
+def test_sanitize_params_drops_disallowed_filters_and_agg_names():
+    """
+    Params dict with direct filters, _aggs, _histograms parameter names containing
+    disallowed fields are sanitized.
+    """
+    params = {
+        "url": ["example.com"],  # filter on a disallowed field
+        "signature": ["abc"],  # filter on an allowed field
+        "_aggs.url": ["signature"],  # aggregation on a disallowed field
+        "_aggs.signature": ["signature"],  # aggregation on an allowed field
+        "_histogram.url": ["signature"],  # histogram on a disallowed field
+        "_histogram.signature": ["signature"],  # histogram on an allowed field
+        "_results_number": 10,  # meta param, not a field
+    }
+    sanitize_params(
+        params,
+        allowed_fields={"signature"},
+        all_fields={"url", "signature"},
+        list_of_fields_params=(),
+    )
+    assert "url" not in params
+    assert params["signature"] == ["abc"]
+    assert "_aggs.url" not in params
+    assert "_aggs.signature" in params
+    assert "_histogram.url" not in params
+    assert "_histogram.signature" in params
+    assert params["_results_number"] == 10
+
+
+def test_sanitize_params_agg_name_checks_all_dotted_segments():
+    """Params dict with subaggregations on disallowed fields are sanitized."""
+    params = {
+        "_aggs.product.version": ["signature"],  # all segments allowed
+        "_aggs.product.url": ["signature"],  # a later segment is disallowed
+    }
+    sanitize_params(
+        params,
+        allowed_fields={"product", "version", "signature"},
+        all_fields={"product", "version", "url", "signature"},
+        list_of_fields_params=(),
+    )
+    assert "_aggs.product.version" in params
+    assert "_aggs.product.url" not in params

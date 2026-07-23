@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from dataclasses import dataclass
 import datetime
+from dataclasses import dataclass
 
 from socorro import settings as socorro_settings
 from socorro.libclass import build_instance_from_settings
-
 
 # Map of processed crash schema permissions to webapp permissions
 PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS = {
@@ -138,22 +137,51 @@ def get_allowed_fields(user=None):
     )
 
 
-def sanitize_list_of_fields_params(
-    params, allowed_fields, list_of_fields_params=("_facets", "_columns", "_sort")
+def sanitize_params(
+    params,
+    allowed_fields,
+    all_fields,
+    list_of_fields_params=("_facets", "_columns", "_sort"),
 ):
-    """Strip disallowed field references from list-of-fields parameters.
-    Handles _sort fields that may be prefixed with `-`.
+    """
+    Strip references to disallowed fields from SuperSearch query params
+    and their values.
+
+    Removes from ``params`` (mutated in place):
+    * disallowed field names inside list-of-fields params, e.g.
+      ``_facets=[<field>]`` (handles the ``-`` prefix used by ``_sort``);
+    * direct filters keyed by a disallowed field
+      name (e.g. ``<field>=...``), and
+    * aggregation/histogram params that encode a disallowed field in the param
+      name at any depth (e.g. ``_aggs.<field>`` or ``_histogram.<field>``).
 
     :arg params: dict of SuperSearch query parameters
+
+    :arg allowed_fields: iterable of field names (plus ``_histogram.*`` /
+    ``_cardinality.*`` pseudo-fields) the caller is permitted to reference
+
+    :arg all_fields: collection of all known field names, used to tell a field
+    filter apart from meta params like ``_results_number``.
 
     :arg list_of_fields_params: tuple of parameter names whose values are
     lists of field names
 
-    :returns: the mutated ``params`` dict, with disallowed entries
-    removed
+    :returns: the mutated ``params`` dict, with disallowed entries removed
     """
     allowed_fields_set = set(allowed_fields)
 
+    # Drop disallowed filters and aggregation/histogram params that name a field
+    # in the param key itself.
+    for key in list(params):
+        if key.startswith(("_aggs.", "_histogram.", "_histogram_interval.")):
+            # e.g. `_aggs.url`, `_aggs.product.version`, `_histogram.url`
+            referenced = key.split(".")[1:]
+            if any(name not in allowed_fields_set for name in referenced):
+                del params[key]
+        elif key in all_fields and key not in allowed_fields_set:
+            del params[key]
+
+    # Strip disallowed field names from the values of list-of-fields params.
     for key in list_of_fields_params:
         # _sort: bare field name or with `-` prefix for reverse order.
         if key == "_sort":

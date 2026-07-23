@@ -7,15 +7,15 @@ import copy
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
+    SuperSearchStatusModel,
     get_allowed_fields,
     get_supersearch_fields,
-    SuperSearchStatusModel,
-    sanitize_list_of_fields_params,
+    sanitize_params,
 )
+
 from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
-
 
 SUPERSEARCH_META_PARAMS = (
     ("_aggs.product.version", list),
@@ -174,10 +174,13 @@ class SuperSearch(ESSocorroMiddleware):
         for field in set(allowed_fields):
             allowed_fields.add("_cardinality.%s" % field)
 
-        # Now make sure all fields listing fields only have unrestricted
-        # values.
-        kwargs = sanitize_list_of_fields_params(
-            kwargs, allowed_fields, list_of_fields_params=self.parameters_listing_fields
+        # Strip every param referencing a field the caller isn't allowed to see:
+        # filters, aggregation/histogram param names, and list-of-fields values.
+        kwargs = sanitize_params(
+            kwargs,
+            allowed_fields,
+            all_fields=self.all_fields,
+            list_of_fields_params=self.parameters_listing_fields,
         )
 
         # SuperSearch requires that the list of fields be passed to it.
