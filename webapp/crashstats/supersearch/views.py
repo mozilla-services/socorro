@@ -2,20 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections import defaultdict
 import datetime
 import json
 import math
-
-from django import http
-from django.conf import settings
-from django.contrib.auth.decorators import permission_required
-from django.shortcuts import render
-from django.urls import reverse
-from django.utils import timezone
-from django.views.decorators.http import require_POST
-
-from django_ratelimit.decorators import ratelimit
+from collections import defaultdict
 
 from crashstats import libproduct
 from crashstats.crashstats import models, utils
@@ -28,14 +18,23 @@ from crashstats.supersearch.models import (
     SuperSearchFields,
     SuperSearchUnredacted,
 )
+from django import http
+from django.conf import settings
+from django.contrib.auth.decorators import permission_required
+from django.shortcuts import render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
+
 from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from webapp.crashstats.supersearch.libsupersearch import (
     get_allowed_fields,
-    sanitize_list_of_fields_params,
+    get_supersearch_fields,
+    sanitize_params,
 )
-
 
 DEFAULT_COLUMNS = ("date", "signature", "product", "version", "build_id", "platform")
 
@@ -89,9 +88,13 @@ def get_params(request):
     params["_facets"] = request.GET.getlist("_facets", DEFAULT_FACETS)
     params["_columns"] = request.GET.getlist("_columns") or DEFAULT_COLUMNS
 
-    # Make sure only allowed fields are used.
     allowed_fields = get_allowed_fields(request.user)
-    params = sanitize_list_of_fields_params(params, allowed_fields)
+    # SearchForm already sanitizes all but list-of-field params
+    # (_facets/_sort/_columns) obtained from request.GET above, but we
+    # want to use the same logic in the webapp as in the API to guarantee
+    # consistent behavior.
+    all_fields = get_supersearch_fields()
+    params = sanitize_params(params, allowed_fields, all_fields)
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.
