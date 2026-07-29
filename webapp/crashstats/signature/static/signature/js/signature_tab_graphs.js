@@ -80,11 +80,18 @@ SignatureReport.GraphsTab.prototype.formatData = function (data) {
     })
   );
 
+  // Build a dictionary for crash counts based on date and aggregation type
+  var crashData = {};
+  for (var dateData of data.aggregates) {
+    crashData[dateData.term] = {};
+    for (var item of dateData.facets[option]) {
+      crashData[dateData.term][item.term] = item.count;
+    }
+  }
+
+  // Add the crash counts to the dataset
   for (var dataset of datasets) {
-    dataset.data = data.aggregates.map((dateData) => {
-      var termData = dateData.facets[option].find((item) => item.term == dataset.label);
-      return termData ? termData.count : 0;
-    });
+    dataset.data = data.aggregates.map((dateData) => crashData[dateData.term][dataset.label] || 0);
   }
 
   // Return the line data, the date labels and also any remaining terms after the
