@@ -36,14 +36,14 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
   var fields = $('#mainbody').data('fields');
 
   // Append an option element for each field.
-  $.each(fields, function (i, field) {
+  for (var field of fields) {
     that.$selectElement.append(
       $('<option>', {
         value: field.id,
         text: field.text,
       })
     );
-  });
+  }
 
   // Append the control elements.
   this.$controlsElement.append(this.$selectElement, $('<hr>'));
@@ -116,9 +116,9 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
   // If there are extra terms missing, let the user know.
   if (graphData.missingTerms.length) {
     var message = 'Showing the top 4 results. Not showing:';
-    $.each(graphData.missingTerms, function (i, term) {
+    for (var term of graphData.missingTerms) {
       message += ' ' + term.term + ' (' + term.count + (term.count === 1 ? ' crash),' : ' crashes),');
-    });
+    }
     contentElement.append($('<p>', { text: message.slice(0, -1) }));
   }
 
