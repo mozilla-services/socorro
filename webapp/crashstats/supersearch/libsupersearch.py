@@ -6,7 +6,13 @@ import datetime
 from dataclasses import dataclass
 
 from socorro import settings as socorro_settings
+from socorro.external.es.search_common import SearchBase
 from socorro.libclass import build_instance_from_settings
+
+# To build an allowlist of fields to sanitize SuperSearch API calls against,
+# we need to combine SuperSearch fields (e.g. user_comments) with
+# meta fields (e.g. _results_number).
+META_FILTER_NAMES = frozenset(f.name for f in SearchBase.meta_filters)
 
 # Map of processed crash schema permissions to webapp permissions
 PROCESSED_CRASH_TO_WEBAPP_PERMISSIONS = {
@@ -140,7 +146,6 @@ def get_allowed_fields(user=None):
 def sanitize_params(
     params,
     allowed_fields,
-    all_fields,
     list_of_fields_params=("_facets", "_columns", "_sort"),
 ):
     """
@@ -160,9 +165,6 @@ def sanitize_params(
     :arg allowed_fields: iterable of field names (plus ``_histogram.*`` /
     ``_cardinality.*`` pseudo-fields) the caller is permitted to reference
 
-    :arg all_fields: collection of all known field names, used to tell a field
-    filter apart from meta params like ``_results_number``.
-
     :arg list_of_fields_params: tuple of parameter names whose values are
     lists of field names
 
@@ -172,13 +174,14 @@ def sanitize_params(
 
     # Drop disallowed filters and aggregation/histogram params that name a field
     # in the param key itself.
+    # Use a list here, since we're deleting keys from params while iterating over it.
     for key in list(params):
         if key.startswith(("_aggs.", "_histogram.", "_histogram_interval.")):
             # e.g. `_aggs.url`, `_aggs.product.version`, `_histogram.url`
             referenced = key.split(".")[1:]
             if any(name not in allowed_fields_set for name in referenced):
                 del params[key]
-        elif key in all_fields and key not in allowed_fields_set:
+        elif key not in allowed_fields_set and key not in META_FILTER_NAMES:
             del params[key]
 
     # Strip disallowed field names from the values of list-of-fields params.

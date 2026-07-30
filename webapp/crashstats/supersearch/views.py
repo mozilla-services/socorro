@@ -32,7 +32,6 @@ from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
 from webapp.crashstats.supersearch.libsupersearch import (
     get_allowed_fields,
-    get_supersearch_fields,
     sanitize_params,
 )
 
@@ -89,12 +88,7 @@ def get_params(request):
     params["_columns"] = request.GET.getlist("_columns") or DEFAULT_COLUMNS
 
     allowed_fields = get_allowed_fields(request.user)
-    # SearchForm already sanitizes all but list-of-field params
-    # (_facets/_sort/_columns) obtained from request.GET above, but we
-    # want to use the same logic in the webapp as in the API to guarantee
-    # consistent behavior.
-    all_fields = get_supersearch_fields()
-    params = sanitize_params(params, allowed_fields, all_fields)
+    params = sanitize_params(params, allowed_fields)
 
     # The uuid is always displayed in the UI so we need to make sure it is
     # always returned by the model.

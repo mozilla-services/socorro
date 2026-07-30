@@ -147,8 +147,11 @@ class SuperSearch(ESSocorroMiddleware):
 
         return tuple(extended_fields)
 
-    def get(self, **kwargs):
+    def get(self, dont_cache=False, refresh_cache=False, **kwargs):
         # Sanitize all parameters based on the user's permissions.
+        # We sanitize kwargs via an allowlist of SuperSearch fields and
+        # meta fields. Without separating out dont_cache and refresh_cache,
+        # these would get removed from kwargs, which would regress crash_verify.
 
         allowed_fields = set(get_allowed_fields(self.api_user))
 
@@ -175,7 +178,6 @@ class SuperSearch(ESSocorroMiddleware):
         kwargs = sanitize_params(
             kwargs,
             allowed_fields,
-            all_fields=self.all_fields,
             list_of_fields_params=self.parameters_listing_fields,
         )
 
@@ -185,7 +187,7 @@ class SuperSearch(ESSocorroMiddleware):
         # Do some data validation here before we go further to reduce efforts
         validate_products(kwargs.get("product"))
 
-        return super().get(**kwargs)
+        return super().get(dont_cache=dont_cache, refresh_cache=refresh_cache, **kwargs)
 
 
 class SuperSearchUnredacted(SuperSearch):

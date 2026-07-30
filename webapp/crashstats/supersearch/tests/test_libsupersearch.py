@@ -161,7 +161,6 @@ def test_sanitize_params_list_of_fields_values(
     sanitize_params(
         params,
         allowed_fields=allowed,
-        all_fields={},
         list_of_fields_params=(param_name,),
     )
     assert params[param_name] == expected
@@ -173,7 +172,6 @@ def test_sanitize_params_handles_missing_keys_for_list_of_fields_values():
     sanitize_params(
         params,
         allowed_fields={"signature"},
-        all_fields={},
         list_of_fields_params=("_sort", "_facets", "_columns"),
     )
     assert params == {"_sort": [], "_facets": [], "_columns": []}
@@ -196,7 +194,6 @@ def test_sanitize_params_drops_disallowed_filters_and_agg_names():
     sanitize_params(
         params,
         allowed_fields={"signature"},
-        all_fields={"url", "signature"},
         list_of_fields_params=(),
     )
     assert "url" not in params
@@ -217,8 +214,38 @@ def test_sanitize_params_agg_name_checks_all_dotted_segments():
     sanitize_params(
         params,
         allowed_fields={"product", "version", "signature"},
-        all_fields={"product", "version", "url", "signature"},
         list_of_fields_params=(),
     )
     assert "_aggs.product.version" in params
     assert "_aggs.product.url" not in params
+
+
+@pytest.mark.parametrize(
+    "field_filter",
+    [
+        # Case variants of a known field
+        "Signature",
+        "SIGNATURE",
+        # Leading/trailing whitespace variants of a known field
+        " signature",
+        "signature ",
+        # Percent-encoded variants of a known field.
+        # Note: Django should decode these upstream.
+        "%73ignature",
+        # Unknown field
+        "not_a_real_field",
+    ],
+)
+def test_sanitize_params_only_allows_exact_field_names(field_filter):
+    """Only exact matches of allowed field names are kept."""
+    params = {
+        "signature": ["abc"],  # allowed field is kept
+        field_filter: ["hmm"],  # variant/unknown field is dropped
+    }
+    sanitize_params(
+        params,
+        allowed_fields={"signature"},
+        list_of_fields_params=(),
+    )
+    assert params["signature"] == ["abc"]
+    assert field_filter not in params
