@@ -7,15 +7,15 @@ import copy
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
+    SuperSearchStatusModel,
     get_allowed_fields,
     get_supersearch_fields,
-    SuperSearchStatusModel,
-    sanitize_list_of_fields_params,
+    sanitize_params,
 )
+
 from socorro import settings as socorro_settings
 from socorro.lib import BadArgumentError
 from socorro.libclass import build_instance_from_settings
-
 
 SUPERSEARCH_META_PARAMS = (
     ("_aggs.product.version", list),
@@ -108,9 +108,7 @@ class SuperSearch(ESSocorroMiddleware):
 
         self.possible_params = (
             tuple(
-                (x["name"], list)
-                for x in self.all_fields.values()
-                if x["is_exposed"] and not x["webapp_permissions_needed"]
+                (x["name"], list) for x in self.all_fields.values() if x["is_exposed"]
             )
             + SUPERSEARCH_META_PARAMS
             + tuple(self.extended_fields)
@@ -121,10 +119,11 @@ class SuperSearch(ESSocorroMiddleware):
         return es_crash_dest.build_supersearch()
 
     def _get_extended_params(self):
-        # Add histogram fields for all 'date','integer', or 'float' fields.
+        # Add aggregation fields to all fields, and add histogram fields for all
+        # 'date','integer', or 'float' fields.
         extended_fields = []
         for field in self.all_fields.values():
-            if not field["is_exposed"] or field["webapp_permissions_needed"]:
+            if not field["is_exposed"]:
                 continue
 
             extended_fields.append(("_aggs.%s" % field["name"], list))
@@ -148,13 +147,13 @@ class SuperSearch(ESSocorroMiddleware):
 
         return tuple(extended_fields)
 
-    def get(self, **kwargs):
-        # Sanitize all parameters listing fields and make sure no private data
-        # is requested.
+    def get(self, dont_cache=False, refresh_cache=False, **kwargs):
+        # Sanitize all parameters based on the user's permissions.
+        # We sanitize kwargs via an allowlist of SuperSearch fields and
+        # meta fields. Without separating out dont_cache and refresh_cache,
+        # these would get removed from kwargs, which would regress crash_verify.
 
-        # Initialize the list of allowed fields with all the fields we know
-        # that are returned and do not require any permission.
-        allowed_fields = set(get_allowed_fields())
+        allowed_fields = set(get_allowed_fields(self.api_user))
 
         # Extend that list with the special fields, like `_histogram.*`.
         # Those are accepted values for fields listing other fields.
@@ -167,17 +166,19 @@ class SuperSearch(ESSocorroMiddleware):
             if (
                 field_name in self.all_fields
                 and self.all_fields[field_name]["is_returned"]
-                and not self.all_fields[field_name]["webapp_permissions_needed"]
+                and field_name in allowed_fields
             ):
                 allowed_fields.add(histogram)
 
         for field in set(allowed_fields):
             allowed_fields.add("_cardinality.%s" % field)
 
-        # Now make sure all fields listing fields only have unrestricted
-        # values.
-        kwargs = sanitize_list_of_fields_params(
-            kwargs, allowed_fields, list_of_fields_params=self.parameters_listing_fields
+        # Strip every param referencing a field the caller isn't allowed to see:
+        # filters, aggregation/histogram param names, and list-of-fields values.
+        kwargs = sanitize_params(
+            kwargs,
+            allowed_fields,
+            list_of_fields_params=self.parameters_listing_fields,
         )
 
         # SuperSearch requires that the list of fields be passed to it.
@@ -186,7 +187,7 @@ class SuperSearch(ESSocorroMiddleware):
         # Do some data validation here before we go further to reduce efforts
         validate_products(kwargs.get("product"))
 
-        return super().get(**kwargs)
+        return super().get(dont_cache=dont_cache, refresh_cache=refresh_cache, **kwargs)
 
 
 class SuperSearchUnredacted(SuperSearch):
