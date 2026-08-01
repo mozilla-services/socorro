@@ -1,1 +1,1 @@
-FROM memcached:1.6.42@sha256:e2a8683c7fbb73d12dce8082525adf9df857765970e639bd9f4705acc31dfcba
+FROM memcached:1.6.45@sha256:dc561d52bb8ad3c038867123ed2dc8357c4c128f047cdbd526cd65cf39408cbd
