@@ -36,14 +36,14 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
   var fields = $('#mainbody').data('fields');
 
   // Append an option element for each field.
-  for (var field of fields) {
-    that.$selectElement.append(
+  that.$selectElement.append(
+    fields.map((f) =>
       $('<option>', {
-        value: field.id,
-        text: field.text,
+        value: f.id,
+        text: f.text,
       })
-    );
-  }
+    )
+  );
 
   // Append the control elements.
   this.$controlsElement.append(this.$selectElement, $('<hr>'));
