@@ -36,14 +36,14 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
   var fields = $('#mainbody').data('fields');
 
   // Append an option element for each field.
-  $.each(fields, function (i, field) {
-    that.$selectElement.append(
+  that.$selectElement.append(
+    fields.map((f) =>
       $('<option>', {
-        value: field.id,
-        text: field.text,
+        value: f.id,
+        text: f.text,
       })
-    );
-  });
+    )
+  );
 
   // Append the control elements.
   this.$controlsElement.append(this.$selectElement, $('<hr>'));
@@ -66,56 +66,37 @@ SignatureReport.GraphsTab.prototype.loadControls = function () {
 SignatureReport.GraphsTab.prototype.formatData = function (data) {
   var option = data.aggregation;
 
-  // Object map to contain data for each element
-  var lineDataObject = {};
-  // Array list to hold the formatted dataset
-  var lineDataArray = [];
-  // Array of date values for the graph's x-axis
-  var dateValues = [];
+  // Get the top 4 elements of the crash data
+  var datasets = data.term_counts.splice(0, 4).map((element) => ({
+    label: element.term,
+  }));
 
-  // Array of objects containing the count for each term, in descending order
-  // of counts.
-  var termCounts = data.term_counts;
-
-  for (const element of termCounts.splice(0, 4)) {
-    lineDataObject[element.term] = {
-      label: element.term,
-      data: [],
-    };
-  }
-
-  // Each object in data.aggregates contains data for one date.
-  $.each(data.aggregates, function (i, dateData) {
-    var isoDate = new Date(dateData.term);
-    var formatDate = isoDate.toLocaleDateString('en-US', {
+  // Array of date values in month, day format
+  var dateValues = data.aggregates.map((dateData) =>
+    new Date(dateData.term).toLocaleDateString('en-US', {
       timeZone: 'UTC',
       month: 'long',
       day: 'numeric',
-    });
-    dateValues.push(formatDate);
+    })
+  );
 
-    var currentDateCount = {};
+  // Build a dictionary for crash counts based on date and aggregation type
+  var crashData = {};
+  for (var dateData of data.aggregates) {
+    crashData[dateData.term] = {};
+    for (var item of dateData.facets[option]) {
+      crashData[dateData.term][item.term] = item.count;
+    }
+  }
 
-    // Maps the current date's crash count to the element
-    $.each(dateData.facets[option], function (j, termData) {
-      currentDateCount[termData.term] = termData.count;
-    });
-
-    // Check if each top 4 element contains crashes for the current date
-    $.each(lineDataObject, function (element, dataObject) {
-      let crashCount = currentDateCount[element] || 0;
-      dataObject.data.push(crashCount);
-    });
-  });
-
-  // Convert the data object into an array of data points for chart.js
-  $.each(lineDataObject, function (fieldValue, lineData) {
-    lineDataArray.push(lineData);
-  });
+  // Add the crash counts to the dataset
+  for (var dataset of datasets) {
+    dataset.data = data.aggregates.map((dateData) => crashData[dateData.term][dataset.label] || 0);
+  }
 
   // Return the line data, the date labels and also any remaining terms after the
   // top 4 were spliced out.
-  return { datasets: lineDataArray, labels: dateValues, missingTerms: termCounts };
+  return { datasets, labels: dateValues, missingTerms: data.term_counts };
 };
 
 SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElement) {
@@ -135,9 +116,9 @@ SignatureReport.GraphsTab.prototype.drawGraph = function (graphData, contentElem
   // If there are extra terms missing, let the user know.
   if (graphData.missingTerms.length) {
     var message = 'Showing the top 4 results. Not showing:';
-    $.each(graphData.missingTerms, function (i, term) {
+    for (var term of graphData.missingTerms) {
       message += ' ' + term.term + ' (' + term.count + (term.count === 1 ? ' crash),' : ' crashes),');
-    });
+    }
     contentElement.append($('<p>', { text: message.slice(0, -1) }));
   }
 
