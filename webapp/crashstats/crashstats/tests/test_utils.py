@@ -38,7 +38,58 @@ from crashstats.crashstats import utils
             },
         ),
         (
-            # Now with a file that has VCS info but isn't in vcs_mappings.
+            # Test that firefox source files link to searchfox rather than the
+            # github.com repo they came from.
+            {
+                "frame": 0,
+                "module": "xul.dll",
+                "function": "Func",
+                "file": (
+                    "git:github.com/mozilla-firefox/firefox"
+                    ":dom/base/StructuredCloneBlob.cpp"
+                    ":ed6cfb3b73cb602ed2b8a75b1721c95b8e820322"
+                ),
+                "line": 253,
+            },
+            {
+                "function": "Func",
+                "short_signature": "Func",
+                "line": 253,
+                "source_link": (
+                    "https://searchfox.org/firefox-main/rev"
+                    "/ed6cfb3b73cb602ed2b8a75b1721c95b8e820322"
+                    "/dom/base/StructuredCloneBlob.cpp#253"
+                ),
+                "file": "dom/base/StructuredCloneBlob.cpp",
+                "frame": 0,
+                "signature": "Func",
+                "module": "xul.dll",
+            },
+        ),
+        (
+            # Test that other github.com repos still link to github.com.
+            {
+                "frame": 0,
+                "module": "bad.dll",
+                "function": "Func",
+                "file": "git:github.com/some/project:dname/fname:rev",
+                "line": 576,
+            },
+            {
+                "function": "Func",
+                "short_signature": "Func",
+                "line": 576,
+                "source_link": (
+                    "https://github.com/some/project/blob/rev/dname/fname#L576"
+                ),
+                "file": "dname/fname",
+                "frame": 0,
+                "signature": "Func",
+                "module": "bad.dll",
+            },
+        ),
+        (
+            # Now with a file whose server has no entry in vcs_mappings.
             {
                 "frame": 0,
                 "module": "bad.dll",
@@ -140,7 +191,15 @@ def test_enhance_frame(data, expected):
             "hg.m.org": (
                 "http://hg.m.org/%(repo)s/file/%(revision)s/%(file)s#l%(line)s"
             )
-        }
+        },
+        "git": {
+            "github.com/mozilla-firefox/firefox": (
+                "https://searchfox.org/firefox-main/rev/%(revision)s/%(file)s#%(line)s"
+            ),
+            "github.com": (
+                "https://github.com/%(repo)s/blob/%(revision)s/%(file)s#L%(line)s"
+            ),
+        },
     }
 
     # NOTE(willkg): data is modified in-place
@@ -180,7 +239,8 @@ def test_enhance_frame_s3_generated_sources():
     utils.enhance_frame(frame, {})
     # Because it can't find a mapping in 'vcs_mappings', the frame's
     # 'file', the default behavior is to extract just the file's basename.
-    frame["file"] = "PCompositorBridgeChild.cpp"
+    assert frame["file"] == "PCompositorBridgeChild.cpp"
+    assert "source_link" not in frame
 
     # Try again, now with 's3' in vcs_mappings.
     frame = copy.copy(original_frame)
