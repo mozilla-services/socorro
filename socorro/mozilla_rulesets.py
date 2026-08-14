@@ -40,16 +40,17 @@ from socorro.processor.rules.mozilla import (
     DistributionIdRule,
     ESRVersionRewrite,
     FenixVersionRewriteRule,
+    MacBootArgsRule,
+    MacCrashInfoRule,
     MajorVersionRule,
     MissingSymbolsRule,
     ModulesInStackRule,
     ModuleURLRewriteRule,
-    MacBootArgsRule,
-    MacCrashInfoRule,
     MozCrashReasonRule,
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PHCRule,
+    PlatformInfoRule,
     PluginRule,
     ProcessTypeRule,
     ReportTypeRule,
@@ -61,7 +62,6 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
     UtilityActorsNameRule,
 )
-
 
 DEFAULT_RULESET = [
     # fix the raw crash removing null characters and Nones
@@ -115,6 +115,9 @@ DEFAULT_RULESET = [
     DistributionIdRule(),
     OSInfoRule(),
     AndroidOSInfoRule(),
+    # This rule must run after (Android)CPUInfoRule and (Android)OSInfoRule,
+    # but before OSPrettyVersionRule.
+    PlatformInfoRule(),
     BetaVersionRule(
         version_string_api=settings.BETAVERSIONRULE_VERSION_STRING_API,
     ),

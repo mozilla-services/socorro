@@ -2451,9 +2451,13 @@ properties:
     permissions: ["public"]
     source_annotation: ContentSandboxLevel
   cpu_arch:
-    description:
+    description: |
       The build architecture. Usually one of `x86`, `amd64` (also known as
       x86-64), `arm`, or `arm64`.
+
+      This comes from `system_info.cpu_arch` in the minidump-stackwalker
+      output. When that isn't available, this falls back to the
+      `CPUArchitecture` crash annotation.
     examples:
       - "x86"
       - "amd64"
@@ -2467,9 +2471,13 @@ properties:
     type: integer
     permissions: ["public"]
   cpu_info:
-    description: >
+    description: |
       Detailed processor information. Usually contains information such as the
       family, model, and stepping number.
+
+      This comes from `system_info.cpu_info` in the minidump-stackwalker
+      output. When that isn't available, this falls back to the `CPUInfo`
+      crash annotation.
     type: ["string", "null"]
     permissions: ["public"]
   cpu_microcode_version:
@@ -2885,7 +2893,8 @@ properties:
   os_name:
     description: |
       The basic name of the operating system. This comes from `system_info.os`
-      from the stackwalker output of the minidump.
+      in the minidump-stackwalker output. When that isn't available, this falls
+      back to the `OS` crash annotation.
 
       Use `os_pretty_version` for a more precise operating system name
       including the version.
@@ -2905,18 +2914,24 @@ properties:
       For macOS, this is a concatenation of `os_name` and `os_version`.
 
       For Linux, this is derived from `lsb_release.description` in the
-      stackwalker output from the minidump and degrades to the `os_name` if
-      that information isn't available.
+      minidump-stackwalker output. When that isn't available, this falls back to
+      the `LinuxLSBDescription` crash annotation else to the `os_name`
+      if neither is available.
 
-      For Android, this is "Android" plus the sdk version.
+      For Android, this is "Android" plus the SDK version.
+
+      This is computed from `os_name` and `os_version`, so it inherits their
+      fallback behavior on the platforms above.
     type: string
     permissions: ["public"]
   os_version:
     description: |
-      Version of the operating system. This comes from `system_info.os_ver`
-      from the stackwalker output of the minidump.
+      Version of the operating system. This comes from `system_info.os_ver` in
+      the minidump-stackwalker output. When that isn't available, this falls
+      back to the `OSVersion` crash annotation.
 
-      For Android, this is the sdk version.
+      For Android, this is the SDK version, taken from the `Android_Version`
+      annotation rather than from `OSVersion`.
     type: string
     permissions: ["public"]
   phc_alloc_stack:
