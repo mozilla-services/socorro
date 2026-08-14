@@ -392,6 +392,16 @@ class TestCSignatureTool:
                 "23",
                 "ShutdownWorkThreads::$::__invoke",
             ),
+            (
+                "js::jit::CodePosition::operator<(js::jit::CodePosition) const",
+                "23",
+                "js::jit::CodePosition::operator<",
+            ),
+            (
+                "js::jit::CodePosition::operator<=>(js::jit::CodePosition const&) const",
+                "23",
+                "js::jit::CodePosition::operator<=>",
+            ),
         ],
     )
     def test_normalize_cpp_function(self, function, line, expected):
