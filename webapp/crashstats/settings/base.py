@@ -302,6 +302,14 @@ VCS_MAPPINGS = {
         "git.mozilla.org": (
             "http://git.mozilla.org/?p=%(repo)s;a=blob;f=%(file)s;h=%(revision)s#l%(line)s"  # noqa
         ),
+        # Firefox source links go to searchfox rather than GitHub. Searchfox
+        # serves the source for any revision in the mozilla-firefox/firefox
+        # repository from any of its firefox-* trees, since those trees share a
+        # single clone which has all the release branches. That means the
+        # "firefox-main" tree works for beta, release and esr revisions too.
+        "github.com/mozilla-firefox/firefox": (
+            "https://searchfox.org/firefox-main/rev/%(revision)s/%(file)s#%(line)s"
+        ),
         "github.com": (
             "https://github.com/%(repo)s/blob/%(revision)s/%(file)s#L%(line)s"
         ),

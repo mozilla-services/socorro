@@ -326,19 +326,23 @@ def enhance_frame(frame, vcs_mappings):
                 # Leave it as is if it's not unweildly long.
                 vcs_source_file_display = vcs_source_file
 
-            if vcstype in vcs_mappings:
-                if server in vcs_mappings[vcstype]:
-                    link = vcs_mappings[vcstype][server]
-                    frame["file"] = vcs_source_file_display
-                    frame["source_link"] = link % {
-                        "repo": repo,
-                        "file": vcs_source_file,
-                        "revision": revision,
-                        "line": frame["line"],
-                    }
+            mappings = vcs_mappings.get(vcstype, {})
+            # Prefer a mapping for the specific repository (e.g.
+            # "github.com/mozilla-firefox/firefox") over one for the whole
+            # server (e.g. "github.com")
+            link = mappings.get(root) or mappings.get(server)
+            if link:
+                frame["file"] = vcs_source_file_display
+                frame["source_link"] = link % {
+                    "repo": repo,
+                    "file": vcs_source_file,
+                    "revision": revision,
+                    "line": frame["line"],
+                }
             else:
-                path_parts = vcs_source_file.split("/")
-                frame["file"] = path_parts.pop()
+                # Without a mapping there's nothing to link to, so just show the
+                # file's basename
+                frame["file"] = vcs_source_file.split("/")[-1]
 
 
 def enhance_json_dump(dump, vcs_mappings):
