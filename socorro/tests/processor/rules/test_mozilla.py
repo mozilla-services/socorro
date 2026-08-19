@@ -400,6 +400,35 @@ class TestCopyFromRawCrashRule:
         assert processed_crash == {copy_item.key: copy_item.default}
         assert status.notes == []
 
+    def test_glean_client_id(self, tmp_path):
+        # Verify the GleanClientId annotation is copied to glean_client_id in the
+        # processed crash using the real schema
+        rule = CopyFromRawCrashRule(schema=PROCESSED_CRASH_SCHEMA)
+        copy_item = self.get_copy_item(rule, "GleanClientId")
+        assert copy_item.key == "glean_client_id"
+
+        raw_crash = {"GleanClientId": "00000000-0000-0000-0000-000000000000"}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert (
+            processed_crash["glean_client_id"] == "00000000-0000-0000-0000-000000000000"
+        )
+        assert status.notes == []
+
+        # Crash reports don't have a GleanClientId annotation and there's no default,
+        # so the field isn't in the processed crash at all
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert "glean_client_id" not in processed_crash
+        assert status.notes == []
+
 
 class TestConvertModuleSignatureInfoRule:
     def test_no_value(self, tmp_path):

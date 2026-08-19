@@ -154,6 +154,37 @@ class TestIntegrationSuperSearch:
         # processed_crash.json_dump.system_info.cpu_count -> cpu_count
         assert "cpu_count" in res["hits"][0]
 
+    def test_get_with_glean_client_id(self, es_helper):
+        now = utc_now()
+        crashstorage = self.build_crashstorage()
+        api = SuperSearchWithFields(crashstorage=crashstorage)
+
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "glean_client_id": "00000000-0000-0000-0000-000000000000",
+                "date_processed": now,
+            },
+        )
+        es_helper.index_crash(
+            processed_crash={
+                "uuid": create_new_ooid(timestamp=now),
+                "glean_client_id": "11111111-1111-1111-1111-111111111111",
+                "date_processed": now,
+            },
+        )
+        es_helper.refresh()
+
+        res = api.get(
+            glean_client_id="00000000-0000-0000-0000-000000000000",
+            _columns=["uuid", "glean_client_id"],
+        )
+
+        assert res["total"] == 1
+        assert (
+            res["hits"][0]["glean_client_id"] == "00000000-0000-0000-0000-000000000000"
+        )
+
     def test_get_with_bad_results_number(self, es_helper):
         """Run a very basic test, just to see if things work"""
         crashstorage = self.build_crashstorage()
