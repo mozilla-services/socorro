@@ -4,14 +4,17 @@
 
 import copy
 import datetime
-from io import BytesIO
 import json
+from io import BytesIO
 from unittest import mock
 
-import requests_mock
 import pytest
+import requests_mock
 
 from socorro.lib.libsocorrodataschema import get_schema
+from socorro.processor.pipeline import Status
+from socorro.processor.rules.android import AndroidCPUInfoRule, AndroidOSInfoRule
+from socorro.processor.rules.general import CPUInfoRule, OSInfoRule
 from socorro.processor.rules.mozilla import (
     AccessibilityRule,
     AddonsRule,
@@ -33,6 +36,7 @@ from socorro.processor.rules.mozilla import (
     OSPrettyVersionRule,
     OutOfMemoryBinaryRule,
     PHCRule,
+    PlatformInfoRule,
     PluginRule,
     ProcessTypeRule,
     ReportTypeRule,
@@ -44,9 +48,7 @@ from socorro.processor.rules.mozilla import (
     TopMostFilesRule,
     UtilityActorsNameRule,
 )
-from socorro.processor.pipeline import Status
 from socorro.signature.generator import SignatureGenerator
-
 
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
@@ -1855,6 +1857,131 @@ class TestBetaVersionRule:
         assert status.notes == []
 
 
+def run_cpu_and_os_rules(raw_crash, dumps, processed_crash, tmpdir, status):
+    """Run the rules that populate the cpu/os fields before PlatformInfoRule.
+
+    Deriving test inputs from the real rules rather than hardcoding their output
+    means these tests fail if their sentinel values or their Android handling
+    change.
+
+    """
+    for rule in (
+        CPUInfoRule(),
+        AndroidCPUInfoRule(),
+        OSInfoRule(),
+        AndroidOSInfoRule(),
+    ):
+        rule.act(raw_crash, dumps, processed_crash, tmpdir, status)
+
+
+class TestPlatformInfoRule:
+    ANNOTATIONS = {
+        "CPUArchitecture": "amd64",
+        "CPUInfo": "family 6 model 158 stepping 10",
+        "OS": "Windows NT",
+        "OSVersion": "10.0.22631",
+    }
+
+    # A minidump-stackwalker system_info section
+    JSON_DUMP = {
+        "system_info": {
+            "cpu_arch": "arm64",
+            "cpu_info": "family 8 model 1 stepping 0",
+            "os": "Mac OS X",
+            "os_ver": "14.5.0",
+        }
+    }
+
+    def test_no_minidump_uses_annotations(self, tmp_path):
+        """With no minidump, the platform annotations fill in the fields."""
+        raw_crash = dict(self.ANNOTATIONS)
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["cpu_arch"] == "amd64"
+        assert processed_crash["cpu_info"] == "family 6 model 158 stepping 10"
+        assert processed_crash["os_name"] == "Windows NT"
+        assert processed_crash["os_version"] == "10.0.22631"
+        assert status.notes == []
+
+    @pytest.mark.parametrize("annotations_present", [True, False])
+    def test_with_minidump_uses_values_from_minidump(
+        self, tmp_path, annotations_present
+    ):
+        """Values derived from the minidump take precedence over annotations.
+
+        The annotations_present=False case is what a crash report looks like
+        before the platform annotations ship in Firefox, or from a client too old
+        to send them: the rule is a no-op and nothing changes.
+
+        """
+        raw_crash = dict(self.ANNOTATIONS) if annotations_present else {}
+        dumps = {}
+        processed_crash = {"json_dump": copy.deepcopy(self.JSON_DUMP)}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        before = copy.deepcopy(processed_crash)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        # The rule changes nothing, and what the minidump gave us is what the
+        # json_dump held rather than any annotation value
+        assert processed_crash == before
+        assert processed_crash["cpu_arch"] == "arm64"
+        assert processed_crash["cpu_info"] == "family 8 model 1 stepping 0"
+        assert processed_crash["os_name"] == "Mac OS X"
+        assert processed_crash["os_version"] == "14.5.0"
+        assert status.notes == []
+
+    def test_with_android_annotations_uses_values_from_android_rules(self, tmp_path):
+        """Values from the Android rules take precedence over annotations.
+
+        AndroidCPUInfoRule and AndroidOSInfoRule run before this rule and
+        replace the sentinels, and we want to preserve those values.
+
+        """
+        raw_crash = dict(self.ANNOTATIONS)
+        raw_crash.update(
+            {
+                "OS": "Linux",
+                "OSVersion": "13",
+                "Android_CPU_ABI": "arm64-v8a",
+                "Android_Version": "33 (REL)",
+            }
+        )
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        before = copy.deepcopy(processed_crash)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash["cpu_arch"] == before["cpu_arch"] == "arm64"
+        assert processed_crash["os_name"] == before["os_name"] == "Android"
+        assert processed_crash["os_version"] == before["os_version"] == "33"
+        # cpu_info has no Android source, so the annotation fills it in
+        assert processed_crash["cpu_info"] == "family 6 model 158 stepping 10"
+        assert status.notes == []
+
+    def test_no_minidump_or_annotations_leaves_sentinels(self, tmp_path):
+        """With neither a minidump nor annotations, this rule is a no-op."""
+        raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        before = copy.deepcopy(processed_crash)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+
+        assert processed_crash == before
+
+
 class TestOsPrettyName:
     @pytest.mark.parametrize(
         "os_name, os_version, expected",
@@ -1908,6 +2035,90 @@ class TestOsPrettyName:
         rule = OSPrettyVersionRule()
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert processed_crash["os_pretty_version"] == "Ubuntu 18.04 LTS"
+
+    def test_linux_with_minidump_and_annotation_prefers_minidump(self, tmp_path):
+        # When both the minidump and the LinuxLSBDescription annotation have a
+        # value, use the minidump one
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash["LinuxLSBDescription"] = "Fedora Linux 42 (Workstation Edition)"
+        dumps = {}
+        processed_crash = {
+            "os_name": "Linux",
+            "os_version": "0.0.0 Linux etc",
+            "json_dump": {"lsb_release": {"description": "Ubuntu 18.04 LTS"}},
+        }
+        status = Status()
+
+        rule = OSPrettyVersionRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["os_pretty_version"] == "Ubuntu 18.04 LTS"
+
+    def test_linux_no_minidump_uses_annotation(self, tmp_path):
+        # With no minidump, fall back to the LinuxLSBDescription annotation
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash["LinuxLSBDescription"] = "Fedora Linux 42 (Workstation Edition)"
+        dumps = {}
+        processed_crash = {"os_name": "Linux", "os_version": "6.8.0 #1 SMP"}
+        status = Status()
+
+        rule = OSPrettyVersionRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert (
+            processed_crash["os_pretty_version"]
+            == "Fedora Linux 42 (Workstation Edition)"
+        )
+
+    def test_linux_no_minidump_or_annotation_falls_back_to_os_name(self, tmp_path):
+        # With neither a minidump nor the annotation, degrade to os_name
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        assert "LinuxLSBDescription" not in raw_crash
+        dumps = {}
+        processed_crash = {"os_name": "Linux", "os_version": "6.8.0 #1 SMP"}
+        status = Status()
+
+        rule = OSPrettyVersionRule()
+        rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash["os_pretty_version"] == "Linux"
+
+    def test_windows_no_minidump_uses_annotations(self, tmp_path):
+        # With no minidump, PlatformInfoRule fills in os_name and os_version from
+        # the annotations, and this rule computes off those
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash.update({"OS": "Windows NT", "OSVersion": "10.0.22631"})
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        OSPrettyVersionRule().act(
+            raw_crash, dumps, processed_crash, str(tmp_path), status
+        )
+        assert processed_crash["os_pretty_version"] == "Windows 11"
+
+    def test_android_uses_sdk_version_from_android_rules(self, tmp_path):
+        # The Android rules run before PlatformInfoRule, so os_version stays the
+        # SDK version and not the release version from the OSVersion annotation
+        raw_crash = copy.deepcopy(canonical_standard_raw_crash)
+        raw_crash.update(
+            {
+                "OS": "Linux",
+                "OSVersion": "13",
+                "Android_CPU_ABI": "arm64-v8a",
+                "Android_Version": "33 (REL)",
+            }
+        )
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+
+        run_cpu_and_os_rules(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        PlatformInfoRule().act(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        OSPrettyVersionRule().act(
+            raw_crash, dumps, processed_crash, str(tmp_path), status
+        )
+        assert processed_crash["os_version"] == "33"
+        assert processed_crash["os_pretty_version"] == "Android 33"
 
     @pytest.mark.parametrize(
         "os_name, os_version, expected",

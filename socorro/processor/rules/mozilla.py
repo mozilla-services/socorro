@@ -2,32 +2,30 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from contextlib import suppress
-from dataclasses import dataclass
 import datetime
 import gzip
 import json
 import re
+from contextlib import suppress
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import unquote_plus, urlsplit
 from zlib import error as ZlibError
 
-from glom import glom
 import jsonschema
 import sentry_sdk
+from glom import glom
 
-from socorro.libmarkus import METRICS
 from socorro.lib import libsocorrodataschema
-from socorro.lib.libdatetime import date_to_string, isoformat_to_time
 from socorro.lib.libcache import ExpiringCache
-from socorro.lib.libdatetime import UTC
+from socorro.lib.libdatetime import UTC, date_to_string, isoformat_to_time
 from socorro.lib.libjsonschema import InvalidSchemaError, resolve_references
 from socorro.lib.librequests import session_with_retries
 from socorro.lib.libsocorrodataschema import SocorroDataReducer, validate_instance
+from socorro.libmarkus import METRICS
 from socorro.processor.rules.base import Rule
 from socorro.signature.generator import SignatureGenerator
 from socorro.signature.utils import convert_to_crash_data
-
 
 # NOTE(willkg): This is the sys.maxint value for Python in the docker container
 # we run it in. Python 3 doesn't have a maxint, so when we switch to Python 3
@@ -882,6 +880,41 @@ class BetaVersionRule(Rule):
         )
 
 
+class PlatformInfoRule(Rule):
+    """Fill in CPU and OS fields from platform crash annotations if needed.
+
+    * cpu_arch (from `CPUArchitecture`)
+    * cpu_info (from `CPUInfo`)
+    * os_name (from `OS`)
+    * os_version (from `OSVersion`)
+
+    The minidump-derived value is preferred when we have one to keep crash report
+    processing unchanged.
+
+    """
+
+    # (processed crash field, annotation, sentinel the minidump-based rule sets
+    # when it has no value)
+    FIELDS = [
+        ("cpu_arch", "CPUArchitecture", "unknown"),
+        ("cpu_info", "CPUInfo", "unknown"),
+        ("os_name", "OS", "Unknown"),
+        ("os_version", "OSVersion", ""),
+    ]
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        for key, annotation, sentinel in self.FIELDS:
+            current = processed_crash.get(key) or ""
+            if current and current != sentinel:
+                # An earlier rule got a real value from the minidump or from an
+                # Android annotation, so leave it alone.
+                continue
+
+            value = (raw_crash.get(annotation) or "").strip()
+            if value:
+                processed_crash[key] = value
+
+
 class OSPrettyVersionRule(Rule):
     """Sets os_pretty_version with most readable operating system version string.
 
@@ -894,7 +927,8 @@ class OSPrettyVersionRule(Rule):
 
     For Mac OSX, this pulls from os_name and os_version.
 
-    For Linux, this uses json_dump.lsb_release.description if it's available.
+    For Linux, this uses json_dump.lsb_release.description if it's available, else it
+    falls back to the LinuxLSBDescription crash annotation value.
 
     Must be run after OSInfoRule.
 
@@ -969,10 +1003,14 @@ class OSPrettyVersionRule(Rule):
 
         return pretty_version
 
-    def compute_linux_pretty_version(self, processed_crash):
+    def compute_linux_pretty_version(self, raw_crash, processed_crash):
         pretty_version = glom(
             processed_crash, "json_dump.lsb_release.description", default=""
         )
+        if not pretty_version:
+            # Crash pings have no minidump, so fall back to the LinuxLSBDescription
+            # annotation.
+            pretty_version = (raw_crash.get("LinuxLSBDescription") or "").strip()
         pretty_version = pretty_version or "Linux"
         return pretty_version
 
@@ -1000,7 +1038,9 @@ class OSPrettyVersionRule(Rule):
             )
 
         elif os_name == "Linux":
-            pretty_version = self.compute_linux_pretty_version(processed_crash)
+            pretty_version = self.compute_linux_pretty_version(
+                raw_crash, processed_crash
+            )
 
         elif os_name == "Android":
             pretty_version = self.compute_android_pretty_version(os_name, os_version)

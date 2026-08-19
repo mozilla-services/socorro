@@ -439,6 +439,30 @@ properties:
     type: string
     permissions: ["public"]
 
+  CPUArchitecture:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D315029#10937005
+    description: >
+      Architecture of the CPU. One of the values described in
+      `system_info.cpu_arch` of
+      https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+      "x86", "amd64", "ppc", "ppc64", "sparc", "arm", "arm64", or "unknown".
+    type: string
+    permissions: ["public"]
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049749
+
+  CPUInfo:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D315029#10937005
+    description: >
+      Information about the CPU, as a string. This typically includes family,
+      model, and stepping.
+    type: string
+    permissions: ["public"]
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049749
+
   CPUMicrocodeVersion:
     data_reviews:
       - unknown
@@ -661,6 +685,15 @@ properties:
     type: string
     permissions: ["public"]
 
+  LinuxLSBDescription:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D315029#10937005
+    description: The Linux lsb_release description.
+    type: string
+    permissions: ["public"]
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049749
+
   MacAvailableMemorySysctl:
     data_reviews:
       - unknown
@@ -768,6 +801,29 @@ properties:
       Size of the allocation that caused an out-of-memory condition.
     type: string
     permissions: ["public"]
+
+  OS:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D315029#10937005
+    description: >
+      The operating system name. One of the values described in
+      `system_info.os` of
+      https://github.com/rust-minidump/rust-minidump/blob/main/minidump-processor/json-schema.md:
+      "Windows NT", "Mac OS X", "iOS", "Linux", "Solaris", "Android", or
+      "Unknown".
+    type: string
+    permissions: ["public"]
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049749
+
+  OSVersion:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D315029#10937005
+    description: The operating system version number.
+    type: string
+    permissions: ["public"]
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049749
 
   PHCAllocStack:
     data_reviews:
