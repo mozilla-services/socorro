@@ -27,6 +27,7 @@ mozilla::detail::MutexImpl::mutexLock
 mozilla::detail::MutexImpl::mutexTryLock
 mozilla::detail::MutexImpl::tryLock
 mozilla::detail::BaseMonitorAutoLock<T>::Wait
+mozilla::detail::ConditionVariableImpl::wait
 
 # These mark the top-most interesting frame of a Linux assertion.
 __GI___assert_fail
