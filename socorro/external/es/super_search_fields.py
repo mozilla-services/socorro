@@ -884,6 +884,7 @@ FIELDS = {
         "query_type": "bool",
         "storage_mapping": {"type": "boolean"},
     },
+    "glean_client_id": keyword_field(name="glean_client_id"),
     "gmp_library_path": {
         "data_validation_type": "str",
         "form_field_choices": [],

@@ -521,6 +521,29 @@ properties:
     type: string
     permissions: ["public"]
 
+  GleanClientId:
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052944#c8
+    description: |
+      The Glean client id of the client that sent the crash ping. This client id
+      is unique to crash pings and is not used by any other Firefox telemetry.
+
+      This is only ever set for crash pings. Crash pings are ingested by
+      extracting the contents of the crash ping and submitting them to the
+      collector, where this value is included as though it were a crash
+      annotation. Because of this, it is not in
+      `toolkit/crashreporter/CrashAnnotations.yaml` in the Firefox source code.
+      Crash reports do not have a Glean client id.
+
+      Socorro needs this in order to process data deletion requests for crash
+      ping data.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989439
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052944
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052950
+    type: string
+    permissions: ["protected"]
+
   GMPLibraryPath:
     data_reviews:
       - unknown

@@ -904,13 +904,13 @@ class PlatformInfoRule(Rule):
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
         for key, annotation, sentinel in self.FIELDS:
-            current = processed_crash.get(key) or ""
+            current = processed_crash.get(key, "")
             if current and current != sentinel:
                 # An earlier rule got a real value from the minidump or from an
                 # Android annotation, so leave it alone.
                 continue
 
-            value = (raw_crash.get(annotation) or "").strip()
+            value = raw_crash.get(annotation, "").strip()
             if value:
                 processed_crash[key] = value
 
