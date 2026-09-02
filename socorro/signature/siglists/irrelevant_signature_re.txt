@@ -104,6 +104,7 @@ IPC::WriteParam
 JSContext::checkImpl
 js::ContextChecks::check
 js::gc::CellWithTenuredGCPointer<T>::headerPtr
+JS::Heap<T>
 JS::loader::ScriptLoadRequest::GetWorkerLoadContext
 JSObject::nonCCWRealm
 JSObject::shape
