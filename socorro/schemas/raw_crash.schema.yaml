@@ -471,6 +471,16 @@ properties:
     type: string
     permissions: ["public"]
 
+  CrashEventID:
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D286321#10050855
+    description: >
+      A unique identifier for the crash event, allowing to link a crash ping
+      with the corresponding crash report, in case both a ping and a report
+      were submitted.
+    type: string
+    permissions: ["public"]
+
   CrashTime:
     data_reviews:
       - unknown
