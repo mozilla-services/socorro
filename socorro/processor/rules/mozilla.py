@@ -267,18 +267,6 @@ class SubmittedFromRule(Rule):
         processed_crash["submitted_from_infobar"] = submitted_from_infobar
 
 
-class SubmittedFromInfobarFixRule(Rule):
-    """Fix SubmittedFromInfobar annotation values to "1" """
-
-    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return "SubmittedFromInfobar" in raw_crash and raw_crash[
-            "SubmittedFromInfobar"
-        ] in ("true", True)
-
-    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        raw_crash["SubmittedFromInfobar"] = "1"
-
-
 class MajorVersionRule(Rule):
     """Sets "version" to the major version number of the Version annotation or 0"""
 
