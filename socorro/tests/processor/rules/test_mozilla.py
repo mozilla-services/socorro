@@ -43,6 +43,7 @@ from socorro.processor.rules.mozilla import (
     ShutDownHangCrashingThreadRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
+    SubmissionTypeRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -474,6 +475,30 @@ class TestConvertModuleSignatureInfoRule:
         rule.act(raw_crash, dumps, processed_crash, str(tmp_path), status)
         assert raw_crash == {"ModuleSignatureInfo": '{"foo": "bar"}'}
         assert processed_crash == {}
+
+
+class TestSubmissionTypeRule:
+    @pytest.mark.parametrize(
+        "submission_type, expected_submission_type",
+        [
+            ("report", "report"),
+            ("ping", "ping"),
+            ("", "report"),
+            (None, "report"),
+            ("glonk", "report"),
+        ],
+    )
+    def test_action(self, tmp_path, submission_type, expected_submission_type):
+        if submission_type is not None:
+            raw_crash = {"submission_type": submission_type}
+        else:
+            raw_crash = {}
+        dumps = {}
+        processed_crash = {}
+        status = Status()
+        rule = SubmissionTypeRule()
+        rule.action(raw_crash, dumps, processed_crash, str(tmp_path), status)
+        assert processed_crash == {"submission_type": expected_submission_type}
 
 
 class TestSubmittedFromRule:

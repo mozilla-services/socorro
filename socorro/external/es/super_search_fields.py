@@ -1411,6 +1411,10 @@ FIELDS = {
         "query_type": "integer",
         "storage_mapping": {"type": "long"},
     },
+    "submission_type": keyword_field(
+        name="submission_type",
+        choices=["report", "ping"],
+    ),
     "submitted_from": keyword_field(name="submitted_from"),
     "system_memory_use_percentage": {
         "data_validation_type": "int",

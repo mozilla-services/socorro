@@ -237,6 +237,22 @@ class ConvertModuleSignatureInfoRule(Rule):
         raw_crash["ModuleSignatureInfo"] = json.dumps(info)
 
 
+class SubmissionTypeRule(Rule):
+    """Determine the submission_type field value - either "report" or "ping".
+
+    This looks at the submission_type field in the raw crash that is added by the
+    collector. If the field is missing in the raw crash or has an invalid value,
+    it defaults to "report" in the processed crash.
+    """
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        submission_type = raw_crash.get("submission_type", "report")
+        if submission_type not in ["report", "ping"]:
+            status.add_note("invalid submission type in raw crash")
+            submission_type = "report"
+        processed_crash["submission_type"] = submission_type
+
+
 class SubmittedFromRule(Rule):
     """Determine submitted_from and submitted_from_infobar field values
 
