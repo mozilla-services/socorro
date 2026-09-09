@@ -821,6 +821,7 @@ FIELDS = {
     "cpu_microcode_version": text_field(
         "cpu_microcode_version", data_validation_type="enum", query_type="enum"
     ),
+    "crash_event_id": keyword_field("crash_event_id"),
     "crash_inconsistencies": keyword_field(
         name="crash_inconsistencies",
     ),

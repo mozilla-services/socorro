@@ -2484,6 +2484,14 @@ properties:
     description: Microcode version of the CPU.
     type: string
     permissions: ["public"]
+  crash_event_id:
+    description: >
+      A unique identifier for the crash event, allowing to link a crash ping
+      with the corresponding crash report, in case both a ping and a report
+      were submitted.
+    type: string
+    permissions: ["public"]
+    source_annotation: CrashEventID
   crash_id:
     description: Unique identifier of this crash report.
     type: string
