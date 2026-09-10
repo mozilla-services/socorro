@@ -155,11 +155,6 @@ class TestAuditGroupsCommand:
         bob.save()
 
         monkeypatch.setattr(
-            "crashstats.authentication.management.commands.auditgroups.settings.LOCAL_DEV_ENV",
-            False,
-        )
-
-        monkeypatch.setattr(
             "crashstats.authentication.management.commands.auditgroups.is_blocked_in_auth0",
             lambda email: True,
         )
@@ -170,8 +165,7 @@ class TestAuditGroupsCommand:
         call_command("auditgroups", dry_run=False, stdout=buffer)
         assert hackers_group.user_set.count() == 0
         assert (
-            "Removing: bob@mozilla.com (user has most likely lost employment)"
-            in buffer.getvalue()
+            "Removing: bob@mozilla.com (user is blocked in Auth0)" in buffer.getvalue()
         )
 
     def test_user_not_blocked_in_auth0_is_not_removed(self, db, monkeypatch):
