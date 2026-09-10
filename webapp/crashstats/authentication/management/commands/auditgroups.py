@@ -69,6 +69,9 @@ def find_users(client_id, client_secret, domain, email, session):
 
 
 def is_blocked_in_auth0(email):
+    if settings.LOCAL_DEV_ENV:
+        # This function calls an Auth0-specific API not available on the local OIDC provider.
+        return False
     session = session_with_retries(total_retries=5)
     users = find_users(
         settings.OIDC_RP_CLIENT_ID,
@@ -77,10 +80,7 @@ def is_blocked_in_auth0(email):
         email,
         session,
     )
-    for user in users:
-        if user.get("blocked"):
-            return True
-    return False
+    return any(user.get("blocked") for user in users)
 
 
 class Command(BaseCommand):
@@ -117,15 +117,15 @@ class Command(BaseCommand):
         # Go through the users and mark the ones for removal
         users_to_remove = []
         for user in hackers_group.user_set.all():
-            if not settings.LOCAL_DEV_ENV:
-                try:
-                    # User may be blocked as a security mitigation. Eg: too many login attempts
-                    if is_blocked_in_auth0(user.email):
-                        users_to_remove.append(
-                            (user, "user has most likely lost employment")
-                        )
-                except RuntimeError as e:
-                    self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
+            is_blocked = False
+            try:
+                # User may be blocked as a security mitigation. Eg: too many login attempts
+                is_blocked = is_blocked_in_auth0(user.email)
+            except Exception as e:
+                self.stdout.write(f"Auth0 failed for: {user.email}: {e}")
+
+            if is_blocked:
+                users_to_remove.append((user, "user is blocked in Auth0"))
 
             elif not user.is_active:
                 users_to_remove.append((user, "!is_active"))
