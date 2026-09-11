@@ -1069,6 +1069,15 @@ properties:
     type: string
     permissions: ["public"]
 
+  StackTraces:
+    data_reviews:
+      - unknown
+    description:
+      Stack traces extracted from the crash minidump, if available, by the
+      crash reporting client. A serialized JSON object.
+    type: string
+    permissions: ["protected"]
+
   StartupCrash:
     data_reviews:
       - unknown
