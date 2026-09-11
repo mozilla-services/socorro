@@ -40,6 +40,19 @@ properties:
     type: object
     permissions: ["protected"]
 
+  submission_type:
+    description: |
+      Takes the values "report" or "ping" depending on whether this crash item
+      represents a submission as a crash report or a crash ping. The same crash
+      event can be submitted as both a report and a ping, in which case the two
+      items are linked by a common CrashEventId annotation.
+
+      Added by the collector.
+    data_reviews:
+      - added by collector
+    type: string
+    permissions: ["public"]
+
   submitted_timestamp:
     description: |
       Date when the crash report was accepted by the collector in ISO-8601

@@ -57,6 +57,7 @@ from socorro.processor.rules.mozilla import (
     ShutDownHangCrashingThreadRule,
     SignatureGeneratorRule,
     SoftErrorsRule,
+    SubmissionTypeRule,
     SubmittedFromRule,
     ThemePrettyNameRule,
     TopMostFilesRule,
@@ -70,6 +71,7 @@ DEFAULT_RULESET = [
     # capture collector things
     CrashReportKeysRule(),
     CollectorMetadataRule(),
+    SubmissionTypeRule(),
     # fix ModuleSignatureInfo if it needs fixing
     ConvertModuleSignatureInfoRule(),
     # rules to transform a raw crash into a processed crash

@@ -3208,6 +3208,17 @@ properties:
       Indicates whether the crash report was successfully processed.
     type: boolean
     permissions: ["public"]
+  submission_type:
+    description: >
+      Takes the values "report" or "ping" depending on whether this crash item
+      represents a submission as a crash report or a crash ping. The same crash
+      event can be submitted as both a report and a ping, in which case the two
+      items are linked by a common crash_event_id field.
+    examples:
+      - report
+      - ping
+    type: string
+    permissions: ["public"]
   submitted_from:
     description: >
       Indicates how the crash was submitted by the user.
