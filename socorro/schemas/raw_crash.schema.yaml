@@ -1069,6 +1069,17 @@ properties:
     type: string
     permissions: ["public"]
 
+  StackTraces:
+    data_reviews:
+      - unknown
+    description: >
+      Stack traces extracted from the crash minidump, if available, by the
+      crash reporting client. A serialized JSON object with a structure
+      documented in
+      https://searchfox.org/firefox-main/source/toolkit/crashreporter/CrashAnnotations.yaml.
+    type: string
+    permissions: ["protected"]
+
   StartupCrash:
     data_reviews:
       - unknown
