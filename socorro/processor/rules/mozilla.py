@@ -246,7 +246,7 @@ class SubmissionTypeRule(Rule):
     """
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        submission_type = raw_crash.get("submission_type", "report")
+        submission_type = raw_crash.get("submission_type", "report").lower()
         if submission_type not in ["report", "ping"]:
             status.add_note("invalid submission type in raw crash")
             submission_type = "report"
