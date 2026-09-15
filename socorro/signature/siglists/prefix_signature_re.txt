@@ -243,6 +243,11 @@ strncpy
 strstr
 syscall
 SysFreeString
+# wgpu_core hal resource from wgpu-core-remote id
+<T>::.*_as_hal::<T>
+<T>::resolve_.*_id
+# wgpu-core-remote Storage access
+<T>::get
 TlsGetValue
 TppRaiseInvalidParameter
 __ulock_wait
