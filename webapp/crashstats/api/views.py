@@ -411,7 +411,7 @@ def _describe_model(model_name, model):
         "name": model_name,
         "url": reverse("api:model_wrapper", args=(model_name,)),
         "parameters": params,
-        "defaults": getattr(model, "defaults", {}),
+        "defaults": getattr(model_inst, "defaults", {}),
         "methods": methods,
         "help_text": help_text,
         "required_permissions": required_permissions,
