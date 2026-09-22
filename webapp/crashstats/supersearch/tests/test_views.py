@@ -96,6 +96,7 @@ class TestViews:
         def build_crash_data(**params):
             crash_id = create_new_ooid()
             data = {
+                "submission_type": "report",
                 "date_processed": utc_now(),
                 "uuid": crash_id,
                 "version": "1.0",
@@ -136,6 +137,11 @@ class TestViews:
                 product="Thunderbird",
                 build=20220330194208,
             ),
+            build_crash_data(
+                signature="pingSignature",
+                product="Firefox",
+                submission_type="ping",
+            ),
         ]
         for item in crash_data:
             es_helper.index_crash(processed_crash=item, refresh=False)
@@ -144,71 +150,88 @@ class TestViews:
         url = reverse("supersearch:search_results")
         response = client.get(url, {"product": "Firefox"})
         assert response.status_code == 200
+        content = smart_str(response.content)
         # Test results are existing
-        assert 'table id="reports-list"' in smart_str(response.content)
-        assert "nsASDOMWindowEnumerator::GetNext()" in smart_str(response.content)
-        assert "mySignatureIsCool" in smart_str(response.content)
-        assert "mineIsCoolerThanYours" in smart_str(response.content)
-        assert "EMPTY" in smart_str(response.content)
+        assert 'table id="reports-list"' in content
+        assert "nsASDOMWindowEnumerator::GetNext()" in content
+        assert "mySignatureIsCool" in content
+        assert "mineIsCoolerThanYours" in content
+        assert "EMPTY" in content
+        # Verify the crash ping isn't in the results
+        assert "pingSignature" not in content
         # Make sure first crash report shows up in results
-        assert crash_data[0]["uuid"] in smart_str(response.content)
-        assert str(crash_data[0]["build"]) in smart_str(response.content)
-        assert crash_data[0]["os_name"] in smart_str(response.content)
+        assert crash_data[0]["uuid"] in content
+        assert str(crash_data[0]["build"]) in content
+        assert crash_data[0]["os_name"] in content
         # Test facets are existing
-        assert 'table id="facets-list-' in smart_str(response.content)
+        assert 'table id="facets-list-' in content
         # Test bugs are existing
-        assert '<th scope="col">Bugs</th>' in smart_str(response.content)
-        assert "123456" in smart_str(response.content)
+        assert '<th scope="col">Bugs</th>' in content
+        assert "123456" in content
         # Test links on terms are existing
         assert "build_id=%3D" + str(crash_data[0]["build"]) in smart_str(
             response.content
         )
         # Refine links to the product should not be "is" queries
-        assert "product=Firefox" in smart_str(response.content)
+        assert "product=Firefox" in content
         # Refine links have values that are urlencoded (this is also a field that should
         # not be an "is" query)
-        assert "platform=%3CWindows%3E" in smart_str(response.content)
+        assert "platform=%3CWindows%3E" in content
+
+        # Test searching for crash pings
+        response = client.get(url, {"product": "Firefox", "submission_type": "ping"})
+        assert response.status_code == 200
+        content = smart_str(response.content)
+        assert "pingSignature" in content
+        assert "nsASDOMWindowEnumerator::GetNext()" not in content
+        assert "mySignatureIsCool" not in content
+        assert "mineIsCoolerThanYours" not in content
+        assert "EMPTY" not in content
 
         # Test with empty results--we didn't index any crash reports for this product
         response = client.get(url, {"product": "Fenix"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' not in smart_str(response.content)
-        assert "No results were found" in smart_str(response.content)
+        content = smart_str(response.content)
+        assert 'table id="reports-list"' not in content
+        assert "No results were found" in content
 
         # Test with a signature param--make sure first crash report shows up
         response = client.get(url, {"signature": "~nsASDOMWindowEnumerator"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_str(response.content)
-        assert crash_data[0]["signature"] in smart_str(response.content)
-        assert str(crash_data[0]["build"]) in smart_str(response.content)
+        content = smart_str(response.content)
+        assert 'table id="reports-list"' in content
+        assert crash_data[0]["signature"] in content
+        assert str(crash_data[0]["build"]) in content
         # Make sure bugs show up because this has the signature facet by default
-        assert ">Bugs</th>" in smart_str(response.content)
-        assert "123456" in smart_str(response.content)
+        assert ">Bugs</th>" in content
+        assert "123456" in content
 
         # Test with a different facet--fourth crash report shows up
         response = client.get(url, {"_facets": "build_id", "product": "Thunderbird"})
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_str(response.content)
-        assert 'table id="facets-list-' in smart_str(response.content)
-        assert str(crash_data[4]["build"]) in smart_str(response.content)
+        content = smart_str(response.content)
+        assert 'table id="reports-list"' in content
+        assert 'table id="facets-list-' in content
+        assert str(crash_data[4]["build"]) in content
         # Make sure bug does not show up
-        assert "<th>Bugs</th>" not in smart_str(response.content)
-        assert "123456" not in smart_str(response.content)
+        assert "<th>Bugs</th>" not in content
+        assert "123456" not in content
 
         # Test with a different columns list
         response = client.get(
             url, {"_columns": ["build_id", "platform"], "product": "Thunderbird"}
         )
         assert response.status_code == 200
-        assert 'table id="reports-list"' in smart_str(response.content)
-        assert 'table id="facets-list-' in smart_str(response.content)
+        content = smart_str(response.content)
+        assert 'table id="reports-list"' in content
+        assert 'table id="facets-list-' in content
         # The build and platform appear
-        assert str(crash_data[4]["build"]) in smart_str(response.content)
-        assert crash_data[4]["os_name"] in smart_str(response.content)
+        assert str(crash_data[4]["build"]) in content
+        assert crash_data[4]["os_name"] in content
         # The crash id is always shown
-        assert crash_data[4]["uuid"] in smart_str(response.content)
+        assert crash_data[4]["uuid"] in content
         # The version and date do not appear
-        assert crash_data[4]["version"] not in smart_str(response.content)
+        assert crash_data[4]["version"] not in content
         # FIXME(willkg): date is hard to test because it changes forms when indexing
 
     def test_search_results_missing_parameter_values(self, client, db, es_helper):

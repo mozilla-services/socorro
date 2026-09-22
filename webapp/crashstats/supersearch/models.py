@@ -4,6 +4,8 @@
 
 import copy
 
+from django.conf import settings
+
 from crashstats import libproduct
 from crashstats.crashstats import models
 from crashstats.supersearch.libsupersearch import (
@@ -93,6 +95,10 @@ class SuperSearch(ESSocorroMiddleware):
     """
 
     API_ALLOWLIST = get_api_allowlist()
+
+    @property
+    def defaults(self):
+        return {"submission_type": settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE}
 
     def __init__(self):
         self.all_fields = get_supersearch_fields()

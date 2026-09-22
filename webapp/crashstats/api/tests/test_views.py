@@ -739,6 +739,7 @@ class TestCrashVerify:
                 "_columns",
                 "_fields",
                 "_results_number",
+                "submission_type",
                 "uuid",
             ]
 
@@ -768,7 +769,7 @@ class TestCrashVerify:
         data = json.loads(resp.content)
         assert data == {"error": "unknown crash id"}
 
-    def test_elastcsearch_has_crash(self, storage_helper, client):
+    def test_elasticsearch_has_crash(self, storage_helper, client):
         self.create_storage_buckets(storage_helper)
 
         uuid = create_new_ooid()
