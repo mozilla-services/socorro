@@ -98,7 +98,7 @@ class SuperSearch(ESSocorroMiddleware):
 
     @property
     def defaults(self):
-        return {"submission_type": settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE}
+        return {"submission_type": settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER}
 
     def __init__(self):
         self.all_fields = get_supersearch_fields()
