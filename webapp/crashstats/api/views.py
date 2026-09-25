@@ -625,6 +625,9 @@ class CrashVerifyAPI(SocorroAPIView):
             "_columns": ["uuid"],
             "_results_number": 1,
             "uuid": crash_id,
+            # Override default submission type. We need a non-empty list here to prevent the
+            # default from being used. The filter matches all submission types.
+            "submission_type": ["__null__", "!__null__"],
             "dont_cache": True,
             "refresh_cache": True,
         }

@@ -37,6 +37,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 from markus.testing import MetricsMock
 
+from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
 
 
@@ -769,14 +770,23 @@ class TestCrashVerify:
         data = json.loads(resp.content)
         assert data == {"error": "unknown crash id"}
 
-    def test_elasticsearch_has_crash(self, storage_helper, client):
+    @pytest.mark.parametrize("submission_type", ["report", "ping", None])
+    def test_elasticsearch_has_crash(
+        self, storage_helper, es_helper, client, submission_type
+    ):
         self.create_storage_buckets(storage_helper)
 
         uuid = create_new_ooid()
-
-        with self.supersearch_returns_crashes([uuid]):
-            url = reverse("api:crash_verify")
-            resp = client.get(url, {"crash_id": uuid})
+        crash_data = {
+            "uuid": uuid,
+            "date_processed": utc_now(),
+            "signature": "/api/CrashVerify",
+        }
+        if submission_type is not None:
+            crash_data["submission_type"] = submission_type
+        es_helper.index_crash(processed_crash=crash_data)
+        url = reverse("api:crash_verify")
+        resp = client.get(url, {"crash_id": uuid})
 
         assert resp.status_code == 200
         data = json.loads(resp.content)
