@@ -331,11 +331,11 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # fields used in the simplified UI for Super Search
 SIMPLE_SEARCH_FIELDS = ("product", "version", "platform", "process_type")
 
-SUPERSEARCH_DEFAULT_SUBMISSION_TYPE = _config(
-    "SUPERSEARCH_DEFAULT_SUBMISSION_TYPE",
+SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = _config(
+    "SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER",
     default="!ping",
     doc=(
-        "Default submission_type filter for SuperSearch. We currently want to innclude "
+        "Default submission_type filter for SuperSearch. We currently want to include "
         "documents without an explicit submission type, and documents explicitly marked as "
         "reports; in other words, we want to exclude documents explicitly markes as pings."
     ),
