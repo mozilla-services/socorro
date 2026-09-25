@@ -41,13 +41,15 @@ class TestVerifyProcessed:
             data=b"test",
         )
 
-    def create_processed_crash_in_es(self, es_helper, crash_id):
+    def create_processed_crash_in_es(self, es_helper, crash_id, submission_type=None):
         crash_date = date_from_ooid(crash_id)
         processed_crash = {
             "uuid": crash_id,
             "signature": "OOM | Small",
             "date_processed": crash_date,
         }
+        if submission_type is not None:
+            processed_crash["submission_type"] = submission_type
         es_helper.index_crash(processed_crash=processed_crash)
 
     def test_get_threechars(self):
@@ -79,19 +81,21 @@ class TestVerifyProcessed:
         storage_helper.create_bucket(bucket)
 
         # Create a few raw and processed crashes
-        crashids = [
-            "000" + create_new_ooid()[3:],
-            "000" + create_new_ooid()[3:],
-            "000" + create_new_ooid()[3:],
+        crashes = [
+            ("000" + create_new_ooid()[3:], "report"),
+            ("000" + create_new_ooid()[3:], "ping"),
+            ("000" + create_new_ooid()[3:], None),
         ]
-        for crash_id in crashids:
+        for crash_id, submission_type in crashes:
             self.create_raw_crash_in_storage(
                 storage_helper, bucket_name=bucket, crash_id=crash_id
             )
             self.create_processed_crash_in_storage(
                 storage_helper, bucket_name=bucket, crash_id=crash_id
             )
-            self.create_processed_crash_in_es(es_helper, crash_id=crash_id)
+            self.create_processed_crash_in_es(
+                es_helper, crash_id=crash_id, submission_type=submission_type
+            )
 
         es_helper.refresh()
 
