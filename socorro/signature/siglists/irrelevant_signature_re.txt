@@ -254,6 +254,7 @@ __security_check_cookie
 SkyLight
 SleepConditionVariableSRW
 __stack_chk_fail
+smallvec::
 std::__
 std::alloc::_::__rg_oom
 std::_Hash
