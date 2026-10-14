@@ -331,6 +331,16 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # fields used in the simplified UI for Super Search
 SIMPLE_SEARCH_FIELDS = ("product", "version", "platform", "process_type")
 
+SUPERSEARCH_DEFAULT_SUBMISSION_TYPE = _config(
+    "SUPERSEARCH_DEFAULT_SUBMISSION_TYPE",
+    default="!ping",
+    doc=(
+        "Default submission_type filter for SuperSearch. We currently want to innclude "
+        "documents without an explicit submission type, and documents explicitly marked as "
+        "reports; in other words, we want to exclude documents explicitly markes as pings."
+    ),
+)
+
 # the number of result filter on tcbs
 TCBS_RESULT_COUNTS = (50, 100, 200, 300)
 
