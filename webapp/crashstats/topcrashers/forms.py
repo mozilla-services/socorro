@@ -11,6 +11,7 @@ from crashstats.crashstats.forms import BaseForm
 class TopCrashersForm(BaseForm):
     product = forms.CharField()
     version = MultipleValueField(required=False)
+    submission_type = MultipleValueField(required=False)
     process_type = forms.CharField(required=False)
     platform = forms.CharField(required=False)
     _facets_size = forms.IntegerField(required=False)
