@@ -57,6 +57,7 @@ def check_elasticsearch(supersearch, crash_ids):
     params = {
         "uuid": crash_ids,
         "date": [">=%s" % start_date, "<=%s" % end_date],
+        "submission_type": ["__null__", "!__null__"],
         "_columns": ["uuid"],
         "_facets": [],
         "_facets_size": 0,
