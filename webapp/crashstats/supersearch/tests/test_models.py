@@ -10,7 +10,7 @@ from socorro.lib.libooid import create_new_ooid
 
 
 @pytest.mark.parametrize("model", [SuperSearch, SuperSearchUnredacted])
-def test_results(model, es_helper):
+def test_results(model, es_helper, settings):
     now = utc_now()
     crash_ids = {}
     for submission_type in [None, "report", "ping"]:
@@ -38,5 +38,10 @@ def test_results(model, es_helper):
     ]
 
     result = api.get(submission_type="ping", _columns=["uuid"], _facets=[])
+    assert result["total"] == 1
+    assert result["hits"] == [{"uuid": crash_ids["ping"]}]
+
+    settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = "ping"
+    result = api.get(_columns=["uuid"], _facets=["signature"])
     assert result["total"] == 1
     assert result["hits"] == [{"uuid": crash_ids["ping"]}]
