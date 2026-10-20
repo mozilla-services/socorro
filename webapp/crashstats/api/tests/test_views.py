@@ -472,9 +472,14 @@ class TestSuperSearch(BaseTestViews):
         url = reverse("api:model_wrapper", args=("SuperSearch",))
 
         # The bare request relies on defaults that are all public fields
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert json.loads(response.content)["hits"]
+        for default_submission_type in ["report", "ping"]:
+            with self.settings(
+                SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=default_submission_type
+            ):
+                response = self.client.get(url)
+            assert response.status_code == 200
+            assert json.loads(response.content)["hits"]
+            assert params_before_query["submission_type"] == [default_submission_type]
 
         # Query with only public fields
         response = self.client.get(
@@ -640,7 +645,11 @@ class TestSuperSearchUnredacted(BaseTestViews):
         "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
     )
     def test_api(self, mock_implementation):
+        params_before_query = {}
+
         def mocked_get(**params):
+            params_before_query.clear()
+            params_before_query.update(params)
             assert "url" in params
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
@@ -672,8 +681,13 @@ class TestSuperSearchUnredacted(BaseTestViews):
         user = self._login()
         self._add_permission(user, "view_pii")
 
-        response = self.client.get(url, {"url": "example.com"})
-        assert response.status_code == 200
+        for default_submission_type in ["report", "ping"]:
+            with self.settings(
+                SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=default_submission_type
+            ):
+                response = self.client.get(url, {"url": "example.com"})
+            assert response.status_code == 200
+            assert params_before_query["submission_type"] == [default_submission_type]
         res = json.loads(response.content)
 
         assert res["hits"]
