@@ -136,6 +136,13 @@ services:
     build:
       context: docker/images/oidcprovider
     image: local/socorro_oidcprovider
+    healthcheck:
+      test: ["CMD", "curl", "-fsSI", "http://localhost:8080/"]
+      start_period: 15s
+      start_interval: 1s
+      interval: 30s
+      timeout: 5s
+      retries: 3
     ports:
       - "8080:8080"
     # The next line can be removed if this PR is included in the image we use:
