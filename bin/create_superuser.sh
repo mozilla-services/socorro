@@ -13,11 +13,15 @@
 #
 # Note: This is meant to run on the host machine, not in a docker container.
 
+set -euo pipefail
+
+# Wait for startup migrations before creating an account in the oidcprovider service.
+docker compose up -d --wait --wait-timeout 30 oidcprovider
+
 # Create an account in the oidcprovider service container
-docker compose up -d oidcprovider
 docker compose exec oidcprovider /code/manage.py createuser admin admin admin@example.com
 
-# Creates a superuser account in the Crash Stats webapp corresponding to
+# Create a superuser account in the Crash Stats webapp corresponding to
 # the account just created in the oidcprovider service container.
 docker compose run app shell ./webapp/manage.py makesuperuser admin@example.com
 
