@@ -411,7 +411,7 @@ def _describe_model(model_name, model):
         "name": model_name,
         "url": reverse("api:model_wrapper", args=(model_name,)),
         "parameters": params,
-        "defaults": getattr(model, "defaults", {}),
+        "defaults": getattr(model_inst, "defaults", {}),
         "methods": methods,
         "help_text": help_text,
         "required_permissions": required_permissions,
@@ -458,65 +458,6 @@ def handle_ratelimit(fun):
             raise Throttled() from exc
 
     return _handle_ratelimit
-
-
-@csrf_exempt
-@handle_ratelimit
-@ratelimit(key="ip", method=["GET"], rate=utils.ratelimit_rate, block=True)
-@utils.json_view
-def crash_verify(request):
-    """Verifies crash data in crash data destinations"""
-    if request.method == "OPTIONS":
-        return http.JsonResponse({}, status=200)
-
-    crash_id = request.GET.get("crash_id", None)
-
-    if not crash_id or not is_crash_id_valid(crash_id):
-        return http.JsonResponse({"error": "unknown crash id"}, status=400)
-
-    data = {"uuid": crash_id}
-
-    # Check crash bucket for raw and processed crash data
-    raw_api = models.RawCrash()
-    try:
-        raw_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
-        has_raw_crash = True
-    except CrashIDNotFound:
-        has_raw_crash = False
-    data["raw_crash"] = has_raw_crash
-
-    processed_api = models.ProcessedCrash()
-    try:
-        processed_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
-        has_processed_crash = True
-    except CrashIDNotFound:
-        has_processed_crash = False
-    data["processed_crash"] = has_processed_crash
-
-    # Check Elasticsearch for crash data
-    supersearch_api = supersearch_models.SuperSearch()
-    params = {
-        "_columns": ["uuid"],
-        "_results_number": 1,
-        "uuid": crash_id,
-        "dont_cache": True,
-        "refresh_cache": True,
-    }
-    results = supersearch_api.get(**params)
-    data["elasticsearch_crash"] = (
-        results["total"] == 1 and results["hits"][0]["uuid"] == crash_id
-    )
-
-    # Check telemetry bucket for crash data
-    telemetry_api = models.TelemetryCrash()
-    try:
-        telemetry_api.get(crash_id=crash_id, dont_cache=True, refresh_cache=True)
-        has_telemetry_crash = True
-    except CrashIDNotFound:
-        has_telemetry_crash = False
-    data["telemetry_crash"] = has_telemetry_crash
-
-    return http.JsonResponse(data, status=200)
 
 
 class SocorroAPIView(APIView):
@@ -684,6 +625,9 @@ class CrashVerifyAPI(SocorroAPIView):
             "_columns": ["uuid"],
             "_results_number": 1,
             "uuid": crash_id,
+            # Override default submission type. We need a non-empty list here to prevent the
+            # default from being used. The filter matches all submission types.
+            "submission_type": ["__null__", "!__null__"],
             "dont_cache": True,
             "refresh_cache": True,
         }
