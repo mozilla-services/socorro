@@ -6,6 +6,7 @@ import datetime
 
 import freezegun
 import pyquery
+import pytest
 
 from django.urls import reverse
 from django.utils.encoding import smart_str
@@ -471,3 +472,54 @@ class TestTopCrasherViews:
             {"product": "Firefox", "version": "19.0", "_range_type": "build"},
         )
         assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "submission_type, expected_signatures",
+        [
+            # When submission_type is not provided, the default is determined by
+            # settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER.
+            (None, {"MissingSubmissionType", "ReportSubmissionType"}),
+            ("ping", {"PingSubmissionType"}),
+            ("report", {"ReportSubmissionType"}),
+            (["report", "ping"], {"ReportSubmissionType", "PingSubmissionType"}),
+        ],
+    )
+    def test_topcrashers_submission_type(
+        self, client, db, es_helper, submission_type, expected_signatures
+    ):
+        """Test the submission_type query parameter for the topcrashers view."""
+        now = utc_now() - datetime.timedelta(days=1)
+        for crash_submission_type, signature in [
+            (None, "MissingSubmissionType"),
+            ("report", "ReportSubmissionType"),
+            ("ping", "PingSubmissionType"),
+        ]:
+            crash = {
+                "date_processed": now,
+                "uuid": create_new_ooid(timestamp=now),
+                "signature": signature,
+                "product": "Firefox",
+                "version": "1.0",
+                "dom_fission_enabled": True,
+                "is_garbage_collecting": False,
+                "os_name": "Linux",
+                "process_type": "parent",
+                "report_type": "crash",
+                "startup_crash": False,
+                "uptime": 1000,
+            }
+            if crash_submission_type is not None:
+                crash["submission_type"] = crash_submission_type
+            es_helper.index_crash(processed_crash=crash, refresh=False)
+        es_helper.refresh()
+
+        params = {"product": "Firefox", "version": "1.0"}
+        if submission_type is not None:
+            params["submission_type"] = submission_type
+        response = client.get(reverse("topcrashers:topcrashers"), params)
+        assert response.status_code == 200
+        doc = pyquery.PyQuery(response.content)
+        assert {item.text.strip() for item in doc("a.signature")} == expected_signatures
+        assert f"of all {len(expected_signatures)} crashes" in smart_str(
+            response.content
+        )

@@ -37,6 +37,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 from markus.testing import MetricsMock
 
+from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
 
 
@@ -471,9 +472,14 @@ class TestSuperSearch(BaseTestViews):
         url = reverse("api:model_wrapper", args=("SuperSearch",))
 
         # The bare request relies on defaults that are all public fields
-        response = self.client.get(url)
-        assert response.status_code == 200
-        assert json.loads(response.content)["hits"]
+        for default_submission_type in ["report", "ping"]:
+            with self.settings(
+                SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=default_submission_type
+            ):
+                response = self.client.get(url)
+            assert response.status_code == 200
+            assert json.loads(response.content)["hits"]
+            assert params_before_query["submission_type"] == [default_submission_type]
 
         # Query with only public fields
         response = self.client.get(
@@ -639,7 +645,11 @@ class TestSuperSearchUnredacted(BaseTestViews):
         "crashstats.supersearch.models.SuperSearchUnredacted.get_implementation"
     )
     def test_api(self, mock_implementation):
+        params_before_query = {}
+
         def mocked_get(**params):
+            params_before_query.clear()
+            params_before_query.update(params)
             assert "url" in params
             if "product" in params:
                 assert params["product"] == ["WaterWolf", "NightTrain"]
@@ -671,8 +681,13 @@ class TestSuperSearchUnredacted(BaseTestViews):
         user = self._login()
         self._add_permission(user, "view_pii")
 
-        response = self.client.get(url, {"url": "example.com"})
-        assert response.status_code == 200
+        for default_submission_type in ["report", "ping"]:
+            with self.settings(
+                SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=default_submission_type
+            ):
+                response = self.client.get(url, {"url": "example.com"})
+            assert response.status_code == 200
+            assert params_before_query["submission_type"] == [default_submission_type]
         res = json.loads(response.content)
 
         assert res["hits"]
@@ -739,6 +754,7 @@ class TestCrashVerify:
                 "_columns",
                 "_fields",
                 "_results_number",
+                "submission_type",
                 "uuid",
             ]
 
@@ -768,14 +784,23 @@ class TestCrashVerify:
         data = json.loads(resp.content)
         assert data == {"error": "unknown crash id"}
 
-    def test_elastcsearch_has_crash(self, storage_helper, client):
+    @pytest.mark.parametrize("submission_type", ["report", "ping", None])
+    def test_elasticsearch_has_crash(
+        self, storage_helper, es_helper, client, submission_type
+    ):
         self.create_storage_buckets(storage_helper)
 
         uuid = create_new_ooid()
-
-        with self.supersearch_returns_crashes([uuid]):
-            url = reverse("api:crash_verify")
-            resp = client.get(url, {"crash_id": uuid})
+        crash_data = {
+            "uuid": uuid,
+            "date_processed": utc_now(),
+            "signature": "/api/CrashVerify",
+        }
+        if submission_type is not None:
+            crash_data["submission_type"] = submission_type
+        es_helper.index_crash(processed_crash=crash_data)
+        url = reverse("api:crash_verify")
+        resp = client.get(url, {"crash_id": uuid})
 
         assert resp.status_code == 200
         data = json.loads(resp.content)
