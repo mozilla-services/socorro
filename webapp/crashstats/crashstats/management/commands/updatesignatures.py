@@ -99,6 +99,8 @@ class Command(BaseCommand):
             "_columns": ["signature", "build_id", "date"],
             "_facets_size": 0,
             "_fields": all_fields,
+            # Include all submission types, even documents without an explicit type.
+            "submission_type": ["__null__", "!__null__"],
             # Set up first page
             "_results_offset": 0,
             "_results_number": MAX_PAGE,
