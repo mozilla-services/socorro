@@ -337,7 +337,7 @@ SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = _config(
     doc=(
         "Default submission_type filter for SuperSearch. We currently want to include "
         "documents without an explicit submission type, and documents explicitly marked as "
-        "reports; in other words, we want to exclude documents explicitly markes as pings."
+        "reports; in other words, we want to exclude documents explicitly marked as pings."
     ),
 )
 
