@@ -488,6 +488,8 @@ def get_versions_for_product(product, use_cache=True):
     window = settings.VERSIONS_WINDOW_DAYS
     params = {
         "product": product.name,
+        # Include all submission types, even documents without an explicit type.
+        "submission_type": ["__null__", "!__null__"],
         "_results_number": 0,
         "_facets": "version",
         "_facets_size": 1000,
