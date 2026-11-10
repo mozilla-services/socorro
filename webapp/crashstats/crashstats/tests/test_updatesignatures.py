@@ -41,6 +41,62 @@ class TestUpdateSignaturesCommand:
     @mock.patch(
         "crashstats.crashstats.management.commands.updatesignatures.SuperSearch"
     )
+    def test_all_submission_types(self, mock_supersearch, settings, db):
+        """Test processing crash documents with different submission types."""
+        settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = "!ping"
+        supersearch = FakeModel()
+        mock_supersearch.return_value = supersearch
+        supersearch.add_get_step(
+            {
+                "errors": [],
+                "hits": [
+                    {
+                        "signature": "legacy crash report",
+                        "build_id": "20260101000000",
+                        "date": "2026-01-01T00:00:00+00:00",
+                    },
+                    {
+                        "signature": "crash report",
+                        "build_id": "20260102000000",
+                        "date": "2026-01-02T00:00:00+00:00",
+                        "submission_type": "report",
+                    },
+                    {
+                        "signature": "crash ping",
+                        "build_id": "20260103000000",
+                        "date": "2026-01-03T00:00:00+00:00",
+                        "submission_type": "ping",
+                    },
+                ],
+                "total": 3,
+                "facets": {},
+            }
+        )
+
+        call_command("updatesignatures", stdout=io.StringIO())
+
+        data = self.fetch_crashstats_signature_data()
+        assert data == [
+            {
+                "signature": "crash ping",
+                "first_build": "20260103000000",
+                "first_date": "2026-01-03 00:00:00+00:00",
+            },
+            {
+                "signature": "crash report",
+                "first_build": "20260102000000",
+                "first_date": "2026-01-02 00:00:00+00:00",
+            },
+            {
+                "signature": "legacy crash report",
+                "first_build": "20260101000000",
+                "first_date": "2026-01-01 00:00:00+00:00",
+            },
+        ]
+
+    @mock.patch(
+        "crashstats.crashstats.management.commands.updatesignatures.SuperSearch"
+    )
     def test_no_crashes_to_process(self, mock_supersearch, db):
         supersearch = FakeModel()
         mock_supersearch.return_value = supersearch
@@ -139,12 +195,12 @@ class TestUpdateSignaturesCommand:
                 "hits": [
                     {
                         "build_id": "20180426000000",
-                        # This is the earliest date of the three
+                        # This is the earliest date
                         "date": "2018-05-03T16:00:00.00000+00:00",
                         "signature": "OOM | large",
                     },
                     {
-                        # This is the earliest build id of the three
+                        # This is the earliest build id
                         "build_id": "20180322000000",
                         "date": "2018-05-03T18:00:00.00000+00:00",
                         "signature": "OOM | large",
