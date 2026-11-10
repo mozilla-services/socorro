@@ -93,15 +93,16 @@ class TestViews:
             bug_id=123456, signature="nsASDOMWindowEnumerator::GetNext()"
         )
 
-        def build_crash_data(**params):
+        def build_crash_data(submission_type="report", **params):
             crash_id = create_new_ooid()
             data = {
-                "submission_type": "report",
                 "date_processed": utc_now(),
                 "uuid": crash_id,
                 "version": "1.0",
                 "os_name": "Linux",
             }
+            if submission_type is not None:
+                data["submission_type"] = submission_type
             data.update(params)
             return data
 
@@ -142,6 +143,11 @@ class TestViews:
                 product="Firefox",
                 submission_type="ping",
             ),
+            build_crash_data(
+                signature="legacySignature",
+                product="Firefox",
+                submission_type=None,
+            ),
         ]
         for item in crash_data:
             es_helper.index_crash(processed_crash=item, refresh=False)
@@ -157,6 +163,9 @@ class TestViews:
         assert "mySignatureIsCool" in content
         assert "mineIsCoolerThanYours" in content
         assert "EMPTY" in content
+        # Legacy reports without submission_type are included by default.
+        assert "legacySignature" in content
+        assert crash_data[-1]["uuid"] in content
         # Verify the crash ping isn't in the results
         assert "pingSignature" not in content
         # Make sure first crash report shows up in results
@@ -183,6 +192,8 @@ class TestViews:
         assert response.status_code == 200
         content = smart_str(response.content)
         assert "pingSignature" in content
+        assert "legacySignature" not in content
+        assert crash_data[-1]["uuid"] not in content
         assert "nsASDOMWindowEnumerator::GetNext()" not in content
         assert "mySignatureIsCool" not in content
         assert "mineIsCoolerThanYours" not in content
