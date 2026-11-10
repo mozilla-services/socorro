@@ -88,6 +88,19 @@ class TestDocumentationViews(BaseTestViews):
         for elt in doc("#mainbody .panel .title h2 a"):
             assert elt.text in valid_names
 
+    @pytest.mark.parametrize("submission_type", ["!ping", "ping"])
+    def test_submission_type_default(self, submission_type):
+        url = reverse("api:documentation")
+        with self.settings(
+            SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=submission_type
+        ):
+            response = self.client.get(url)
+        assert response.status_code == 200
+        doc = pyquery.PyQuery(response.content)
+        test_input = doc("#SuperSearch input[name='submission_type']")
+        assert test_input.attr("value") == submission_type
+        assert test_input.closest("tr").find("td").eq(3).text() == submission_type
+
 
 class TestViews(BaseTestViews):
     def test_invalid_url(self):

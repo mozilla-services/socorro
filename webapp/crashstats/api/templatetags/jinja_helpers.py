@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import datetime
-from urllib.parse import quote
 import warnings
 
 from django_jinja import library
@@ -57,7 +56,7 @@ def make_test_input(parameter, defaults):
     if parameter["type"] is not str:
         classes.append("validate-%s" % parameter["type"].__name__)
     if defaults.get(parameter["name"]):
-        data["value"] = quote(str(defaults.get(parameter["name"])))
+        data["value"] = markupsafe.escape(str(defaults.get(parameter["name"])))
     else:
         data["value"] = ""
 
