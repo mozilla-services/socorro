@@ -4,6 +4,7 @@
 
 import pytest
 
+from crashstats.crashstats.models import FILTER_ANY
 from crashstats.supersearch.models import SuperSearch, SuperSearchUnredacted
 from socorro.lib.libdatetime import utc_now
 from socorro.lib.libooid import create_new_ooid
@@ -45,3 +46,14 @@ def test_results(model, es_helper, settings):
     result = api.get(_columns=["uuid"], _facets=["signature"])
     assert result["total"] == 1
     assert result["hits"] == [{"uuid": crash_ids["ping"]}]
+
+    for default_submission_type in ["!ping", "ping"]:
+        settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = default_submission_type
+        result = api.get(
+            submission_type=FILTER_ANY, _columns=["uuid"], _facets=["signature"]
+        )
+        assert result["total"] == 3
+        assert {hit["uuid"] for hit in result["hits"]} == set(crash_ids.values())
+        assert result["facets"]["signature"] == [
+            {"term": "test submission types", "count": 3}
+        ]

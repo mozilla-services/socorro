@@ -489,7 +489,7 @@ def get_versions_for_product(product, use_cache=True):
     params = {
         "product": product.name,
         # Include all submission types, even documents without an explicit type.
-        "submission_type": ["__null__", "!__null__"],
+        "submission_type": models.FILTER_ANY,
         "_results_number": 0,
         "_facets": "version",
         "_facets_size": 1000,

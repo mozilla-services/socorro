@@ -765,7 +765,6 @@ class TestCrashVerify:
                 "_columns",
                 "_fields",
                 "_results_number",
-                "submission_type",
                 "uuid",
             ]
 
