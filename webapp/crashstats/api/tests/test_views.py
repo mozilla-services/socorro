@@ -91,9 +91,7 @@ class TestDocumentationViews(BaseTestViews):
     @pytest.mark.parametrize("submission_type", ["!ping", "ping"])
     def test_submission_type_default(self, submission_type):
         url = reverse("api:documentation")
-        with self.settings(
-            SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=submission_type
-        ):
+        with self.settings(SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=submission_type):
             response = self.client.get(url)
         assert response.status_code == 200
         doc = pyquery.PyQuery(response.content)
