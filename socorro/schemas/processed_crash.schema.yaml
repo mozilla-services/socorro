@@ -2718,9 +2718,12 @@ properties:
     permissions: ["public"]
     source_annotation: JavaException
   java_stack_trace:
-    description: >
+    description: |
       The unstructured `JavaStackTrace` crash annotation without the exception
       value.
+
+      Crash pings don't include the `JavaStackTrace` annotation, so for crash
+      pings this is built from `java_exception` instead.
     type: string
     permissions: ["public"]
   java_stack_trace_raw:
