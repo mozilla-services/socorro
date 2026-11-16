@@ -95,8 +95,11 @@ class TestDocumentationViews(BaseTestViews):
             response = self.client.get(url)
         assert response.status_code == 200
         doc = pyquery.PyQuery(response.content)
+        # Select the input tag for the submission_type value.
         test_input = doc("#SuperSearch input[name='submission_type']")
         assert test_input.attr("value") == submission_type
+        # Select the row containing the input tag, and the column with index 3, i.e.
+        # the fourth column, containing the default value.
         assert test_input.closest("tr").find("td").eq(3).text() == submission_type
 
 
