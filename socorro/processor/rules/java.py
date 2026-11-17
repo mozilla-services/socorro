@@ -35,15 +35,15 @@ class JavaStackTraceRule(Rule):
 
 
 class JavaStackTraceFromJavaExceptionRule(Rule):
-    """Build ``java_stack_trace`` from ``java_exception`` for crash pings.
+    """Build ``java_stack_trace`` from ``java_exception`` if it's missing.
 
     Crash pings don't include the ``JavaStackTrace`` annotation, only
-    ``JavaException``. Building ``java_stack_trace`` from ``java_exception`` lets
-    signature generation use ``JavaSignatureTool`` for crash pings, so they get the
-    same signatures as the corresponding crash reports.
+    ``JavaException``, and some crash reports have ``JavaException`` without
+    ``JavaStackTrace``. Building ``java_stack_trace`` from ``java_exception`` lets
+    signature generation use ``JavaSignatureTool`` for these crashes, so they get
+    the same signatures as crashes with a ``JavaStackTrace`` annotation.
 
-    This runs only for crash pings and never overwrites an existing
-    ``java_stack_trace``.
+    This never overwrites an existing ``java_stack_trace``.
 
     Note: This rule must run after ``CopyFromRawCrashRule`` (which copies
     ``java_exception`` into the processed crash) and ``JavaStackTraceRule`` (so a
@@ -53,10 +53,8 @@ class JavaStackTraceFromJavaExceptionRule(Rule):
     """
 
     def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
-        return (
-            processed_crash.get("submission_type") == "ping"
-            and bool(processed_crash.get("java_exception"))
-            and not processed_crash.get("java_stack_trace")
+        return bool(processed_crash.get("java_exception")) and not processed_crash.get(
+            "java_stack_trace"
         )
 
     def action(self, raw_crash, dumps, processed_crash, tmpdir, status):

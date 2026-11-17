@@ -67,11 +67,19 @@ class TestJavaStackTraceFromJavaExceptionRule:
         rule.act({}, {}, processed_crash, str(tmp_path), status)
         return status
 
-    def test_builds_java_stack_trace_for_ping(self, java_exception, tmp_path):
-        processed_crash = {
-            "submission_type": "ping",
-            "java_exception": java_exception,
-        }
+    @pytest.mark.parametrize(
+        "submission_type",
+        [
+            pytest.param("ping", id="ping"),
+            pytest.param("report", id="report"),
+            pytest.param(None, id="missing-submission-type"),
+        ],
+    )
+    def test_builds_java_stack_trace(self, submission_type, java_exception, tmp_path):
+        """Runs for any crash with java_exception but no java_stack_trace"""
+        processed_crash = {"java_exception": java_exception}
+        if submission_type is not None:
+            processed_crash["submission_type"] = submission_type
         status = self.run_rule(processed_crash, tmp_path)
 
         assert processed_crash["java_stack_trace"] == (
@@ -84,12 +92,11 @@ class TestJavaStackTraceFromJavaExceptionRule:
             + "java_exception"
         ]
 
-    def test_signature_matches_crash_report(self, java_exception, tmp_path):
-        """The built java_stack_trace gives the same signature as the crash report"""
-        processed_crash = {
-            "submission_type": "ping",
-            "java_exception": java_exception,
-        }
+    def test_signature_matches_java_stack_trace_annotation(
+        self, java_exception, tmp_path
+    ):
+        """The built java_stack_trace gives the same signature as JavaStackTrace"""
+        processed_crash = {"java_exception": java_exception}
         self.run_rule(processed_crash, tmp_path)
 
         signature = JavaSignatureTool().generate(processed_crash["java_stack_trace"])[0]
@@ -98,25 +105,8 @@ class TestJavaStackTraceFromJavaExceptionRule:
             "android.app.servertransaction.PendingTransactionActions$StopInfo.run(PendingTransactionActions.java)"  # noqa
         )
 
-    @pytest.mark.parametrize(
-        "submission_type",
-        [
-            pytest.param("report", id="report"),
-            pytest.param(None, id="missing-submission-type"),
-        ],
-    )
-    def test_skips_non_ping(self, submission_type, java_exception, tmp_path):
-        processed_crash = {"java_exception": java_exception}
-        if submission_type is not None:
-            processed_crash["submission_type"] = submission_type
-        status = self.run_rule(processed_crash, tmp_path)
-
-        assert "java_stack_trace" not in processed_crash
-        assert status.notes == []
-
     def test_does_not_overwrite_java_stack_trace(self, java_exception, tmp_path):
         processed_crash = {
-            "submission_type": "ping",
             "java_exception": java_exception,
             "java_stack_trace": "existing value",
         }
@@ -126,7 +116,7 @@ class TestJavaStackTraceFromJavaExceptionRule:
         assert status.notes == []
 
     def test_skips_without_java_exception(self, tmp_path):
-        processed_crash = {"submission_type": "ping"}
+        processed_crash = {}
         status = self.run_rule(processed_crash, tmp_path)
 
         assert "java_stack_trace" not in processed_crash
@@ -135,7 +125,6 @@ class TestJavaStackTraceFromJavaExceptionRule:
     def test_cannot_build_java_stack_trace(self, tmp_path):
         """If java_exception can't be used, leave java_stack_trace unset"""
         processed_crash = {
-            "submission_type": "ping",
             # No module or type, so there's no exception class name
             "java_exception": {
                 "exception": {"values": [{"stacktrace": {"frames": []}}]}
