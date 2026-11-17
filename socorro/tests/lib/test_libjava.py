@@ -290,7 +290,7 @@ class Test_java_stack_trace_from_java_exception:
                 ),
                 "at android.os.BinderProxy.transactNative(Native Method)",
             ),
-            # No filename: Unknown Source, even if there's a line number
+            # No filename: Unknown Source, with the line number if there is one
             (
                 make_frame(
                     module="kotlinx.coroutines.BuildersKt",
@@ -298,7 +298,7 @@ class Test_java_stack_trace_from_java_exception:
                     filename=None,
                     lineno=92,
                 ),
-                "at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)",
+                "at kotlinx.coroutines.BuildersKt.withContext(Unknown Source:92)",
             ),
             (
                 make_frame(
@@ -308,6 +308,15 @@ class Test_java_stack_trace_from_java_exception:
                     lineno=None,
                 ),
                 "at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)",
+            ),
+            (
+                make_frame(
+                    module="$Proxy20",
+                    function="uniffi_autofill_fn_method_store_get_all_addresses",
+                    filename=None,
+                    lineno=-1,
+                ),
+                "at $Proxy20.uniffi_autofill_fn_method_store_get_all_addresses(Unknown Source)",
             ),
             # Filename but no usable line number
             (

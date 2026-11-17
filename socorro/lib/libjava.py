@@ -140,7 +140,8 @@ def format_frame(frame) -> str:
     crash reports' ``JavaStackTrace`` crash annotation uses:
     * ``at <module>.<function>(<filename>:<lineno>)``
     * ``(Native Method)`` if the method is native (``lineno == -2``)
-    * ``(Unknown Source)`` if there's no ``filename``, even if there's a line number.
+    * ``(Unknown Source:<lineno>)`` if there's no ``filename`` but there is a line
+      number, or ``(Unknown Source)`` if there's neither.
     * ``(<filename>)`` if there's a ``filename`` but no usable line number.
 
     See https://developer.android.com/reference/java/lang/StackTraceElement
@@ -164,11 +165,12 @@ def format_frame(frame) -> str:
     lineno = frame.get("lineno")
     filename = frame.get("filename")
 
+    has_lineno = lineno is not None and lineno >= 0
     if lineno == -2:
         location = "Native Method"
     elif not filename:
-        location = "Unknown Source"
-    elif lineno is not None and lineno >= 0:
+        location = f"Unknown Source:{lineno}" if has_lineno else "Unknown Source"
+    elif has_lineno:
         location = f"{filename}:{lineno}"
     else:
         location = filename
