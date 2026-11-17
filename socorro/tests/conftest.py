@@ -437,3 +437,102 @@ def storage_helper():
     """Generate and return a queue helper using env config."""
     with GcsHelper() as helper:
         yield helper
+
+
+@pytest.fixture
+def java_exception():
+    """Return a realistic processed_crash.java_exception value.
+
+    This is from a real Fenix crash with the signature
+    "java.lang.RuntimeException: at
+    android.app.servertransaction.PendingTransactionActions$StopInfo.run(PendingTransactionActions.java)",
+    with frames trimmed to 4 per exception. It includes:
+
+    * a chain of two exceptions: values[0] is the root cause
+      (TransactionTooLargeException) and values[1], the last element, is the
+      outermost exception (RuntimeException)
+    * a nested class in a frame module: PendingTransactionActions$StopInfo
+    * a native frame (lineno: -2) in the root cause
+    * a package-level exception class: java.lang + RuntimeException, joined with "."
+
+    See also ``java_exception`` in ``processed_crash.schema.yaml``.
+
+    """
+    return {
+        "exception": {
+            "values": [
+                {
+                    "stacktrace": {
+                        "frames": [
+                            {
+                                "module": "android.os.BinderProxy",
+                                "function": "transactNative",
+                                "in_app": False,
+                                "lineno": -2,
+                                "filename": "BinderProxy.java",
+                            },
+                            {
+                                "module": "android.os.BinderProxy",
+                                "function": "transact",
+                                "in_app": True,
+                                "lineno": 639,
+                                "filename": "BinderProxy.java",
+                            },
+                            {
+                                "module": "android.app.IActivityClientController$Stub$Proxy",
+                                "function": "activityStopped",
+                                "in_app": True,
+                                "lineno": 1459,
+                                "filename": "IActivityClientController.java",
+                            },
+                            {
+                                "module": "android.app.ActivityClient",
+                                "function": "activityStopped",
+                                "in_app": True,
+                                "lineno": 112,
+                                "filename": "ActivityClient.java",
+                            },
+                        ],
+                        "type": "TransactionTooLargeException",
+                        "module": "android.os",
+                    }
+                },
+                {
+                    "stacktrace": {
+                        "frames": [
+                            {
+                                "module": "android.app.servertransaction.PendingTransactionActions$StopInfo",
+                                "function": "run",
+                                "in_app": True,
+                                "lineno": 146,
+                                "filename": "PendingTransactionActions.java",
+                            },
+                            {
+                                "module": "android.os.Handler",
+                                "function": "handleCallback",
+                                "in_app": True,
+                                "lineno": 958,
+                                "filename": "Handler.java",
+                            },
+                            {
+                                "module": "android.os.Handler",
+                                "function": "dispatchMessage",
+                                "in_app": True,
+                                "lineno": 99,
+                                "filename": "Handler.java",
+                            },
+                            {
+                                "module": "android.os.Looper",
+                                "function": "loopOnce",
+                                "in_app": True,
+                                "lineno": 222,
+                                "filename": "Looper.java",
+                            },
+                        ],
+                        "type": "RuntimeException",
+                        "module": "java.lang",
+                    }
+                },
+            ]
+        }
+    }

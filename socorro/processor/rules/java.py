@@ -32,3 +32,43 @@ class JavaStackTraceRule(Rule):
             java_stack_trace = "malformed"
 
         processed_crash["java_stack_trace"] = java_stack_trace
+
+
+class JavaStackTraceFromJavaExceptionRule(Rule):
+    """Build ``java_stack_trace`` from ``java_exception`` if it's missing.
+
+    Crash pings don't include the ``JavaStackTrace`` annotation, only
+    ``JavaException``, and some crash reports have ``JavaException`` without
+    ``JavaStackTrace``. Building ``java_stack_trace`` from ``java_exception`` lets
+    signature generation use ``JavaSignatureTool`` for these crashes, so they get
+    the same signatures as crashes with a ``JavaStackTrace`` annotation.
+
+    This never overwrites an existing ``java_stack_trace``.
+
+    Note: This rule must run after ``CopyFromRawCrashRule`` (which copies
+    ``java_exception`` into the processed crash) and ``JavaStackTraceRule`` (so a
+    ``java_stack_trace`` from a ``JavaStackTrace`` annotation takes precedence), and
+    before ``SignatureGeneratorRule``.
+
+    """
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        return bool(processed_crash.get("java_exception")) and not processed_crash.get(
+            "java_stack_trace"
+        )
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        java_stack_trace = libjava.java_stack_trace_from_java_exception(
+            processed_crash["java_exception"]
+        )
+        if java_stack_trace is None:
+            status.add_note(
+                "JavaStackTraceFromJavaExceptionRule: could not build java_stack_trace"
+            )
+            return
+
+        processed_crash["java_stack_trace"] = java_stack_trace
+        status.add_note(
+            "JavaStackTraceFromJavaExceptionRule: built java_stack_trace from "
+            + "java_exception"
+        )
