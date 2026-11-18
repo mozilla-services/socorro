@@ -2,12 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import io
 from unittest import mock
 
 from django.core.management import call_command
+import pytest
 
 from crashstats.crashstats.models import Signature
+from socorro.lib.libdatetime import utc_now
+from socorro.lib.libooid import create_new_ooid
 
 
 class FakeModel:
@@ -38,61 +42,34 @@ class TestUpdateSignaturesCommand:
             )
         ]
 
-    @mock.patch(
-        "crashstats.crashstats.management.commands.updatesignatures.SuperSearch"
-    )
-    def test_all_submission_types(self, mock_supersearch, settings, db):
+    @pytest.mark.parametrize("submission_type_filter", ["!ping", "ping"])
+    def test_all_submission_types(
+        self, submission_type_filter, es_helper, settings, db
+    ):
         """Test processing crash documents with different submission types."""
-        settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = "!ping"
-        supersearch = FakeModel()
-        mock_supersearch.return_value = supersearch
-        supersearch.add_get_step(
-            {
-                "errors": [],
-                "hits": [
-                    {
-                        "signature": "legacy crash report",
-                        "build_id": "20260101000000",
-                        "date": "2026-01-01T00:00:00+00:00",
-                    },
-                    {
-                        "signature": "crash report",
-                        "build_id": "20260102000000",
-                        "date": "2026-01-02T00:00:00+00:00",
-                        "submission_type": "report",
-                    },
-                    {
-                        "signature": "crash ping",
-                        "build_id": "20260103000000",
-                        "date": "2026-01-03T00:00:00+00:00",
-                        "submission_type": "ping",
-                    },
-                ],
-                "total": 3,
-                "facets": {},
+        settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = submission_type_filter
+        run_time = utc_now().replace(second=0, microsecond=0)
+        date_processed = run_time - datetime.timedelta(minutes=5)
+        for submission_type in [None, "report", "ping"]:
+            processed_crash = {
+                "uuid": create_new_ooid(),
+                "signature": str(submission_type),
+                "date_processed": date_processed,
+                "build": "20180420000000",
+                "date": "2018-05-03T12:00:00.00000+00:00",
             }
+            if submission_type is not None:
+                processed_crash["submission_type"] = submission_type
+            es_helper.index_crash(processed_crash=processed_crash)
+
+        call_command(
+            "updatesignatures", run_time=run_time.isoformat(), stdout=io.StringIO()
         )
 
-        call_command("updatesignatures", stdout=io.StringIO())
-
-        data = self.fetch_crashstats_signature_data()
-        assert data == [
-            {
-                "signature": "crash ping",
-                "first_build": "20260103000000",
-                "first_date": "2026-01-03 00:00:00+00:00",
-            },
-            {
-                "signature": "crash report",
-                "first_build": "20260102000000",
-                "first_date": "2026-01-02 00:00:00+00:00",
-            },
-            {
-                "signature": "legacy crash report",
-                "first_build": "20260101000000",
-                "first_date": "2026-01-01 00:00:00+00:00",
-            },
+        signatures_in_db = [
+            sig["signature"] for sig in self.fetch_crashstats_signature_data()
         ]
+        assert signatures_in_db == ["None", "ping", "report"]
 
     @mock.patch(
         "crashstats.crashstats.management.commands.updatesignatures.SuperSearch"
