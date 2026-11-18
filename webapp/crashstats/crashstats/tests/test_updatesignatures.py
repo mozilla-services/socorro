@@ -2,12 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import datetime
 import io
 from unittest import mock
 
 from django.core.management import call_command
+import pytest
 
 from crashstats.crashstats.models import Signature
+from socorro.lib.libdatetime import utc_now
+from socorro.lib.libooid import create_new_ooid
 
 
 class FakeModel:
@@ -37,6 +41,35 @@ class TestUpdateSignaturesCommand:
                 "signature", "first_build", "first_date"
             )
         ]
+
+    @pytest.mark.parametrize("submission_type_filter", ["!ping", "ping"])
+    def test_all_submission_types(
+        self, submission_type_filter, es_helper, settings, db
+    ):
+        """Test processing crash documents with different submission types."""
+        settings.SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER = submission_type_filter
+        run_time = utc_now().replace(second=0, microsecond=0)
+        date_processed = run_time - datetime.timedelta(minutes=5)
+        for submission_type in [None, "report", "ping"]:
+            processed_crash = {
+                "uuid": create_new_ooid(),
+                "signature": str(submission_type),
+                "date_processed": date_processed,
+                "build": "20180420000000",
+                "date": "2018-05-03T12:00:00.00000+00:00",
+            }
+            if submission_type is not None:
+                processed_crash["submission_type"] = submission_type
+            es_helper.index_crash(processed_crash=processed_crash)
+
+        call_command(
+            "updatesignatures", run_time=run_time.isoformat(), stdout=io.StringIO()
+        )
+
+        signatures_in_db = [
+            sig["signature"] for sig in self.fetch_crashstats_signature_data()
+        ]
+        assert signatures_in_db == ["None", "ping", "report"]
 
     @mock.patch(
         "crashstats.crashstats.management.commands.updatesignatures.SuperSearch"
@@ -139,12 +172,12 @@ class TestUpdateSignaturesCommand:
                 "hits": [
                     {
                         "build_id": "20180426000000",
-                        # This is the earliest date of the three
+                        # This is the earliest date
                         "date": "2018-05-03T16:00:00.00000+00:00",
                         "signature": "OOM | large",
                     },
                     {
-                        # This is the earliest build id of the three
+                        # This is the earliest build id
                         "build_id": "20180322000000",
                         "date": "2018-05-03T18:00:00.00000+00:00",
                         "signature": "OOM | large",

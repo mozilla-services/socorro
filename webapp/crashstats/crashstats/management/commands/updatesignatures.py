@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from crashstats.crashstats.models import Signature
+from crashstats.crashstats.models import FILTER_ANY, Signature
 from crashstats.supersearch.models import SuperSearch
 from crashstats.supersearch.libsupersearch import get_supersearch_fields
 from socorro.lib.libdatetime import string_to_datetime
@@ -99,6 +99,8 @@ class Command(BaseCommand):
             "_columns": ["signature", "build_id", "date"],
             "_facets_size": 0,
             "_fields": all_fields,
+            # Include all submission types, even documents without an explicit type.
+            "submission_type": FILTER_ANY,
             # Set up first page
             "_results_offset": 0,
             "_results_number": MAX_PAGE,

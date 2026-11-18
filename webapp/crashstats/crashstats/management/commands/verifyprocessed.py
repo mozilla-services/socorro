@@ -20,7 +20,7 @@ from django.db.utils import IntegrityError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 
-from crashstats.crashstats.models import MissingProcessedCrash, Reprocessing
+from crashstats.crashstats.models import FILTER_ANY, MissingProcessedCrash, Reprocessing
 from crashstats.supersearch.models import SuperSearchUnredacted
 from socorro import settings as socorro_settings
 from socorro.lib.libooid import date_from_ooid
@@ -57,6 +57,7 @@ def check_elasticsearch(supersearch, crash_ids):
     params = {
         "uuid": crash_ids,
         "date": [">=%s" % start_date, "<=%s" % end_date],
+        "submission_type": FILTER_ANY,
         "_columns": ["uuid"],
         "_facets": [],
         "_facets_size": 0,

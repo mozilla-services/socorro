@@ -42,6 +42,10 @@ RAW_CRASH_SCHEMA = get_schema("raw_crash.schema.yaml")
 PROCESSED_CRASH_SCHEMA = get_schema("processed_crash.schema.yaml")
 
 
+# Explicitly omit a filter, even when the middleware defines a default for it.
+FILTER_ANY = object()
+
+
 # Django models first
 
 
@@ -397,12 +401,16 @@ class SocorroMiddleware(SocorroCommon):
         return {}, False
 
     def parse_parameters(self, kwargs):
+        """Apply defaults and aliases, omitting filters set to FILTER_ANY."""
         defaults = getattr(self, "defaults", {})
         aliases = getattr(self, "aliases", {})
 
         for key, value in defaults.items():
             kwargs[key] = kwargs.get(key) or value
 
+        kwargs = {
+            key: value for key, value in kwargs.items() if value is not FILTER_ANY
+        }
         params = self.kwargs_to_params(kwargs)
         for param in list(params):
             if aliases.get(param):

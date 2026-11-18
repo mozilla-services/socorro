@@ -213,6 +213,7 @@ def topcrashers(request, days=None, possible_days=None, default_context=None):
     total_number_of_crashes, topcrashers_stats = get_topcrashers_stats(
         product=product.name,
         version=versions,
+        submission_type=form.cleaned_data["submission_type"],
         platform=os_name,
         process_type=crash_type,
         report_type=report_type,
