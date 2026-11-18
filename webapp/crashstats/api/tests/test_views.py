@@ -88,19 +88,24 @@ class TestDocumentationViews(BaseTestViews):
         for elt in doc("#mainbody .panel .title h2 a"):
             assert elt.text in valid_names
 
-    @pytest.mark.parametrize("submission_type", ["!ping", "ping"])
-    def test_submission_type_default(self, submission_type):
+    def test_submission_type_default(self):
         url = reverse("api:documentation")
-        with self.settings(SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=submission_type):
-            response = self.client.get(url)
-        assert response.status_code == 200
-        doc = pyquery.PyQuery(response.content)
-        # Select the input tag for the submission_type value.
-        test_input = doc("#SuperSearch input[name='submission_type']")
-        assert test_input.attr("value") == submission_type
-        # Select the row containing the input tag, and the column with index 3, i.e.
-        # the fourth column, containing the default value.
-        assert test_input.closest("tr").find("td").eq(3).text() == submission_type
+        for submission_type in ["!ping", "ping"]:
+            with self.subTest(submission_type=submission_type):
+                with self.settings(
+                    SUPERSEARCH_DEFAULT_SUBMISSION_TYPE_FILTER=submission_type
+                ):
+                    response = self.client.get(url)
+                assert response.status_code == 200
+                doc = pyquery.PyQuery(response.content)
+                # Select the input tag for the submission_type value.
+                test_input = doc("#SuperSearch input[name='submission_type']")
+                assert test_input.attr("value") == submission_type
+                # Select the row containing the input tag, and the column with index 3, i.e.
+                # the fourth column, containing the default value.
+                assert (
+                    test_input.closest("tr").find("td").eq(3).text() == submission_type
+                )
 
 
 class TestViews(BaseTestViews):
