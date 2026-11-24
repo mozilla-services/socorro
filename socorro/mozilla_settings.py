@@ -13,7 +13,6 @@ import tempfile
 
 from everett.manager import ConfigManager, ListOf, parse_data_size, parse_time_period
 
-
 _config = ConfigManager.basic_config()
 
 
@@ -294,6 +293,42 @@ STACKWALKER = {
         default=os.path.join(tempfile.gettempdir(), "symbols", "tmp"),
         doc="Directory to use for temporary storage of files being downloaded.",
     ),
+}
+
+
+# SymbolicationRule configuration
+SYMBOLICATOR = {
+    "command_path": _config(
+        "SYMBOLICATOR_COMMAND_PATH",
+        default="/stackwalk-rust/symbolicate-stacks",
+        doc="Absolute path to the symbolicate-stacks binary.",
+    ),
+    # Besides --input-file and --output-file, symbolicate-stacks takes config as extra
+    # positional arguments, and each argument is one line of TOML. The SymbolicationRule
+    # must JSON-encode each value (i.e. via ``json.dumps``, which yields valid TOML
+    # strings/arrays). Each line is wrapped in single quotes, because ``execute_process``
+    # splits the command string with ``shlex.split``, which would otherwise break each
+    # TOML line apart at its spaces.
+    "command_line": (
+        "{command_path} "
+        + "--input-file={input_path} "
+        + "--output-file={output_path} "
+        + "'symbol_servers.breakpad = {symbols_urls}' "
+        + "'symbol_servers.windows = {symbols_urls}' "
+        + "'cache.directory = {symbol_cache_path}'"
+    ),
+    "kill_timeout": _config(
+        "SYMBOLICATOR_KILL_TIMEOUT",
+        default="2m",
+        parser=or_none(parse_time_period),
+        doc="Timeout in seconds before symbolicate-stacks is killed.",
+    ),
+    # Same symbol servers as minidump-stackwalk
+    "symbols_urls": STACKWALKER["symbols_urls"],
+    # minidump-stackwalker's cache uses different filenames, so the two binaries
+    # can't currently share the same cache.
+    # TODO(bdanforth): File a ticket and link here?
+    "symbol_cache_path": os.path.join(SYMBOLS_CACHE_PATH, "symbolicate-stacks"),
 }
 
 
