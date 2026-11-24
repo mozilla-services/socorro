@@ -12,7 +12,8 @@ set -euo pipefail
 
 # This should be a url to a .tar.gz file from the release page:
 # https://github.com/rust-minidump/rust-minidump/releases
-URL="https://github.com/mozilla-services/socorro-stackwalk/releases/download/v20250801.0/socorro-stackwalker.2025-06-20.v0.26.0.tar.gz"
+# TODO(bdanforth): Update this URL once Bug 2054202 is done.
+URL="http://host.docker.internal:8000/socorro-stackwalker-84f84cf.2026-11-24.tar.gz"
 
 TARFILE="stackwalker.tar.gz"
 TARGETDIR="/stackwalk-rust"
@@ -30,11 +31,15 @@ ls -l "${TARFILE}"
 tar -xzvf "${TARFILE}"
 mkdir -p "${TARGETDIR}" || true
 cp build/bin/minidump-stackwalk "${TARGETDIR}"
-cp build/stackwalk.version.json "${TARGETDIR}/minidump-stackwalk.version.json"
+cp build/minidump-stackwalk.version.json "${TARGETDIR}/minidump-stackwalk.version.json"
+cp build/bin/symbolicate-stacks "${TARGETDIR}"
+cp build/symbolicate-stacks.version.json "${TARGETDIR}/symbolicate-stacks.version.json"
 ls -l "${TARGETDIR}"
 
 # Make sure it runs and reports version
 ${TARGETDIR}/minidump-stackwalk --version
+# symbolicate-stacks doesn't support --version yet, so --help is the "does it run at all" check.
+${TARGETDIR}/symbolicate-stacks --help > /dev/null
 
 # Clean up
 popd
