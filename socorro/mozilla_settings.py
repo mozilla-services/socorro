@@ -296,7 +296,7 @@ STACKWALKER = {
 }
 
 
-# SymbolicationRule configuration
+# SymbolicateRule configuration
 SYMBOLICATOR = {
     "command_path": _config(
         "SYMBOLICATOR_COMMAND_PATH",
@@ -304,14 +304,14 @@ SYMBOLICATOR = {
         doc="Absolute path to the symbolicate-stacks binary.",
     ),
     # Besides --input-file and --output-file, symbolicate-stacks takes config as extra
-    # positional arguments, and each argument is one line of TOML. The SymbolicationRule
+    # positional arguments, and each argument is one line of TOML. The SymbolicateRule
     # must JSON-encode each value (i.e. via ``json.dumps``, which yields valid TOML
     # strings/arrays). Each line is wrapped in single quotes, because ``execute_process``
     # splits the command string with ``shlex.split``, which would otherwise break each
     # TOML line apart at its spaces.
     "command_line": (
         "{command_path} "
-        + "--input-file={input_path} "
+        + "--input-file={raw_crash_path} "
         + "--output-file={output_path} "
         + "'symbol_servers.breakpad = {symbols_urls}' "
         + "'symbol_servers.windows = {symbols_urls}' "

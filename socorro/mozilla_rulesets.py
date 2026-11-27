@@ -15,6 +15,7 @@ from socorro.processor.rules.breakpad import (
     MinidumpSha256HashRule,
     MinidumpStackwalkRule,
     PossibleBitFlipsRule,
+    SymbolicateRule,
     ThreadCountRule,
     TruncateStacksRule,
 )
@@ -92,6 +93,13 @@ DEFAULT_RULESET = [
         kill_timeout=settings.STACKWALKER["kill_timeout"],
         symbol_cache_path=settings.STACKWALKER["symbol_cache_path"],
         symbol_tmp_path=settings.STACKWALKER["symbol_tmp_path"],
+    ),
+    SymbolicateRule(
+        symbols_urls=settings.SYMBOLICATOR["symbols_urls"],
+        command_line=settings.SYMBOLICATOR["command_line"],
+        command_path=settings.SYMBOLICATOR["command_path"],
+        kill_timeout=settings.SYMBOLICATOR["kill_timeout"],
+        symbol_cache_path=settings.SYMBOLICATOR["symbol_cache_path"],
     ),
     ModuleURLRewriteRule(),
     CrashingThreadInfoRule(),

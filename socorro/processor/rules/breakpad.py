@@ -2,18 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from collections.abc import Mapping
 import json
 import logging
 import os
 import shlex
 import subprocess
+from collections.abc import Mapping
 
 from glom import glom
 
 from socorro.libmarkus import METRICS
 from socorro.processor.rules.base import Rule
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -287,6 +286,29 @@ def execute_process(command_line, timeout=120):
     return ret
 
 
+def get_version_json_suffix(command_path):
+    """Returns "(<date> <sha>)" from <command_path>.version.json, or "" if unavailable.
+
+    The socorro-stackwalk release tarball includes a <binary>.version.json file
+    next to each binary with the revision and date it was built from.
+
+    :param command_path: the absolute path to the binary
+
+    :returns: version suffix string; e.g. "(2025-06-20 v0.26.0)"
+
+    """
+    shafile = command_path + ".version.json"
+    if not os.path.exists(shafile):
+        return ""
+    with open(shafile, "r") as fp:
+        data = json.load(fp)
+    if not data:
+        return ""
+    rev = data["sha"][:8]
+    revdate = data["date"]
+    return f"({revdate} {rev})"
+
+
 class CommandError(Exception):
     pass
 
@@ -368,6 +390,10 @@ class MinidumpStackwalkRule(Rule):
         )
         return self.generate_repr(keys=keys)
 
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        # Crash pings have no minidump; SymbolicateRule handles them
+        return processed_crash.get("submission_type") != "ping"
+
     def get_version(self):
         command_line = f"{self.command_path} --version"
         ret = execute_process(command_line, timeout=self.kill_timeout)
@@ -380,15 +406,8 @@ class MinidumpStackwalkRule(Rule):
 
         # If there's a JSON file, then that has version information about the
         # minidump-stackwalk that we installed, so tack that information on
-        shafile = self.command_path + ".version.json"
-        if os.path.exists(shafile):
-            with open(shafile, "r") as fp:
-                data = json.load(fp)
-            if data:
-                rev = data["sha"][:8]
-                revdate = data["date"]
-                version = f"{version} ({revdate} {rev})"
-        return version
+        suffix = get_version_json_suffix(self.command_path)
+        return f"{version} {suffix}" if suffix else version
 
     def build_directories(self):
         os.makedirs(self.symbol_tmp_path, exist_ok=True)
@@ -586,6 +605,297 @@ class MinidumpStackwalkRule(Rule):
                     processed_crash["additional_minidumps"].append(dump_name)
                 processed_crash.setdefault(dump_name, {})
                 processed_crash[dump_name].update(stackwalker_data)
+
+
+class SymbolicateRule(Rule):
+    """Runs symbolicate-stacks (Rust) and puts output in processed crash.
+
+    Produces:
+
+    * json_dump: symbolicate-stacks output converted to the json_dump structure
+    * symbolicate_exit_code: process exit code
+    * symbolicate_status_string:
+
+      * "OK" if symbolicate-stacks exited 0 and produced a JSON object
+      * "unknown error" otherwise; details are in the processor notes
+
+    * symbolicate_success: bool
+    * symbolicate_version: version of symbolicate-stacks
+    * symbolicate_stderr: last 10 lines of symbolicate-stacks stderr
+
+    Also adds processor notes.
+
+    Emits:
+
+    * processor.symbolicate.*
+
+    """
+
+    def __init__(
+        self,
+        symbols_urls=None,
+        # This is the location it gets put in the Docker image
+        command_path="/stackwalk-rust/symbolicate-stacks",
+        command_line=(
+            "{command_path} "
+            + "--input-file={raw_crash_path} "
+            + "--output-file={output_path} "
+            + "'symbol_servers.breakpad = {symbols_urls}' "
+            + "'symbol_servers.windows = {symbols_urls}' "
+            + "'cache.directory = {symbol_cache_path}'"
+        ),
+        kill_timeout=600,
+        symbol_cache_path="/tmp/symbols/symbolicate-stacks",
+    ):
+        super().__init__()
+
+        # If kill_timeout is None, set it to 600--the default
+        if kill_timeout is None:
+            kill_timeout = 600
+
+        self.symbols_urls = symbols_urls or []
+        self.command_path = command_path
+        self.command_line = command_line
+        self.kill_timeout = kill_timeout
+        self.symbol_cache_path = symbol_cache_path
+
+        self.symbolicate_version = self.get_version()
+        self.build_directories()
+
+    def __repr__(self):
+        keys = (
+            "symbols_urls",
+            "command_path",
+            "command_line",
+            "kill_timeout",
+            "symbol_cache_path",
+        )
+        return self.generate_repr(keys=keys)
+
+    def get_version(self):
+        # symbolicate-stacks doesn't support --version yet, so run --help to make sure
+        # the binary runs (to fail early at startup like MinidumpStackwalkRule does) and
+        # get the version from the version.json file.
+        # TODO: Update to match MinidumpStackwalkRule.get_version once it does. See
+        # https://github.com/mozilla-services/socorro-stackwalk/pull/25#discussion_r4672118024
+        command_line = f"{self.command_path} --help"
+        ret = execute_process(command_line, timeout=self.kill_timeout)
+        if ret["returncode"] != 0:
+            raise CommandError(
+                "SymbolicateRule: unknown error when getting version: "
+                + f"{ret['returncode']} {ret['stdout']}"
+            )
+
+        name = os.path.basename(self.command_path)
+        suffix = get_version_json_suffix(self.command_path)
+        if not suffix:
+            return f"{name} (unknown version)"
+        # The version.json "sha" is the release tag, so use it as the version number too,
+        # e.g. "symbolicate-stacks 0.4.0 (2026-11-20 0.4.0)".
+        with open(self.command_path + ".version.json") as fp:
+            sha = json.load(fp)["sha"]
+        return f"{name} {sha} {suffix}"
+
+    def build_directories(self):
+        os.makedirs(self.symbol_cache_path, exist_ok=True)
+
+    def expand_commandline(self, raw_crash_path, output_path):
+        """Expands the command line parameters and returns the final command line
+
+        :param raw_crash_path: the absolute path to the crash annotations file
+        :param output_path: the absolute path to where the output will go
+
+        :returns: command line as a string
+
+        """
+        # NOTE: If we ever add new configuration variables, we'll need
+        # to add them here, too, otherwise they won't get expanded in the
+        # command line.
+
+        symbols_urls = json.dumps([url.strip() for url in self.symbols_urls])
+
+        params = {
+            # These come from config
+            "command_path": self.command_path,
+            "symbol_cache_path": json.dumps(self.symbol_cache_path),
+            "symbols_urls": symbols_urls,
+            # These are calculated
+            "raw_crash_path": raw_crash_path,
+            "output_path": output_path,
+        }
+        return self.command_line.format(**params)
+
+    def run_symbolicate(self, crash_id, command_path, command_line, output_path, status):
+        ret = execute_process(command_line, timeout=self.kill_timeout)
+        returncode = ret["returncode"]
+
+        # symbolicate-stacks logs to stderr rather than a log file
+        log_data = ret["stderr"].decode("utf-8", errors="replace")
+
+        # Truncate to 10 lines
+        if log_data.count("\n") > 10:
+            log_data = "\n".join(["..."] + log_data.splitlines()[-10:])
+
+        # symbolicate-stacks output has no status field, so determine whether it
+        # failed from the return code and whether the output is a JSON object
+        output = {}
+        failure_reason = None
+        if returncode == 0:
+            if os.path.exists(output_path):
+                with open(output_path, "r") as fp:
+                    output_raw = fp.read()
+
+                try:
+                    output = json.loads(output_raw)
+                except Exception as exc:
+                    failure_reason = f"non-json output: {exc}"
+                    self.logger.debug(
+                        "SymbolicateRule: %s: non-json output: %s",
+                        command_path,
+                        output_raw[:1000],
+                    )
+
+                if failure_reason is None and not isinstance(output, Mapping):
+                    failure_reason = f"unexpected output: {str(output)[:200]}"
+                    output = {}
+            else:
+                failure_reason = "missing output"
+
+        # subprocess.run returns negative exit codes where the number is the signal
+        # that killed the process; execute_process returns -9 on timeout
+        elif returncode == -9:
+            failure_reason = "timeout (SIGKILL)"
+        elif returncode < 0:
+            failure_reason = f"killed by signal {-returncode}"
+        else:
+            # 1 = symbolication failed, 101 = panic; details are in stderr
+            failure_reason = f"failed: {returncode}"
+
+        # Like MinidumpStackwalkRule, the status string is "OK" or "unknown error";
+        # failure details only go in the processor note
+        success = failure_reason is None
+        status_string = "OK" if success else "unknown error"
+        symbolicate_data = {
+            # Raw symbolicate-stacks output; mapped into json_dump separately
+            "output": output,
+            "symbolicate_exit_code": returncode,
+            "symbolicate_status_string": status_string,
+            "symbolicate_success": success,
+            "symbolicate_version": self.symbolicate_version,
+            # NOTE: this may contain protected data
+            "symbolicate_stderr": log_data,
+        }
+
+        if not success:
+            msg = f"SymbolicateRule: symbolicate-stacks: {failure_reason}"
+            status.add_note(msg)
+            self.logger.warning("%s (%s)", msg, crash_id)
+
+        METRICS.incr(
+            "processor.symbolicate.run",
+            tags=[
+                "outcome:%s" % ("success" if success else "fail"),
+                "exitcode:%s" % returncode,
+            ],
+        )
+
+        return symbolicate_data
+
+    def convert_to_json_dump(self, output):
+        """Converts symbolicate-stacks output into the json_dump structure.
+
+        symbolicate-stacks outputs data in the signature generation crash data schema.
+        This moves the parts that signature generation and downstream rules read into
+        the json_dump paths they read them from (json_dump is structured like
+        minidump-stackwalk output). Keys missing from the output are omitted rather
+        than included empty.
+
+        :param output: parsed symbolicate-stacks output
+
+        :returns: json_dump dict
+
+        """
+        json_dump = {}
+
+        crash_info = {}
+        if "reason" in output:
+            crash_info["type"] = output["reason"]
+        if "crashing_thread" in output:
+            crash_info["crashing_thread"] = output["crashing_thread"]
+        if crash_info:
+            json_dump["crash_info"] = crash_info
+
+        if "threads" in output:
+            json_dump["threads"] = output["threads"]
+
+        if "os" in output:
+            json_dump["system_info"] = {"os": output["os"]}
+
+        return json_dump
+
+    def predicate(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        # Only crash pings for now; crash reports will be handled by
+        # MinidumpStackwalkRule until CRINGE-456
+        if processed_crash.get("submission_type") != "ping":
+            return False
+
+        stack_traces = raw_crash.get("StackTraces")
+        if not stack_traces:
+            # Java crashes don't have StackTraces, so only add a note for native
+            # crashes
+            is_java_crash = raw_crash.get("JavaException") or raw_crash.get(
+                "JavaStackTrace"
+            )
+            if not is_java_crash:
+                status.add_note("SymbolicateRule: StackTraces is missing")
+            return False
+
+        # symbolicate-stacks treats malformed StackTraces as empty and exits 0, so
+        # check it's usable here
+        try:
+            parsed = json.loads(stack_traces)
+        except (TypeError, ValueError) as exc:
+            status.add_note(f"SymbolicateRule: StackTraces is not valid JSON: {exc}")
+            return False
+
+        if not isinstance(parsed, Mapping):
+            status.add_note("SymbolicateRule: StackTraces is not a JSON object")
+            return False
+
+        return True
+
+    def action(self, raw_crash, dumps, processed_crash, tmpdir, status):
+        crash_id = raw_crash["uuid"]
+
+        # Save crash annotations (which include StackTraces) to disk for
+        # symbolicate-stacks to read
+        raw_crash_path = os.path.join(tmpdir, f"{crash_id}.json")
+        with open(raw_crash_path, "w") as fp:
+            json.dump(raw_crash, fp)
+
+        output_path = os.path.join(tmpdir, f"{crash_id}.symbolicate.json")
+        command_line = self.expand_commandline(
+            raw_crash_path=raw_crash_path,
+            output_path=output_path,
+        )
+
+        symbolicate_data = self.run_symbolicate(
+            crash_id=crash_id,
+            command_path=self.command_path,
+            command_line=command_line,
+            output_path=output_path,
+            status=status,
+        )
+
+        # The raw output is in the signature generation schema (see
+        # https://github.com/mozilla/symbolicate-stacks/blob/029fef6b64c50912e7d98ae90b1c63f00234b808/README.md#output),
+        # so convert it to json_dump rather than storing it as is. Like
+        # MinidumpStackwalkRule, this sets json_dump even if symbolicate-stacks failed
+        # (in which case it's {}).
+        output = symbolicate_data.pop("output")
+        processed_crash["json_dump"] = self.convert_to_json_dump(output)
+
+        processed_crash.update(symbolicate_data)
 
 
 class ThreadCountRule(Rule):

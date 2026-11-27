@@ -1416,6 +1416,10 @@ FIELDS = {
         choices=["report", "ping"],
     ),
     "submitted_from": keyword_field(name="submitted_from"),
+    "symbolicate_version": keyword_field(
+        name="symbolicate_version",
+        namespace="processed_crash",
+    ),
     "system_memory_use_percentage": {
         "data_validation_type": "int",
         "form_field_choices": [],

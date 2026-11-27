@@ -3245,6 +3245,35 @@ properties:
       The `submitted_timestamp` from the collector.
     type: string
     permissions: ["public"]
+  symbolicate_exit_code:
+    description: >
+      Exit code of the symbolicate-stacks process. Non-zero indicates there was an
+      error.
+    type: integer
+    permissions: ["protected"]
+  symbolicate_status_string:
+    description: >
+      Status of the symbolicate-stacks run. `OK` if it succeeded, otherwise
+      `unknown error`. Details of the error are in the processor notes.
+    type: string
+    permissions: ["public"]
+  symbolicate_stderr:
+    description: >
+      stderr output from symbolicate-stacks.
+    type: string
+    # This can contain paths and other things about the node, as well as parts of
+    # protected crash annotations
+    permissions: ["protected"]
+  symbolicate_success:
+    description: >
+      Indicates whether symbolicate-stacks ran successfully.
+    type: boolean
+    permissions: ["public"]
+  symbolicate_version:
+    description: >
+      Version of symbolicate-stacks used to symbolicate the stacks.
+    type: string
+    permissions: ["public"]
   system_memory_use_percentage:
     description:
       The approximate percentage of physical memory that is in use.
